@@ -1,9 +1,10 @@
 [project]
 name = "zzz"
 version = "0.1.0"
-description = "Zzz - Python/PHP/JSON Projekt"
+description = "Zzz - Webbasierte Loesung mit Python, PHP und HTML"
 requires-python = ">=3.11"
 dependencies = [
+    "flask>=3.0",
     "jsonschema>=4.0",
 ]
 
@@ -14,7 +15,7 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
-testpaths = ["tests/python", "tests/json"]
+testpaths = ["tests/python", "tests/html"]
 addopts = "--cov=src/python --cov-report=term-missing"
 
 [tool.coverage.run]

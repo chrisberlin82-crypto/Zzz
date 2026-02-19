@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zzz - Rechner</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>Zzz Rechner</h1>
+        <nav>
+            <a href="index.html" class="active">Rechner</a>
+            <a href="benutzer.html">Benutzer</a>
+        </nav>
+    </header>
+    <main>
+        <section id="rechner">
+            <h2>Rechner</h2>
+            <form id="rechner-form">
+                <div class="form-group">
+                    <label for="zahl-a">Zahl A</label>
+                    <input type="number" id="zahl-a" name="zahl_a" step="any" required>
+                </div>
+                <div class="form-group">
+                    <label for="operation">Operation</label>
+                    <select id="operation" name="operation" required>
+                        <option value="addieren">+ Addieren</option>
+                        <option value="subtrahieren">- Subtrahieren</option>
+                        <option value="multiplizieren">× Multiplizieren</option>
+                        <option value="dividieren">÷ Dividieren</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="zahl-b">Zahl B</label>
+                    <input type="number" id="zahl-b" name="zahl_b" step="any" required>
+                </div>
+                <button type="submit">Berechnen</button>
+            </form>
+            <div id="ergebnis" class="ergebnis" hidden>
+                <strong>Ergebnis:</strong> <span id="ergebnis-wert"></span>
+            </div>
+            <div id="fehler" class="fehler" hidden></div>
+        </section>
+    </main>
+    <script src="app.js"></script>
+</body>
+</html>
