@@ -2,7 +2,7 @@
 
 const API_BASE = "/api";
 
-/** Rechner */
+/** Rechner (Client-Fallback) */
 function berechnen(a, operation, b) {
     switch (operation) {
         case "addieren":
@@ -19,20 +19,39 @@ function berechnen(a, operation, b) {
     }
 }
 
+/** API-Aufruf fuer Berechnung */
+async function berechnenApi(a, operation, b) {
+    const response = await fetch(API_BASE + "/berechnen", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ a: a, b: b, operation: operation }),
+    });
+    const daten = await response.json();
+    if (!response.ok) {
+        throw new Error(daten.fehler || "Serverfehler");
+    }
+    return daten.ergebnis;
+}
+
 function initRechner() {
-    const form = document.getElementById("rechner-form");
+    var form = document.getElementById("rechner-form");
     if (!form) return;
 
-    form.addEventListener("submit", function (e) {
+    form.addEventListener("submit", async function (e) {
         e.preventDefault();
-        const a = parseFloat(document.getElementById("zahl-a").value);
-        const b = parseFloat(document.getElementById("zahl-b").value);
-        const op = document.getElementById("operation").value;
-        const ergebnisDiv = document.getElementById("ergebnis");
-        const fehlerDiv = document.getElementById("fehler");
+        var a = parseFloat(document.getElementById("zahl-a").value);
+        var b = parseFloat(document.getElementById("zahl-b").value);
+        var op = document.getElementById("operation").value;
+        var ergebnisDiv = document.getElementById("ergebnis");
+        var fehlerDiv = document.getElementById("fehler");
 
         try {
-            const ergebnis = berechnen(a, op, b);
+            var ergebnis;
+            try {
+                ergebnis = await berechnenApi(a, op, b);
+            } catch (_) {
+                ergebnis = berechnen(a, op, b);
+            }
             document.getElementById("ergebnis-wert").textContent = ergebnis;
             ergebnisDiv.hidden = false;
             fehlerDiv.hidden = true;
@@ -46,7 +65,7 @@ function initRechner() {
 
 /** Benutzer-Validierung */
 function benutzerValidieren(daten) {
-    const fehler = [];
+    var fehler = [];
 
     if (!daten.name || daten.name.trim().length === 0) {
         fehler.push("Name ist erforderlich");
@@ -64,13 +83,39 @@ function benutzerValidieren(daten) {
     return fehler;
 }
 
+/** API-Aufruf fuer Benutzer speichern */
+async function benutzerSpeichernApi(daten) {
+    var response = await fetch(API_BASE + "/benutzer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(daten),
+    });
+    var ergebnis = await response.json();
+    if (!response.ok) {
+        var msg = Array.isArray(ergebnis.fehler)
+            ? ergebnis.fehler.join(", ")
+            : ergebnis.fehler;
+        throw new Error(msg || "Serverfehler");
+    }
+    return ergebnis;
+}
+
+/** API-Aufruf fuer Benutzerliste laden */
+async function benutzerLadenApi() {
+    var response = await fetch(API_BASE + "/benutzer");
+    if (!response.ok) throw new Error("Fehler beim Laden der Benutzer");
+    return response.json();
+}
+
 function initBenutzerFormular() {
-    const form = document.getElementById("benutzer-form");
+    var form = document.getElementById("benutzer-form");
     if (!form) return;
 
-    form.addEventListener("submit", function (e) {
+    benutzerListeAktualisieren();
+
+    form.addEventListener("submit", async function (e) {
         e.preventDefault();
-        const daten = {
+        var daten = {
             name: document.getElementById("name").value,
             email: document.getElementById("email").value,
             alter: parseInt(document.getElementById("alter").value, 10),
@@ -79,15 +124,24 @@ function initBenutzerFormular() {
             stadt: document.getElementById("stadt").value,
         };
 
-        const fehler = benutzerValidieren(daten);
-        const erfolgDiv = document.getElementById("benutzer-erfolg");
-        const fehlerDiv = document.getElementById("benutzer-fehler");
+        var fehler = benutzerValidieren(daten);
+        var erfolgDiv = document.getElementById("benutzer-erfolg");
+        var fehlerDiv = document.getElementById("benutzer-fehler");
 
         if (fehler.length > 0) {
             fehlerDiv.textContent = fehler.join(", ");
             fehlerDiv.hidden = false;
             erfolgDiv.hidden = true;
-        } else {
+            return;
+        }
+
+        try {
+            await benutzerSpeichernApi(daten);
+            erfolgDiv.hidden = false;
+            fehlerDiv.hidden = true;
+            form.reset();
+            benutzerListeAktualisieren();
+        } catch (err) {
             benutzerZurTabelle(daten);
             erfolgDiv.hidden = false;
             fehlerDiv.hidden = true;
@@ -96,11 +150,25 @@ function initBenutzerFormular() {
     });
 }
 
+async function benutzerListeAktualisieren() {
+    try {
+        var benutzer = await benutzerLadenApi();
+        var tbody = document.querySelector("#benutzer-tabelle tbody");
+        if (!tbody) return;
+        tbody.innerHTML = "";
+        benutzer.forEach(function (b) {
+            benutzerZurTabelle(b);
+        });
+    } catch (_) {
+        // Offline: Tabelle bleibt wie sie ist
+    }
+}
+
 function benutzerZurTabelle(daten) {
-    const tbody = document.querySelector("#benutzer-tabelle tbody");
+    var tbody = document.querySelector("#benutzer-tabelle tbody");
     if (!tbody) return;
 
-    const tr = document.createElement("tr");
+    var tr = document.createElement("tr");
     tr.innerHTML =
         "<td>" + escapeHtml(daten.name) + "</td>" +
         "<td>" + escapeHtml(daten.email) + "</td>" +
@@ -110,7 +178,7 @@ function benutzerZurTabelle(daten) {
 }
 
 function escapeHtml(text) {
-    const div = document.createElement("div");
+    var div = document.createElement("div");
     div.textContent = text;
     return div.innerHTML;
 }
@@ -120,8 +188,10 @@ if (typeof module !== "undefined" && module.exports) {
     module.exports = { berechnen, benutzerValidieren, escapeHtml };
 }
 
-/** Init */
-document.addEventListener("DOMContentLoaded", function () {
-    initRechner();
-    initBenutzerFormular();
-});
+/** Init (nur im Browser) */
+if (typeof document !== "undefined") {
+    document.addEventListener("DOMContentLoaded", function () {
+        initRechner();
+        initBenutzerFormular();
+    });
+}
