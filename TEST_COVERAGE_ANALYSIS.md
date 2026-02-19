@@ -1,77 +1,77 @@
-# Test Coverage Analysis
+# Analyse der Testabdeckung
 
-**Date:** 2026-02-19
+**Datum:** 19.02.2026
 **Branch:** `claude/analyze-test-coverage-xMpaK`
 
-## Current State
+## Aktueller Zustand
 
-The repository contains no application source code, tests, or build/test infrastructure.
-The only tracked file is `README.md`.
+Das Repository enthält keinen Anwendungsquellcode, keine Tests und keine Build-/Test-Infrastruktur.
+Die einzige versionierte Datei ist `README.md`.
 
-| Category              | Status             |
-|-----------------------|--------------------|
-| Source code files     | None               |
-| Test files            | None               |
-| Test framework        | Not configured     |
-| Test runner           | Not configured     |
-| Coverage tooling      | Not configured     |
-| CI/CD test integration| Not configured     |
+| Kategorie              | Status              |
+|------------------------|---------------------|
+| Quellcode-Dateien      | Keine               |
+| Test-Dateien           | Keine               |
+| Test-Framework         | Nicht konfiguriert  |
+| Test-Runner            | Nicht konfiguriert  |
+| Coverage-Tooling       | Nicht konfiguriert  |
+| CI/CD-Testintegration  | Nicht konfiguriert  |
 
-**Effective test coverage: 0% (no code to cover)**
+**Effektive Testabdeckung: 0 % (kein Code vorhanden)**
 
-## Areas for Improvement
+## Verbesserungsbereiche
 
-Since the project is at its inception, all testing infrastructure needs to be built from scratch. The following areas should be addressed as the codebase grows:
+Da sich das Projekt in der Anfangsphase befindet, muss die gesamte Test-Infrastruktur von Grund auf aufgebaut werden. Folgende Bereiche sollten mit dem Wachstum der Codebasis adressiert werden:
 
-### 1. Establish a Test Framework
+### 1. Test-Framework einrichten
 
-Choose and configure a test runner appropriate to the project's language/stack:
+Wähle einen zum Technologie-Stack passenden Test-Runner aus und konfiguriere ihn:
 
-- **JavaScript/TypeScript:** Jest, Vitest, or Mocha
+- **JavaScript/TypeScript:** Jest, Vitest oder Mocha
 - **Python:** pytest
-- **Go:** built-in `go test`
-- **Rust:** built-in `cargo test`
+- **Go:** eingebautes `go test`
+- **Rust:** eingebautes `cargo test`
 - **Java/Kotlin:** JUnit 5
 
-### 2. Set Up Coverage Tooling
+### 2. Coverage-Tooling aufsetzen
 
-Integrate a coverage reporter from the start so regressions are caught early:
+Integriere von Anfang an ein Coverage-Reporting-Tool, damit Rückschritte frühzeitig erkannt werden:
 
-- **JavaScript/TypeScript:** Istanbul / nyc / c8 / Vitest built-in coverage
+- **JavaScript/TypeScript:** Istanbul / nyc / c8 / eingebaute Vitest-Coverage
 - **Python:** coverage.py (via `pytest-cov`)
 - **Go:** `go test -cover` / `go tool cover`
-- **Rust:** cargo-tarpaulin or cargo-llvm-cov
+- **Rust:** cargo-tarpaulin oder cargo-llvm-cov
 
-### 3. Define Testing Conventions
+### 3. Test-Konventionen festlegen
 
-Decide on project-wide standards before code is written:
+Lege projektweite Standards fest, bevor Code geschrieben wird:
 
-- **File placement:** Co-located tests (e.g., `foo.test.ts` next to `foo.ts`) vs. a separate `tests/` directory.
-- **Naming:** Consistent naming patterns (`*.test.*`, `test_*.*`, `*_test.*`).
-- **Minimum coverage thresholds:** e.g., 80% line coverage enforced in CI.
-- **Test categories:** Unit tests, integration tests, and end-to-end tests in clearly separated directories or configurations.
+- **Dateiablage:** Tests neben dem Quellcode (z. B. `foo.test.ts` neben `foo.ts`) vs. ein separates `tests/`-Verzeichnis.
+- **Benennung:** Einheitliche Namensmuster (`*.test.*`, `test_*.*`, `*_test.*`).
+- **Mindestabdeckungsschwellen:** z. B. 80 % Zeilenabdeckung, die in der CI erzwungen wird.
+- **Testkategorien:** Unit-Tests, Integrationstests und End-to-End-Tests in klar getrennten Verzeichnissen oder Konfigurationen.
 
-### 4. Add CI/CD Pipeline
+### 4. CI/CD-Pipeline hinzufuegen
 
-Set up a GitHub Actions workflow (or equivalent) that:
+Richte einen GitHub-Actions-Workflow (oder Vergleichbares) ein, der:
 
-- Runs the full test suite on every push and pull request.
-- Fails the build if coverage drops below the configured threshold.
-- Reports coverage diffs on PRs (e.g., via Codecov or Coveralls).
+- Die vollstaendige Testsuite bei jedem Push und Pull Request ausfuehrt.
+- Den Build fehlschlagen laesst, wenn die Abdeckung unter den konfigurierten Schwellenwert faellt.
+- Coverage-Unterschiede in PRs anzeigt (z. B. ueber Codecov oder Coveralls).
 
-### 5. Plan Test Categories as Code Is Added
+### 5. Testkategorien beim Hinzufuegen von Code planen
 
-As features are implemented, ensure each layer has appropriate test coverage:
+Stelle beim Implementieren von Features sicher, dass jede Schicht eine angemessene Testabdeckung hat:
 
-| Layer                  | Test Type          | What to Verify                              |
-|------------------------|--------------------|---------------------------------------------|
-| Utility functions      | Unit tests         | Pure logic, edge cases, error handling       |
-| Data models / schemas  | Unit tests         | Validation, serialization, defaults          |
-| API endpoints / routes | Integration tests  | Request/response contracts, auth, status codes|
-| Database interactions  | Integration tests  | Queries, migrations, transactions            |
-| External service calls | Unit tests (mocked)| Retry logic, error mapping, timeouts         |
-| User-facing flows      | End-to-end tests   | Critical paths through the full system       |
+| Schicht                   | Testtyp              | Was geprüft werden soll                          |
+|---------------------------|----------------------|--------------------------------------------------|
+| Hilfsfunktionen           | Unit-Tests           | Reine Logik, Grenzfälle, Fehlerbehandlung        |
+| Datenmodelle / Schemata   | Unit-Tests           | Validierung, Serialisierung, Standardwerte        |
+| API-Endpunkte / Routen    | Integrationstests    | Request/Response-Verträge, Auth, Statuscodes      |
+| Datenbankinteraktionen    | Integrationstests    | Abfragen, Migrationen, Transaktionen              |
+| Externe Service-Aufrufe   | Unit-Tests (gemockt) | Retry-Logik, Fehlermapping, Timeouts              |
+| Benutzerabläufe           | End-to-End-Tests     | Kritische Pfade durch das Gesamtsystem            |
 
-## Summary
+## Zusammenfassung
 
-This repository has no code and therefore no test coverage gaps in the traditional sense. The key recommendation is to **adopt a test-first approach** — set up the testing infrastructure before writing the first line of application code. This avoids the common pattern of accumulating untested code that becomes increasingly difficult to retrofit with tests later.
+Dieses Repository enthält keinen Code und hat daher im herkömmlichen Sinne keine Lücken in der Testabdeckung. Die wichtigste Empfehlung ist, einen **Test-First-Ansatz** zu verfolgen — die Test-Infrastruktur aufzubauen, bevor die erste Zeile Anwendungscode geschrieben wird. So wird das häufige Muster vermieden, ungetesteten Code anzusammeln, der im Nachhinein immer schwieriger mit Tests auszustatten ist.
