@@ -141,6 +141,322 @@ try {
             echo json_encode(['fehler' => 'Methode nicht erlaubt']);
         }
 
+    // --- Patienten: Liste + Suche ---
+    } elseif ($pfad === '/api/patienten' && $methode === 'GET') {
+        $suche = isset($_GET['suche']) ? trim($_GET['suche']) : '';
+        if ($suche !== '') {
+            $alle = $db->patientSuchen($suche);
+        } else {
+            $alle = $db->patientAlle();
+        }
+        echo json_encode(array_map([Datenbank::class, 'patientFormat'], $alle));
+
+    // --- Patienten: Erstellen ---
+    } elseif ($pfad === '/api/patienten' && $methode === 'POST') {
+        $daten = json_decode(file_get_contents('php://input'), true, 512, JSON_THROW_ON_ERROR);
+
+        $fehler = [];
+        if (empty($daten['vorname'])) {
+            $fehler[] = 'Vorname ist erforderlich';
+        }
+        if (empty($daten['nachname'])) {
+            $fehler[] = 'Nachname ist erforderlich';
+        }
+        if (empty($daten['geburtsdatum'])) {
+            $fehler[] = 'Geburtsdatum ist erforderlich';
+        }
+        if (empty($daten['versicherungsnummer'])) {
+            $fehler[] = 'Versicherungsnummer ist erforderlich';
+        }
+        if (empty($daten['krankenkasse'])) {
+            $fehler[] = 'Krankenkasse ist erforderlich';
+        }
+
+        if (!empty($fehler)) {
+            http_response_code(422);
+            echo json_encode(['fehler' => $fehler]);
+            exit;
+        }
+
+        try {
+            $patient = $db->patientErstellen($daten);
+            http_response_code(201);
+            echo json_encode([
+                'nachricht' => 'Patient gespeichert',
+                'patient' => Datenbank::patientFormat($patient),
+            ]);
+        } catch (\PDOException $e) {
+            http_response_code(409);
+            echo json_encode(['fehler' => ['Versicherungsnummer existiert bereits']]);
+        }
+
+    // --- Patienten: Detail / Aktualisieren / Loeschen ---
+    } elseif (preg_match('#^/api/patienten/(\d+)$#', $pfad, $matches)) {
+        $id = (int) $matches[1];
+
+        if ($methode === 'GET') {
+            $patient = $db->patientNachId($id);
+            if (!$patient) {
+                http_response_code(404);
+                echo json_encode(['fehler' => 'Patient nicht gefunden']);
+                exit;
+            }
+            echo json_encode(Datenbank::patientFormat($patient));
+
+        } elseif ($methode === 'PUT') {
+            $daten = json_decode(file_get_contents('php://input'), true, 512, JSON_THROW_ON_ERROR);
+            $patient = $db->patientNachId($id);
+            if (!$patient) {
+                http_response_code(404);
+                echo json_encode(['fehler' => 'Patient nicht gefunden']);
+                exit;
+            }
+            try {
+                $aktualisiert = $db->patientAktualisieren($id, $daten);
+                echo json_encode([
+                    'nachricht' => 'Patient aktualisiert',
+                    'patient' => Datenbank::patientFormat($aktualisiert),
+                ]);
+            } catch (\PDOException $e) {
+                http_response_code(409);
+                echo json_encode(['fehler' => ['Versicherungsnummer existiert bereits']]);
+            }
+
+        } elseif ($methode === 'DELETE') {
+            if ($db->patientLoeschen($id)) {
+                echo json_encode(['nachricht' => 'Patient geloescht']);
+            } else {
+                http_response_code(404);
+                echo json_encode(['fehler' => 'Patient nicht gefunden']);
+            }
+
+        } else {
+            http_response_code(405);
+            echo json_encode(['fehler' => 'Methode nicht erlaubt']);
+        }
+
+    // --- Aerzte: Liste ---
+    } elseif ($pfad === '/api/aerzte' && $methode === 'GET') {
+        $alle = $db->arztAlle();
+        echo json_encode(array_map([Datenbank::class, 'arztFormat'], $alle));
+
+    // --- Aerzte: Erstellen ---
+    } elseif ($pfad === '/api/aerzte' && $methode === 'POST') {
+        $daten = json_decode(file_get_contents('php://input'), true, 512, JSON_THROW_ON_ERROR);
+
+        $fehler = [];
+        if (empty($daten['vorname'])) {
+            $fehler[] = 'Vorname ist erforderlich';
+        }
+        if (empty($daten['nachname'])) {
+            $fehler[] = 'Nachname ist erforderlich';
+        }
+        if (empty($daten['fachrichtung'])) {
+            $fehler[] = 'Fachrichtung ist erforderlich';
+        }
+
+        if (!empty($fehler)) {
+            http_response_code(422);
+            echo json_encode(['fehler' => $fehler]);
+            exit;
+        }
+
+        $arzt = $db->arztErstellen($daten);
+        http_response_code(201);
+        echo json_encode([
+            'nachricht' => 'Arzt gespeichert',
+            'arzt' => Datenbank::arztFormat($arzt),
+        ]);
+
+    // --- Aerzte: Detail / Aktualisieren / Loeschen ---
+    } elseif (preg_match('#^/api/aerzte/(\d+)$#', $pfad, $matches)) {
+        $id = (int) $matches[1];
+
+        if ($methode === 'GET') {
+            $arzt = $db->arztNachId($id);
+            if (!$arzt) {
+                http_response_code(404);
+                echo json_encode(['fehler' => 'Arzt nicht gefunden']);
+                exit;
+            }
+            echo json_encode(Datenbank::arztFormat($arzt));
+
+        } elseif ($methode === 'PUT') {
+            $daten = json_decode(file_get_contents('php://input'), true, 512, JSON_THROW_ON_ERROR);
+            $arzt = $db->arztNachId($id);
+            if (!$arzt) {
+                http_response_code(404);
+                echo json_encode(['fehler' => 'Arzt nicht gefunden']);
+                exit;
+            }
+            $aktualisiert = $db->arztAktualisieren($id, $daten);
+            echo json_encode([
+                'nachricht' => 'Arzt aktualisiert',
+                'arzt' => Datenbank::arztFormat($aktualisiert),
+            ]);
+
+        } elseif ($methode === 'DELETE') {
+            if ($db->arztLoeschen($id)) {
+                echo json_encode(['nachricht' => 'Arzt geloescht']);
+            } else {
+                http_response_code(404);
+                echo json_encode(['fehler' => 'Arzt nicht gefunden']);
+            }
+
+        } else {
+            http_response_code(405);
+            echo json_encode(['fehler' => 'Methode nicht erlaubt']);
+        }
+
+    // --- Termine: Liste ---
+    } elseif ($pfad === '/api/termine' && $methode === 'GET') {
+        $datum = isset($_GET['datum']) ? trim($_GET['datum']) : null;
+        $alle = $db->terminAlle($datum ?: null);
+        echo json_encode(array_map([Datenbank::class, 'terminFormat'], $alle));
+
+    // --- Termine: Erstellen ---
+    } elseif ($pfad === '/api/termine' && $methode === 'POST') {
+        $daten = json_decode(file_get_contents('php://input'), true, 512, JSON_THROW_ON_ERROR);
+
+        $fehler = [];
+        if (empty($daten['patient_id'])) {
+            $fehler[] = 'Patient-ID ist erforderlich';
+        }
+        if (empty($daten['arzt_id'])) {
+            $fehler[] = 'Arzt-ID ist erforderlich';
+        }
+        if (empty($daten['datum'])) {
+            $fehler[] = 'Datum ist erforderlich';
+        }
+        if (empty($daten['uhrzeit'])) {
+            $fehler[] = 'Uhrzeit ist erforderlich';
+        }
+
+        if (!empty($fehler)) {
+            http_response_code(422);
+            echo json_encode(['fehler' => $fehler]);
+            exit;
+        }
+
+        $termin = $db->terminErstellen($daten);
+        http_response_code(201);
+        echo json_encode([
+            'nachricht' => 'Termin gespeichert',
+            'termin' => Datenbank::terminFormat($termin),
+        ]);
+
+    // --- Termine: Detail / Aktualisieren / Loeschen ---
+    } elseif (preg_match('#^/api/termine/(\d+)$#', $pfad, $matches)) {
+        $id = (int) $matches[1];
+
+        if ($methode === 'GET') {
+            $termin = $db->terminNachId($id);
+            if (!$termin) {
+                http_response_code(404);
+                echo json_encode(['fehler' => 'Termin nicht gefunden']);
+                exit;
+            }
+            echo json_encode(Datenbank::terminFormat($termin));
+
+        } elseif ($methode === 'PUT') {
+            $daten = json_decode(file_get_contents('php://input'), true, 512, JSON_THROW_ON_ERROR);
+            $termin = $db->terminNachId($id);
+            if (!$termin) {
+                http_response_code(404);
+                echo json_encode(['fehler' => 'Termin nicht gefunden']);
+                exit;
+            }
+            $aktualisiert = $db->terminAktualisieren($id, $daten);
+            echo json_encode([
+                'nachricht' => 'Termin aktualisiert',
+                'termin' => Datenbank::terminFormat($aktualisiert),
+            ]);
+
+        } elseif ($methode === 'DELETE') {
+            if ($db->terminLoeschen($id)) {
+                echo json_encode(['nachricht' => 'Termin geloescht']);
+            } else {
+                http_response_code(404);
+                echo json_encode(['fehler' => 'Termin nicht gefunden']);
+            }
+
+        } else {
+            http_response_code(405);
+            echo json_encode(['fehler' => 'Methode nicht erlaubt']);
+        }
+
+    // --- Wartezimmer: Liste ---
+    } elseif ($pfad === '/api/wartezimmer' && $methode === 'GET') {
+        $alle = $db->wartezimmerAktuelle();
+        echo json_encode(array_map([Datenbank::class, 'wartezimmerFormat'], $alle));
+
+    // --- Wartezimmer: Hinzufuegen ---
+    } elseif ($pfad === '/api/wartezimmer' && $methode === 'POST') {
+        $daten = json_decode(file_get_contents('php://input'), true, 512, JSON_THROW_ON_ERROR);
+
+        if (empty($daten['patient_id'])) {
+            http_response_code(422);
+            echo json_encode(['fehler' => ['Patient-ID ist erforderlich']]);
+            exit;
+        }
+
+        $eintrag = $db->wartezimmerHinzufuegen($daten);
+        http_response_code(201);
+        echo json_encode([
+            'nachricht' => 'Patient ins Wartezimmer aufgenommen',
+            'eintrag' => Datenbank::wartezimmerFormat($eintrag),
+        ]);
+
+    // --- Wartezimmer: Status / Entfernen ---
+    } elseif (preg_match('#^/api/wartezimmer/(\d+)/status$#', $pfad, $matches) && $methode === 'PUT') {
+        $id = (int) $matches[1];
+        $daten = json_decode(file_get_contents('php://input'), true, 512, JSON_THROW_ON_ERROR);
+
+        $eintrag = $db->wartezimmerNachId($id);
+        if (!$eintrag) {
+            http_response_code(404);
+            echo json_encode(['fehler' => 'Wartezimmer-Eintrag nicht gefunden']);
+            exit;
+        }
+
+        $neuerStatus = $daten['status'] ?? '';
+        if (!in_array($neuerStatus, ['wartend', 'aufgerufen', 'fertig'], true)) {
+            http_response_code(400);
+            echo json_encode(['fehler' => 'Ungueltiger Status']);
+            exit;
+        }
+
+        $aktualisiert = $db->wartezimmerStatusAendern($id, $neuerStatus);
+        echo json_encode([
+            'nachricht' => 'Status aktualisiert',
+            'eintrag' => Datenbank::wartezimmerFormat($aktualisiert),
+        ]);
+
+    } elseif (preg_match('#^/api/wartezimmer/(\d+)$#', $pfad, $matches)) {
+        $id = (int) $matches[1];
+
+        if ($methode === 'GET') {
+            $eintrag = $db->wartezimmerNachId($id);
+            if (!$eintrag) {
+                http_response_code(404);
+                echo json_encode(['fehler' => 'Wartezimmer-Eintrag nicht gefunden']);
+                exit;
+            }
+            echo json_encode(Datenbank::wartezimmerFormat($eintrag));
+
+        } elseif ($methode === 'DELETE') {
+            if ($db->wartezimmerEntfernen($id)) {
+                echo json_encode(['nachricht' => 'Aus Wartezimmer entfernt']);
+            } else {
+                http_response_code(404);
+                echo json_encode(['fehler' => 'Wartezimmer-Eintrag nicht gefunden']);
+            }
+
+        } else {
+            http_response_code(405);
+            echo json_encode(['fehler' => 'Methode nicht erlaubt']);
+        }
+
     // --- Agenten: Liste + Erstellen ---
     } elseif ($pfad === '/api/agenten' && $methode === 'GET') {
         $alle = $db->agentAlle();

@@ -170,6 +170,127 @@ class ApiTest extends TestCase
     }
 
     // ============================================================
+    // --- Patienten-Validierung (wie in api.php) ---
+    // ============================================================
+
+    public function testPatientValidierungGueltig(): void
+    {
+        $daten = [
+            'vorname' => 'Max', 'nachname' => 'Mustermann',
+            'geburtsdatum' => '1990-05-15', 'versicherungsnummer' => 'A123',
+            'krankenkasse' => 'AOK',
+        ];
+        $fehler = $this->patientValidieren($daten);
+        $this->assertEmpty($fehler);
+    }
+
+    public function testPatientValidierungOhneVorname(): void
+    {
+        $daten = [
+            'vorname' => '', 'nachname' => 'Mustermann',
+            'geburtsdatum' => '1990-05-15', 'versicherungsnummer' => 'A123',
+            'krankenkasse' => 'AOK',
+        ];
+        $fehler = $this->patientValidieren($daten);
+        $this->assertContains('Vorname ist erforderlich', $fehler);
+    }
+
+    public function testPatientValidierungAlleFehler(): void
+    {
+        $daten = [
+            'vorname' => '', 'nachname' => '', 'geburtsdatum' => '',
+            'versicherungsnummer' => '', 'krankenkasse' => '',
+        ];
+        $fehler = $this->patientValidieren($daten);
+        $this->assertCount(5, $fehler);
+    }
+
+    // --- Aerzte-Validierung ---
+
+    public function testArztValidierungGueltig(): void
+    {
+        $daten = ['vorname' => 'Hans', 'nachname' => 'Schmidt', 'fachrichtung' => 'Allgemeinmedizin'];
+        $fehler = $this->arztValidieren($daten);
+        $this->assertEmpty($fehler);
+    }
+
+    public function testArztValidierungAlleFehler(): void
+    {
+        $daten = ['vorname' => '', 'nachname' => '', 'fachrichtung' => ''];
+        $fehler = $this->arztValidieren($daten);
+        $this->assertCount(3, $fehler);
+    }
+
+    // --- Termine-Validierung ---
+
+    public function testTerminValidierungGueltig(): void
+    {
+        $daten = ['patient_id' => 1, 'arzt_id' => 1, 'datum' => '2026-03-15', 'uhrzeit' => '10:30'];
+        $fehler = $this->terminValidieren($daten);
+        $this->assertEmpty($fehler);
+    }
+
+    public function testTerminValidierungAlleFehler(): void
+    {
+        $daten = ['patient_id' => '', 'arzt_id' => '', 'datum' => '', 'uhrzeit' => ''];
+        $fehler = $this->terminValidieren($daten);
+        $this->assertCount(4, $fehler);
+    }
+
+    // --- Wartezimmer-Validierung ---
+
+    public function testWartezimmerValidierungGueltig(): void
+    {
+        $daten = ['patient_id' => 1];
+        $fehler = $this->wartezimmerValidieren($daten);
+        $this->assertEmpty($fehler);
+    }
+
+    public function testWartezimmerValidierungOhnePatientId(): void
+    {
+        $daten = [];
+        $fehler = $this->wartezimmerValidieren($daten);
+        $this->assertContains('Patient-ID ist erforderlich', $fehler);
+    }
+
+    // --- Wartezimmer-Status-Validierung ---
+
+    public function testWartezimmerStatusGueltig(): void
+    {
+        foreach (['wartend', 'aufgerufen', 'fertig'] as $status) {
+            $this->assertTrue($this->istGueltigerWartezimmerStatus($status));
+        }
+    }
+
+    public function testWartezimmerStatusUngueltig(): void
+    {
+        $this->assertFalse($this->istGueltigerWartezimmerStatus('abwesend'));
+        $this->assertFalse($this->istGueltigerWartezimmerStatus(''));
+    }
+
+    // --- Medizin JSON-Antwortformate ---
+
+    public function testPatientErstelltAntwortFormat(): void
+    {
+        $patient = ['vorname' => 'Max', 'nachname' => 'Mustermann', 'krankenkasse' => 'AOK'];
+        $antwort = ['nachricht' => 'Patient gespeichert', 'patient' => $patient];
+        $json = json_encode($antwort);
+        $decoded = json_decode($json, true);
+        $this->assertSame('Patient gespeichert', $decoded['nachricht']);
+        $this->assertSame('Max', $decoded['patient']['vorname']);
+    }
+
+    public function testTerminErstelltAntwortFormat(): void
+    {
+        $termin = ['datum' => '2026-03-15', 'uhrzeit' => '10:30', 'status' => 'geplant'];
+        $antwort = ['nachricht' => 'Termin gespeichert', 'termin' => $termin];
+        $json = json_encode($antwort);
+        $decoded = json_decode($json, true);
+        $this->assertSame('Termin gespeichert', $decoded['nachricht']);
+        $this->assertSame('geplant', $decoded['termin']['status']);
+    }
+
+    // ============================================================
     // --- Agenten-Validierung (wie in api.php) ---
     // ============================================================
 
@@ -340,5 +461,73 @@ class ApiTest extends TestCase
             $fehler[] = 'Anrufer-Nummer ist erforderlich';
         }
         return $fehler;
+    }
+
+    private function patientValidieren(array $daten): array
+    {
+        $fehler = [];
+        if (empty($daten['vorname'])) {
+            $fehler[] = 'Vorname ist erforderlich';
+        }
+        if (empty($daten['nachname'])) {
+            $fehler[] = 'Nachname ist erforderlich';
+        }
+        if (empty($daten['geburtsdatum'])) {
+            $fehler[] = 'Geburtsdatum ist erforderlich';
+        }
+        if (empty($daten['versicherungsnummer'])) {
+            $fehler[] = 'Versicherungsnummer ist erforderlich';
+        }
+        if (empty($daten['krankenkasse'])) {
+            $fehler[] = 'Krankenkasse ist erforderlich';
+        }
+        return $fehler;
+    }
+
+    private function arztValidieren(array $daten): array
+    {
+        $fehler = [];
+        if (empty($daten['vorname'])) {
+            $fehler[] = 'Vorname ist erforderlich';
+        }
+        if (empty($daten['nachname'])) {
+            $fehler[] = 'Nachname ist erforderlich';
+        }
+        if (empty($daten['fachrichtung'])) {
+            $fehler[] = 'Fachrichtung ist erforderlich';
+        }
+        return $fehler;
+    }
+
+    private function terminValidieren(array $daten): array
+    {
+        $fehler = [];
+        if (empty($daten['patient_id'])) {
+            $fehler[] = 'Patient-ID ist erforderlich';
+        }
+        if (empty($daten['arzt_id'])) {
+            $fehler[] = 'Arzt-ID ist erforderlich';
+        }
+        if (empty($daten['datum'])) {
+            $fehler[] = 'Datum ist erforderlich';
+        }
+        if (empty($daten['uhrzeit'])) {
+            $fehler[] = 'Uhrzeit ist erforderlich';
+        }
+        return $fehler;
+    }
+
+    private function wartezimmerValidieren(array $daten): array
+    {
+        $fehler = [];
+        if (empty($daten['patient_id'])) {
+            $fehler[] = 'Patient-ID ist erforderlich';
+        }
+        return $fehler;
+    }
+
+    private function istGueltigerWartezimmerStatus(string $status): bool
+    {
+        return in_array($status, ['wartend', 'aufgerufen', 'fertig'], true);
     }
 }
