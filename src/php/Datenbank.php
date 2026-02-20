@@ -666,11 +666,11 @@ class Datenbank
     public function anrufAktive(): array
     {
         $stmt = $this->pdo->query(
-            'SELECT a.*, ag.name AS agent_name
+            "SELECT a.*, ag.name AS agent_name
              FROM anrufe a
              LEFT JOIN agenten ag ON a.agent_id = ag.id
-             WHERE a.status IN ("klingelt", "verbunden", "warteschlange")
-             ORDER BY a.beginn DESC'
+             WHERE a.status IN ('klingelt', 'verbunden', 'warteschlange')
+             ORDER BY a.beginn DESC"
         );
         return $stmt->fetchAll();
     }

@@ -169,6 +169,118 @@ class ApiTest extends TestCase
         $this->assertSame('Max', $decoded['benutzer']['name']);
     }
 
+    // ============================================================
+    // --- Agenten-Validierung (wie in api.php) ---
+    // ============================================================
+
+    public function testAgentValidierungGueltig(): void
+    {
+        $daten = ['name' => 'Agent Smith', 'nebenstelle' => '100', 'sip_passwort' => 'geheim'];
+        $fehler = $this->agentValidieren($daten);
+        $this->assertEmpty($fehler);
+    }
+
+    public function testAgentValidierungOhneName(): void
+    {
+        $daten = ['name' => '', 'nebenstelle' => '100', 'sip_passwort' => 'pw'];
+        $fehler = $this->agentValidieren($daten);
+        $this->assertContains('Name ist erforderlich', $fehler);
+    }
+
+    public function testAgentValidierungOhneNebenstelle(): void
+    {
+        $daten = ['name' => 'Agent', 'nebenstelle' => '', 'sip_passwort' => 'pw'];
+        $fehler = $this->agentValidieren($daten);
+        $this->assertContains('Nebenstelle ist erforderlich', $fehler);
+    }
+
+    public function testAgentValidierungOhnePasswort(): void
+    {
+        $daten = ['name' => 'Agent', 'nebenstelle' => '100', 'sip_passwort' => ''];
+        $fehler = $this->agentValidieren($daten);
+        $this->assertContains('SIP-Passwort ist erforderlich', $fehler);
+    }
+
+    public function testAgentValidierungAlleFehler(): void
+    {
+        $daten = ['name' => '', 'nebenstelle' => '', 'sip_passwort' => ''];
+        $fehler = $this->agentValidieren($daten);
+        $this->assertCount(3, $fehler);
+    }
+
+    // --- Agenten-Status-Validierung ---
+
+    public function testAgentStatusGueltig(): void
+    {
+        foreach (['online', 'offline', 'pause', 'besetzt'] as $status) {
+            $this->assertTrue($this->istGueltigerAgentStatus($status));
+        }
+    }
+
+    public function testAgentStatusUngueltig(): void
+    {
+        $this->assertFalse($this->istGueltigerAgentStatus('aktiv'));
+        $this->assertFalse($this->istGueltigerAgentStatus(''));
+        $this->assertFalse($this->istGueltigerAgentStatus('bereit'));
+    }
+
+    // --- Anrufe-Validierung ---
+
+    public function testAnrufValidierungGueltig(): void
+    {
+        $daten = ['anrufer_nummer' => '+4930123456'];
+        $fehler = $this->anrufValidieren($daten);
+        $this->assertEmpty($fehler);
+    }
+
+    public function testAnrufValidierungOhneNummer(): void
+    {
+        $daten = ['anrufer_nummer' => ''];
+        $fehler = $this->anrufValidieren($daten);
+        $this->assertContains('Anrufer-Nummer ist erforderlich', $fehler);
+    }
+
+    public function testAnrufValidierungOhneKey(): void
+    {
+        $daten = [];
+        $fehler = $this->anrufValidieren($daten);
+        $this->assertContains('Anrufer-Nummer ist erforderlich', $fehler);
+    }
+
+    // --- Agenten JSON-Antwortformat ---
+
+    public function testAgentErstelltAntwortFormat(): void
+    {
+        $agent = ['name' => 'Smith', 'nebenstelle' => '100', 'status' => 'online'];
+        $antwort = ['nachricht' => 'Agent gespeichert', 'agent' => $agent];
+        $json = json_encode($antwort);
+        $decoded = json_decode($json, true);
+        $this->assertSame('Agent gespeichert', $decoded['nachricht']);
+        $this->assertSame('Smith', $decoded['agent']['name']);
+    }
+
+    public function testAgentStatusAntwortFormat(): void
+    {
+        $agent = ['name' => 'Smith', 'status' => 'pause'];
+        $antwort = ['nachricht' => 'Status aktualisiert', 'agent' => $agent];
+        $json = json_encode($antwort);
+        $decoded = json_decode($json, true);
+        $this->assertSame('Status aktualisiert', $decoded['nachricht']);
+        $this->assertSame('pause', $decoded['agent']['status']);
+    }
+
+    // --- Anrufe JSON-Antwortformat ---
+
+    public function testAnrufErstelltAntwortFormat(): void
+    {
+        $anruf = ['anrufer_nummer' => '+4930123', 'status' => 'klingelt'];
+        $antwort = ['nachricht' => 'Anruf erstellt', 'anruf' => $anruf];
+        $json = json_encode($antwort);
+        $decoded = json_decode($json, true);
+        $this->assertSame('Anruf erstellt', $decoded['nachricht']);
+        $this->assertSame('+4930123', $decoded['anruf']['anrufer_nummer']);
+    }
+
     // --- Hilfsmethoden (spiegeln die api.php Logik) ---
 
     private function operationAusfuehren(array $eingabe): float
@@ -197,6 +309,35 @@ class ApiTest extends TestCase
         }
         if (!isset($daten['alter']) || $daten['alter'] < 0 || $daten['alter'] > 150) {
             $fehler[] = 'Alter muss zwischen 0 und 150 liegen';
+        }
+        return $fehler;
+    }
+
+    private function agentValidieren(array $daten): array
+    {
+        $fehler = [];
+        if (empty($daten['name'])) {
+            $fehler[] = 'Name ist erforderlich';
+        }
+        if (empty($daten['nebenstelle'])) {
+            $fehler[] = 'Nebenstelle ist erforderlich';
+        }
+        if (empty($daten['sip_passwort'])) {
+            $fehler[] = 'SIP-Passwort ist erforderlich';
+        }
+        return $fehler;
+    }
+
+    private function istGueltigerAgentStatus(string $status): bool
+    {
+        return in_array($status, ['online', 'offline', 'pause', 'besetzt'], true);
+    }
+
+    private function anrufValidieren(array $daten): array
+    {
+        $fehler = [];
+        if (empty($daten['anrufer_nummer'])) {
+            $fehler[] = 'Anrufer-Nummer ist erforderlich';
         }
         return $fehler;
     }
