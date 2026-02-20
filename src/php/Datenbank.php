@@ -361,6 +361,17 @@ class Datenbank
         return $stmt->rowCount() > 0;
     }
 
+    public function arztSuchen(string $suchbegriff): array
+    {
+        $like = "%{$suchbegriff}%";
+        $stmt = $this->pdo->prepare(
+            'SELECT * FROM aerzte WHERE vorname LIKE :s1 OR nachname LIKE :s2
+             OR fachrichtung LIKE :s3 ORDER BY nachname, vorname'
+        );
+        $stmt->execute([':s1' => $like, ':s2' => $like, ':s3' => $like]);
+        return $stmt->fetchAll();
+    }
+
     // --- Termine ---
 
     public function terminErstellen(array $daten): array
@@ -661,6 +672,13 @@ class Datenbank
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($werte);
         return $this->anrufNachId($id);
+    }
+
+    public function anrufLoeschen(int $id): bool
+    {
+        $stmt = $this->pdo->prepare('DELETE FROM anrufe WHERE id = :id');
+        $stmt->execute([':id' => $id]);
+        return $stmt->rowCount() > 0;
     }
 
     public function anrufAktive(): array

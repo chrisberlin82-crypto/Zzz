@@ -518,6 +518,47 @@ class DatenbankTest extends TestCase
         $this->assertFalse($this->db->arztLoeschen(999));
     }
 
+    public function testArztSuchenNachName(): void
+    {
+        $this->db->arztErstellen($this->beispielArzt());
+        $a2 = $this->beispielArzt();
+        $a2['vorname'] = 'Anna';
+        $a2['nachname'] = 'Mueller';
+        $a2['fachrichtung'] = 'Kardiologie';
+        $this->db->arztErstellen($a2);
+
+        $ergebnis = $this->db->arztSuchen('Schmidt');
+        $this->assertCount(1, $ergebnis);
+        $this->assertSame('Schmidt', $ergebnis[0]['nachname']);
+    }
+
+    public function testArztSuchenNachFachrichtung(): void
+    {
+        $this->db->arztErstellen($this->beispielArzt());
+        $a2 = $this->beispielArzt();
+        $a2['vorname'] = 'Anna';
+        $a2['nachname'] = 'Mueller';
+        $a2['fachrichtung'] = 'Kardiologie';
+        $this->db->arztErstellen($a2);
+
+        $ergebnis = $this->db->arztSuchen('Kardiologie');
+        $this->assertCount(1, $ergebnis);
+        $this->assertSame('Kardiologie', $ergebnis[0]['fachrichtung']);
+    }
+
+    public function testArztSuchenOhneTreffer(): void
+    {
+        $this->db->arztErstellen($this->beispielArzt());
+        $this->assertEmpty($this->db->arztSuchen('xyz_unbekannt'));
+    }
+
+    public function testArztSuchenNachVorname(): void
+    {
+        $this->db->arztErstellen($this->beispielArzt());
+        $ergebnis = $this->db->arztSuchen('Hans');
+        $this->assertCount(1, $ergebnis);
+    }
+
     public function testArztFormat(): void
     {
         $row = [
@@ -1126,6 +1167,18 @@ class DatenbankTest extends TestCase
         $anruf = $this->db->anrufErstellen(['anrufer_nummer' => '+491']);
         $this->db->anrufAktualisieren((int) $anruf['id'], ['status' => 'beendet']);
         $this->assertEmpty($this->db->anrufAktive());
+    }
+
+    public function testAnrufLoeschen(): void
+    {
+        $erstellt = $this->db->anrufErstellen($this->beispielAnruf());
+        $this->assertTrue($this->db->anrufLoeschen((int) $erstellt['id']));
+        $this->assertNull($this->db->anrufNachId((int) $erstellt['id']));
+    }
+
+    public function testAnrufLoeschenNichtVorhanden(): void
+    {
+        $this->assertFalse($this->db->anrufLoeschen(999));
     }
 
     public function testAnrufMitAgentJoin(): void

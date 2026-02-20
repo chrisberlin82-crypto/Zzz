@@ -235,9 +235,14 @@ try {
             echo json_encode(['fehler' => 'Methode nicht erlaubt']);
         }
 
-    // --- Aerzte: Liste ---
+    // --- Aerzte: Liste + Suche ---
     } elseif ($pfad === '/api/aerzte' && $methode === 'GET') {
-        $alle = $db->arztAlle();
+        $suche = isset($_GET['suche']) ? trim($_GET['suche']) : '';
+        if ($suche !== '') {
+            $alle = $db->arztSuchen($suche);
+        } else {
+            $alle = $db->arztAlle();
+        }
         echo json_encode(array_map([Datenbank::class, 'arztFormat'], $alle));
 
     // --- Aerzte: Erstellen ---
@@ -617,6 +622,14 @@ try {
                 'nachricht' => 'Anruf aktualisiert',
                 'anruf' => Datenbank::anrufFormat($aktualisiert),
             ]);
+
+        } elseif ($methode === 'DELETE') {
+            if ($db->anrufLoeschen($id)) {
+                echo json_encode(['nachricht' => 'Anruf geloescht']);
+            } else {
+                http_response_code(404);
+                echo json_encode(['fehler' => 'Anruf nicht gefunden']);
+            }
 
         } else {
             http_response_code(405);
