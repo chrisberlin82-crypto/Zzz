@@ -97,12 +97,13 @@ class TestHtmlStruktur:
 
 class TestIndexHtml:
     def test_hat_rechner_formular(self):
-        inhalt = (HTML_DIR / "index.html").read_text(encoding="utf-8")
+        # Rechner ist jetzt auf benutzer.html, index.html ist Dashboard
+        inhalt = (HTML_DIR / "benutzer.html").read_text(encoding="utf-8")
         assert 'id="rechner-form"' in inhalt
 
     def test_hat_navigation(self):
         inhalt = (HTML_DIR / "index.html").read_text(encoding="utf-8")
-        assert "<nav>" in inhalt
+        assert "<nav" in inhalt
 
     def test_laedt_app_js(self):
         inhalt = (HTML_DIR / "index.html").read_text(encoding="utf-8")
