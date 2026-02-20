@@ -168,111 +168,473 @@ def _mock_agi_call(befehl_antworten):
 
 class TestDialogWillkommen:
     def test_auswahl_1_ruft_termin(self):
-        # 1 = Termin auswaehlen
-        antworten = [
-            "200 result=1",  # get_data -> "1"
-            "200 result=0",  # verbose
-            "200 result=0",  # playback kein-arzt
-            "200 result=1",  # set_variable TRANSFER
-        ]
+        # 1 = Termin auswaehlen -> dialog_termin laeuft (keine Aerzte -> TRANSFER)
+        antworten = ["200 result=1\n"] + ["200 result=0\n"] * 20
         with patch("sys.stdout", io.StringIO()), \
-             patch("sys.stdin.readline", side_effect=[a + "\n" for a in antworten * 5]), \
+             patch("sys.stdin.readline", side_effect=antworten), \
              patch("asterisk.med_voicebot.api_anfrage", return_value=[]):
             dialog_willkommen({})
 
     def test_auswahl_2_ruft_rezept(self):
         antworten = [
-            "200 result=2",  # get_data -> "2"
-            "200 result=0",  # verbose
-            "200 result=0",  # playback
-            "200 result=12345678",  # vnr eingabe
-            "200 result=0",  # verbose vnr
-            "200 result=0",  # playback bestaetigt
-            "200 result=1",  # set VOICEBOT_RESULT
-            "200 result=1",  # set VOICEBOT_REZEPT_VNR
-            "200 result=1",  # set CDR
-        ]
+            "200 result=2\n",         # get_data -> "2"
+            "200 result=0\n",         # verbose
+            "200 result=0\n",         # playback
+            "200 result=12345678\n",  # vnr eingabe
+            "200 result=0\n",         # verbose vnr
+            "200 result=0\n",         # playback bestaetigt
+            "200 result=1\n",         # set VOICEBOT_RESULT
+            "200 result=1\n",         # set VOICEBOT_REZEPT_VNR
+            "200 result=1\n",         # set CDR
+        ] + ["200 result=0\n"] * 10
         with patch("sys.stdout", io.StringIO()), \
-             patch("sys.stdin.readline", side_effect=[a + "\n" for a in antworten * 3]):
+             patch("sys.stdin.readline", side_effect=antworten):
             dialog_willkommen({})
 
     def test_auswahl_3_transfer(self):
-        antworten = ["200 result=3", "200 result=1"]
+        antworten = ["200 result=3\n", "200 result=1\n"] + ["200 result=0\n"] * 10
         with patch("sys.stdout", io.StringIO()), \
-             patch("sys.stdin.readline", side_effect=[a + "\n" for a in antworten * 5]):
+             patch("sys.stdin.readline", side_effect=antworten):
             dialog_willkommen({})
 
     def test_auswahl_0_transfer(self):
-        antworten = ["200 result=0", "200 result=1"]
+        antworten = ["200 result=0\n", "200 result=1\n"] + ["200 result=0\n"] * 10
         with patch("sys.stdout", io.StringIO()), \
-             patch("sys.stdin.readline", side_effect=[a + "\n" for a in antworten * 5]):
+             patch("sys.stdin.readline", side_effect=antworten):
             dialog_willkommen({})
 
     def test_keine_eingabe_nochmal(self):
-        # Erste Eingabe leer, zweite auch -> TRANSFER
         antworten = [
-            "200 result=-1",  # erste Abfrage leer
-            "200 result=-1",  # nochmal Abfrage leer
-            "200 result=1",   # set_variable TRANSFER
-        ]
+            "200 result=-1\n",  # erste Abfrage leer
+            "200 result=-1\n",  # nochmal Abfrage leer
+            "200 result=1\n",   # set_variable TRANSFER
+        ] + ["200 result=0\n"] * 10
         with patch("sys.stdout", io.StringIO()), \
-             patch("sys.stdin.readline", side_effect=[a + "\n" for a in antworten * 5]):
+             patch("sys.stdin.readline", side_effect=antworten):
             dialog_willkommen({})
 
 
 class TestDialogTermin:
+    """Umfassende Tests fuer den Terminvergabe-Dialog."""
+
+    AERZTE = [
+        {"id": 1, "vorname": "Hans", "nachname": "Schmidt",
+         "fachrichtung": "Allgemeinmedizin"},
+        {"id": 2, "vorname": "Anna", "nachname": "Mueller",
+         "fachrichtung": "Innere Medizin"},
+    ]
+    OK = "200 result=0"
+
+    def _agi(self, n=30):
+        """Erzeugt genug AGI-Antworten fuer jeden Pfad."""
+        return [self.OK + "\n"] * n
+
+    # --- Aerzte-Abfrage schlaegt fehl ---
+
     def test_keine_aerzte_transfer(self):
-        antworten = [
-            "200 result=0",  # verbose
-            "200 result=0",  # playback kein-arzt
-            "200 result=1",  # set_variable TRANSFER
-        ]
         with patch("sys.stdout", io.StringIO()), \
-             patch("sys.stdin.readline", side_effect=[a + "\n" for a in antworten * 5]), \
+             patch("sys.stdin.readline", side_effect=self._agi()), \
              patch("asterisk.med_voicebot.api_anfrage", return_value=[]):
             dialog_termin({})
 
-    def test_api_fehler_transfer(self):
-        antworten = [
-            "200 result=0",  # verbose
-            "200 result=0",  # playback kein-arzt
-            "200 result=1",  # set_variable TRANSFER
-        ]
+    def test_aerzte_none_transfer(self):
         with patch("sys.stdout", io.StringIO()), \
-             patch("sys.stdin.readline", side_effect=[a + "\n" for a in antworten * 5]), \
+             patch("sys.stdin.readline", side_effect=self._agi()), \
              patch("asterisk.med_voicebot.api_anfrage", return_value=None):
             dialog_termin({})
 
-    def test_termin_bestaetigt(self):
-        aerzte = [{"id": 1, "vorname": "Dr.", "nachname": "Schmidt", "fachrichtung": "Allgemein"}]
+    # --- Fachrichtung-Auswahl: Alle 3 Optionen + Default ---
+
+    def test_fachrichtung_1_allgemeinmedizin(self):
         antworten = [
-            "200 result=0",  # verbose
-            "200 result=1",  # fachrichtung Allgemein
-            "200 result=0",  # playback vorschlag
-            "200 result=1",  # bestaetigung Ja
-            "200 result=0",  # verbose bestaetigt
-            "200 result=1",  # set VOICEBOT_RESULT
-            "200 result=1",  # set TERMIN_DATUM
-            "200 result=1",  # set FACHRICHTUNG
-        ]
+            "200 result=0\n",  # verbose
+            "200 result=1\n",  # fachrichtung=1 -> Allgemeinmedizin
+            "200 result=0\n",  # playback vorschlag
+            "200 result=2\n",  # ablehnen -> TRANSFER
+        ] + self._agi(20)
+
+        calls = []
+
+        def mock_api(pfad, methode="GET", daten=None):
+            calls.append((pfad, methode, daten))
+            if pfad == "/aerzte":
+                return self.AERZTE
+            return None
+
         with patch("sys.stdout", io.StringIO()), \
-             patch("sys.stdin.readline", side_effect=[a + "\n" for a in antworten * 3]), \
-             patch("asterisk.med_voicebot.api_anfrage", return_value=aerzte):
+             patch("sys.stdin.readline", side_effect=antworten), \
+             patch("asterisk.med_voicebot.api_anfrage", side_effect=mock_api):
             dialog_termin({})
 
-    def test_termin_abgelehnt_transfer(self):
-        aerzte = [{"id": 1, "vorname": "Dr.", "nachname": "Test", "fachrichtung": "Allgemein"}]
+        assert calls[0] == ("/aerzte", "GET", None)
+
+    def test_fachrichtung_2_innere_medizin(self):
         antworten = [
-            "200 result=0",  # verbose
-            "200 result=2",  # fachrichtung Innere
-            "200 result=0",  # playback vorschlag
-            "200 result=2",  # bestaetigung Nein
-            "200 result=1",  # set VOICEBOT_RESULT TRANSFER
-        ]
+            "200 result=0\n",  # verbose
+            "200 result=2\n",  # fachrichtung=2 -> Innere Medizin
+            "200 result=0\n",  # playback vorschlag
+            "200 result=2\n",  # ablehnen
+        ] + self._agi(20)
+
         with patch("sys.stdout", io.StringIO()), \
-             patch("sys.stdin.readline", side_effect=[a + "\n" for a in antworten * 3]), \
-             patch("asterisk.med_voicebot.api_anfrage", return_value=aerzte):
+             patch("sys.stdin.readline", side_effect=antworten), \
+             patch("asterisk.med_voicebot.api_anfrage", return_value=self.AERZTE):
             dialog_termin({})
+
+    def test_fachrichtung_3_sonstiges(self):
+        antworten = [
+            "200 result=0\n",  # verbose
+            "200 result=3\n",  # fachrichtung=3 -> Sonstiges
+            "200 result=0\n",  # playback vorschlag
+            "200 result=2\n",  # ablehnen
+        ] + self._agi(20)
+
+        with patch("sys.stdout", io.StringIO()), \
+             patch("sys.stdin.readline", side_effect=antworten), \
+             patch("asterisk.med_voicebot.api_anfrage", return_value=self.AERZTE):
+            dialog_termin({})
+
+    def test_fachrichtung_ungueltig_default_allgemein(self):
+        antworten = [
+            "200 result=0\n",  # verbose
+            "200 result=9\n",  # ungueltiger Wert -> Default Allgemeinmedizin
+            "200 result=0\n",  # playback
+            "200 result=2\n",  # ablehnen
+        ] + self._agi(20)
+
+        with patch("sys.stdout", io.StringIO()), \
+             patch("sys.stdin.readline", side_effect=antworten), \
+             patch("asterisk.med_voicebot.api_anfrage", return_value=self.AERZTE):
+            dialog_termin({})
+
+    def test_fachrichtung_leer_default(self):
+        antworten = [
+            "200 result=0\n",
+            "200 result=-1\n",  # keine Eingabe
+            "200 result=0\n",
+            "200 result=2\n",
+        ] + self._agi(20)
+
+        with patch("sys.stdout", io.StringIO()), \
+             patch("sys.stdin.readline", side_effect=antworten), \
+             patch("asterisk.med_voicebot.api_anfrage", return_value=self.AERZTE):
+            dialog_termin({})
+
+    # --- Termin bestaetigt: Patient gefunden, API erstellt Termin ---
+
+    def test_termin_bestaetigt_mit_patient_und_api_erstellung(self):
+        patient = [{"id": 42, "vorname": "Max", "nachname": "M"}]
+        termin_antwort = {"termin": {"id": 99, "datum": "2026-02-21"}}
+        antworten = [
+            "200 result=0\n",  # verbose
+            "200 result=1\n",  # fachrichtung=1
+            "200 result=0\n",  # playback vorschlag
+            "200 result=1\n",  # bestaetigung=1 Ja
+        ] + self._agi(30)
+
+        api_calls = []
+
+        def mock_api(pfad, methode="GET", daten=None):
+            api_calls.append((pfad, methode, daten))
+            if pfad == "/aerzte":
+                return self.AERZTE
+            if "patienten" in pfad:
+                return patient
+            if pfad == "/termine" and methode == "POST":
+                return termin_antwort
+            return None
+
+        with patch("sys.stdout", io.StringIO()) as out, \
+             patch("sys.stdin.readline", side_effect=antworten), \
+             patch("asterisk.med_voicebot.api_anfrage", side_effect=mock_api):
+            dialog_termin({"agi_callerid": "030123456"})
+
+        # Pruefe: /aerzte wurde geladen
+        assert api_calls[0][0] == "/aerzte"
+        # Pruefe: Patient wurde anhand CallerID gesucht
+        assert "/patienten?suche=030123456" in api_calls[1][0]
+        # Pruefe: Termin wurde via POST erstellt
+        assert api_calls[2][0] == "/termine"
+        assert api_calls[2][1] == "POST"
+        # Pruefe Termin-Daten
+        termin_daten = api_calls[2][2]
+        assert termin_daten["arzt_id"] == 1  # Allgemeinmedizin-Arzt
+        assert termin_daten["patient_id"] == 42
+        assert termin_daten["uhrzeit"] == "09:00"
+        assert "Allgemeinmedizin" in termin_daten["grund"]
+
+    def test_termin_bestaetigt_innere_medizin_waehlt_richtigen_arzt(self):
+        termin_antwort = {"termin": {"id": 77}}
+        antworten = [
+            "200 result=0\n",  # verbose
+            "200 result=2\n",  # fachrichtung=2 -> Innere Medizin
+            "200 result=0\n",  # playback
+            "200 result=1\n",  # bestaetigung Ja
+        ] + self._agi(30)
+
+        api_calls = []
+
+        def mock_api(pfad, methode="GET", daten=None):
+            api_calls.append((pfad, methode, daten))
+            if pfad == "/aerzte":
+                return self.AERZTE
+            if "patienten" in pfad:
+                return [{"id": 10}]
+            if pfad == "/termine" and methode == "POST":
+                return termin_antwort
+            return None
+
+        with patch("sys.stdout", io.StringIO()), \
+             patch("sys.stdin.readline", side_effect=antworten), \
+             patch("asterisk.med_voicebot.api_anfrage", side_effect=mock_api):
+            dialog_termin({"agi_callerid": "0171555"})
+
+        termin_post = [c for c in api_calls if c[0] == "/termine"]
+        assert len(termin_post) == 1
+        assert termin_post[0][2]["arzt_id"] == 2  # Anna Mueller (Innere Medizin)
+
+    def test_termin_bestaetigt_fachrichtung_nicht_vorhanden_nimmt_ersten(self):
+        termin_antwort = {"termin": {"id": 55}}
+        antworten = [
+            "200 result=0\n",
+            "200 result=3\n",  # fachrichtung=3 -> Sonstiges (kein Arzt hat das)
+            "200 result=0\n",
+            "200 result=1\n",  # Ja
+        ] + self._agi(30)
+
+        api_calls = []
+
+        def mock_api(pfad, methode="GET", daten=None):
+            api_calls.append((pfad, methode, daten))
+            if pfad == "/aerzte":
+                return self.AERZTE
+            if "patienten" in pfad:
+                return [{"id": 5}]
+            if pfad == "/termine" and methode == "POST":
+                return termin_antwort
+            return None
+
+        with patch("sys.stdout", io.StringIO()), \
+             patch("sys.stdin.readline", side_effect=antworten), \
+             patch("asterisk.med_voicebot.api_anfrage", side_effect=mock_api):
+            dialog_termin({"agi_callerid": "040999"})
+
+        termin_post = [c for c in api_calls if c[0] == "/termine"]
+        assert termin_post[0][2]["arzt_id"] == 1  # Erster Arzt als Fallback
+
+    # --- Termin bestaetigt: Kein Patient gefunden ---
+
+    def test_termin_bestaetigt_kein_patient_transfer(self):
+        antworten = [
+            "200 result=0\n",
+            "200 result=1\n",
+            "200 result=0\n",
+            "200 result=1\n",  # Ja
+        ] + self._agi(30)
+
+        api_calls = []
+
+        def mock_api(pfad, methode="GET", daten=None):
+            api_calls.append((pfad, methode, daten))
+            if pfad == "/aerzte":
+                return self.AERZTE
+            if "patienten" in pfad:
+                return []  # Kein Patient gefunden
+            return None
+
+        with patch("sys.stdout", io.StringIO()), \
+             patch("sys.stdin.readline", side_effect=antworten), \
+             patch("asterisk.med_voicebot.api_anfrage", side_effect=mock_api):
+            dialog_termin({"agi_callerid": "0000"})
+
+        # Kein POST /termine weil kein Patient
+        termin_posts = [c for c in api_calls if c[1] == "POST"]
+        assert len(termin_posts) == 0
+
+    def test_termin_bestaetigt_keine_callerid_transfer(self):
+        antworten = [
+            "200 result=0\n",
+            "200 result=1\n",
+            "200 result=0\n",
+            "200 result=1\n",  # Ja
+        ] + self._agi(30)
+
+        api_calls = []
+
+        def mock_api(pfad, methode="GET", daten=None):
+            api_calls.append((pfad, methode, daten))
+            if pfad == "/aerzte":
+                return self.AERZTE
+            return None
+
+        with patch("sys.stdout", io.StringIO()), \
+             patch("sys.stdin.readline", side_effect=antworten), \
+             patch("asterisk.med_voicebot.api_anfrage", side_effect=mock_api):
+            dialog_termin({})  # Keine CallerID
+
+        # Keine Patientensuche, kein POST
+        patienten_calls = [c for c in api_calls if "patienten" in c[0]]
+        assert len(patienten_calls) == 0
+
+    # --- Termin bestaetigt: API-Fehler bei Erstellung ---
+
+    def test_termin_api_fehler_bei_erstellung_transfer(self):
+        antworten = [
+            "200 result=0\n",
+            "200 result=1\n",
+            "200 result=0\n",
+            "200 result=1\n",  # Ja
+        ] + self._agi(30)
+
+        def mock_api(pfad, methode="GET", daten=None):
+            if pfad == "/aerzte":
+                return self.AERZTE
+            if "patienten" in pfad:
+                return [{"id": 42}]
+            if pfad == "/termine" and methode == "POST":
+                return None  # API-Fehler
+            return None
+
+        with patch("sys.stdout", io.StringIO()), \
+             patch("sys.stdin.readline", side_effect=antworten), \
+             patch("asterisk.med_voicebot.api_anfrage", side_effect=mock_api):
+            dialog_termin({"agi_callerid": "030123"})
+
+    def test_termin_api_gibt_unerwartetes_format_transfer(self):
+        antworten = [
+            "200 result=0\n",
+            "200 result=1\n",
+            "200 result=0\n",
+            "200 result=1\n",
+        ] + self._agi(30)
+
+        def mock_api(pfad, methode="GET", daten=None):
+            if pfad == "/aerzte":
+                return self.AERZTE
+            if "patienten" in pfad:
+                return [{"id": 42}]
+            if pfad == "/termine" and methode == "POST":
+                return {"fehler": "Ungueltige Daten"}  # Kein "termin"-Key
+            return None
+
+        with patch("sys.stdout", io.StringIO()), \
+             patch("sys.stdin.readline", side_effect=antworten), \
+             patch("asterisk.med_voicebot.api_anfrage", side_effect=mock_api):
+            dialog_termin({"agi_callerid": "030123"})
+
+    # --- Termin abgelehnt ---
+
+    def test_termin_abgelehnt_transfer(self):
+        antworten = [
+            "200 result=0\n",
+            "200 result=2\n",  # Innere
+            "200 result=0\n",
+            "200 result=2\n",  # Nein
+        ] + self._agi(20)
+
+        with patch("sys.stdout", io.StringIO()), \
+             patch("sys.stdin.readline", side_effect=antworten), \
+             patch("asterisk.med_voicebot.api_anfrage", return_value=self.AERZTE):
+            dialog_termin({})
+
+    def test_termin_keine_bestaetigung_transfer(self):
+        antworten = [
+            "200 result=0\n",
+            "200 result=1\n",
+            "200 result=0\n",
+            "200 result=-1\n",  # keine Eingabe
+        ] + self._agi(20)
+
+        with patch("sys.stdout", io.StringIO()), \
+             patch("sys.stdin.readline", side_effect=antworten), \
+             patch("asterisk.med_voicebot.api_anfrage", return_value=self.AERZTE):
+            dialog_termin({})
+
+    # --- Nur ein Arzt verfuegbar ---
+
+    def test_termin_nur_ein_arzt(self):
+        ein_arzt = [{"id": 5, "vorname": "Eva", "nachname": "Braun",
+                     "fachrichtung": "Chirurgie"}]
+        termin_antwort = {"termin": {"id": 33}}
+        antworten = [
+            "200 result=0\n",
+            "200 result=1\n",  # Allgemeinmedizin (aber Arzt ist Chirurgie)
+            "200 result=0\n",
+            "200 result=1\n",
+        ] + self._agi(30)
+
+        api_calls = []
+
+        def mock_api(pfad, methode="GET", daten=None):
+            api_calls.append((pfad, methode, daten))
+            if pfad == "/aerzte":
+                return ein_arzt
+            if "patienten" in pfad:
+                return [{"id": 7}]
+            if pfad == "/termine" and methode == "POST":
+                return termin_antwort
+            return None
+
+        with patch("sys.stdout", io.StringIO()), \
+             patch("sys.stdin.readline", side_effect=antworten), \
+             patch("asterisk.med_voicebot.api_anfrage", side_effect=mock_api):
+            dialog_termin({"agi_callerid": "05511111"})
+
+        termin_post = [c for c in api_calls if c[0] == "/termine"]
+        # Nimmt den einzigen Arzt obwohl Fachrichtung nicht passt
+        assert termin_post[0][2]["arzt_id"] == 5
+
+    # --- End-to-End via willkommen -> termin ---
+
+    def test_willkommen_auswahl_1_terminierung_komplett(self):
+        """Kompletter Durchlauf: Willkommen -> 1 -> Termin erstellen."""
+        termin_antwort = {"termin": {"id": 123, "datum": "2026-02-21"}}
+        antworten = [
+            "200 result=0\n",  # verbose willkommen gestartet
+            "200 result=1\n",  # willkommen get_data: 1 = Termin
+            "200 result=0\n",  # verbose termin gestartet
+            "200 result=1\n",  # fachrichtung=1
+            "200 result=0\n",  # playback vorschlag
+            "200 result=1\n",  # bestaetigung Ja
+        ] + self._agi(30)
+
+        api_calls = []
+
+        def mock_api(pfad, methode="GET", daten=None):
+            api_calls.append((pfad, methode, daten))
+            if pfad == "/aerzte":
+                return self.AERZTE
+            if "patienten" in pfad:
+                return [{"id": 1}]
+            if pfad == "/termine" and methode == "POST":
+                return termin_antwort
+            return None
+
+        with patch("sys.stdout", io.StringIO()), \
+             patch("sys.stdin.readline", side_effect=antworten), \
+             patch("asterisk.med_voicebot.api_anfrage", side_effect=mock_api):
+            dialog_willkommen({"agi_callerid": "030999"})
+
+        # Termin wurde erstellt
+        termin_posts = [c for c in api_calls if c[0] == "/termine" and c[1] == "POST"]
+        assert len(termin_posts) == 1
+        assert termin_posts[0][2]["patient_id"] == 1
+
+    def test_willkommen_nochmal_auswahl_1_terminierung(self):
+        """Erste Eingabe leer, Nochmal -> 1 -> Termin."""
+        antworten = [
+            "200 result=-1\n",  # willkommen: keine Eingabe
+            "200 result=1\n",   # nochmal: 1 = Termin
+            "200 result=0\n",   # verbose
+            "200 result=1\n",   # fachrichtung
+            "200 result=0\n",   # playback
+            "200 result=2\n",   # ablehnen -> Transfer
+        ] + self._agi(20)
+
+        with patch("sys.stdout", io.StringIO()), \
+             patch("sys.stdin.readline", side_effect=antworten), \
+             patch("asterisk.med_voicebot.api_anfrage", return_value=self.AERZTE):
+            dialog_willkommen({})
 
 
 class TestDialogRezept:

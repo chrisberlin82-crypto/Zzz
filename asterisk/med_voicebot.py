@@ -135,7 +135,7 @@ def dialog_termin(agi_vars):
     """Terminvergabe-Dialog."""
     agi_verbose("Voicebot: Termindialog gestartet", 1)
 
-    # Naechsten freien Termin suchen
+    # Aerzte laden
     aerzte = api_anfrage("/aerzte")
     if not aerzte or len(aerzte) == 0:
         agi_playback("voicebot-kein-arzt")
@@ -156,6 +156,15 @@ def dialog_termin(agi_vars):
     }
     fachrichtung = fachrichtung_map.get(eingabe, "Allgemeinmedizin")
 
+    # Passenden Arzt finden (erste Uebereinstimmung oder erster verfuegbarer)
+    arzt = None
+    for a in aerzte:
+        if fachrichtung.lower() in a.get("fachrichtung", "").lower():
+            arzt = a
+            break
+    if not arzt:
+        arzt = aerzte[0]
+
     # Termin-Vorschlag
     agi_playback("voicebot-termin-vorschlag")
 
@@ -163,10 +172,49 @@ def dialog_termin(agi_vars):
     bestaetigung = agi_get_data("voicebot-bestaetigen", 5000, 1)
 
     if bestaetigung == "1":
-        # Termin anlegen (vereinfacht)
-        agi_verbose("Voicebot: Termin bestaetigt fuer {} / {}".format(
-            morgen, fachrichtung), 1)
-        agi_set_variable("VOICEBOT_RESULT", "TERMIN")
+        # Termin ueber API anlegen
+        termin_daten = {
+            "arzt_id": arzt["id"],
+            "datum": morgen,
+            "uhrzeit": "09:00",
+            "grund": "Voicebot-Termin ({})".format(fachrichtung),
+        }
+
+        # Patient-ID aus AGI-Variablen oder CallerID
+        caller_id = agi_vars.get("agi_callerid", "")
+        if caller_id:
+            # Patient anhand Telefonnummer suchen
+            patienten = api_anfrage(
+                "/patienten?suche={}".format(caller_id)
+            )
+            if patienten and len(patienten) > 0:
+                termin_daten["patient_id"] = patienten[0]["id"]
+
+        if "patient_id" in termin_daten:
+            ergebnis = api_anfrage("/termine", "POST", termin_daten)
+            if ergebnis and "termin" in ergebnis:
+                agi_verbose(
+                    "Voicebot: Termin erstellt ID={} fuer {} / {}".format(
+                        ergebnis["termin"].get("id", "?"),
+                        morgen, fachrichtung
+                    ), 1,
+                )
+                agi_set_variable("VOICEBOT_RESULT", "TERMIN")
+                agi_set_variable("VOICEBOT_TERMIN_ID",
+                                 str(ergebnis["termin"].get("id", "")))
+                agi_set_variable("VOICEBOT_TERMIN_DATUM", morgen)
+                agi_set_variable("VOICEBOT_FACHRICHTUNG", fachrichtung)
+                return
+            else:
+                agi_verbose("Voicebot: Termin-Erstellung fehlgeschlagen", 1)
+
+        # Kein Patient gefunden oder API-Fehler -> Variablen setzen, Transfer
+        agi_verbose(
+            "Voicebot: Termin vorgemerkt fuer {} / {}".format(
+                morgen, fachrichtung
+            ), 1,
+        )
+        agi_set_variable("VOICEBOT_RESULT", "TERMIN_TRANSFER")
         agi_set_variable("VOICEBOT_TERMIN_DATUM", morgen)
         agi_set_variable("VOICEBOT_FACHRICHTUNG", fachrichtung)
     else:
