@@ -1471,6 +1471,7 @@ function chatSenden() {
     setTimeout(function () {
         var antwort = chatAntwortGenerieren(text);
         chatNachrichtHinzufuegen("bot", antwort);
+        sprachAusgabe(antwort);
     }, 500);
 }
 
@@ -1523,7 +1524,7 @@ function chatAntwortGenerieren(frage) {
     }
 
     if (f.includes("hilfe") || f.includes("help")) {
-        return "Ich kann Ihnen helfen mit: Patienten-Info, Aerzte-Info, Termine heute, Wartezimmer-Status. Stellen Sie einfach eine Frage!";
+        return "Ich kann Ihnen helfen mit: Patienten-Info, Aerzte-Info, Termine heute, Wartezimmer-Status, Voicebot, Callflow, Uebersetzer. Stellen Sie einfach eine Frage oder sprechen Sie mich per Mikrofon an!";
     }
 
     if (f.includes("agent")) {
@@ -1532,13 +1533,25 @@ function chatAntwortGenerieren(frage) {
         return agenten.length + " Agenten registriert, davon " + online.length + " online.";
     }
 
+    if (f.includes("voicebot") || f.includes("sprachbot")) {
+        return "Der Voicebot bearbeitet automatisch eingehende Anrufe. Er kann Termine vergeben, Rezepte entgegennehmen und an die Rezeption weiterleiten. Konfigurieren Sie ihn unter 'Voicebot'.";
+    }
+
+    if (f.includes("callflow") || f.includes("anrufablauf")) {
+        return "Im Callflow Editor koennen Sie den Anrufablauf visuell gestalten. Fuegen Sie Bausteine wie Ansagen, DTMF-Menues, Voicebot-Dialoge und Warteschlangen hinzu.";
+    }
+
+    if (f.includes("uebersetz") || f.includes("sprache") || f.includes("translation")) {
+        return "Der Uebersetzer hilft bei der Kommunikation mit fremdsprachigen Patienten. Er unterstuetzt Deutsch, Englisch, Tuerkisch, Arabisch, Russisch und Polnisch.";
+    }
+
     if (f.includes("demo") || f.includes("reset") || f.includes("zurueck")) {
         localStorage.removeItem("med_demo_geladen");
         demoDatenLaden();
         return "Demo-Daten wurden zurueckgesetzt! Laden Sie die Seite neu um die Aenderungen zu sehen.";
     }
 
-    return "Das habe ich nicht verstanden. Fragen Sie mich nach: Patienten, Aerzte, Termine, Wartezimmer, Agenten oder tippen Sie 'hilfe'.";
+    return "Das habe ich nicht verstanden. Fragen Sie mich nach: Patienten, Aerzte, Termine, Wartezimmer, Voicebot, Callflow, Uebersetzer oder 'hilfe'.";
 }
 
 // ===== Hilfsfunktionen =====
@@ -1560,6 +1573,624 @@ function initDemoReset() {
         demoDatenLaden();
         location.reload();
     });
+}
+
+// ===== Sprach-Chat (Web Speech API) =====
+
+function initSprachChat() {
+    var mikBtn = document.getElementById("chat-mikrofon");
+    if (!mikBtn) return;
+    var SpeechRec = typeof window !== "undefined" && (window.SpeechRecognition || window.webkitSpeechRecognition);
+    if (!SpeechRec) {
+        mikBtn.title = "Spracherkennung nicht verfuegbar";
+        mikBtn.style.opacity = "0.5";
+        return;
+    }
+    var recognition = new SpeechRec();
+    recognition.lang = "de-DE";
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    var recording = false;
+
+    mikBtn.addEventListener("click", function () {
+        if (recording) {
+            recognition.stop();
+            return;
+        }
+        recording = true;
+        mikBtn.classList.add("recording");
+        recognition.start();
+    });
+
+    recognition.onresult = function (e) {
+        var text = e.results[0][0].transcript;
+        var input = document.getElementById("chat-input");
+        if (input) input.value = text;
+        chatSenden();
+    };
+
+    recognition.onend = function () {
+        recording = false;
+        mikBtn.classList.remove("recording");
+    };
+
+    recognition.onerror = function () {
+        recording = false;
+        mikBtn.classList.remove("recording");
+    };
+}
+
+function sprachAusgabe(text) {
+    if (typeof window === "undefined" || !window.speechSynthesis) return;
+    var utt = new SpeechSynthesisUtterance(text);
+    utt.lang = "de-DE";
+    utt.rate = 1.0;
+    window.speechSynthesis.speak(utt);
+}
+
+// ===== Callflow Editor =====
+
+var callflowDaten = [];
+var callflowAusgewaehlt = null;
+
+function demoCallflowLaden() {
+    if (callflowDaten.length > 0) return;
+    callflowDaten = [
+        { id: 1, typ: "start", label: "Eingehender Anruf", config: { quelle: "SIP-Trunk" } },
+        { id: 2, typ: "ansage", label: "Willkommen", config: { text: "Willkommen bei der Arztpraxis MED Rezeption.", datei: "willkommen.wav" } },
+        { id: 3, typ: "dtmf", label: "Hauptmenue", config: { text: "1=Termin, 2=Rezept, 3=Rezeption, 0=Warteschlange", timeout: 8, optionen: [
+            { taste: "1", label: "Terminvergabe", ziel_id: 4 },
+            { taste: "2", label: "Rezeptbestellung", ziel_id: 5 },
+            { taste: "3", label: "Rezeption", ziel_id: 6 },
+            { taste: "0", label: "Warteschlange", ziel_id: 7 }
+        ] } },
+        { id: 4, typ: "voicebot", label: "Termin-Dialog", config: { dialog: "termin", beschreibung: "Automatische Terminvergabe per Sprache" } },
+        { id: 5, typ: "voicebot", label: "Rezept-Dialog", config: { dialog: "rezept", beschreibung: "Rezeptbestellung per Versicherungsnummer" } },
+        { id: 6, typ: "transfer", label: "Transfer Rezeption", config: { nebenstelle: "100", timeout: 30 } },
+        { id: 7, typ: "warteschlange", label: "Queue Rezeption", config: { queue: "rezeption", ansage: "bitte-warten.wav", maxWait: 120 } },
+        { id: 8, typ: "ende", label: "Auflegen", config: {} }
+    ];
+}
+
+function initCallflowEditor() {
+    var canvas = document.getElementById("callflow-flow");
+    if (!canvas) return;
+    demoCallflowLaden();
+    callflowRendern();
+
+    // Baustein-Buttons
+    var bausteine = document.querySelectorAll(".callflow-baustein");
+    for (var i = 0; i < bausteine.length; i++) {
+        bausteine[i].addEventListener("click", function () {
+            var typ = this.getAttribute("data-typ");
+            var maxId = 0;
+            for (var j = 0; j < callflowDaten.length; j++) {
+                if (callflowDaten[j].id > maxId) maxId = callflowDaten[j].id;
+            }
+            callflowDaten.push({
+                id: maxId + 1, typ: typ, label: typ.charAt(0).toUpperCase() + typ.slice(1) + " (neu)",
+                config: typ === "dtmf" ? { text: "", timeout: 5, optionen: [] } :
+                    typ === "ansage" ? { text: "", datei: "" } :
+                    typ === "voicebot" ? { dialog: "willkommen", beschreibung: "" } :
+                    typ === "warteschlange" ? { queue: "rezeption", ansage: "", maxWait: 120 } :
+                    typ === "transfer" ? { nebenstelle: "", timeout: 30 } : {}
+            });
+            callflowRendern();
+        });
+    }
+
+    // Speichern
+    var saveBtn = document.getElementById("btn-flow-speichern");
+    if (saveBtn) saveBtn.addEventListener("click", function () {
+        localStorage.setItem("med_callflow", JSON.stringify(callflowDaten));
+        alert("Callflow gespeichert!");
+    });
+
+    // Simulieren
+    var simBtn = document.getElementById("btn-flow-simulieren");
+    if (simBtn) simBtn.addEventListener("click", callflowSimulieren);
+}
+
+function callflowRendern() {
+    var container = document.getElementById("callflow-flow");
+    if (!container) return;
+    container.innerHTML = "";
+
+    for (var i = 0; i < callflowDaten.length; i++) {
+        var node = callflowDaten[i];
+        var el = document.createElement("div");
+        el.className = "callflow-node" + (callflowAusgewaehlt === node.id ? " selected" : "");
+        el.setAttribute("data-id", node.id);
+
+        var bodyHtml = "";
+        if (node.typ === "ansage") bodyHtml = '<div class="node-detail">' + escapeHtml(node.config.text || "Keine Ansage") + '</div><div class="node-detail"><small>Datei: ' + escapeHtml(node.config.datei || "-") + '</small></div>';
+        else if (node.typ === "dtmf") {
+            bodyHtml = '<div class="node-detail">' + escapeHtml(node.config.text || "") + '</div>';
+            var opts = node.config.optionen || [];
+            for (var o = 0; o < opts.length; o++) bodyHtml += '<div class="node-detail"><small>Taste ' + opts[o].taste + ' → ' + escapeHtml(opts[o].label) + '</small></div>';
+        }
+        else if (node.typ === "voicebot") bodyHtml = '<div class="node-detail">' + escapeHtml(node.config.beschreibung || node.config.dialog) + '</div>';
+        else if (node.typ === "transfer") bodyHtml = '<div class="node-detail">Nebenstelle: ' + escapeHtml(node.config.nebenstelle || "-") + '</div>';
+        else if (node.typ === "warteschlange") bodyHtml = '<div class="node-detail">Queue: ' + escapeHtml(node.config.queue || "-") + '</div><div class="node-detail"><small>Max. Wartezeit: ' + (node.config.maxWait || 120) + 's</small></div>';
+        else if (node.typ === "start") bodyHtml = '<div class="node-detail">' + escapeHtml(node.config.quelle || "Eingehend") + '</div>';
+
+        el.innerHTML = '<div class="callflow-node-header typ-' + node.typ + '"><i class="fa-solid ' + callflowIcon(node.typ) + '"></i> ' + escapeHtml(node.label) + '</div><div class="callflow-node-body">' + bodyHtml + '</div>';
+        el.addEventListener("click", (function (nid) {
+            return function () { callflowNodeAuswaehlen(nid); };
+        })(node.id));
+        container.appendChild(el);
+
+        if (i < callflowDaten.length - 1) {
+            var pfeil = document.createElement("div");
+            pfeil.className = "callflow-pfeil";
+            pfeil.innerHTML = '<i class="fa-solid fa-arrow-down"></i>';
+            container.appendChild(pfeil);
+        }
+    }
+}
+
+function callflowIcon(typ) {
+    var icons = { start: "fa-play", ansage: "fa-volume-high", dtmf: "fa-hashtag", voicebot: "fa-robot", warteschlange: "fa-users-line", transfer: "fa-right-left", bedingung: "fa-code-branch", aufnahme: "fa-microphone", ende: "fa-phone-slash" };
+    return icons[typ] || "fa-circle";
+}
+
+function callflowNodeAuswaehlen(id) {
+    callflowAusgewaehlt = id;
+    callflowRendern();
+    var node = null;
+    for (var i = 0; i < callflowDaten.length; i++) {
+        if (callflowDaten[i].id === id) { node = callflowDaten[i]; break; }
+    }
+    if (!node) return;
+    var propsEl = document.getElementById("callflow-props-inhalt");
+    if (!propsEl) return;
+    var html = '<div class="form-group"><label>Label</label><input type="text" id="cf-prop-label" value="' + escapeHtml(node.label) + '"></div>';
+    html += '<div class="form-group"><label>Typ</label><input type="text" value="' + node.typ + '" disabled></div>';
+    if (node.config.text !== undefined) html += '<div class="form-group"><label>Text</label><textarea id="cf-prop-text" rows="3">' + escapeHtml(node.config.text || "") + '</textarea></div>';
+    if (node.config.nebenstelle !== undefined) html += '<div class="form-group"><label>Nebenstelle</label><input type="text" id="cf-prop-nst" value="' + escapeHtml(node.config.nebenstelle || "") + '"></div>';
+    if (node.config.queue !== undefined) html += '<div class="form-group"><label>Queue</label><input type="text" id="cf-prop-queue" value="' + escapeHtml(node.config.queue || "") + '"></div>';
+    if (node.config.timeout !== undefined) html += '<div class="form-group"><label>Timeout (Sek.)</label><input type="number" id="cf-prop-timeout" value="' + (node.config.timeout || 5) + '"></div>';
+    html += '<div class="button-gruppe"><button type="button" onclick="callflowPropsSpeichern()">Uebernehmen</button>';
+    if (node.typ !== "start") html += '<button type="button" class="btn-loeschen" onclick="callflowNodeLoeschen(' + node.id + ')">Loeschen</button>';
+    html += '</div>';
+    propsEl.innerHTML = html;
+}
+
+function callflowPropsSpeichern() {
+    if (!callflowAusgewaehlt) return;
+    for (var i = 0; i < callflowDaten.length; i++) {
+        if (callflowDaten[i].id === callflowAusgewaehlt) {
+            var labelEl = document.getElementById("cf-prop-label");
+            if (labelEl) callflowDaten[i].label = labelEl.value;
+            var textEl = document.getElementById("cf-prop-text");
+            if (textEl) callflowDaten[i].config.text = textEl.value;
+            var nstEl = document.getElementById("cf-prop-nst");
+            if (nstEl) callflowDaten[i].config.nebenstelle = nstEl.value;
+            var queueEl = document.getElementById("cf-prop-queue");
+            if (queueEl) callflowDaten[i].config.queue = queueEl.value;
+            var timeoutEl = document.getElementById("cf-prop-timeout");
+            if (timeoutEl) callflowDaten[i].config.timeout = parseInt(timeoutEl.value) || 5;
+            break;
+        }
+    }
+    callflowRendern();
+    callflowNodeAuswaehlen(callflowAusgewaehlt);
+}
+
+function callflowNodeLoeschen(id) {
+    callflowDaten = callflowDaten.filter(function (n) { return n.id !== id; });
+    callflowAusgewaehlt = null;
+    callflowRendern();
+    var propsEl = document.getElementById("callflow-props-inhalt");
+    if (propsEl) propsEl.innerHTML = '<p class="text-muted">Baustein geloescht.</p>';
+}
+
+function callflowSimulieren() {
+    var simEl = document.getElementById("callflow-simulation");
+    var ablaufEl = document.getElementById("simulation-ablauf");
+    if (!simEl || !ablaufEl) return;
+    simEl.hidden = false;
+    ablaufEl.innerHTML = "";
+    var zeilen = [
+        { cls: "sim-zeile-system", text: "[SYSTEM] Eingehender Anruf von +49 170 1234567" },
+        { cls: "sim-zeile-system", text: "[SYSTEM] Kanal geoeffnet, Sprache: de" },
+        { cls: "sim-zeile-audio", text: "[AUDIO] Abspielen: willkommen.wav" },
+        { cls: "sim-zeile-audio", text: '[AUDIO] "Willkommen bei der Arztpraxis MED Rezeption."' },
+        { cls: "sim-zeile-audio", text: '[AUDIO] "Druecken Sie 1 fuer Terminvergabe, 2 fuer Rezept, 3 fuer Rezeption."' },
+        { cls: "sim-zeile-system", text: "[SYSTEM] Warte auf DTMF-Eingabe... (Timeout: 8s)" },
+        { cls: "sim-zeile-eingabe", text: "[DTMF] Eingabe: 1" },
+        { cls: "sim-zeile-aktion", text: "[AKTION] Weiterleitung an Voicebot-Dialog: termin" },
+        { cls: "sim-zeile-system", text: "[VOICEBOT] AGI-Script gestartet: med_voicebot.py termin" },
+        { cls: "sim-zeile-audio", text: '[AUDIO] "Fuer welche Fachrichtung? 1=Allgemein, 2=Innere, 3=Andere"' },
+        { cls: "sim-zeile-eingabe", text: "[DTMF] Eingabe: 1" },
+        { cls: "sim-zeile-aktion", text: "[VOICEBOT] Fachrichtung: Allgemeinmedizin" },
+        { cls: "sim-zeile-aktion", text: "[API] GET /api/aerzte → 3 Aerzte geladen" },
+        { cls: "sim-zeile-aktion", text: "[VOICEBOT] Arzt gefunden: Dr. Mueller (Allgemeinmedizin)" },
+        { cls: "sim-zeile-audio", text: '[AUDIO] "Terminvorschlag: Morgen 09:00 Uhr bei Dr. Mueller. Druecken Sie 1 zur Bestaetigung."' },
+        { cls: "sim-zeile-eingabe", text: "[DTMF] Eingabe: 1" },
+        { cls: "sim-zeile-aktion", text: "[API] POST /api/termine → Termin erstellt (ID: 5)" },
+        { cls: "sim-zeile-aktion", text: "[VOICEBOT] VOICEBOT_RESULT=TERMIN" },
+        { cls: "sim-zeile-audio", text: '[AUDIO] "Ihr Termin ist bestaetigt. Auf Wiedersehen!"' },
+        { cls: "sim-zeile-system", text: "[SYSTEM] Anruf beendet. Dauer: 45 Sekunden" }
+    ];
+    var idx = 0;
+    function naechsteZeile() {
+        if (idx >= zeilen.length) return;
+        var div = document.createElement("div");
+        div.className = "sim-zeile " + zeilen[idx].cls;
+        div.textContent = zeilen[idx].text;
+        ablaufEl.appendChild(div);
+        ablaufEl.scrollTop = ablaufEl.scrollHeight;
+        idx++;
+        setTimeout(naechsteZeile, 600);
+    }
+    naechsteZeile();
+
+    var stopBtn = document.getElementById("btn-sim-stop");
+    if (stopBtn) stopBtn.addEventListener("click", function () { idx = zeilen.length; simEl.hidden = true; });
+}
+
+// ===== Voicebot Konfiguration & Test =====
+
+function initVoicebotSeite() {
+    var configForm = document.getElementById("voicebot-config-form");
+    if (!configForm) return;
+
+    // Config speichern
+    configForm.addEventListener("submit", function (e) {
+        e.preventDefault();
+        var config = {
+            begruessung: document.getElementById("vb-begruessung").value,
+            sprache: document.getElementById("vb-sprache").value,
+            stimme: document.getElementById("vb-stimme").value,
+            maxVersuche: parseInt(document.getElementById("vb-max-versuche").value),
+            timeout: parseInt(document.getElementById("vb-timeout").value),
+            tasten: {
+                "1": document.getElementById("vb-taste1").value,
+                "2": document.getElementById("vb-taste2").value,
+                "3": document.getElementById("vb-taste3").value,
+                "0": document.getElementById("vb-taste0").value
+            }
+        };
+        localStorage.setItem("med_voicebot_config", JSON.stringify(config));
+        var erfolg = document.getElementById("vb-config-erfolg");
+        if (erfolg) { erfolg.textContent = "Konfiguration gespeichert!"; erfolg.hidden = false; setTimeout(function () { erfolg.hidden = true; }, 3000); }
+    });
+
+    // Test starten
+    var testBtn = document.getElementById("btn-vb-test");
+    if (testBtn) testBtn.addEventListener("click", voicebotTestStarten);
+
+    // DTMF-Tasten im Test
+    var dtmfBtns = document.querySelectorAll(".vb-dtmf");
+    for (var i = 0; i < dtmfBtns.length; i++) {
+        dtmfBtns[i].addEventListener("click", function () {
+            voicebotTestDtmf(this.getAttribute("data-dtmf"));
+        });
+    }
+
+    var resetBtn = document.getElementById("btn-vb-test-reset");
+    if (resetBtn) resetBtn.addEventListener("click", voicebotTestStarten);
+
+    // Demo-Anrufe laden
+    voicebotAnrufeLaden();
+}
+
+var vbTestSchritt = 0;
+
+function voicebotTestStarten() {
+    var bereich = document.getElementById("voicebot-test-bereich");
+    var chat = document.getElementById("vb-test-chat");
+    if (!bereich || !chat) return;
+    bereich.hidden = false;
+    chat.innerHTML = "";
+    vbTestSchritt = 0;
+    vbTestNachricht("bot", "Willkommen bei der Arztpraxis MED Rezeption.");
+    vbTestNachricht("bot", "Druecken Sie 1 fuer Terminvergabe, 2 fuer Rezeptbestellung, 3 fuer die Rezeption, oder 0 fuer die Warteschlange.");
+    vbTestNachricht("system", "Warte auf DTMF-Eingabe...");
+    sprachAusgabe("Willkommen bei der Arztpraxis. Druecken Sie 1 fuer Terminvergabe, 2 fuer Rezeptbestellung, 3 fuer die Rezeption.");
+}
+
+function voicebotTestDtmf(taste) {
+    var chat = document.getElementById("vb-test-chat");
+    if (!chat) return;
+    vbTestNachricht("anrufer", "DTMF: " + taste);
+
+    if (vbTestSchritt === 0) {
+        if (taste === "1") {
+            vbTestSchritt = 1;
+            vbTestNachricht("bot", "Fuer welche Fachrichtung moechten Sie einen Termin?");
+            vbTestNachricht("bot", "1 = Allgemeinmedizin, 2 = Innere Medizin, 3 = Andere");
+            vbTestNachricht("system", "Warte auf DTMF-Eingabe...");
+            sprachAusgabe("Fuer welche Fachrichtung moechten Sie einen Termin?");
+        } else if (taste === "2") {
+            vbTestSchritt = 10;
+            vbTestNachricht("bot", "Bitte geben Sie Ihre Versicherungsnummer ein.");
+            vbTestNachricht("system", "Warte auf Eingabe... (max. 12 Ziffern)");
+            sprachAusgabe("Bitte geben Sie Ihre Versicherungsnummer ein.");
+        } else if (taste === "3") {
+            vbTestNachricht("bot", "Sie werden mit der Rezeption verbunden...");
+            vbTestNachricht("system", "TRANSFER → Nebenstelle 100");
+            sprachAusgabe("Sie werden mit der Rezeption verbunden.");
+        } else if (taste === "0") {
+            vbTestNachricht("bot", "Bitte warten Sie, Sie werden mit dem naechsten freien Mitarbeiter verbunden.");
+            vbTestNachricht("system", "WARTESCHLANGE → rezeption (Prioritaet: 1)");
+            sprachAusgabe("Bitte warten Sie.");
+        }
+    } else if (vbTestSchritt === 1) {
+        var fach = taste === "1" ? "Allgemeinmedizin" : taste === "2" ? "Innere Medizin" : "Sonstiges";
+        vbTestSchritt = 2;
+        var morgen = new Date(Date.now() + 86400000).toLocaleDateString("de-DE");
+        vbTestNachricht("system", "API-Anfrage: GET /api/aerzte");
+        vbTestNachricht("system", "Arzt gefunden: Dr. Mueller (" + fach + ")");
+        vbTestNachricht("bot", "Terminvorschlag: " + morgen + " um 09:00 Uhr bei Dr. Mueller, " + fach + ".");
+        vbTestNachricht("bot", "Druecken Sie 1 zur Bestaetigung oder 2 fuer Abbruch.");
+        sprachAusgabe("Terminvorschlag: morgen um 9 Uhr bei Doktor Mueller. Druecken Sie 1 zur Bestaetigung.");
+    } else if (vbTestSchritt === 2) {
+        if (taste === "1") {
+            vbTestNachricht("system", "API-Anfrage: POST /api/termine → Termin erstellt");
+            vbTestNachricht("bot", "Ihr Termin wurde erfolgreich gebucht! Auf Wiedersehen.");
+            vbTestNachricht("system", "VOICEBOT_RESULT = TERMIN ✓");
+            sprachAusgabe("Ihr Termin wurde erfolgreich gebucht. Auf Wiedersehen.");
+        } else {
+            vbTestNachricht("bot", "Kein Problem. Sie werden mit der Rezeption verbunden.");
+            vbTestNachricht("system", "TRANSFER → Rezeption");
+        }
+        vbTestSchritt = 99;
+    } else if (vbTestSchritt === 10) {
+        vbTestNachricht("system", "Versicherungsnummer erkannt: " + taste + "...");
+        vbTestNachricht("bot", "Ihre Rezeptanfrage wird an die Rezeption weitergeleitet.");
+        vbTestNachricht("system", "VOICEBOT_RESULT = TRANSFER, VOICEBOT_REZEPT_VNR = " + taste);
+        sprachAusgabe("Ihre Rezeptanfrage wird an die Rezeption weitergeleitet.");
+        vbTestSchritt = 99;
+    }
+}
+
+function vbTestNachricht(typ, text) {
+    var chat = document.getElementById("vb-test-chat");
+    if (!chat) return;
+    var div = document.createElement("div");
+    div.className = "vb-chat-msg " + (typ === "bot" ? "vb-msg-bot" : typ === "anrufer" ? "vb-msg-anrufer" : "vb-msg-system");
+    div.textContent = text;
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+}
+
+function voicebotAnrufeLaden() {
+    var liste = document.getElementById("voicebot-anrufe-liste");
+    if (!liste) return;
+    var demoAnrufe = [
+        { zeit: "09:15", nummer: "+49 170 1234567", ergebnis: "termin", detail: "Termin: Dr. Mueller, Allgemeinmedizin" },
+        { zeit: "09:32", nummer: "+49 171 9876543", ergebnis: "rezept", detail: "Rezept-Anfrage VNR: A98765" },
+        { zeit: "09:45", nummer: "+49 160 5551234", ergebnis: "transfer", detail: "Weiterleitung an Rezeption" },
+        { zeit: "10:03", nummer: "+49 172 3456789", ergebnis: "termin", detail: "Termin: Dr. Schmidt, Innere Medizin" },
+        { zeit: "10:18", nummer: "+49 176 8884321", ergebnis: "transfer", detail: "Weiterleitung nach Timeout" },
+        { zeit: "10:40", nummer: "+49 151 7779999", ergebnis: "rezept", detail: "Rezept-Anfrage VNR: B12345" }
+    ];
+    liste.innerHTML = "";
+    for (var i = 0; i < demoAnrufe.length; i++) {
+        var a = demoAnrufe[i];
+        var div = document.createElement("div");
+        div.className = "voicebot-anruf-eintrag";
+        div.innerHTML = '<div class="anruf-info"><strong>' + a.zeit + ' - ' + escapeHtml(a.nummer) + '</strong>' + escapeHtml(a.detail) + '</div><span class="anruf-ergebnis ergebnis-' + a.ergebnis + '">' + a.ergebnis.charAt(0).toUpperCase() + a.ergebnis.slice(1) + '</span>';
+        liste.appendChild(div);
+    }
+}
+
+// ===== Uebersetzer =====
+
+var medPhrases = {
+    begruessung: [
+        { de: "Guten Tag, wie kann ich Ihnen helfen?", en: "Good day, how can I help you?", tr: "Merhaba, size nasil yardimci olabilirim?", ar: "مرحبا، كيف يمكنني مساعدتك؟", ru: "Здравствуйте, чем могу помочь?", pl: "Dzien dobry, jak moge pomoc?" },
+        { de: "Haben Sie einen Termin?", en: "Do you have an appointment?", tr: "Randevunuz var mi?", ar: "هل لديك موعد؟", ru: "У вас есть запись?", pl: "Czy ma Pan/Pani wizyte?" },
+        { de: "Bitte nehmen Sie im Wartezimmer Platz.", en: "Please take a seat in the waiting room.", tr: "Lutfen bekleme odasinda oturunuz.", ar: "يرجى الجلوس في غرفة الانتظار.", ru: "Пожалуйста, присядьте в зале ожидания.", pl: "Prosze usiasc w poczekalni." },
+        { de: "Ihre Versichertenkarte bitte.", en: "Your insurance card, please.", tr: "Sigorta kartinizi lutfen.", ar: "بطاقة التأمين من فضلك.", ru: "Вашу страховую карту, пожалуйста.", pl: "Prosze o karte ubezpieczenia." }
+    ],
+    anamnese: [
+        { de: "Was fuehrt Sie zu uns?", en: "What brings you to us?", tr: "Bizi neden ziyaret ediyorsunuz?", ar: "ما الذي أتى بك إلينا؟", ru: "Что привело вас к нам?", pl: "Co Pana/Pania do nas sprowadza?" },
+        { de: "Nehmen Sie regelmaessig Medikamente?", en: "Do you take regular medication?", tr: "Duzenli ilac kullaniyor musunuz?", ar: "هل تتناول أدوية بانتظام؟", ru: "Вы принимаете лекарства регулярно?", pl: "Czy przyjmuje Pan/Pani regularnie leki?" },
+        { de: "Haben Sie Allergien?", en: "Do you have any allergies?", tr: "Alerjiniz var mi?", ar: "هل لديك حساسية؟", ru: "У вас есть аллергия?", pl: "Czy ma Pan/Pani alergie?" },
+        { de: "Seit wann haben Sie die Beschwerden?", en: "Since when have you had these symptoms?", tr: "Sikayetleriniz ne zamandan beri var?", ar: "منذ متى تعاني من هذه الأعراض؟", ru: "С каких пор у вас эти жалобы?", pl: "Od kiedy ma Pan/Pani te dolegliwosci?" }
+    ],
+    schmerzen: [
+        { de: "Wo haben Sie Schmerzen?", en: "Where do you have pain?", tr: "Nereniz agriyor?", ar: "أين تشعر بالألم؟", ru: "Где у вас болит?", pl: "Gdzie odczuwa Pan/Pani bol?" },
+        { de: "Wie stark sind die Schmerzen auf einer Skala von 1-10?", en: "How severe is the pain on a scale of 1-10?", tr: "1-10 olceginde agriniz ne kadar siddetli?", ar: "ما مدى شدة الألم على مقياس من 1 إلى 10؟", ru: "Насколько сильная боль по шкале от 1 до 10?", pl: "Jak silny jest bol w skali od 1 do 10?" },
+        { de: "Ist der Schmerz staendig oder kommt und geht er?", en: "Is the pain constant or does it come and go?", tr: "Agri surekli mi yoksa gelip gidiyor mu?", ar: "هل الألم مستمر أم يأتي ويذهب؟", ru: "Боль постоянная или приходит и уходит?", pl: "Czy bol jest staly czy przychodzi i odchodzi?" }
+    ],
+    behandlung: [
+        { de: "Ich verschreibe Ihnen ein Medikament.", en: "I will prescribe you a medication.", tr: "Size bir ilac yazacagim.", ar: "سأصف لك دواء.", ru: "Я выпишу вам лекарство.", pl: "Przepisze Panu/Pani lek." },
+        { de: "Bitte kommen Sie naechste Woche wieder.", en: "Please come back next week.", tr: "Lutfen gelecek hafta tekrar gelin.", ar: "يرجى العودة الأسبوع المقبل.", ru: "Пожалуйста, приходите на следующей неделе.", pl: "Prosze przyjsc w przyszlym tygodniu." },
+        { de: "Sie muessen nuechtern zur Blutabnahme kommen.", en: "You need to come fasting for the blood test.", tr: "Kan testi icin ac karnina gelmelisiniz.", ar: "يجب أن تأتي صائماً لسحب الدم.", ru: "Вам нужно прийти натощак на анализ крови.", pl: "Musi Pan/Pani przyjsc na czczo na badanie krwi." }
+    ],
+    termin: [
+        { de: "Ihr naechster Termin ist am...", en: "Your next appointment is on...", tr: "Bir sonraki randevunuz...", ar: "موعدك القادم في...", ru: "Ваша следующая запись...", pl: "Pana/Pani nastepna wizyta jest..." },
+        { de: "Moechten Sie den Termin verschieben?", en: "Would you like to reschedule?", tr: "Randevunuzu ertelemek ister misiniz?", ar: "هل تريد تأجيل الموعد؟", ru: "Хотите перенести запись?", pl: "Czy chcialby Pan/chcialaby Pani przesunac wizyte?" }
+    ],
+    rezept: [
+        { de: "Ihr Rezept liegt an der Rezeption bereit.", en: "Your prescription is ready at the reception.", tr: "Recetiniz resepsiyonda hazir.", ar: "وصفتك جاهزة في الاستقبال.", ru: "Ваш рецепт готов на ресепшен.", pl: "Recepta czeka na Pana/Pania w recepcji." },
+        { de: "Das Rezept ist 3 Monate gueltig.", en: "The prescription is valid for 3 months.", tr: "Recete 3 ay gecerlidir.", ar: "الوصفة صالحة لمدة 3 أشهر.", ru: "Рецепт действителен 3 месяца.", pl: "Recepta jest wazna przez 3 miesiace." }
+    ]
+};
+
+function initUebersetzer() {
+    var uebersetzenBtn = document.getElementById("btn-ue-uebersetzen");
+    if (!uebersetzenBtn) return;
+
+    uebersetzenBtn.addEventListener("click", uebersetzen);
+
+    var tauschBtn = document.getElementById("btn-ue-tauschen");
+    if (tauschBtn) tauschBtn.addEventListener("click", function () {
+        var von = document.getElementById("ue-sprache-von");
+        var nach = document.getElementById("ue-sprache-nach");
+        var tmp = von.value; von.value = nach.value; nach.value = tmp;
+    });
+
+    var vorlesenBtn = document.getElementById("btn-ue-vorlesen");
+    if (vorlesenBtn) vorlesenBtn.addEventListener("click", function () {
+        var ausgabe = document.getElementById("ue-ausgabe");
+        if (ausgabe && ausgabe.textContent) {
+            var nach = document.getElementById("ue-sprache-nach");
+            var langMap = { de: "de-DE", en: "en-US", tr: "tr-TR", ar: "ar-SA", ru: "ru-RU", pl: "pl-PL" };
+            var utt = new SpeechSynthesisUtterance(ausgabe.textContent);
+            utt.lang = langMap[nach.value] || "de-DE";
+            window.speechSynthesis.speak(utt);
+        }
+    });
+
+    var kopierenBtn = document.getElementById("btn-ue-kopieren");
+    if (kopierenBtn) kopierenBtn.addEventListener("click", function () {
+        var ausgabe = document.getElementById("ue-ausgabe");
+        if (ausgabe && navigator.clipboard) {
+            navigator.clipboard.writeText(ausgabe.textContent);
+            kopierenBtn.textContent = "Kopiert!";
+            setTimeout(function () { kopierenBtn.innerHTML = '<i class="fa-solid fa-copy"></i> Kopieren'; }, 2000);
+        }
+    });
+
+    // Mikrofon fuer Uebersetzer
+    var mikBtn = document.getElementById("btn-ue-mikrofon");
+    if (mikBtn) {
+        var SpeechRec = typeof window !== "undefined" && (window.SpeechRecognition || window.webkitSpeechRecognition);
+        if (SpeechRec) {
+            var rec = new SpeechRec();
+            rec.continuous = false;
+            rec.interimResults = false;
+            var isRec = false;
+            mikBtn.addEventListener("click", function () {
+                if (isRec) { rec.stop(); return; }
+                var von = document.getElementById("ue-sprache-von");
+                var langMap = { de: "de-DE", en: "en-US", tr: "tr-TR", ar: "ar-SA", ru: "ru-RU", pl: "pl-PL" };
+                rec.lang = langMap[von.value] || "de-DE";
+                isRec = true;
+                mikBtn.classList.add("recording");
+                rec.start();
+            });
+            rec.onresult = function (e) {
+                var text = e.results[0][0].transcript;
+                document.getElementById("ue-eingabe").value = text;
+                uebersetzen();
+            };
+            rec.onend = function () { isRec = false; mikBtn.classList.remove("recording"); };
+            rec.onerror = function () { isRec = false; mikBtn.classList.remove("recording"); };
+        }
+    }
+
+    // Phrasen laden
+    initPhrasen();
+}
+
+function uebersetzen() {
+    var eingabe = document.getElementById("ue-eingabe").value.trim();
+    var von = document.getElementById("ue-sprache-von").value;
+    var nach = document.getElementById("ue-sprache-nach").value;
+    var ausgabe = document.getElementById("ue-ausgabe");
+    if (!eingabe || !ausgabe) return;
+
+    // Suche in den medizinischen Phrasen
+    var gefunden = null;
+    var kategorien = Object.keys(medPhrases);
+    for (var k = 0; k < kategorien.length; k++) {
+        var phrasen = medPhrases[kategorien[k]];
+        for (var p = 0; p < phrasen.length; p++) {
+            if (phrasen[p][von] && phrasen[p][von].toLowerCase() === eingabe.toLowerCase()) {
+                gefunden = phrasen[p][nach] || phrasen[p].en || eingabe;
+                break;
+            }
+        }
+        if (gefunden) break;
+    }
+
+    if (gefunden) {
+        ausgabe.textContent = gefunden;
+    } else {
+        // Demo-Fallback: einfache Wort-fuer-Wort Marker
+        var demoUe = {
+            "de-en": { "hallo": "hello", "ja": "yes", "nein": "no", "danke": "thank you", "bitte": "please", "schmerzen": "pain", "kopf": "head", "bauch": "stomach", "termin": "appointment", "arzt": "doctor", "medikament": "medication", "rezept": "prescription" },
+            "de-tr": { "hallo": "merhaba", "ja": "evet", "nein": "hayir", "danke": "tesekkurler", "bitte": "lutfen", "schmerzen": "agri", "termin": "randevu", "arzt": "doktor" }
+        };
+        var key = von + "-" + nach;
+        var woerter = eingabe.toLowerCase().split(" ");
+        var uebersetzt = [];
+        var dict = demoUe[key] || {};
+        for (var w = 0; w < woerter.length; w++) {
+            uebersetzt.push(dict[woerter[w]] || woerter[w]);
+        }
+        ausgabe.textContent = uebersetzt.join(" ");
+        if (Object.keys(dict).length === 0) {
+            ausgabe.textContent = "[Demo] " + eingabe + " (" + von + " → " + nach + ")";
+        }
+    }
+
+    // Verlauf speichern
+    var verlauf = dbLaden("ue_verlauf");
+    verlauf.unshift({ original: eingabe, uebersetzung: ausgabe.textContent, von: von, nach: nach, zeit: new Date().toLocaleTimeString("de-DE") });
+    if (verlauf.length > 20) verlauf = verlauf.slice(0, 20);
+    dbSpeichern("ue_verlauf", verlauf);
+    ueVerlaufAktualisieren();
+}
+
+function ueVerlaufAktualisieren() {
+    var tabelle = document.getElementById("ue-verlauf-tabelle");
+    if (!tabelle) return;
+    var tbody = tabelle.querySelector("tbody");
+    if (!tbody) return;
+    var verlauf = dbLaden("ue_verlauf");
+    tbody.innerHTML = "";
+    for (var i = 0; i < verlauf.length; i++) {
+        var v = verlauf[i];
+        var tr = document.createElement("tr");
+        tr.innerHTML = '<td>' + escapeHtml(v.original) + '</td><td>' + escapeHtml(v.uebersetzung) + '</td><td>' + v.von.toUpperCase() + ' → ' + v.nach.toUpperCase() + '</td><td>' + escapeHtml(v.zeit) + '</td>';
+        tbody.appendChild(tr);
+    }
+}
+
+function initPhrasen() {
+    var katBtns = document.querySelectorAll(".phrasen-kat");
+    for (var i = 0; i < katBtns.length; i++) {
+        katBtns[i].addEventListener("click", function () {
+            for (var j = 0; j < katBtns.length; j++) katBtns[j].classList.remove("active");
+            this.classList.add("active");
+            phrasenAnzeigen(this.getAttribute("data-kat"));
+        });
+    }
+
+    var sprachSel = document.getElementById("ue-phrasen-sprache");
+    if (sprachSel) sprachSel.addEventListener("change", function () {
+        var aktiveKat = document.querySelector(".phrasen-kat.active");
+        phrasenAnzeigen(aktiveKat ? aktiveKat.getAttribute("data-kat") : "begruessung");
+    });
+
+    phrasenAnzeigen("begruessung");
+    ueVerlaufAktualisieren();
+}
+
+function phrasenAnzeigen(kategorie) {
+    var liste = document.getElementById("phrasen-liste");
+    var sprachSel = document.getElementById("ue-phrasen-sprache");
+    if (!liste || !sprachSel) return;
+    var sprache = sprachSel.value;
+    var phrasen = medPhrases[kategorie] || [];
+    liste.innerHTML = "";
+    for (var i = 0; i < phrasen.length; i++) {
+        var p = phrasen[i];
+        var div = document.createElement("div");
+        div.className = "phrase-card";
+        div.innerHTML = '<div class="phrase-de">' + escapeHtml(p.de) + '</div><div class="phrase-uebersetzt">' + escapeHtml(p[sprache] || p.en) + '</div><div class="phrase-actions"><button type="button" class="btn-sm" onclick="phraseVorlesen(\'' + escapeHtml(p[sprache] || p.en).replace(/'/g, "\\'") + '\',\'' + sprache + '\')"><i class="fa-solid fa-volume-high"></i></button><button type="button" class="btn-sm" onclick="phraseUebernehmen(\'' + escapeHtml(p.de).replace(/'/g, "\\'") + '\')"><i class="fa-solid fa-arrow-right"></i></button></div>';
+        liste.appendChild(div);
+    }
+}
+
+function phraseVorlesen(text, sprache) {
+    if (!window.speechSynthesis) return;
+    var langMap = { en: "en-US", tr: "tr-TR", ar: "ar-SA", ru: "ru-RU", pl: "pl-PL" };
+    var utt = new SpeechSynthesisUtterance(text);
+    utt.lang = langMap[sprache] || "en-US";
+    window.speechSynthesis.speak(utt);
+}
+
+function phraseUebernehmen(text) {
+    var eingabe = document.getElementById("ue-eingabe");
+    if (eingabe) { eingabe.value = text; uebersetzen(); }
 }
 
 /** Exportieren fuer Tests (Node.js) */
@@ -1594,7 +2225,17 @@ if (typeof module !== "undefined" && module.exports) {
         wartezimmerAktualisieren, wartezimmerDropdownsLaden, wartezimmerTermineLaden,
         agentFormZuruecksetzen, agentBearbeiten, agentenBoardAktualisieren,
         aktiveAnrufeAktualisieren, anrufprotokollAktualisieren,
+        sprachAusgabe, callflowDaten: callflowDaten,
+        medPhrases: medPhrases, uebersetzen: typeof uebersetzen !== "undefined" ? uebersetzen : function () {},
     };
+}
+
+// Globale Funktionen fuer onclick-Handler im HTML
+if (typeof window !== "undefined") {
+    window.callflowPropsSpeichern = callflowPropsSpeichern;
+    window.callflowNodeLoeschen = callflowNodeLoeschen;
+    window.phraseVorlesen = phraseVorlesen;
+    window.phraseUebernehmen = phraseUebernehmen;
 }
 
 /** Init (nur im Browser) */
@@ -1611,6 +2252,10 @@ if (typeof document !== "undefined") {
         initAgentenBoard();
         initSoftphone();
         initChatWidget();
+        initSprachChat();
+        initCallflowEditor();
+        initVoicebotSeite();
+        initUebersetzer();
         initDemoReset();
 
         // Mobile Sidebar Toggle
