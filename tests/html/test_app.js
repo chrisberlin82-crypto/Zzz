@@ -2,6 +2,38 @@
 
 var assert = require("assert");
 
+// === Mock-Fetch Framework ===
+var lastFetchUrl = null;
+var lastFetchOpts = null;
+var mockFetchResponse = null;
+
+function mockFetch(responseData, status, ok) {
+    status = status || 200;
+    ok = ok !== undefined ? ok : true;
+    mockFetchResponse = { data: responseData, status: status, ok: ok };
+    global.fetch = function (url, opts) {
+        lastFetchUrl = url;
+        lastFetchOpts = opts || {};
+        return Promise.resolve({
+            ok: mockFetchResponse.ok,
+            status: mockFetchResponse.status,
+            json: function () { return Promise.resolve(mockFetchResponse.data); },
+        });
+    };
+}
+
+function mockFetchError() {
+    global.fetch = function () {
+        return Promise.reject(new Error("Netzwerkfehler"));
+    };
+}
+
+function resetFetchMock() {
+    lastFetchUrl = null;
+    lastFetchOpts = null;
+    mockFetchResponse = null;
+}
+
 // DOM-Mock fuer escapeHtml und DOMContentLoaded
 global.document = {
     createElement: function () {
@@ -655,4 +687,497 @@ test("Zahlen bleiben erhalten", function () {
 
 console.log("  3 Tests bestanden");
 
+// === API-Funktionen Tests (mit Mock-Fetch) ===
+
+function asyncTest(name, fn) {
+    return fn().then(function () { bestanden++; }).catch(function (err) {
+        console.error("FEHLER in: " + name);
+        console.error(err);
+        process.exit(1);
+    });
+}
+
+(async function () {
+
+// --- berechnenApi ---
+
+console.log("\n=== berechnenApi ===");
+
+await asyncTest("berechnenApi sendet POST mit korrekten Daten", async function () {
+    mockFetch({ ergebnis: 15 });
+    var erg = await app.berechnenApi(10, "addieren", 5);
+    assert.strictEqual(erg, 15);
+    assert.ok(lastFetchUrl.includes("/berechnen"));
+    assert.strictEqual(lastFetchOpts.method, "POST");
+    var body = JSON.parse(lastFetchOpts.body);
+    assert.strictEqual(body.a, 10);
+    assert.strictEqual(body.b, 5);
+    assert.strictEqual(body.operation, "addieren");
+    resetFetchMock();
+});
+
+await asyncTest("berechnenApi wirft Fehler bei Serverfehler", async function () {
+    mockFetch({ fehler: "Division durch Null" }, 400, false);
+    try {
+        await app.berechnenApi(10, "dividieren", 0);
+        assert.fail("Sollte Fehler werfen");
+    } catch (e) {
+        assert.ok(e.message.includes("Division"));
+    }
+    resetFetchMock();
+});
+
+console.log("  2 Tests bestanden");
+
+// --- Benutzer-API ---
+
+console.log("\n=== Benutzer-API ===");
+
+await asyncTest("benutzerSpeichernApi POST", async function () {
+    mockFetch({ nachricht: "ok", benutzer: { id: 1 } }, 201);
+    var erg = await app.benutzerSpeichernApi({ name: "Test" });
+    assert.strictEqual(erg.benutzer.id, 1);
+    assert.strictEqual(lastFetchOpts.method, "POST");
+    assert.ok(lastFetchUrl.includes("/benutzer"));
+    resetFetchMock();
+});
+
+await asyncTest("benutzerSpeichernApi Fehler-Array", async function () {
+    mockFetch({ fehler: ["Name fehlt", "Email fehlt"] }, 422, false);
+    try {
+        await app.benutzerSpeichernApi({});
+        assert.fail("Sollte Fehler werfen");
+    } catch (e) {
+        assert.ok(e.message.includes("Name fehlt"));
+        assert.ok(e.message.includes("Email fehlt"));
+    }
+    resetFetchMock();
+});
+
+await asyncTest("benutzerAktualisierenApi PUT", async function () {
+    mockFetch({ nachricht: "aktualisiert" });
+    await app.benutzerAktualisierenApi(5, { name: "Neu" });
+    assert.ok(lastFetchUrl.includes("/benutzer/5"));
+    assert.strictEqual(lastFetchOpts.method, "PUT");
+    resetFetchMock();
+});
+
+await asyncTest("benutzerLoeschenApi DELETE", async function () {
+    mockFetch({ nachricht: "geloescht" });
+    await app.benutzerLoeschenApi(3);
+    assert.ok(lastFetchUrl.includes("/benutzer/3"));
+    assert.strictEqual(lastFetchOpts.method, "DELETE");
+    resetFetchMock();
+});
+
+await asyncTest("benutzerLoeschenApi Fehler", async function () {
+    mockFetch({ fehler: "Nicht gefunden" }, 404, false);
+    try {
+        await app.benutzerLoeschenApi(999);
+        assert.fail("Sollte Fehler werfen");
+    } catch (e) {
+        assert.ok(e.message.includes("Nicht gefunden"));
+    }
+    resetFetchMock();
+});
+
+await asyncTest("benutzerLadenApi GET ohne Suche", async function () {
+    mockFetch([{ id: 1, name: "A" }, { id: 2, name: "B" }]);
+    var erg = await app.benutzerLadenApi();
+    assert.strictEqual(erg.length, 2);
+    assert.ok(lastFetchUrl.includes("/benutzer"));
+    assert.ok(!lastFetchUrl.includes("suche"));
+    resetFetchMock();
+});
+
+await asyncTest("benutzerLadenApi GET mit Suche", async function () {
+    mockFetch([{ id: 1, name: "Max" }]);
+    await app.benutzerLadenApi("Max");
+    assert.ok(lastFetchUrl.includes("suche=Max"));
+    resetFetchMock();
+});
+
+await asyncTest("benutzerLadenApi Fehler", async function () {
+    mockFetch({}, 500, false);
+    try {
+        await app.benutzerLadenApi();
+        assert.fail("Sollte Fehler werfen");
+    } catch (e) {
+        assert.ok(e.message.includes("Laden"));
+    }
+    resetFetchMock();
+});
+
+console.log("  8 Tests bestanden");
+
+// --- Verlauf-API ---
+
+console.log("\n=== Verlauf-API ===");
+
+await asyncTest("verlaufLadenApi GET", async function () {
+    mockFetch([{ id: 1, a: 2, b: 3, operation: "addieren", ergebnis: 5 }]);
+    var erg = await app.verlaufLadenApi();
+    assert.strictEqual(erg[0].ergebnis, 5);
+    assert.ok(lastFetchUrl.includes("/verlauf"));
+    resetFetchMock();
+});
+
+await asyncTest("verlaufLoeschenApi DELETE", async function () {
+    mockFetch({ nachricht: "ok" });
+    await app.verlaufLoeschenApi();
+    assert.ok(lastFetchUrl.includes("/verlauf"));
+    assert.strictEqual(lastFetchOpts.method, "DELETE");
+    resetFetchMock();
+});
+
+console.log("  2 Tests bestanden");
+
+// --- Patienten-API ---
+
+console.log("\n=== Patienten-API ===");
+
+await asyncTest("patientenLadenApi GET", async function () {
+    mockFetch([{ id: 1, vorname: "Max" }]);
+    var erg = await app.patientenLadenApi();
+    assert.strictEqual(erg[0].vorname, "Max");
+    resetFetchMock();
+});
+
+await asyncTest("patientenLadenApi mit Suche", async function () {
+    mockFetch([]);
+    await app.patientenLadenApi("Mueller");
+    assert.ok(lastFetchUrl.includes("suche=Mueller"));
+    resetFetchMock();
+});
+
+await asyncTest("patientSpeichernApi POST Erfolg", async function () {
+    mockFetch({ patient: { id: 10 } }, 201);
+    var erg = await app.patientSpeichernApi({ vorname: "Max", nachname: "M" });
+    assert.strictEqual(erg.patient.id, 10);
+    assert.strictEqual(lastFetchOpts.method, "POST");
+    resetFetchMock();
+});
+
+await asyncTest("patientSpeichernApi Fehler-Array", async function () {
+    mockFetch({ fehler: ["Vorname fehlt"] }, 422, false);
+    try {
+        await app.patientSpeichernApi({});
+        assert.fail();
+    } catch (e) {
+        assert.ok(e.message.includes("Vorname"));
+    }
+    resetFetchMock();
+});
+
+await asyncTest("patientAktualisierenApi PUT", async function () {
+    mockFetch({ patient: { id: 10, vorname: "Neu" } });
+    await app.patientAktualisierenApi(10, { vorname: "Neu" });
+    assert.ok(lastFetchUrl.includes("/patienten/10"));
+    assert.strictEqual(lastFetchOpts.method, "PUT");
+    resetFetchMock();
+});
+
+await asyncTest("patientLoeschenApi DELETE", async function () {
+    mockFetch({ nachricht: "geloescht" });
+    await app.patientLoeschenApi(7);
+    assert.ok(lastFetchUrl.includes("/patienten/7"));
+    assert.strictEqual(lastFetchOpts.method, "DELETE");
+    resetFetchMock();
+});
+
+console.log("  6 Tests bestanden");
+
+// --- Aerzte-API ---
+
+console.log("\n=== Aerzte-API ===");
+
+await asyncTest("aerzteLadenApi GET", async function () {
+    mockFetch([{ id: 1, nachname: "Schmidt", fachrichtung: "Allgemein" }]);
+    var erg = await app.aerzteLadenApi();
+    assert.strictEqual(erg[0].nachname, "Schmidt");
+    resetFetchMock();
+});
+
+await asyncTest("arztSpeichernApi POST", async function () {
+    mockFetch({ arzt: { id: 5 } }, 201);
+    var erg = await app.arztSpeichernApi({ vorname: "Hans", nachname: "S", fachrichtung: "K" });
+    assert.strictEqual(erg.arzt.id, 5);
+    assert.strictEqual(lastFetchOpts.method, "POST");
+    resetFetchMock();
+});
+
+await asyncTest("arztSpeichernApi Fehler", async function () {
+    mockFetch({ fehler: "Fachrichtung fehlt" }, 422, false);
+    try {
+        await app.arztSpeichernApi({});
+        assert.fail();
+    } catch (e) {
+        assert.ok(e.message.includes("Fachrichtung"));
+    }
+    resetFetchMock();
+});
+
+await asyncTest("arztAktualisierenApi PUT", async function () {
+    mockFetch({ arzt: { id: 5 } });
+    await app.arztAktualisierenApi(5, { fachrichtung: "Innere" });
+    assert.ok(lastFetchUrl.includes("/aerzte/5"));
+    assert.strictEqual(lastFetchOpts.method, "PUT");
+    resetFetchMock();
+});
+
+await asyncTest("arztLoeschenApi DELETE", async function () {
+    mockFetch({ nachricht: "ok" });
+    await app.arztLoeschenApi(5);
+    assert.ok(lastFetchUrl.includes("/aerzte/5"));
+    assert.strictEqual(lastFetchOpts.method, "DELETE");
+    resetFetchMock();
+});
+
+console.log("  5 Tests bestanden");
+
+// --- Termine-API ---
+
+console.log("\n=== Termine-API ===");
+
+await asyncTest("termineLadenApi GET ohne Datum", async function () {
+    mockFetch([{ id: 1, datum: "2026-03-01" }]);
+    await app.termineLadenApi();
+    assert.ok(lastFetchUrl.includes("/termine"));
+    assert.ok(!lastFetchUrl.includes("datum="));
+    resetFetchMock();
+});
+
+await asyncTest("termineLadenApi GET mit Datum", async function () {
+    mockFetch([]);
+    await app.termineLadenApi("2026-03-15");
+    assert.ok(lastFetchUrl.includes("datum=2026-03-15"));
+    resetFetchMock();
+});
+
+await asyncTest("terminSpeichernApi POST", async function () {
+    mockFetch({ termin: { id: 22 } }, 201);
+    var erg = await app.terminSpeichernApi({ patient_id: 1, arzt_id: 2, datum: "2026-03-15", uhrzeit: "10:00" });
+    assert.strictEqual(erg.termin.id, 22);
+    assert.strictEqual(lastFetchOpts.method, "POST");
+    var body = JSON.parse(lastFetchOpts.body);
+    assert.strictEqual(body.patient_id, 1);
+    assert.strictEqual(body.arzt_id, 2);
+    resetFetchMock();
+});
+
+await asyncTest("terminSpeichernApi Fehler", async function () {
+    mockFetch({ fehler: ["Patient fehlt"] }, 422, false);
+    try {
+        await app.terminSpeichernApi({});
+        assert.fail();
+    } catch (e) {
+        assert.ok(e.message.includes("Patient"));
+    }
+    resetFetchMock();
+});
+
+await asyncTest("terminAktualisierenApi PUT", async function () {
+    mockFetch({ termin: { id: 22, status: "bestaetigt" } });
+    await app.terminAktualisierenApi(22, { status: "bestaetigt" });
+    assert.ok(lastFetchUrl.includes("/termine/22"));
+    assert.strictEqual(lastFetchOpts.method, "PUT");
+    resetFetchMock();
+});
+
+await asyncTest("terminLoeschenApi DELETE", async function () {
+    mockFetch({ nachricht: "ok" });
+    await app.terminLoeschenApi(22);
+    assert.ok(lastFetchUrl.includes("/termine/22"));
+    assert.strictEqual(lastFetchOpts.method, "DELETE");
+    resetFetchMock();
+});
+
+console.log("  6 Tests bestanden");
+
+// --- Wartezimmer-API ---
+
+console.log("\n=== Wartezimmer-API ===");
+
+await asyncTest("wartezimmerLadenApi GET", async function () {
+    mockFetch([{ id: 1, patient_name: "Max M", status: "wartend" }]);
+    var erg = await app.wartezimmerLadenApi();
+    assert.strictEqual(erg[0].status, "wartend");
+    assert.ok(lastFetchUrl.includes("/wartezimmer"));
+    resetFetchMock();
+});
+
+await asyncTest("wartezimmerCheckinApi POST", async function () {
+    mockFetch({ eintrag: { id: 5 } }, 201);
+    var erg = await app.wartezimmerCheckinApi({ patient_id: 1 });
+    assert.strictEqual(erg.eintrag.id, 5);
+    assert.strictEqual(lastFetchOpts.method, "POST");
+    resetFetchMock();
+});
+
+await asyncTest("wartezimmerCheckinApi Fehler", async function () {
+    mockFetch({ fehler: ["Patient fehlt"] }, 422, false);
+    try {
+        await app.wartezimmerCheckinApi({});
+        assert.fail();
+    } catch (e) {
+        assert.ok(e.message.includes("Patient"));
+    }
+    resetFetchMock();
+});
+
+await asyncTest("wartezimmerStatusApi PUT aufgerufen", async function () {
+    mockFetch({ eintrag: { id: 5, status: "aufgerufen" } });
+    await app.wartezimmerStatusApi(5, "aufgerufen");
+    assert.ok(lastFetchUrl.includes("/wartezimmer/5"));
+    assert.strictEqual(lastFetchOpts.method, "PUT");
+    var body = JSON.parse(lastFetchOpts.body);
+    assert.strictEqual(body.status, "aufgerufen");
+    resetFetchMock();
+});
+
+await asyncTest("wartezimmerEntfernenApi DELETE", async function () {
+    mockFetch({ nachricht: "ok" });
+    await app.wartezimmerEntfernenApi(5);
+    assert.ok(lastFetchUrl.includes("/wartezimmer/5"));
+    assert.strictEqual(lastFetchOpts.method, "DELETE");
+    resetFetchMock();
+});
+
+console.log("  5 Tests bestanden");
+
+// --- Agenten-API ---
+
+console.log("\n=== Agenten-API ===");
+
+await asyncTest("agentenLadenApi GET", async function () {
+    mockFetch([{ id: 1, name: "Agent 1", status: "online" }]);
+    var erg = await app.agentenLadenApi();
+    assert.strictEqual(erg[0].name, "Agent 1");
+    assert.ok(lastFetchUrl.includes("/agenten"));
+    resetFetchMock();
+});
+
+await asyncTest("agentSpeichernApi POST", async function () {
+    mockFetch({ agent: { id: 3 } }, 201);
+    var erg = await app.agentSpeichernApi({ name: "Agent", nebenstelle: "100", sip_passwort: "geheim" });
+    assert.strictEqual(erg.agent.id, 3);
+    assert.strictEqual(lastFetchOpts.method, "POST");
+    resetFetchMock();
+});
+
+await asyncTest("agentSpeichernApi Fehler", async function () {
+    mockFetch({ fehler: "Name fehlt" }, 422, false);
+    try {
+        await app.agentSpeichernApi({});
+        assert.fail();
+    } catch (e) {
+        assert.ok(e.message.includes("Name"));
+    }
+    resetFetchMock();
+});
+
+await asyncTest("agentAktualisierenApi PUT", async function () {
+    mockFetch({ agent: { id: 3 } });
+    await app.agentAktualisierenApi(3, { name: "Neu" });
+    assert.ok(lastFetchUrl.includes("/agenten/3"));
+    assert.strictEqual(lastFetchOpts.method, "PUT");
+    resetFetchMock();
+});
+
+await asyncTest("agentLoeschenApi DELETE", async function () {
+    mockFetch({ nachricht: "ok" });
+    await app.agentLoeschenApi(3);
+    assert.ok(lastFetchUrl.includes("/agenten/3"));
+    assert.strictEqual(lastFetchOpts.method, "DELETE");
+    resetFetchMock();
+});
+
+await asyncTest("agentStatusSetzenApi PUT online", async function () {
+    mockFetch({ agent: { id: 3, status: "online" } });
+    await app.agentStatusSetzenApi(3, "online");
+    assert.ok(lastFetchUrl.includes("/agenten/3/status"));
+    assert.strictEqual(lastFetchOpts.method, "PUT");
+    var body = JSON.parse(lastFetchOpts.body);
+    assert.strictEqual(body.status, "online");
+    resetFetchMock();
+});
+
+await asyncTest("agentStatusSetzenApi PUT pause", async function () {
+    mockFetch({ agent: { id: 3, status: "pause" } });
+    await app.agentStatusSetzenApi(3, "pause");
+    var body = JSON.parse(lastFetchOpts.body);
+    assert.strictEqual(body.status, "pause");
+    resetFetchMock();
+});
+
+await asyncTest("agentStatusSetzenApi PUT offline", async function () {
+    mockFetch({ agent: { id: 3, status: "offline" } });
+    await app.agentStatusSetzenApi(3, "offline");
+    var body = JSON.parse(lastFetchOpts.body);
+    assert.strictEqual(body.status, "offline");
+    resetFetchMock();
+});
+
+console.log("  8 Tests bestanden");
+
+// --- Anrufe-API ---
+
+console.log("\n=== Anrufe-API ===");
+
+await asyncTest("anrufeLadenApi GET alle", async function () {
+    mockFetch([{ id: 1, anrufer_nummer: "+49111" }]);
+    var erg = await app.anrufeLadenApi(false);
+    assert.strictEqual(erg[0].anrufer_nummer, "+49111");
+    assert.ok(!lastFetchUrl.includes("aktiv"));
+    resetFetchMock();
+});
+
+await asyncTest("anrufeLadenApi GET aktive", async function () {
+    mockFetch([]);
+    await app.anrufeLadenApi(true);
+    assert.ok(lastFetchUrl.includes("aktiv=true"));
+    resetFetchMock();
+});
+
+await asyncTest("anrufeLadenApi Fehler", async function () {
+    mockFetch({}, 500, false);
+    try {
+        await app.anrufeLadenApi();
+        assert.fail();
+    } catch (e) {
+        assert.ok(e.message.includes("Laden"));
+    }
+    resetFetchMock();
+});
+
+console.log("  3 Tests bestanden");
+
+// --- Timer-Funktionen ---
+
+console.log("\n=== Timer-Funktionen ===");
+
+await asyncTest("startAnrufTimer und stopAnrufTimer", async function () {
+    // Mock fuer document.getElementById
+    var timerText = "00:00";
+    var origGetById = global.document.getElementById;
+    global.document.getElementById = function (id) {
+        if (id === "anruf-timer") return { set textContent(v) { timerText = v; }, get textContent() { return timerText; } };
+        return null;
+    };
+    app.startAnrufTimer();
+    app.stopAnrufTimer();
+    assert.strictEqual(timerText, "00:00");
+    global.document.getElementById = origGetById;
+});
+
+await asyncTest("stopAnrufTimer ohne laufenden Timer", async function () {
+    var origGetById = global.document.getElementById;
+    global.document.getElementById = function () { return { set textContent(v) {} }; };
+    app.stopAnrufTimer(); // Sollte nicht abstuerzen
+    global.document.getElementById = origGetById;
+});
+
+console.log("  2 Tests bestanden");
+
 console.log("\n=== Alle " + bestanden + " JS-Tests bestanden ===");
+})();
