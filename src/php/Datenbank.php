@@ -104,6 +104,36 @@ class Datenbank
                 FOREIGN KEY (termin_id) REFERENCES termine(id)
             )
         ');
+        $this->pdo->exec('
+            CREATE TABLE IF NOT EXISTS agenten (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                nebenstelle TEXT NOT NULL UNIQUE,
+                sip_passwort TEXT NOT NULL,
+                rolle TEXT NOT NULL DEFAULT "rezeption",
+                status TEXT NOT NULL DEFAULT "offline",
+                warteschlange TEXT DEFAULT "rezeption",
+                erstellt_am TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ');
+        $this->pdo->exec('
+            CREATE TABLE IF NOT EXISTS anrufe (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                anrufer_nummer TEXT NOT NULL,
+                anrufer_name TEXT DEFAULT "",
+                agent_id INTEGER,
+                warteschlange TEXT DEFAULT "",
+                typ TEXT NOT NULL DEFAULT "eingehend",
+                status TEXT NOT NULL DEFAULT "klingelt",
+                beginn TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                angenommen TIMESTAMP,
+                beendet TIMESTAMP,
+                dauer_sekunden INTEGER DEFAULT 0,
+                notizen TEXT DEFAULT "",
+                erstellt_am TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (agent_id) REFERENCES agenten(id)
+            )
+        ');
     }
 
     // --- Benutzer ---
@@ -485,6 +515,166 @@ class Datenbank
         return $stmt->rowCount() > 0;
     }
 
+    // --- Agenten ---
+
+    public function agentErstellen(array $daten): array
+    {
+        $stmt = $this->pdo->prepare(
+            'INSERT INTO agenten (name, nebenstelle, sip_passwort, rolle, status, warteschlange)
+             VALUES (:name, :nst, :pwd, :rolle, :status, :queue)'
+        );
+        $stmt->execute([
+            ':name' => $daten['name'],
+            ':nst' => $daten['nebenstelle'],
+            ':pwd' => $daten['sip_passwort'],
+            ':rolle' => $daten['rolle'] ?? 'rezeption',
+            ':status' => $daten['status'] ?? 'offline',
+            ':queue' => $daten['warteschlange'] ?? 'rezeption',
+        ]);
+        return $this->agentNachId((int) $this->pdo->lastInsertId());
+    }
+
+    public function agentAlle(): array
+    {
+        return $this->pdo->query('SELECT * FROM agenten ORDER BY name')->fetchAll();
+    }
+
+    public function agentNachId(int $id): ?array
+    {
+        $stmt = $this->pdo->prepare('SELECT * FROM agenten WHERE id = :id');
+        $stmt->execute([':id' => $id]);
+        $row = $stmt->fetch();
+        return $row ?: null;
+    }
+
+    public function agentAktualisieren(int $id, array $daten): ?array
+    {
+        $felder = [];
+        $werte = [':id' => $id];
+        $zuordnung = [
+            'name' => 'name', 'nebenstelle' => 'nebenstelle',
+            'sip_passwort' => 'sip_passwort', 'rolle' => 'rolle',
+            'status' => 'status', 'warteschlange' => 'warteschlange',
+        ];
+
+        foreach ($zuordnung as $eingabe => $spalte) {
+            if (isset($daten[$eingabe])) {
+                $felder[] = "{$spalte} = :{$eingabe}";
+                $werte[":{$eingabe}"] = $daten[$eingabe];
+            }
+        }
+
+        if (empty($felder)) {
+            return $this->agentNachId($id);
+        }
+
+        $sql = 'UPDATE agenten SET ' . implode(', ', $felder) . ' WHERE id = :id';
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($werte);
+        return $this->agentNachId($id);
+    }
+
+    public function agentLoeschen(int $id): bool
+    {
+        $stmt = $this->pdo->prepare('DELETE FROM agenten WHERE id = :id');
+        $stmt->execute([':id' => $id]);
+        return $stmt->rowCount() > 0;
+    }
+
+    public function agentStatusSetzen(int $id, string $status): ?array
+    {
+        $stmt = $this->pdo->prepare('UPDATE agenten SET status = :status WHERE id = :id');
+        $stmt->execute([':status' => $status, ':id' => $id]);
+        return $this->agentNachId($id);
+    }
+
+    // --- Anrufe ---
+
+    public function anrufErstellen(array $daten): array
+    {
+        $stmt = $this->pdo->prepare(
+            'INSERT INTO anrufe (anrufer_nummer, anrufer_name, agent_id, warteschlange, typ, status, notizen)
+             VALUES (:nr, :name, :aid, :queue, :typ, :status, :notizen)'
+        );
+        $stmt->execute([
+            ':nr' => $daten['anrufer_nummer'],
+            ':name' => $daten['anrufer_name'] ?? '',
+            ':aid' => $daten['agent_id'] ?? null,
+            ':queue' => $daten['warteschlange'] ?? '',
+            ':typ' => $daten['typ'] ?? 'eingehend',
+            ':status' => $daten['status'] ?? 'klingelt',
+            ':notizen' => $daten['notizen'] ?? '',
+        ]);
+        return $this->anrufNachId((int) $this->pdo->lastInsertId());
+    }
+
+    public function anrufAlle(int $limit = 50): array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT a.*, ag.name AS agent_name
+             FROM anrufe a
+             LEFT JOIN agenten ag ON a.agent_id = ag.id
+             ORDER BY a.beginn DESC LIMIT :limit'
+        );
+        $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+
+    public function anrufNachId(int $id): ?array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT a.*, ag.name AS agent_name
+             FROM anrufe a
+             LEFT JOIN agenten ag ON a.agent_id = ag.id
+             WHERE a.id = :id'
+        );
+        $stmt->execute([':id' => $id]);
+        $row = $stmt->fetch();
+        return $row ?: null;
+    }
+
+    public function anrufAktualisieren(int $id, array $daten): ?array
+    {
+        $felder = [];
+        $werte = [':id' => $id];
+        $zuordnung = [
+            'anrufer_nummer' => 'anrufer_nummer', 'anrufer_name' => 'anrufer_name',
+            'agent_id' => 'agent_id', 'warteschlange' => 'warteschlange',
+            'typ' => 'typ', 'status' => 'status',
+            'angenommen' => 'angenommen', 'beendet' => 'beendet',
+            'dauer_sekunden' => 'dauer_sekunden', 'notizen' => 'notizen',
+        ];
+
+        foreach ($zuordnung as $eingabe => $spalte) {
+            if (isset($daten[$eingabe])) {
+                $felder[] = "{$spalte} = :{$eingabe}";
+                $werte[":{$eingabe}"] = $daten[$eingabe];
+            }
+        }
+
+        if (empty($felder)) {
+            return $this->anrufNachId($id);
+        }
+
+        $sql = 'UPDATE anrufe SET ' . implode(', ', $felder) . ' WHERE id = :id';
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($werte);
+        return $this->anrufNachId($id);
+    }
+
+    public function anrufAktive(): array
+    {
+        $stmt = $this->pdo->query(
+            'SELECT a.*, ag.name AS agent_name
+             FROM anrufe a
+             LEFT JOIN agenten ag ON a.agent_id = ag.id
+             WHERE a.status IN ("klingelt", "verbunden", "warteschlange")
+             ORDER BY a.beginn DESC'
+        );
+        return $stmt->fetchAll();
+    }
+
     // --- Verlauf ---
 
     public function berechnungSpeichern(float $a, float $b, string $operation, float $ergebnis): array
@@ -602,6 +792,40 @@ class Datenbank
             'arzt_name' => isset($row['a_vorname']) && $row['a_vorname']
                 ? trim(($row['a_titel'] ?? '') . ' ' . $row['a_vorname'] . ' ' . $row['a_nachname'])
                 : null,
+        ];
+    }
+
+    public static function agentFormat(array $row): array
+    {
+        return [
+            'id' => (int) $row['id'],
+            'name' => $row['name'],
+            'nebenstelle' => $row['nebenstelle'],
+            'sip_passwort' => $row['sip_passwort'],
+            'rolle' => $row['rolle'],
+            'status' => $row['status'],
+            'warteschlange' => $row['warteschlange'],
+            'erstellt_am' => $row['erstellt_am'],
+        ];
+    }
+
+    public static function anrufFormat(array $row): array
+    {
+        return [
+            'id' => (int) $row['id'],
+            'anrufer_nummer' => $row['anrufer_nummer'],
+            'anrufer_name' => $row['anrufer_name'],
+            'agent_id' => $row['agent_id'] ? (int) $row['agent_id'] : null,
+            'agent_name' => $row['agent_name'] ?? null,
+            'warteschlange' => $row['warteschlange'],
+            'typ' => $row['typ'],
+            'status' => $row['status'],
+            'beginn' => $row['beginn'],
+            'angenommen' => $row['angenommen'],
+            'beendet' => $row['beendet'],
+            'dauer_sekunden' => (int) $row['dauer_sekunden'],
+            'notizen' => $row['notizen'],
+            'erstellt_am' => $row['erstellt_am'],
         ];
     }
 }
