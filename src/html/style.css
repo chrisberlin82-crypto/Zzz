@@ -170,3 +170,47 @@ th {
 section + section {
     margin-top: 2rem;
 }
+
+.verlauf-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.verlauf-header .btn-loeschen {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.875rem;
+}
+
+#fehler-seite {
+    text-align: center;
+    padding: 3rem 1rem;
+}
+
+#fehler-seite h2 {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    color: #dc3545;
+}
+
+#fehler-seite p {
+    margin-bottom: 2rem;
+    color: #666;
+}
+
+.btn-zurueck {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    background: #4a90d9;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+}
+
+.btn-zurueck:hover {
+    background: #357abd;
+}
+
+#benutzer-suche {
+    margin-bottom: 0;
+}

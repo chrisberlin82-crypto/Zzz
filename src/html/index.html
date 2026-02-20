@@ -27,8 +27,8 @@
                     <select id="operation" name="operation" required>
                         <option value="addieren">+ Addieren</option>
                         <option value="subtrahieren">- Subtrahieren</option>
-                        <option value="multiplizieren">× Multiplizieren</option>
-                        <option value="dividieren">÷ Dividieren</option>
+                        <option value="multiplizieren">&times; Multiplizieren</option>
+                        <option value="dividieren">&divide; Dividieren</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -41,6 +41,22 @@
                 <strong>Ergebnis:</strong> <span id="ergebnis-wert"></span>
             </div>
             <div id="fehler" class="fehler" hidden></div>
+        </section>
+        <section id="verlauf-sektion">
+            <div class="verlauf-header">
+                <h2>Verlauf</h2>
+                <button id="btn-verlauf-loeschen" class="btn-loeschen" type="button">Verlauf loeschen</button>
+            </div>
+            <table id="verlauf-tabelle">
+                <thead>
+                    <tr>
+                        <th>Rechnung</th>
+                        <th>Ergebnis</th>
+                        <th>Zeit</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
         </section>
     </main>
     <script src="app.js"></script>

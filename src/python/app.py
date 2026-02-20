@@ -9,7 +9,8 @@ from src.python.validator import schema_laden, validieren
 from src.python.datenbank import (
     verbindung_herstellen, tabellen_erstellen,
     benutzer_erstellen, benutzer_alle, benutzer_nach_id,
-    benutzer_aktualisieren, benutzer_loeschen,
+    benutzer_aktualisieren, benutzer_loeschen, benutzer_suchen,
+    berechnung_speichern, verlauf_laden, verlauf_loeschen,
 )
 
 app = Flask(__name__, static_folder=str(Path(__file__).resolve().parent.parent / "html"))
@@ -65,15 +66,33 @@ def api_berechnen():
 
     try:
         ergebnis = operationen[operation](float(a), float(b))
+        berechnung_speichern(db(), float(a), float(b), operation, ergebnis)
         return jsonify({"ergebnis": ergebnis})
     except ValueError as e:
         return jsonify({"fehler": str(e)}), 400
+
+
+# --- Verlauf API ---
+
+@app.route("/api/verlauf", methods=["GET"])
+def api_verlauf():
+    limit = request.args.get("limit", 20, type=int)
+    return jsonify(verlauf_laden(db(), limit))
+
+
+@app.route("/api/verlauf", methods=["DELETE"])
+def api_verlauf_loeschen():
+    anzahl = verlauf_loeschen(db())
+    return jsonify({"nachricht": f"{anzahl} Eintraege geloescht"})
 
 
 # --- Benutzer API (CRUD) ---
 
 @app.route("/api/benutzer", methods=["GET"])
 def api_benutzer_liste():
+    suche = request.args.get("suche", "").strip()
+    if suche:
+        return jsonify(benutzer_suchen(db(), suche))
     return jsonify(benutzer_alle(db()))
 
 

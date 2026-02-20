@@ -55,12 +55,15 @@ function initRechner() {
             document.getElementById("ergebnis-wert").textContent = ergebnis;
             ergebnisDiv.hidden = false;
             fehlerDiv.hidden = true;
+            verlaufAktualisieren();
         } catch (err) {
             fehlerDiv.textContent = err.message;
             fehlerDiv.hidden = false;
             ergebnisDiv.hidden = true;
         }
     });
+
+    initVerlauf();
 }
 
 /** Benutzer-Validierung */
@@ -130,10 +133,63 @@ async function benutzerLoeschenApi(id) {
 }
 
 /** API: Benutzerliste laden (GET) */
-async function benutzerLadenApi() {
-    var response = await fetch(API_BASE + "/benutzer");
+async function benutzerLadenApi(suche) {
+    var url = API_BASE + "/benutzer";
+    if (suche) url += "?suche=" + encodeURIComponent(suche);
+    var response = await fetch(url);
     if (!response.ok) throw new Error("Fehler beim Laden der Benutzer");
     return response.json();
+}
+
+/** API: Verlauf laden */
+async function verlaufLadenApi() {
+    var response = await fetch(API_BASE + "/verlauf");
+    if (!response.ok) throw new Error("Fehler beim Laden des Verlaufs");
+    return response.json();
+}
+
+/** API: Verlauf loeschen */
+async function verlaufLoeschenApi() {
+    var response = await fetch(API_BASE + "/verlauf", { method: "DELETE" });
+    if (!response.ok) throw new Error("Fehler beim Loeschen");
+    return response.json();
+}
+
+var OP_SYMBOLE = {
+    addieren: "+", subtrahieren: "-",
+    multiplizieren: "*", dividieren: "/"
+};
+
+function initVerlauf() {
+    verlaufAktualisieren();
+
+    var btn = document.getElementById("btn-verlauf-loeschen");
+    if (btn) {
+        btn.addEventListener("click", async function () {
+            try {
+                await verlaufLoeschenApi();
+                verlaufAktualisieren();
+            } catch (_) {}
+        });
+    }
+}
+
+async function verlaufAktualisieren() {
+    try {
+        var eintraege = await verlaufLadenApi();
+        var tbody = document.querySelector("#verlauf-tabelle tbody");
+        if (!tbody) return;
+        tbody.innerHTML = "";
+        eintraege.forEach(function (e) {
+            var tr = document.createElement("tr");
+            var symbol = OP_SYMBOLE[e.operation] || e.operation;
+            tr.innerHTML =
+                "<td>" + e.a + " " + symbol + " " + e.b + "</td>" +
+                "<td>" + e.ergebnis + "</td>" +
+                "<td>" + escapeHtml(e.erstellt_am || "") + "</td>";
+            tbody.appendChild(tr);
+        });
+    } catch (_) {}
 }
 
 function initBenutzerFormular() {
@@ -143,6 +199,17 @@ function initBenutzerFormular() {
     var btnAbbrechen = document.getElementById("btn-abbrechen");
 
     benutzerListeAktualisieren();
+
+    var suchfeld = document.getElementById("benutzer-suche");
+    if (suchfeld) {
+        var suchTimer;
+        suchfeld.addEventListener("input", function () {
+            clearTimeout(suchTimer);
+            suchTimer = setTimeout(function () {
+                benutzerListeAktualisieren(suchfeld.value);
+            }, 300);
+        });
+    }
 
     if (btnAbbrechen) {
         btnAbbrechen.addEventListener("click", function () {
@@ -228,9 +295,9 @@ async function benutzerEntfernen(id) {
     }
 }
 
-async function benutzerListeAktualisieren() {
+async function benutzerListeAktualisieren(suche) {
     try {
-        var benutzer = await benutzerLadenApi();
+        var benutzer = await benutzerLadenApi(suche);
         var tbody = document.querySelector("#benutzer-tabelle tbody");
         if (!tbody) return;
         tbody.innerHTML = "";

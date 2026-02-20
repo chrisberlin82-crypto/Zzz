@@ -31,6 +31,16 @@ def tabellen_erstellen(conn: sqlite3.Connection) -> None:
             erstellt_am TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS verlauf (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            a REAL NOT NULL,
+            b REAL NOT NULL,
+            operation TEXT NOT NULL,
+            ergebnis REAL NOT NULL,
+            erstellt_am TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
     conn.commit()
 
 
@@ -90,6 +100,42 @@ def benutzer_loeschen(conn: sqlite3.Connection, benutzer_id: int) -> bool:
     return cursor.rowcount > 0
 
 
+def berechnung_speichern(conn: sqlite3.Connection, a: float, b: float, operation: str, ergebnis: float) -> dict:
+    """Speichert eine Berechnung in der Datenbank."""
+    cursor = conn.execute(
+        "INSERT INTO verlauf (a, b, operation, ergebnis) VALUES (?, ?, ?, ?)",
+        (a, b, operation, ergebnis),
+    )
+    conn.commit()
+    row = conn.execute("SELECT * FROM verlauf WHERE id = ?", (cursor.lastrowid,)).fetchone()
+    return _verlauf_zu_dict(row)
+
+
+def verlauf_laden(conn: sqlite3.Connection, limit: int = 20) -> list[dict]:
+    """Gibt die letzten Berechnungen zurueck."""
+    rows = conn.execute(
+        "SELECT * FROM verlauf ORDER BY id DESC LIMIT ?", (limit,)
+    ).fetchall()
+    return [_verlauf_zu_dict(r) for r in rows]
+
+
+def verlauf_loeschen(conn: sqlite3.Connection) -> int:
+    """Loescht den gesamten Verlauf. Gibt Anzahl geloeschter Eintraege zurueck."""
+    cursor = conn.execute("DELETE FROM verlauf")
+    conn.commit()
+    return cursor.rowcount
+
+
+def benutzer_suchen(conn: sqlite3.Connection, suchbegriff: str) -> list[dict]:
+    """Sucht Benutzer nach Name, Email oder Stadt."""
+    like = f"%{suchbegriff}%"
+    rows = conn.execute(
+        "SELECT * FROM benutzer WHERE name LIKE ? OR email LIKE ? OR stadt LIKE ? ORDER BY id",
+        (like, like, like),
+    ).fetchall()
+    return [_zeile_zu_dict(r) for r in rows]
+
+
 def _zeile_zu_dict(row: sqlite3.Row) -> dict:
     """Konvertiert eine Datenbankzeile zu einem Dict."""
     return {
@@ -100,4 +146,16 @@ def _zeile_zu_dict(row: sqlite3.Row) -> dict:
         "strasse": row["strasse"],
         "plz": row["plz"],
         "stadt": row["stadt"],
+    }
+
+
+def _verlauf_zu_dict(row: sqlite3.Row) -> dict:
+    """Konvertiert eine Verlaufszeile zu einem Dict."""
+    return {
+        "id": row["id"],
+        "a": row["a"],
+        "b": row["b"],
+        "operation": row["operation"],
+        "ergebnis": row["ergebnis"],
+        "erstellt_am": row["erstellt_am"],
     }
