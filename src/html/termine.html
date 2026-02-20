@@ -7,87 +7,69 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <header>
-        <h1>MED Rezeption</h1>
-        <nav>
-            <a href="patienten.html">Patienten</a>
-            <a href="aerzte.html">Aerzte</a>
-            <a href="termine.html" class="active">Termine</a>
-            <a href="wartezimmer.html">Wartezimmer</a>
-            <a href="agenten.html">Agenten</a>
-            <a href="softphone.html">Softphone</a>
-            <a href="index.html">Rechner</a>
-            <a href="benutzer.html">Benutzer</a>
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-logo"><h2>MED Rezeption</h2><small>Praxisverwaltung</small></div>
+        <nav class="sidebar-nav">
+            <a href="index.html"><span class="nav-icon">&#9635;</span> Dashboard</a>
+            <a href="patienten.html"><span class="nav-icon">&#9977;</span> Patienten</a>
+            <a href="aerzte.html"><span class="nav-icon">&#9877;</span> Aerzte</a>
+            <a href="termine.html" class="active"><span class="nav-icon">&#128197;</span> Termine</a>
+            <a href="wartezimmer.html"><span class="nav-icon">&#128682;</span> Wartezimmer</a>
+            <a href="agenten.html"><span class="nav-icon">&#128222;</span> Agenten</a>
+            <a href="softphone.html"><span class="nav-icon">&#128241;</span> Softphone</a>
+            <a href="benutzer.html"><span class="nav-icon">&#128100;</span> Benutzer</a>
         </nav>
-    </header>
-    <main>
-        <section id="termin-formular">
-            <h2 id="termin-formular-titel">Termin anlegen</h2>
-            <form id="termin-form">
-                <input type="hidden" id="termin-id" value="">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="termin-patient">Patient</label>
-                        <select id="termin-patient" required>
-                            <option value="">-- Patient waehlen --</option>
-                        </select>
+        <div class="sidebar-footer"><button id="btn-demo-reset" type="button">Demo zuruecksetzen</button></div>
+    </aside>
+    <div class="main-wrapper">
+        <header class="topbar">
+            <button id="menu-toggle" type="button">&#9776;</button>
+            <h1>Terminverwaltung</h1>
+            <div class="topbar-right">Demo-Modus</div>
+        </header>
+        <main>
+            <section id="termin-formular" class="card">
+                <h2 id="termin-formular-titel">Termin anlegen</h2>
+                <form id="termin-form">
+                    <input type="hidden" id="termin-id">
+                    <div class="form-row">
+                        <div class="form-group"><label for="termin-patient">Patient</label><select id="termin-patient" required><option value="">-- Patient waehlen --</option></select></div>
+                        <div class="form-group"><label for="termin-arzt">Arzt</label><select id="termin-arzt" required><option value="">-- Arzt waehlen --</option></select></div>
                     </div>
-                    <div class="form-group">
-                        <label for="termin-arzt">Arzt</label>
-                        <select id="termin-arzt" required>
-                            <option value="">-- Arzt waehlen --</option>
-                        </select>
+                    <div class="form-row">
+                        <div class="form-group"><label for="termin-datum">Datum</label><input type="date" id="termin-datum" required></div>
+                        <div class="form-group"><label for="termin-uhrzeit">Uhrzeit</label><input type="time" id="termin-uhrzeit" required></div>
+                        <div class="form-group"><label for="termin-dauer">Dauer (Min.)</label><input type="number" id="termin-dauer" value="15" min="5" max="120"></div>
                     </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="termin-datum">Datum</label>
-                        <input type="date" id="termin-datum" required>
+                    <div class="form-group"><label for="termin-grund">Grund</label><input type="text" id="termin-grund" placeholder="z.B. Vorsorge, Kontrolle..."></div>
+                    <div class="button-gruppe">
+                        <button type="submit" id="btn-termin-speichern">Speichern</button>
+                        <button type="button" id="btn-termin-abbrechen" hidden>Abbrechen</button>
                     </div>
-                    <div class="form-group">
-                        <label for="termin-uhrzeit">Uhrzeit</label>
-                        <input type="time" id="termin-uhrzeit" required>
-                    </div>
-                    <div class="form-group" style="flex:0.5">
-                        <label for="termin-dauer">Dauer (Min.)</label>
-                        <input type="number" id="termin-dauer" value="15" min="5" max="120" step="5">
-                    </div>
+                </form>
+                <div id="termin-erfolg" class="ergebnis" hidden></div>
+                <div id="termin-fehler" class="fehler" hidden></div>
+            </section>
+            <section class="card">
+                <div class="section-header">
+                    <h2>Terminliste</h2>
+                    <div class="form-group" style="margin-bottom:0"><input type="date" id="termin-filter-datum" title="Nach Datum filtern"></div>
                 </div>
-                <div class="form-group">
-                    <label for="termin-grund">Grund</label>
-                    <input type="text" id="termin-grund" placeholder="z.B. Vorsorgeuntersuchung, Kontrolle...">
+                <div class="table-container">
+                    <table id="termine-tabelle">
+                        <thead><tr><th>Datum</th><th>Uhrzeit</th><th>Patient</th><th>Arzt</th><th>Grund</th><th>Status</th><th>Aktionen</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
                 </div>
-                <div class="button-gruppe">
-                    <button type="submit" id="btn-termin-speichern">Speichern</button>
-                    <button type="button" id="btn-termin-abbrechen" hidden>Abbrechen</button>
-                </div>
-            </form>
-            <div id="termin-erfolg" class="ergebnis" hidden></div>
-            <div id="termin-fehler" class="fehler" hidden></div>
-        </section>
-        <section id="termine-liste">
-            <div class="verlauf-header">
-                <h2>Termine</h2>
-                <div class="form-group" style="margin-bottom:0">
-                    <input type="date" id="termin-filter-datum" title="Nach Datum filtern">
-                </div>
-            </div>
-            <table id="termine-tabelle">
-                <thead>
-                    <tr>
-                        <th>Datum</th>
-                        <th>Uhrzeit</th>
-                        <th>Patient</th>
-                        <th>Arzt</th>
-                        <th>Grund</th>
-                        <th>Status</th>
-                        <th>Aktionen</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
-        </section>
-    </main>
+            </section>
+        </main>
+    </div>
+    <button id="chat-toggle" type="button">&#128172;</button>
+    <div id="chat-fenster">
+        <div class="chat-header"><span>Praxis-Assistent</span><button id="chat-schliessen" type="button">&#10005;</button></div>
+        <div id="chat-nachrichten"></div>
+        <div class="chat-eingabe"><input id="chat-input" type="text" placeholder="Frage stellen..."><button id="chat-senden" type="button">&#10148;</button></div>
+    </div>
     <script src="app.js"></script>
 </body>
 </html>

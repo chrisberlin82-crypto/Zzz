@@ -7,83 +7,68 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <header>
-        <h1>MED Rezeption</h1>
-        <nav>
-            <a href="patienten.html">Patienten</a>
-            <a href="aerzte.html" class="active">Aerzte</a>
-            <a href="termine.html">Termine</a>
-            <a href="wartezimmer.html">Wartezimmer</a>
-            <a href="agenten.html">Agenten</a>
-            <a href="softphone.html">Softphone</a>
-            <a href="index.html">Rechner</a>
-            <a href="benutzer.html">Benutzer</a>
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-logo"><h2>MED Rezeption</h2><small>Praxisverwaltung</small></div>
+        <nav class="sidebar-nav">
+            <a href="index.html"><span class="nav-icon">&#9635;</span> Dashboard</a>
+            <a href="patienten.html"><span class="nav-icon">&#9977;</span> Patienten</a>
+            <a href="aerzte.html" class="active"><span class="nav-icon">&#9877;</span> Aerzte</a>
+            <a href="termine.html"><span class="nav-icon">&#128197;</span> Termine</a>
+            <a href="wartezimmer.html"><span class="nav-icon">&#128682;</span> Wartezimmer</a>
+            <a href="agenten.html"><span class="nav-icon">&#128222;</span> Agenten</a>
+            <a href="softphone.html"><span class="nav-icon">&#128241;</span> Softphone</a>
+            <a href="benutzer.html"><span class="nav-icon">&#128100;</span> Benutzer</a>
         </nav>
-    </header>
-    <main>
-        <section id="arzt-formular">
-            <h2 id="arzt-formular-titel">Arzt anlegen</h2>
-            <form id="arzt-form">
-                <input type="hidden" id="arzt-id" value="">
-                <div class="form-row">
-                    <div class="form-group" style="flex:0.5">
-                        <label for="arzt-titel">Titel</label>
-                        <select id="arzt-titel">
-                            <option value="">-- Kein --</option>
-                            <option value="Dr.">Dr.</option>
-                            <option value="Prof. Dr.">Prof. Dr.</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="arzt-vorname">Vorname</label>
-                        <input type="text" id="arzt-vorname" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="arzt-nachname">Nachname</label>
-                        <input type="text" id="arzt-nachname" required>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label for="arzt-fachrichtung">Fachrichtung</label>
-                    <input type="text" id="arzt-fachrichtung" required placeholder="z.B. Allgemeinmedizin, Kardiologie...">
-                </div>
-                <fieldset>
-                    <legend>Kontakt (optional)</legend>
+        <div class="sidebar-footer"><button id="btn-demo-reset" type="button">Demo zuruecksetzen</button></div>
+    </aside>
+    <div class="main-wrapper">
+        <header class="topbar">
+            <button id="menu-toggle" type="button">&#9776;</button>
+            <h1>Aerzte</h1>
+            <div class="topbar-right">Demo-Modus</div>
+        </header>
+        <main>
+            <section id="arzt-formular" class="card">
+                <h2 id="arzt-formular-titel">Arzt anlegen</h2>
+                <form id="arzt-form">
+                    <input type="hidden" id="arzt-id">
                     <div class="form-row">
-                        <div class="form-group">
-                            <label for="arzt-telefon">Telefon</label>
-                            <input type="tel" id="arzt-telefon">
-                        </div>
-                        <div class="form-group">
-                            <label for="arzt-email">E-Mail</label>
-                            <input type="email" id="arzt-email">
-                        </div>
+                        <div class="form-group"><label for="arzt-titel">Titel</label><input type="text" id="arzt-titel" placeholder="Dr. / Prof. Dr."></div>
+                        <div class="form-group"><label for="arzt-fachrichtung">Fachrichtung</label><input type="text" id="arzt-fachrichtung" required></div>
                     </div>
-                </fieldset>
-                <div class="button-gruppe">
-                    <button type="submit" id="btn-arzt-speichern">Speichern</button>
-                    <button type="button" id="btn-arzt-abbrechen" hidden>Abbrechen</button>
+                    <div class="form-row">
+                        <div class="form-group"><label for="arzt-vorname">Vorname</label><input type="text" id="arzt-vorname" required></div>
+                        <div class="form-group"><label for="arzt-nachname">Nachname</label><input type="text" id="arzt-nachname" required></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label for="arzt-telefon">Telefon</label><input type="tel" id="arzt-telefon"></div>
+                        <div class="form-group"><label for="arzt-email">E-Mail</label><input type="email" id="arzt-email"></div>
+                    </div>
+                    <div class="button-gruppe">
+                        <button type="submit" id="btn-arzt-speichern">Speichern</button>
+                        <button type="button" id="btn-arzt-abbrechen" hidden>Abbrechen</button>
+                    </div>
+                </form>
+                <div id="arzt-erfolg" class="ergebnis" hidden></div>
+                <div id="arzt-fehler" class="fehler" hidden></div>
+            </section>
+            <section class="card">
+                <h2>Aerzteliste</h2>
+                <div class="table-container">
+                    <table id="aerzte-tabelle">
+                        <thead><tr><th>Name</th><th>Fachrichtung</th><th>Telefon</th><th>E-Mail</th><th>Aktionen</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
                 </div>
-            </form>
-            <div id="arzt-erfolg" class="ergebnis" hidden></div>
-            <div id="arzt-fehler" class="fehler" hidden></div>
-        </section>
-        <section id="aerzte-liste">
-            <h2>Aerzte</h2>
-            <table id="aerzte-tabelle">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Fachrichtung</th>
-                        <th>Telefon</th>
-                        <th>E-Mail</th>
-                        <th>Aktionen</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
-        </section>
-    </main>
+            </section>
+        </main>
+    </div>
+    <button id="chat-toggle" type="button">&#128172;</button>
+    <div id="chat-fenster">
+        <div class="chat-header"><span>Praxis-Assistent</span><button id="chat-schliessen" type="button">&#10005;</button></div>
+        <div id="chat-nachrichten"></div>
+        <div class="chat-eingabe"><input id="chat-input" type="text" placeholder="Frage stellen..."><button id="chat-senden" type="button">&#10148;</button></div>
+    </div>
     <script src="app.js"></script>
 </body>
 </html>

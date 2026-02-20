@@ -3,68 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MED Rezeption - Rechner</title>
+    <title>MED Rezeption - Dashboard</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <header>
-        <h1>MED Rezeption</h1>
-        <nav>
-            <a href="patienten.html">Patienten</a>
-            <a href="aerzte.html">Aerzte</a>
-            <a href="termine.html">Termine</a>
-            <a href="wartezimmer.html">Wartezimmer</a>
-            <a href="agenten.html">Agenten</a>
-            <a href="softphone.html">Softphone</a>
-            <a href="index.html" class="active">Rechner</a>
-            <a href="benutzer.html">Benutzer</a>
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-logo">
+            <h2>MED Rezeption</h2>
+            <small>Praxisverwaltung</small>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="index.html" class="active"><span class="nav-icon">&#9635;</span> Dashboard</a>
+            <a href="patienten.html"><span class="nav-icon">&#9977;</span> Patienten</a>
+            <a href="aerzte.html"><span class="nav-icon">&#9877;</span> Aerzte</a>
+            <a href="termine.html"><span class="nav-icon">&#128197;</span> Termine</a>
+            <a href="wartezimmer.html"><span class="nav-icon">&#128682;</span> Wartezimmer</a>
+            <a href="agenten.html"><span class="nav-icon">&#128222;</span> Agenten</a>
+            <a href="softphone.html"><span class="nav-icon">&#128241;</span> Softphone</a>
+            <a href="benutzer.html"><span class="nav-icon">&#128100;</span> Benutzer</a>
         </nav>
-    </header>
-    <main>
-        <section id="rechner">
-            <h2>Rechner</h2>
-            <form id="rechner-form">
-                <div class="form-group">
-                    <label for="zahl-a">Zahl A</label>
-                    <input type="number" id="zahl-a" name="zahl_a" step="any" required>
+        <div class="sidebar-footer">
+            <button id="btn-demo-reset" type="button">Demo zuruecksetzen</button>
+        </div>
+    </aside>
+    <div class="main-wrapper">
+        <header class="topbar">
+            <button id="menu-toggle" type="button">&#9776;</button>
+            <h1>Dashboard</h1>
+            <div class="topbar-right">Demo-Modus</div>
+        </header>
+        <main id="dashboard">
+            <div class="stat-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">&#9977;</div>
+                    <div class="stat-value" id="stat-patienten">0</div>
+                    <div class="stat-label">Patienten</div>
                 </div>
-                <div class="form-group">
-                    <label for="operation">Operation</label>
-                    <select id="operation" name="operation" required>
-                        <option value="addieren">+ Addieren</option>
-                        <option value="subtrahieren">- Subtrahieren</option>
-                        <option value="multiplizieren">&times; Multiplizieren</option>
-                        <option value="dividieren">&divide; Dividieren</option>
-                    </select>
+                <div class="stat-card">
+                    <div class="stat-icon">&#9877;</div>
+                    <div class="stat-value" id="stat-aerzte">0</div>
+                    <div class="stat-label">Aerzte</div>
                 </div>
-                <div class="form-group">
-                    <label for="zahl-b">Zahl B</label>
-                    <input type="number" id="zahl-b" name="zahl_b" step="any" required>
+                <div class="stat-card">
+                    <div class="stat-icon">&#128197;</div>
+                    <div class="stat-value" id="stat-termine-heute">0</div>
+                    <div class="stat-label">Termine heute</div>
                 </div>
-                <button type="submit">Berechnen</button>
-            </form>
-            <div id="ergebnis" class="ergebnis" hidden>
-                <strong>Ergebnis:</strong> <span id="ergebnis-wert"></span>
+                <div class="stat-card">
+                    <div class="stat-icon">&#128682;</div>
+                    <div class="stat-value" id="stat-wartezimmer">0</div>
+                    <div class="stat-label">Wartezimmer</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">&#128222;</div>
+                    <div class="stat-value" id="stat-agenten-online">0</div>
+                    <div class="stat-label">Agenten online</div>
+                </div>
             </div>
-            <div id="fehler" class="fehler" hidden></div>
-        </section>
-        <section id="verlauf-sektion">
-            <div class="verlauf-header">
-                <h2>Verlauf</h2>
-                <button id="btn-verlauf-loeschen" class="btn-loeschen" type="button">Verlauf loeschen</button>
+            <div class="dashboard-grid">
+                <div class="card">
+                    <h2>Heutige Termine</h2>
+                    <div class="table-container">
+                        <table>
+                            <thead><tr><th>Uhrzeit</th><th>Patient</th><th>Arzt</th><th>Status</th></tr></thead>
+                            <tbody id="dashboard-termine"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card">
+                    <h2>Wartezimmer</h2>
+                    <div id="dashboard-wartezimmer"></div>
+                </div>
             </div>
-            <table id="verlauf-tabelle">
-                <thead>
-                    <tr>
-                        <th>Rechnung</th>
-                        <th>Ergebnis</th>
-                        <th>Zeit</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
-        </section>
-    </main>
+        </main>
+    </div>
+    <button id="chat-toggle" type="button">&#128172;</button>
+    <div id="chat-fenster">
+        <div class="chat-header"><span>Praxis-Assistent</span><button id="chat-schliessen" type="button">&#10005;</button></div>
+        <div id="chat-nachrichten"></div>
+        <div class="chat-eingabe">
+            <input id="chat-input" type="text" placeholder="Frage stellen...">
+            <button id="chat-senden" type="button">&#10148;</button>
+        </div>
+    </div>
     <script src="app.js"></script>
 </body>
 </html>
