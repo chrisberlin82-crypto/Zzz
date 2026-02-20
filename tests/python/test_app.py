@@ -130,6 +130,22 @@ class TestApiBenutzerCrud:
         resp = self._benutzer_anlegen(client, name="Anderer", email="doppelt@test.de")
         assert resp.status_code == 409
 
+    def test_erstellen_mit_adresse(self, client):
+        resp = client.post("/api/benutzer", json={
+            "name": "Anna", "email": "anna@test.de", "alter": 25,
+            "strasse": "Hauptstr. 1", "plz": "10115", "stadt": "Berlin",
+        })
+        assert resp.status_code == 201
+        benutzer = resp.get_json()["benutzer"]
+        assert benutzer["name"] == "Anna"
+
+    def test_erstellen_ungueltige_plz(self, client):
+        resp = client.post("/api/benutzer", json={
+            "name": "Max", "email": "max@test.de", "alter": 30,
+            "plz": "ABC",
+        })
+        assert resp.status_code == 422
+
 
 class TestApiVerlauf:
     def test_verlauf_leer(self, client):

@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Benutzer",
-  "description": "Schema für ein Benutzer-Objekt",
+  "description": "Schema fuer ein Benutzer-Objekt",
   "type": "object",
   "required": ["name", "email", "alter"],
   "properties": {
@@ -19,14 +19,15 @@
       "minimum": 0,
       "maximum": 150
     },
-    "adresse": {
-      "type": "object",
-      "properties": {
-        "strasse": { "type": "string" },
-        "plz": { "type": "string", "pattern": "^[0-9]{5}$" },
-        "stadt": { "type": "string" }
-      },
-      "required": ["strasse", "plz", "stadt"]
+    "strasse": {
+      "type": "string"
+    },
+    "plz": {
+      "type": "string",
+      "pattern": "^[0-9]{5}$"
+    },
+    "stadt": {
+      "type": "string"
     }
   },
   "additionalProperties": false

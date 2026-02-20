@@ -347,7 +347,7 @@ function escapeHtml(text) {
 
 /** Exportieren fuer Tests (Node.js) */
 if (typeof module !== "undefined" && module.exports) {
-    module.exports = { berechnen, benutzerValidieren, escapeHtml };
+    module.exports = { berechnen, benutzerValidieren, escapeHtml, OP_SYMBOLE };
 }
 
 /** Init (nur im Browser) */

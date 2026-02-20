@@ -47,7 +47,9 @@ class TestValidieren:
             "name": "Max",
             "email": "max@beispiel.de",
             "alter": 30,
-            "adresse": {"strasse": "Hauptstr. 1", "plz": "12345", "stadt": "Berlin"},
+            "strasse": "Hauptstr. 1",
+            "plz": "12345",
+            "stadt": "Berlin",
         }
         fehler = validieren(daten, benutzer_schema)
         assert fehler == []
@@ -57,10 +59,22 @@ class TestValidieren:
             "name": "Max",
             "email": "max@beispiel.de",
             "alter": 30,
-            "adresse": {"strasse": "Hauptstr. 1", "plz": "ABC", "stadt": "Berlin"},
+            "strasse": "Hauptstr. 1",
+            "plz": "ABC",
+            "stadt": "Berlin",
         }
         fehler = validieren(daten, benutzer_schema)
         assert len(fehler) > 0
+
+    def test_nur_teilweise_adresse(self, benutzer_schema):
+        daten = {
+            "name": "Max",
+            "email": "max@beispiel.de",
+            "alter": 30,
+            "stadt": "Berlin",
+        }
+        fehler = validieren(daten, benutzer_schema)
+        assert fehler == []
 
 
 class TestIstGueltig:
