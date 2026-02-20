@@ -314,6 +314,206 @@ section + section {
 .status-abgesagt { background: #f8d7da; color: #721c24; }
 .status-abgeschlossen { background: #cce5ff; color: #004085; }
 
+/* --- Section Header --- */
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.section-header h2 {
+    margin-bottom: 0;
+}
+
+/* --- Agenten-Board --- */
+
+.agenten-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.agent-karte {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 1rem;
+    position: relative;
+}
+
+.agent-karte .agent-status-punkt {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 0.5rem;
+}
+
+.agent-karte .agent-status-punkt.online { background: #28a745; }
+.agent-karte .agent-status-punkt.offline { background: #dc3545; }
+.agent-karte .agent-status-punkt.pause { background: #ffc107; }
+.agent-karte .agent-status-punkt.besetzt { background: #17a2b8; }
+
+.agent-karte h3 {
+    margin-bottom: 0.25rem;
+}
+
+.agent-karte p {
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+}
+
+.agent-karte .agent-aktionen {
+    display: flex;
+    gap: 0.25rem;
+    margin-top: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.agent-karte .agent-aktionen button {
+    padding: 0.2rem 0.5rem;
+    font-size: 0.75rem;
+}
+
+.badge-rot {
+    background: #dc3545;
+}
+
+.anruf-karte {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-left: 4px solid #17a2b8;
+}
+
+.anruf-karte.klingelt {
+    border-left-color: #ffc107;
+    background: #fff9e6;
+}
+
+.anruf-karte.verbunden {
+    border-left-color: #28a745;
+    background: #f0fff0;
+}
+
+/* --- Softphone --- */
+
+.softphone-panel {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.softphone-panel h3 {
+    margin-bottom: 1rem;
+}
+
+.sip-status {
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 1rem;
+}
+
+.sip-status.online {
+    background: #d4edda;
+    color: #155724;
+}
+
+.sip-status.offline {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.sip-status.verbindend {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.dialpad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    max-width: 250px;
+    margin: 1rem auto;
+}
+
+.dialpad-taste {
+    padding: 1rem;
+    font-size: 1.2rem;
+    background: #f0f0f0;
+    color: #333;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.dialpad-taste:hover {
+    background: #e0e0e0;
+}
+
+.anruf-buttons {
+    justify-content: center;
+    margin-top: 1rem;
+}
+
+.btn-anrufen {
+    background: #28a745;
+    padding: 0.75rem 2rem;
+}
+
+.btn-anrufen:hover {
+    background: #218838;
+}
+
+.btn-auflegen {
+    background: #dc3545;
+    padding: 0.75rem 2rem;
+}
+
+.btn-auflegen:hover {
+    background: #c82333;
+}
+
+.btn-annehmen {
+    background: #28a745;
+    padding: 0.75rem 2rem;
+}
+
+.btn-annehmen:hover {
+    background: #218838;
+}
+
+#anruf-info {
+    text-align: center;
+}
+
+#anruf-gegenstelle {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+#anruf-timer {
+    font-size: 2rem;
+    font-family: monospace;
+    color: #2563eb;
+    margin-bottom: 0.5rem;
+}
+
+#anruf-status-anzeige {
+    color: #666;
+}
+
 /* --- Responsive --- */
 
 @media (max-width: 640px) {

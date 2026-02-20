@@ -97,6 +97,36 @@ def tabellen_erstellen(conn: sqlite3.Connection) -> None:
             FOREIGN KEY (termin_id) REFERENCES termine(id)
         )
     """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS agenten (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            nebenstelle TEXT NOT NULL UNIQUE,
+            sip_passwort TEXT NOT NULL,
+            rolle TEXT NOT NULL DEFAULT 'rezeption',
+            status TEXT NOT NULL DEFAULT 'offline',
+            warteschlange TEXT DEFAULT 'rezeption',
+            erstellt_am TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS anrufe (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            anrufer_nummer TEXT NOT NULL,
+            anrufer_name TEXT DEFAULT '',
+            agent_id INTEGER,
+            warteschlange TEXT DEFAULT '',
+            typ TEXT NOT NULL DEFAULT 'eingehend',
+            status TEXT NOT NULL DEFAULT 'klingelt',
+            beginn TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            angenommen TIMESTAMP,
+            beendet TIMESTAMP,
+            dauer_sekunden INTEGER DEFAULT 0,
+            notizen TEXT DEFAULT '',
+            erstellt_am TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (agent_id) REFERENCES agenten(id)
+        )
+    """)
     conn.commit()
 
 
@@ -559,5 +589,183 @@ def _verlauf_zu_dict(row: sqlite3.Row) -> dict:
         "b": row["b"],
         "operation": row["operation"],
         "ergebnis": row["ergebnis"],
+        "erstellt_am": row["erstellt_am"],
+    }
+
+
+# --- Agenten ---
+
+def agent_erstellen(conn: sqlite3.Connection, daten: dict) -> dict:
+    """Erstellt einen neuen Agenten."""
+    cursor = conn.execute(
+        """INSERT INTO agenten (name, nebenstelle, sip_passwort, rolle, status, warteschlange)
+           VALUES (?, ?, ?, ?, ?, ?)""",
+        (
+            daten["name"], daten["nebenstelle"], daten["sip_passwort"],
+            daten.get("rolle", "rezeption"), daten.get("status", "offline"),
+            daten.get("warteschlange", "rezeption"),
+        ),
+    )
+    conn.commit()
+    return agent_nach_id(conn, cursor.lastrowid)
+
+
+def agent_alle(conn: sqlite3.Connection) -> list[dict]:
+    """Gibt alle Agenten zurueck."""
+    rows = conn.execute("SELECT * FROM agenten ORDER BY name").fetchall()
+    return [_agent_zu_dict(r) for r in rows]
+
+
+def agent_nach_id(conn: sqlite3.Connection, agent_id: int) -> dict | None:
+    """Gibt einen Agenten anhand seiner ID zurueck."""
+    row = conn.execute("SELECT * FROM agenten WHERE id = ?", (agent_id,)).fetchone()
+    return _agent_zu_dict(row) if row else None
+
+
+def agent_aktualisieren(conn: sqlite3.Connection, agent_id: int, daten: dict) -> dict | None:
+    """Aktualisiert einen bestehenden Agenten."""
+    felder = []
+    werte = []
+    for feld, spalte in [
+        ("name", "name"), ("nebenstelle", "nebenstelle"),
+        ("sip_passwort", "sip_passwort"), ("rolle", "rolle"),
+        ("status", "status"), ("warteschlange", "warteschlange"),
+    ]:
+        if feld in daten:
+            felder.append(f"{spalte} = ?")
+            werte.append(daten[feld])
+
+    if not felder:
+        return agent_nach_id(conn, agent_id)
+
+    werte.append(agent_id)
+    conn.execute(f"UPDATE agenten SET {', '.join(felder)} WHERE id = ?", werte)
+    conn.commit()
+    return agent_nach_id(conn, agent_id)
+
+
+def agent_loeschen(conn: sqlite3.Connection, agent_id: int) -> bool:
+    """Loescht einen Agenten."""
+    cursor = conn.execute("DELETE FROM agenten WHERE id = ?", (agent_id,))
+    conn.commit()
+    return cursor.rowcount > 0
+
+
+def agent_status_setzen(conn: sqlite3.Connection, agent_id: int, status: str) -> dict | None:
+    """Setzt den Status eines Agenten (online, offline, pause, besetzt)."""
+    conn.execute("UPDATE agenten SET status = ? WHERE id = ?", (status, agent_id))
+    conn.commit()
+    return agent_nach_id(conn, agent_id)
+
+
+# --- Anrufe ---
+
+def anruf_erstellen(conn: sqlite3.Connection, daten: dict) -> dict:
+    """Erstellt einen neuen Anruf."""
+    cursor = conn.execute(
+        """INSERT INTO anrufe (anrufer_nummer, anrufer_name, agent_id, warteschlange,
+           typ, status, notizen)
+           VALUES (?, ?, ?, ?, ?, ?, ?)""",
+        (
+            daten["anrufer_nummer"], daten.get("anrufer_name", ""),
+            daten.get("agent_id"), daten.get("warteschlange", ""),
+            daten.get("typ", "eingehend"), daten.get("status", "klingelt"),
+            daten.get("notizen", ""),
+        ),
+    )
+    conn.commit()
+    return anruf_nach_id(conn, cursor.lastrowid)
+
+
+def anruf_alle(conn: sqlite3.Connection, limit: int = 50) -> list[dict]:
+    """Gibt alle Anrufe zurueck (neueste zuerst)."""
+    rows = conn.execute(
+        """SELECT a.*, ag.name AS agent_name
+           FROM anrufe a
+           LEFT JOIN agenten ag ON a.agent_id = ag.id
+           ORDER BY a.beginn DESC LIMIT ?""",
+        (limit,),
+    ).fetchall()
+    return [_anruf_zu_dict(r) for r in rows]
+
+
+def anruf_nach_id(conn: sqlite3.Connection, anruf_id: int) -> dict | None:
+    """Gibt einen Anruf anhand seiner ID zurueck."""
+    row = conn.execute(
+        """SELECT a.*, ag.name AS agent_name
+           FROM anrufe a
+           LEFT JOIN agenten ag ON a.agent_id = ag.id
+           WHERE a.id = ?""",
+        (anruf_id,),
+    ).fetchone()
+    return _anruf_zu_dict(row) if row else None
+
+
+def anruf_aktualisieren(conn: sqlite3.Connection, anruf_id: int, daten: dict) -> dict | None:
+    """Aktualisiert einen bestehenden Anruf."""
+    felder = []
+    werte = []
+    for feld, spalte in [
+        ("anrufer_nummer", "anrufer_nummer"), ("anrufer_name", "anrufer_name"),
+        ("agent_id", "agent_id"), ("warteschlange", "warteschlange"),
+        ("typ", "typ"), ("status", "status"),
+        ("angenommen", "angenommen"), ("beendet", "beendet"),
+        ("dauer_sekunden", "dauer_sekunden"), ("notizen", "notizen"),
+    ]:
+        if feld in daten:
+            felder.append(f"{spalte} = ?")
+            werte.append(daten[feld])
+
+    if not felder:
+        return anruf_nach_id(conn, anruf_id)
+
+    werte.append(anruf_id)
+    conn.execute(f"UPDATE anrufe SET {', '.join(felder)} WHERE id = ?", werte)
+    conn.commit()
+    return anruf_nach_id(conn, anruf_id)
+
+
+def anruf_aktive(conn: sqlite3.Connection) -> list[dict]:
+    """Gibt alle aktiven Anrufe zurueck (nicht beendet)."""
+    rows = conn.execute(
+        """SELECT a.*, ag.name AS agent_name
+           FROM anrufe a
+           LEFT JOIN agenten ag ON a.agent_id = ag.id
+           WHERE a.status IN ('klingelt', 'verbunden', 'warteschlange')
+           ORDER BY a.beginn DESC""",
+    ).fetchall()
+    return [_anruf_zu_dict(r) for r in rows]
+
+
+def _agent_zu_dict(row: sqlite3.Row) -> dict:
+    """Konvertiert eine Agentenzeile zu einem Dict."""
+    return {
+        "id": row["id"],
+        "name": row["name"],
+        "nebenstelle": row["nebenstelle"],
+        "sip_passwort": row["sip_passwort"],
+        "rolle": row["rolle"],
+        "status": row["status"],
+        "warteschlange": row["warteschlange"],
+        "erstellt_am": row["erstellt_am"],
+    }
+
+
+def _anruf_zu_dict(row: sqlite3.Row) -> dict:
+    """Konvertiert eine Anrufzeile zu einem Dict."""
+    return {
+        "id": row["id"],
+        "anrufer_nummer": row["anrufer_nummer"],
+        "anrufer_name": row["anrufer_name"],
+        "agent_id": row["agent_id"],
+        "agent_name": row["agent_name"] if "agent_name" in row.keys() else None,
+        "warteschlange": row["warteschlange"],
+        "typ": row["typ"],
+        "status": row["status"],
+        "beginn": row["beginn"],
+        "angenommen": row["angenommen"],
+        "beendet": row["beendet"],
+        "dauer_sekunden": row["dauer_sekunden"],
+        "notizen": row["notizen"],
         "erstellt_am": row["erstellt_am"],
     }

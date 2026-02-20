@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MED Rezeption - Softphone</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>MED Rezeption</h1>
+        <nav>
+            <a href="patienten.html">Patienten</a>
+            <a href="aerzte.html">Aerzte</a>
+            <a href="termine.html">Termine</a>
+            <a href="wartezimmer.html">Wartezimmer</a>
+            <a href="agenten.html">Agenten</a>
+            <a href="softphone.html" class="active">Softphone</a>
+            <a href="index.html">Rechner</a>
+            <a href="benutzer.html">Benutzer</a>
+        </nav>
+    </header>
+    <main>
+        <section id="softphone">
+            <h2>WebRTC Softphone</h2>
+
+            <!-- Registrierung -->
+            <div id="sip-registrierung" class="softphone-panel">
+                <h3>SIP-Registrierung</h3>
+                <div id="sip-status" class="sip-status offline">Nicht verbunden</div>
+                <form id="sip-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="sip-server">SIP-Server</label>
+                            <input type="text" id="sip-server" placeholder="wss://pbx.example.com:8089/ws" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="sip-benutzer">Nebenstelle</label>
+                            <input type="text" id="sip-benutzer" placeholder="100" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="sip-passwort">Passwort</label>
+                        <input type="password" id="sip-passwort" required>
+                    </div>
+                    <div class="button-gruppe">
+                        <button type="submit" id="btn-sip-verbinden">Verbinden</button>
+                        <button type="button" id="btn-sip-trennen" hidden>Trennen</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Waehlfeld -->
+            <div id="waehlfeld" class="softphone-panel">
+                <h3>Anruf</h3>
+                <div class="form-group">
+                    <label for="wahlnummer">Nummer / Nebenstelle</label>
+                    <input type="text" id="wahlnummer" placeholder="Nummer eingeben...">
+                </div>
+                <div class="dialpad">
+                    <button type="button" class="dialpad-taste" data-dtmf="1">1</button>
+                    <button type="button" class="dialpad-taste" data-dtmf="2">2</button>
+                    <button type="button" class="dialpad-taste" data-dtmf="3">3</button>
+                    <button type="button" class="dialpad-taste" data-dtmf="4">4</button>
+                    <button type="button" class="dialpad-taste" data-dtmf="5">5</button>
+                    <button type="button" class="dialpad-taste" data-dtmf="6">6</button>
+                    <button type="button" class="dialpad-taste" data-dtmf="7">7</button>
+                    <button type="button" class="dialpad-taste" data-dtmf="8">8</button>
+                    <button type="button" class="dialpad-taste" data-dtmf="9">9</button>
+                    <button type="button" class="dialpad-taste" data-dtmf="*">*</button>
+                    <button type="button" class="dialpad-taste" data-dtmf="0">0</button>
+                    <button type="button" class="dialpad-taste" data-dtmf="#">#</button>
+                </div>
+                <div class="button-gruppe anruf-buttons">
+                    <button type="button" id="btn-anrufen" class="btn-anrufen">Anrufen</button>
+                    <button type="button" id="btn-auflegen" class="btn-auflegen" hidden>Auflegen</button>
+                    <button type="button" id="btn-annehmen" class="btn-annehmen" hidden>Annehmen</button>
+                </div>
+            </div>
+
+            <!-- Anruf-Info -->
+            <div id="anruf-info" class="softphone-panel" hidden>
+                <h3>Aktiver Anruf</h3>
+                <div id="anruf-gegenstelle">-</div>
+                <div id="anruf-timer">00:00</div>
+                <div id="anruf-status-anzeige">-</div>
+            </div>
+
+            <!-- Audio -->
+            <audio id="remote-audio" autoplay></audio>
+        </section>
+    </main>
+    <script src="app.js"></script>
+</body>
+</html>

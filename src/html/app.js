@@ -1019,6 +1019,350 @@ async function wartezimmerAktualisieren() {
     } catch (_) {}
 }
 
+// ===== Agenten-Board =====
+
+async function agentenLadenApi() {
+    var response = await fetch(API_BASE + "/agenten");
+    if (!response.ok) throw new Error("Fehler beim Laden");
+    return response.json();
+}
+
+async function agentSpeichernApi(daten) {
+    var response = await fetch(API_BASE + "/agenten", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(daten),
+    });
+    var ergebnis = await response.json();
+    if (!response.ok) {
+        var msg = Array.isArray(ergebnis.fehler) ? ergebnis.fehler.join(", ") : ergebnis.fehler;
+        throw new Error(msg || "Serverfehler");
+    }
+    return ergebnis;
+}
+
+async function agentAktualisierenApi(id, daten) {
+    var response = await fetch(API_BASE + "/agenten/" + id, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(daten),
+    });
+    var ergebnis = await response.json();
+    if (!response.ok) {
+        var msg = Array.isArray(ergebnis.fehler) ? ergebnis.fehler.join(", ") : ergebnis.fehler;
+        throw new Error(msg || "Serverfehler");
+    }
+    return ergebnis;
+}
+
+async function agentLoeschenApi(id) {
+    var response = await fetch(API_BASE + "/agenten/" + id, { method: "DELETE" });
+    var ergebnis = await response.json();
+    if (!response.ok) throw new Error(ergebnis.fehler || "Serverfehler");
+    return ergebnis;
+}
+
+async function agentStatusSetzenApi(id, status) {
+    var response = await fetch(API_BASE + "/agenten/" + id + "/status", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: status }),
+    });
+    var ergebnis = await response.json();
+    if (!response.ok) throw new Error(ergebnis.fehler || "Serverfehler");
+    return ergebnis;
+}
+
+async function anrufeLadenApi(aktiv) {
+    var url = API_BASE + "/anrufe";
+    if (aktiv) url += "?aktiv=true";
+    var response = await fetch(url);
+    if (!response.ok) throw new Error("Fehler beim Laden");
+    return response.json();
+}
+
+function initAgentenBoard() {
+    var form = document.getElementById("agent-form");
+    if (!form) return;
+
+    agentenBoardAktualisieren();
+    aktiveAnrufeAktualisieren();
+    anrufprotokollAktualisieren();
+
+    // Auto-Refresh alle 10 Sekunden
+    setInterval(function () {
+        agentenBoardAktualisieren();
+        aktiveAnrufeAktualisieren();
+        anrufprotokollAktualisieren();
+    }, 10000);
+
+    var btnAbbrechen = document.getElementById("btn-agent-abbrechen");
+    if (btnAbbrechen) {
+        btnAbbrechen.addEventListener("click", function () { agentFormZuruecksetzen(); });
+    }
+
+    form.addEventListener("submit", async function (e) {
+        e.preventDefault();
+        var editId = document.getElementById("agent-id").value;
+        var daten = {
+            name: document.getElementById("agent-name").value,
+            nebenstelle: document.getElementById("agent-nebenstelle").value,
+            sip_passwort: document.getElementById("agent-sip-passwort").value,
+            rolle: document.getElementById("agent-rolle").value,
+            warteschlange: document.getElementById("agent-warteschlange").value,
+        };
+
+        var erfolgDiv = document.getElementById("agent-erfolg");
+        var fehlerDiv = document.getElementById("agent-fehler");
+
+        try {
+            if (editId) {
+                await agentAktualisierenApi(editId, daten);
+                erfolgDiv.textContent = "Agent aktualisiert!";
+            } else {
+                await agentSpeichernApi(daten);
+                erfolgDiv.textContent = "Agent gespeichert!";
+            }
+            erfolgDiv.hidden = false;
+            fehlerDiv.hidden = true;
+            agentFormZuruecksetzen();
+            agentenBoardAktualisieren();
+        } catch (err) {
+            fehlerDiv.textContent = err.message;
+            fehlerDiv.hidden = false;
+            erfolgDiv.hidden = true;
+        }
+    });
+}
+
+function agentFormZuruecksetzen() {
+    var form = document.getElementById("agent-form");
+    if (form) form.reset();
+    document.getElementById("agent-id").value = "";
+    document.getElementById("agent-formular-titel").textContent = "Agent anlegen";
+    document.getElementById("btn-agent-speichern").textContent = "Speichern";
+    var btn = document.getElementById("btn-agent-abbrechen");
+    if (btn) btn.hidden = true;
+}
+
+function agentBearbeiten(a) {
+    document.getElementById("agent-id").value = a.id;
+    document.getElementById("agent-name").value = a.name;
+    document.getElementById("agent-nebenstelle").value = a.nebenstelle;
+    document.getElementById("agent-sip-passwort").value = a.sip_passwort;
+    document.getElementById("agent-rolle").value = a.rolle;
+    document.getElementById("agent-warteschlange").value = a.warteschlange || "rezeption";
+    document.getElementById("agent-formular-titel").textContent = "Agent bearbeiten";
+    document.getElementById("btn-agent-speichern").textContent = "Aktualisieren";
+    var btn = document.getElementById("btn-agent-abbrechen");
+    if (btn) btn.hidden = false;
+    document.getElementById("agent-formular").scrollIntoView({ behavior: "smooth" });
+}
+
+async function agentenBoardAktualisieren() {
+    try {
+        var agenten = await agentenLadenApi();
+        var container = document.getElementById("agenten-karten");
+        var badge = document.getElementById("agenten-online-badge");
+        if (!container) return;
+
+        var onlineCount = agenten.filter(function (a) { return a.status === "online"; }).length;
+        if (badge) badge.textContent = onlineCount + " online";
+
+        container.innerHTML = "";
+        if (agenten.length === 0) {
+            container.innerHTML = '<p style="color:#666;text-align:center;padding:2rem">Keine Agenten angelegt.</p>';
+            return;
+        }
+
+        agenten.forEach(function (a) {
+            var karte = document.createElement("div");
+            karte.className = "agent-karte";
+            karte.innerHTML =
+                '<h3><span class="agent-status-punkt ' + escapeHtml(a.status) + '"></span>' + escapeHtml(a.name) + '</h3>' +
+                '<p>Nebenstelle: ' + escapeHtml(a.nebenstelle) + '</p>' +
+                '<p>Rolle: ' + escapeHtml(a.rolle) + ' | Queue: ' + escapeHtml(a.warteschlange || '-') + '</p>' +
+                '<p>Status: <strong>' + escapeHtml(a.status) + '</strong></p>' +
+                '<div class="agent-aktionen">' +
+                    '<button class="btn-online">Online</button>' +
+                    '<button class="btn-pause">Pause</button>' +
+                    '<button class="btn-offline">Offline</button>' +
+                    '<button class="btn-bearbeiten">Bearbeiten</button>' +
+                    '<button class="btn-loeschen">Loeschen</button>' +
+                '</div>';
+
+            karte.querySelector(".btn-online").addEventListener("click", async function () {
+                try { await agentStatusSetzenApi(a.id, "online"); agentenBoardAktualisieren(); } catch (_) {}
+            });
+            karte.querySelector(".btn-pause").addEventListener("click", async function () {
+                try { await agentStatusSetzenApi(a.id, "pause"); agentenBoardAktualisieren(); } catch (_) {}
+            });
+            karte.querySelector(".btn-offline").addEventListener("click", async function () {
+                try { await agentStatusSetzenApi(a.id, "offline"); agentenBoardAktualisieren(); } catch (_) {}
+            });
+            karte.querySelector(".btn-bearbeiten").addEventListener("click", function () { agentBearbeiten(a); });
+            karte.querySelector(".btn-loeschen").addEventListener("click", async function () {
+                if (!confirm("Agent wirklich loeschen?")) return;
+                try { await agentLoeschenApi(a.id); agentenBoardAktualisieren(); } catch (err) { alert(err.message); }
+            });
+
+            container.appendChild(karte);
+        });
+    } catch (_) {}
+}
+
+async function aktiveAnrufeAktualisieren() {
+    try {
+        var anrufe = await anrufeLadenApi(true);
+        var container = document.getElementById("aktive-anrufe-liste");
+        var badge = document.getElementById("anrufe-aktiv-badge");
+        if (!container) return;
+
+        if (badge) badge.textContent = anrufe.length + " aktiv";
+
+        container.innerHTML = "";
+        if (anrufe.length === 0) {
+            container.innerHTML = '<p style="color:#666;text-align:center;padding:1rem">Keine aktiven Anrufe.</p>';
+            return;
+        }
+
+        anrufe.forEach(function (a) {
+            var karte = document.createElement("div");
+            karte.className = "anruf-karte " + a.status;
+            karte.innerHTML =
+                '<div>' +
+                    '<strong>' + escapeHtml(a.anrufer_nummer) + '</strong>' +
+                    (a.anrufer_name ? ' - ' + escapeHtml(a.anrufer_name) : '') +
+                    '<br><small>Agent: ' + escapeHtml(a.agent_name || '-') +
+                    ' | Queue: ' + escapeHtml(a.warteschlange || '-') + '</small>' +
+                '</div>' +
+                '<span class="status-badge status-' + a.status + '">' + escapeHtml(a.status) + '</span>';
+            container.appendChild(karte);
+        });
+    } catch (_) {}
+}
+
+async function anrufprotokollAktualisieren() {
+    try {
+        var anrufe = await anrufeLadenApi(false);
+        var tbody = document.querySelector("#anrufe-tabelle tbody");
+        if (!tbody) return;
+        tbody.innerHTML = "";
+        anrufe.forEach(function (a) {
+            var tr = document.createElement("tr");
+            var dauerText = a.dauer_sekunden > 0
+                ? Math.floor(a.dauer_sekunden / 60) + ":" + ("0" + (a.dauer_sekunden % 60)).slice(-2)
+                : "-";
+            tr.innerHTML =
+                "<td>" + escapeHtml(a.beginn || "") + "</td>" +
+                "<td>" + escapeHtml(a.anrufer_nummer) + (a.anrufer_name ? " (" + escapeHtml(a.anrufer_name) + ")" : "") + "</td>" +
+                "<td>" + escapeHtml(a.agent_name || "-") + "</td>" +
+                "<td>" + escapeHtml(a.warteschlange || "-") + "</td>" +
+                "<td>" + escapeHtml(a.typ) + "</td>" +
+                '<td><span class="status-badge">' + escapeHtml(a.status) + "</span></td>" +
+                "<td>" + dauerText + "</td>";
+            tbody.appendChild(tr);
+        });
+    } catch (_) {}
+}
+
+// ===== Softphone =====
+
+function initSoftphone() {
+    var sipForm = document.getElementById("sip-form");
+    if (!sipForm) return;
+
+    // Dialpad-Tasten
+    var tasten = document.querySelectorAll(".dialpad-taste");
+    tasten.forEach(function (taste) {
+        taste.addEventListener("click", function () {
+            var wahlnummer = document.getElementById("wahlnummer");
+            if (wahlnummer) wahlnummer.value += taste.getAttribute("data-dtmf");
+        });
+    });
+
+    // SIP-Verbindung (Platzhalter - echte Implementierung braucht SIP.js)
+    sipForm.addEventListener("submit", function (e) {
+        e.preventDefault();
+        var statusDiv = document.getElementById("sip-status");
+        var server = document.getElementById("sip-server").value;
+        var benutzer = document.getElementById("sip-benutzer").value;
+
+        statusDiv.className = "sip-status verbindend";
+        statusDiv.textContent = "Verbinde mit " + benutzer + "@" + server + "...";
+
+        // Simulierte Verbindung (in Produktion: SIP.js UserAgent)
+        setTimeout(function () {
+            statusDiv.className = "sip-status online";
+            statusDiv.textContent = "Verbunden als " + benutzer;
+            document.getElementById("btn-sip-verbinden").hidden = true;
+            document.getElementById("btn-sip-trennen").hidden = false;
+        }, 1500);
+    });
+
+    document.getElementById("btn-sip-trennen").addEventListener("click", function () {
+        var statusDiv = document.getElementById("sip-status");
+        statusDiv.className = "sip-status offline";
+        statusDiv.textContent = "Nicht verbunden";
+        document.getElementById("btn-sip-verbinden").hidden = false;
+        document.getElementById("btn-sip-trennen").hidden = true;
+        document.getElementById("anruf-info").hidden = true;
+    });
+
+    // Anruf starten
+    document.getElementById("btn-anrufen").addEventListener("click", function () {
+        var nummer = document.getElementById("wahlnummer").value;
+        if (!nummer) return;
+        document.getElementById("anruf-info").hidden = false;
+        document.getElementById("anruf-gegenstelle").textContent = nummer;
+        document.getElementById("anruf-status-anzeige").textContent = "Klingelt...";
+        document.getElementById("btn-anrufen").hidden = true;
+        document.getElementById("btn-auflegen").hidden = false;
+        startAnrufTimer();
+    });
+
+    // Auflegen
+    document.getElementById("btn-auflegen").addEventListener("click", function () {
+        stopAnrufTimer();
+        document.getElementById("anruf-info").hidden = true;
+        document.getElementById("btn-anrufen").hidden = false;
+        document.getElementById("btn-auflegen").hidden = true;
+        document.getElementById("btn-annehmen").hidden = true;
+    });
+
+    // Annehmen
+    document.getElementById("btn-annehmen").addEventListener("click", function () {
+        document.getElementById("anruf-status-anzeige").textContent = "Verbunden";
+        document.getElementById("btn-annehmen").hidden = true;
+        startAnrufTimer();
+    });
+}
+
+var anrufTimerInterval = null;
+var anrufTimerSekunden = 0;
+
+function startAnrufTimer() {
+    anrufTimerSekunden = 0;
+    var timerDiv = document.getElementById("anruf-timer");
+    if (anrufTimerInterval) clearInterval(anrufTimerInterval);
+    anrufTimerInterval = setInterval(function () {
+        anrufTimerSekunden++;
+        var min = Math.floor(anrufTimerSekunden / 60);
+        var sec = anrufTimerSekunden % 60;
+        if (timerDiv) timerDiv.textContent = ("0" + min).slice(-2) + ":" + ("0" + sec).slice(-2);
+    }, 1000);
+}
+
+function stopAnrufTimer() {
+    if (anrufTimerInterval) {
+        clearInterval(anrufTimerInterval);
+        anrufTimerInterval = null;
+    }
+    anrufTimerSekunden = 0;
+    var timerDiv = document.getElementById("anruf-timer");
+    if (timerDiv) timerDiv.textContent = "00:00";
+}
+
 // ===== Hilfsfunktionen =====
 
 function escapeHtml(text) {
@@ -1041,5 +1385,7 @@ if (typeof document !== "undefined") {
         initAerzte();
         initTermine();
         initWartezimmer();
+        initAgentenBoard();
+        initSoftphone();
     });
 }

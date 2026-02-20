@@ -19,6 +19,10 @@ from src.python.datenbank import (
     termin_aktualisieren, termin_loeschen,
     wartezimmer_hinzufuegen, wartezimmer_aktuelle, wartezimmer_nach_id,
     wartezimmer_status_aendern, wartezimmer_entfernen,
+    agent_erstellen, agent_alle, agent_nach_id,
+    agent_aktualisieren, agent_loeschen, agent_status_setzen,
+    anruf_erstellen, anruf_alle, anruf_nach_id,
+    anruf_aktualisieren, anruf_aktive,
 )
 
 app = Flask(__name__, static_folder=str(Path(__file__).resolve().parent.parent / "html"))
@@ -393,6 +397,133 @@ def api_wartezimmer_entfernen_route(eintrag_id):
     if wartezimmer_entfernen(db(), eintrag_id):
         return jsonify({"nachricht": "Eintrag entfernt"})
     return jsonify({"fehler": "Eintrag nicht gefunden"}), 404
+
+
+# --- Agenten API ---
+
+@app.route("/api/agenten", methods=["GET"])
+def api_agenten_liste():
+    return jsonify(agent_alle(db()))
+
+
+@app.route("/api/agenten", methods=["POST"])
+def api_agent_erstellen_route():
+    daten = request.get_json()
+    if not daten:
+        return jsonify({"fehler": "Keine Daten erhalten"}), 400
+
+    fehler = []
+    if not daten.get("name"):
+        fehler.append("Name ist erforderlich")
+    if not daten.get("nebenstelle"):
+        fehler.append("Nebenstelle ist erforderlich")
+    if not daten.get("sip_passwort"):
+        fehler.append("SIP-Passwort ist erforderlich")
+
+    if fehler:
+        return jsonify({"fehler": fehler}), 422
+
+    try:
+        agent = agent_erstellen(db(), daten)
+        return jsonify({"nachricht": "Agent gespeichert", "agent": agent}), 201
+    except sqlite3.IntegrityError:
+        return jsonify({"fehler": ["Nebenstelle existiert bereits"]}), 409
+
+
+@app.route("/api/agenten/<int:agent_id>", methods=["GET"])
+def api_agent_detail(agent_id):
+    agent = agent_nach_id(db(), agent_id)
+    if not agent:
+        return jsonify({"fehler": "Agent nicht gefunden"}), 404
+    return jsonify(agent)
+
+
+@app.route("/api/agenten/<int:agent_id>", methods=["PUT"])
+def api_agent_aktualisieren_route(agent_id):
+    daten = request.get_json()
+    if not daten:
+        return jsonify({"fehler": "Keine Daten erhalten"}), 400
+
+    agent = agent_nach_id(db(), agent_id)
+    if not agent:
+        return jsonify({"fehler": "Agent nicht gefunden"}), 404
+
+    try:
+        aktualisiert = agent_aktualisieren(db(), agent_id, daten)
+        return jsonify({"nachricht": "Agent aktualisiert", "agent": aktualisiert})
+    except sqlite3.IntegrityError:
+        return jsonify({"fehler": ["Nebenstelle existiert bereits"]}), 409
+
+
+@app.route("/api/agenten/<int:agent_id>", methods=["DELETE"])
+def api_agent_loeschen_route(agent_id):
+    if agent_loeschen(db(), agent_id):
+        return jsonify({"nachricht": "Agent geloescht"})
+    return jsonify({"fehler": "Agent nicht gefunden"}), 404
+
+
+@app.route("/api/agenten/<int:agent_id>/status", methods=["PUT"])
+def api_agent_status_route(agent_id):
+    daten = request.get_json()
+    if not daten:
+        return jsonify({"fehler": "Keine Daten erhalten"}), 400
+
+    agent = agent_nach_id(db(), agent_id)
+    if not agent:
+        return jsonify({"fehler": "Agent nicht gefunden"}), 404
+
+    neuer_status = daten.get("status")
+    if neuer_status not in ("online", "offline", "pause", "besetzt"):
+        return jsonify({"fehler": "Ungueltiger Status"}), 400
+
+    aktualisiert = agent_status_setzen(db(), agent_id, neuer_status)
+    return jsonify({"nachricht": "Status aktualisiert", "agent": aktualisiert})
+
+
+# --- Anrufe API ---
+
+@app.route("/api/anrufe", methods=["GET"])
+def api_anrufe_liste():
+    limit = request.args.get("limit", 50, type=int)
+    aktiv = request.args.get("aktiv", "").strip()
+    if aktiv == "true":
+        return jsonify(anruf_aktive(db()))
+    return jsonify(anruf_alle(db(), limit))
+
+
+@app.route("/api/anrufe", methods=["POST"])
+def api_anruf_erstellen_route():
+    daten = request.get_json()
+    if not daten:
+        return jsonify({"fehler": "Keine Daten erhalten"}), 400
+
+    if not daten.get("anrufer_nummer"):
+        return jsonify({"fehler": ["Anrufer-Nummer ist erforderlich"]}), 422
+
+    anruf = anruf_erstellen(db(), daten)
+    return jsonify({"nachricht": "Anruf erstellt", "anruf": anruf}), 201
+
+
+@app.route("/api/anrufe/<int:anruf_id>", methods=["GET"])
+def api_anruf_detail(anruf_id):
+    anruf = anruf_nach_id(db(), anruf_id)
+    if not anruf:
+        return jsonify({"fehler": "Anruf nicht gefunden"}), 404
+    return jsonify(anruf)
+
+
+@app.route("/api/anrufe/<int:anruf_id>", methods=["PUT"])
+def api_anruf_aktualisieren_route(anruf_id):
+    daten = request.get_json()
+    if not daten:
+        return jsonify({"fehler": "Keine Daten erhalten"}), 400
+
+    anruf = anruf_nach_id(db(), anruf_id)
+    if not anruf:
+        return jsonify({"fehler": "Anruf nicht gefunden"}), 404
+
+    aktualisiert = anruf_aktualisieren(db(), anruf_id, daten)
+    return jsonify({"nachricht": "Anruf aktualisiert", "anruf": aktualisiert})
 
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-"""Tests fuer MED Rezeption Module: Patienten, Aerzte, Termine, Wartezimmer."""
+"""Tests fuer MED Rezeption Module: Patienten, Aerzte, Termine, Wartezimmer, Agenten, Anrufe."""
 
 import pytest
 from src.python.app import app
@@ -421,3 +421,212 @@ class TestNeueSeiten:
         resp = client.get("/wartezimmer.html")
         assert resp.status_code == 200
         assert b"Wartezimmer" in resp.data
+
+    def test_agenten_seite(self, client):
+        resp = client.get("/agenten.html")
+        assert resp.status_code == 200
+        assert b"Agenten-Board" in resp.data
+
+    def test_softphone_seite(self, client):
+        resp = client.get("/softphone.html")
+        assert resp.status_code == 200
+        assert b"Softphone" in resp.data
+
+
+# ===== Agenten Tests =====
+
+BEISPIEL_AGENT = {
+    "name": "Anna Rezeption",
+    "nebenstelle": "100",
+    "sip_passwort": "geheim123",
+    "rolle": "rezeption",
+    "warteschlange": "rezeption",
+}
+
+
+def _agent_anlegen(client, **kwargs):
+    daten = {**BEISPIEL_AGENT, **kwargs}
+    return client.post("/api/agenten", json=daten)
+
+
+class TestAgentenCrud:
+    def test_erstellen(self, client):
+        resp = _agent_anlegen(client)
+        assert resp.status_code == 201
+        daten = resp.get_json()
+        assert daten["nachricht"] == "Agent gespeichert"
+        assert daten["agent"]["name"] == "Anna Rezeption"
+        assert daten["agent"]["nebenstelle"] == "100"
+        assert daten["agent"]["status"] == "offline"
+
+    def test_liste_leer(self, client):
+        resp = client.get("/api/agenten")
+        assert resp.status_code == 200
+        assert resp.get_json() == []
+
+    def test_liste_nach_erstellen(self, client):
+        _agent_anlegen(client)
+        resp = client.get("/api/agenten")
+        assert len(resp.get_json()) == 1
+
+    def test_detail(self, client):
+        agent = _agent_anlegen(client).get_json()["agent"]
+        resp = client.get(f"/api/agenten/{agent['id']}")
+        assert resp.status_code == 200
+        assert resp.get_json()["name"] == "Anna Rezeption"
+
+    def test_detail_nicht_gefunden(self, client):
+        resp = client.get("/api/agenten/999")
+        assert resp.status_code == 404
+
+    def test_aktualisieren(self, client):
+        agent = _agent_anlegen(client).get_json()["agent"]
+        resp = client.put(f"/api/agenten/{agent['id']}",
+                          json={"name": "Anna Schmidt"})
+        assert resp.status_code == 200
+        assert resp.get_json()["agent"]["name"] == "Anna Schmidt"
+
+    def test_aktualisieren_nicht_gefunden(self, client):
+        resp = client.put("/api/agenten/999", json={"name": "Test"})
+        assert resp.status_code == 404
+
+    def test_loeschen(self, client):
+        agent = _agent_anlegen(client).get_json()["agent"]
+        resp = client.delete(f"/api/agenten/{agent['id']}")
+        assert resp.status_code == 200
+        assert resp.get_json()["nachricht"] == "Agent geloescht"
+
+    def test_loeschen_nicht_gefunden(self, client):
+        resp = client.delete("/api/agenten/999")
+        assert resp.status_code == 404
+
+    def test_doppelte_nebenstelle(self, client):
+        _agent_anlegen(client)
+        resp = _agent_anlegen(client)
+        assert resp.status_code == 409
+
+    def test_pflichtfelder_fehlen(self, client):
+        resp = client.post("/api/agenten", json={"name": "Test"})
+        assert resp.status_code == 422
+        fehler = resp.get_json()["fehler"]
+        assert "Nebenstelle ist erforderlich" in fehler
+        assert "SIP-Passwort ist erforderlich" in fehler
+
+    def test_keine_daten(self, client):
+        resp = client.post("/api/agenten", content_type="application/json")
+        assert resp.status_code == 400
+
+    def test_status_setzen(self, client):
+        agent = _agent_anlegen(client).get_json()["agent"]
+        resp = client.put(f"/api/agenten/{agent['id']}/status",
+                          json={"status": "online"})
+        assert resp.status_code == 200
+        assert resp.get_json()["agent"]["status"] == "online"
+
+    def test_status_pause(self, client):
+        agent = _agent_anlegen(client).get_json()["agent"]
+        resp = client.put(f"/api/agenten/{agent['id']}/status",
+                          json={"status": "pause"})
+        assert resp.status_code == 200
+        assert resp.get_json()["agent"]["status"] == "pause"
+
+    def test_status_ungueltig(self, client):
+        agent = _agent_anlegen(client).get_json()["agent"]
+        resp = client.put(f"/api/agenten/{agent['id']}/status",
+                          json={"status": "unbekannt"})
+        assert resp.status_code == 400
+
+    def test_status_agent_nicht_gefunden(self, client):
+        resp = client.put("/api/agenten/999/status",
+                          json={"status": "online"})
+        assert resp.status_code == 404
+
+
+# ===== Anrufe Tests =====
+
+class TestAnrufeCrud:
+    def _setup_agent(self, client):
+        return _agent_anlegen(client).get_json()["agent"]
+
+    def test_erstellen(self, client):
+        resp = client.post("/api/anrufe",
+                           json={"anrufer_nummer": "+4917612345678"})
+        assert resp.status_code == 201
+        daten = resp.get_json()
+        assert daten["nachricht"] == "Anruf erstellt"
+        assert daten["anruf"]["anrufer_nummer"] == "+4917612345678"
+        assert daten["anruf"]["status"] == "klingelt"
+        assert daten["anruf"]["typ"] == "eingehend"
+
+    def test_erstellen_mit_agent(self, client):
+        agent = self._setup_agent(client)
+        resp = client.post("/api/anrufe", json={
+            "anrufer_nummer": "+4917612345678",
+            "anrufer_name": "Max Mustermann",
+            "agent_id": agent["id"],
+            "warteschlange": "rezeption",
+        })
+        assert resp.status_code == 201
+        anruf = resp.get_json()["anruf"]
+        assert anruf["agent_id"] == agent["id"]
+        assert anruf["agent_name"] == "Anna Rezeption"
+
+    def test_liste_leer(self, client):
+        resp = client.get("/api/anrufe")
+        assert resp.status_code == 200
+        assert resp.get_json() == []
+
+    def test_liste(self, client):
+        client.post("/api/anrufe",
+                     json={"anrufer_nummer": "+491111"})
+        client.post("/api/anrufe",
+                     json={"anrufer_nummer": "+492222"})
+        resp = client.get("/api/anrufe")
+        assert len(resp.get_json()) == 2
+
+    def test_detail(self, client):
+        anruf = client.post("/api/anrufe",
+                             json={"anrufer_nummer": "+491111"}).get_json()["anruf"]
+        resp = client.get(f"/api/anrufe/{anruf['id']}")
+        assert resp.status_code == 200
+        assert resp.get_json()["anrufer_nummer"] == "+491111"
+
+    def test_detail_nicht_gefunden(self, client):
+        resp = client.get("/api/anrufe/999")
+        assert resp.status_code == 404
+
+    def test_aktualisieren(self, client):
+        anruf = client.post("/api/anrufe",
+                             json={"anrufer_nummer": "+491111"}).get_json()["anruf"]
+        resp = client.put(f"/api/anrufe/{anruf['id']}",
+                          json={"status": "verbunden", "dauer_sekunden": 120})
+        assert resp.status_code == 200
+        aktualisiert = resp.get_json()["anruf"]
+        assert aktualisiert["status"] == "verbunden"
+        assert aktualisiert["dauer_sekunden"] == 120
+
+    def test_aktualisieren_nicht_gefunden(self, client):
+        resp = client.put("/api/anrufe/999",
+                          json={"status": "verbunden"})
+        assert resp.status_code == 404
+
+    def test_aktive_anrufe(self, client):
+        client.post("/api/anrufe",
+                     json={"anrufer_nummer": "+491111", "status": "klingelt"})
+        client.post("/api/anrufe",
+                     json={"anrufer_nummer": "+492222", "status": "verbunden"})
+        client.post("/api/anrufe",
+                     json={"anrufer_nummer": "+493333", "status": "beendet"})
+        resp = client.get("/api/anrufe?aktiv=true")
+        assert resp.status_code == 200
+        aktive = resp.get_json()
+        # Nur klingelt und verbunden, nicht beendet
+        assert len(aktive) == 2
+
+    def test_pflichtfeld_fehlt(self, client):
+        resp = client.post("/api/anrufe", json={"anrufer_name": "Test"})
+        assert resp.status_code == 422
+
+    def test_keine_daten(self, client):
+        resp = client.post("/api/anrufe", content_type="application/json")
+        assert resp.status_code == 400
