@@ -1,0 +1,39 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Agent",
+  "description": "Schema fuer ein Agent-Objekt",
+  "type": "object",
+  "required": ["name", "nebenstelle", "sip_passwort"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "nebenstelle": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 10
+    },
+    "sip_passwort": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "rolle": {
+      "type": "string",
+      "enum": ["rezeption", "arzt", "admin"],
+      "default": "rezeption"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["online", "offline", "pause", "besetzt"],
+      "default": "offline"
+    },
+    "warteschlange": {
+      "type": "string",
+      "maxLength": 50
+    }
+  },
+  "additionalProperties": false
+}

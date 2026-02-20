@@ -1,0 +1,41 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Anruf",
+  "description": "Schema fuer ein Anruf-Objekt",
+  "type": "object",
+  "required": ["anrufer_nummer"],
+  "properties": {
+    "anrufer_nummer": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 30
+    },
+    "anrufer_name": {
+      "type": "string",
+      "maxLength": 100
+    },
+    "agent_id": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "warteschlange": {
+      "type": "string",
+      "maxLength": 50
+    },
+    "typ": {
+      "type": "string",
+      "enum": ["eingehend", "ausgehend", "intern"],
+      "default": "eingehend"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["klingelt", "verbunden", "warteschlange", "beendet", "verpasst"],
+      "default": "klingelt"
+    },
+    "notizen": {
+      "type": "string",
+      "maxLength": 2000
+    }
+  },
+  "additionalProperties": false
+}

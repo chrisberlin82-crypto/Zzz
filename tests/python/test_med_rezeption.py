@@ -630,3 +630,101 @@ class TestAnrufeCrud:
     def test_keine_daten(self, client):
         resp = client.post("/api/anrufe", content_type="application/json")
         assert resp.status_code == 400
+
+    def test_loeschen(self, client):
+        anruf = client.post("/api/anrufe",
+                             json={"anrufer_nummer": "+491111"}).get_json()["anruf"]
+        resp = client.delete(f"/api/anrufe/{anruf['id']}")
+        assert resp.status_code == 200
+        assert "geloescht" in resp.get_json()["nachricht"]
+        assert client.get(f"/api/anrufe/{anruf['id']}").status_code == 404
+
+    def test_loeschen_nicht_gefunden(self, client):
+        resp = client.delete("/api/anrufe/999")
+        assert resp.status_code == 404
+
+    def test_limit_parameter(self, client):
+        for i in range(5):
+            client.post("/api/anrufe",
+                         json={"anrufer_nummer": f"+49{i}000"})
+        resp = client.get("/api/anrufe?limit=3")
+        assert len(resp.get_json()) == 3
+
+
+# ===== Aerzte Suche Tests =====
+
+class TestAerzteSuche:
+    def test_suche_nach_name(self, client):
+        _arzt_anlegen(client, vorname="Hans", nachname="Schmidt")
+        _arzt_anlegen(client, vorname="Anna", nachname="Mueller",
+                      fachrichtung="Kardiologie")
+        resp = client.get("/api/aerzte?suche=Schmidt")
+        assert resp.status_code == 200
+        assert len(resp.get_json()) == 1
+        assert resp.get_json()[0]["nachname"] == "Schmidt"
+
+    def test_suche_nach_fachrichtung(self, client):
+        _arzt_anlegen(client, fachrichtung="Allgemeinmedizin")
+        _arzt_anlegen(client, vorname="Anna", nachname="Mueller",
+                      fachrichtung="Kardiologie")
+        resp = client.get("/api/aerzte?suche=Kardiologie")
+        assert len(resp.get_json()) == 1
+
+    def test_suche_ohne_treffer(self, client):
+        _arzt_anlegen(client)
+        resp = client.get("/api/aerzte?suche=XYZnichtvorhanden")
+        assert resp.get_json() == []
+
+    def test_suche_leer_gibt_alle(self, client):
+        _arzt_anlegen(client)
+        _arzt_anlegen(client, vorname="Anna", nachname="Mueller",
+                      fachrichtung="Kardiologie")
+        resp = client.get("/api/aerzte?suche=")
+        assert len(resp.get_json()) == 2
+
+
+# ===== Wartezimmer Status Sub-Route =====
+
+class TestWartezimmerStatusSubRoute:
+    def _setup(self, client):
+        p = _patient_anlegen(client).get_json()["patient"]
+        return p["id"]
+
+    def test_status_via_sub_route(self, client):
+        pid = self._setup(client)
+        eintrag = client.post("/api/wartezimmer",
+                               json={"patient_id": pid}).get_json()["eintrag"]
+        resp = client.put(f"/api/wartezimmer/{eintrag['id']}/status",
+                          json={"status": "aufgerufen"})
+        assert resp.status_code == 200
+        assert resp.get_json()["eintrag"]["status"] == "aufgerufen"
+
+    def test_status_sub_route_in_behandlung(self, client):
+        pid = self._setup(client)
+        eintrag = client.post("/api/wartezimmer",
+                               json={"patient_id": pid}).get_json()["eintrag"]
+        resp = client.put(f"/api/wartezimmer/{eintrag['id']}/status",
+                          json={"status": "in_behandlung"})
+        assert resp.status_code == 200
+        assert resp.get_json()["eintrag"]["status"] == "in_behandlung"
+
+    def test_status_sub_route_ungueltig(self, client):
+        pid = self._setup(client)
+        eintrag = client.post("/api/wartezimmer",
+                               json={"patient_id": pid}).get_json()["eintrag"]
+        resp = client.put(f"/api/wartezimmer/{eintrag['id']}/status",
+                          json={"status": "ungueltig"})
+        assert resp.status_code == 400
+
+    def test_status_sub_route_nicht_gefunden(self, client):
+        resp = client.put("/api/wartezimmer/999/status",
+                          json={"status": "aufgerufen"})
+        assert resp.status_code == 404
+
+    def test_status_sub_route_keine_daten(self, client):
+        pid = self._setup(client)
+        eintrag = client.post("/api/wartezimmer",
+                               json={"patient_id": pid}).get_json()["eintrag"]
+        resp = client.put(f"/api/wartezimmer/{eintrag['id']}/status",
+                          content_type="application/json")
+        assert resp.status_code == 400

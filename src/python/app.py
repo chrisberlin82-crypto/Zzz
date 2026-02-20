@@ -14,7 +14,7 @@ from src.python.datenbank import (
     patient_erstellen, patient_alle, patient_nach_id,
     patient_aktualisieren, patient_loeschen, patient_suchen,
     arzt_erstellen, arzt_alle, arzt_nach_id,
-    arzt_aktualisieren, arzt_loeschen,
+    arzt_aktualisieren, arzt_loeschen, arzt_suchen,
     termin_erstellen, termin_alle, termin_nach_id,
     termin_aktualisieren, termin_loeschen,
     wartezimmer_hinzufuegen, wartezimmer_aktuelle, wartezimmer_nach_id,
@@ -22,7 +22,7 @@ from src.python.datenbank import (
     agent_erstellen, agent_alle, agent_nach_id,
     agent_aktualisieren, agent_loeschen, agent_status_setzen,
     anruf_erstellen, anruf_alle, anruf_nach_id,
-    anruf_aktualisieren, anruf_aktive,
+    anruf_aktualisieren, anruf_loeschen, anruf_aktive,
 )
 
 app = Flask(__name__, static_folder=str(Path(__file__).resolve().parent.parent / "html"))
@@ -233,6 +233,9 @@ def api_patient_loeschen_route(patient_id):
 
 @app.route("/api/aerzte", methods=["GET"])
 def api_aerzte_liste():
+    suche = request.args.get("suche", "").strip()
+    if suche:
+        return jsonify(arzt_suchen(db(), suche))
     return jsonify(arzt_alle(db()))
 
 
@@ -392,6 +395,24 @@ def api_wartezimmer_status_route(eintrag_id):
     return jsonify({"nachricht": "Status aktualisiert", "eintrag": aktualisiert})
 
 
+@app.route("/api/wartezimmer/<int:eintrag_id>/status", methods=["PUT"])
+def api_wartezimmer_status_sub_route(eintrag_id):
+    daten = request.get_json()
+    if not daten:
+        return jsonify({"fehler": "Keine Daten erhalten"}), 400
+
+    eintrag = wartezimmer_nach_id(db(), eintrag_id)
+    if not eintrag:
+        return jsonify({"fehler": "Eintrag nicht gefunden"}), 404
+
+    neuer_status = daten.get("status")
+    if neuer_status not in ("wartend", "aufgerufen", "in_behandlung", "fertig"):
+        return jsonify({"fehler": "Ungueltiger Status"}), 400
+
+    aktualisiert = wartezimmer_status_aendern(db(), eintrag_id, neuer_status)
+    return jsonify({"nachricht": "Status aktualisiert", "eintrag": aktualisiert})
+
+
 @app.route("/api/wartezimmer/<int:eintrag_id>", methods=["DELETE"])
 def api_wartezimmer_entfernen_route(eintrag_id):
     if wartezimmer_entfernen(db(), eintrag_id):
@@ -524,6 +545,13 @@ def api_anruf_aktualisieren_route(anruf_id):
 
     aktualisiert = anruf_aktualisieren(db(), anruf_id, daten)
     return jsonify({"nachricht": "Anruf aktualisiert", "anruf": aktualisiert})
+
+
+@app.route("/api/anrufe/<int:anruf_id>", methods=["DELETE"])
+def api_anruf_loeschen_route(anruf_id):
+    if anruf_loeschen(db(), anruf_id):
+        return jsonify({"nachricht": "Anruf geloescht"})
+    return jsonify({"fehler": "Anruf nicht gefunden"}), 404
 
 
 if __name__ == "__main__":

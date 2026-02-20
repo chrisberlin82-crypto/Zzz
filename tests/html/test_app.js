@@ -457,4 +457,202 @@ test("Alle 4 Status vorhanden", function () {
 
 console.log("  5 Tests bestanden");
 
+// --- Erweiterte Rechner-Tests: Grenzfaelle ---
+
+console.log("\n=== Erweiterte Rechner-Tests ===");
+
+test("Division ergibt periodische Dezimalzahl", function () {
+    var ergebnis = berechnen(1, "dividieren", 3);
+    assert.ok(Math.abs(ergebnis - 0.3333333333333333) < 1e-10);
+});
+
+test("Subtraktion gleicher Zahlen ergibt 0", function () {
+    assert.strictEqual(berechnen(42, "subtrahieren", 42), 0);
+});
+
+test("Addition sehr kleiner Zahlen", function () {
+    assert.strictEqual(berechnen(0.1, "addieren", 0.2), 0.30000000000000004);
+});
+
+test("Multiplikation mit -1", function () {
+    assert.strictEqual(berechnen(7, "multiplizieren", -1), -7);
+});
+
+test("Division -10 durch -2", function () {
+    assert.strictEqual(berechnen(-10, "dividieren", -2), 5);
+});
+
+console.log("  5 Tests bestanden");
+
+// --- Erweiterte Benutzer-Validierung ---
+
+console.log("\n=== Erweiterte Benutzer-Validierung ===");
+
+test("PLZ mit 6 Ziffern erzeugt Fehler", function () {
+    var f = benutzerValidieren({ name: "Max", email: "max@test.de", alter: 30, plz: "101150" });
+    assert.ok(f.length > 0);
+});
+
+test("Email mit mehreren @ erzeugt keinen Fehler (enthaelt @)", function () {
+    // Aktuelle Validierung prueft nur ob @ enthalten
+    var f = benutzerValidieren({ name: "Max", email: "a@b@c", alter: 30 });
+    assert.ok(!f.some(function (e) { return e.includes("E-Mail"); }));
+});
+
+test("Alter genau 151 erzeugt Fehler", function () {
+    var f = benutzerValidieren({ name: "Max", email: "max@test.de", alter: 151 });
+    assert.ok(f.some(function (e) { return e.includes("Alter"); }));
+});
+
+test("Leere PLZ ist gueltig (optionales Feld)", function () {
+    var f = benutzerValidieren({ name: "Max", email: "max@test.de", alter: 30, plz: "" });
+    assert.ok(!f.some(function (e) { return e.includes("PLZ"); }));
+});
+
+console.log("  4 Tests bestanden");
+
+// --- Erweiterte Patienten-Validierung ---
+
+console.log("\n=== Erweiterte Patienten-Validierung ===");
+
+test("Patient Vorname nur Leerzeichen", function () {
+    var f = patientValidieren({
+        vorname: "   ", nachname: "M", geburtsdatum: "1990-01-01",
+        versicherungsnummer: "A1", krankenkasse: "AOK"
+    });
+    assert.ok(f.some(function (e) { return e.includes("Vorname"); }));
+});
+
+test("Patient Nachname nur Leerzeichen", function () {
+    var f = patientValidieren({
+        vorname: "Max", nachname: "   ", geburtsdatum: "1990-01-01",
+        versicherungsnummer: "A1", krankenkasse: "AOK"
+    });
+    assert.ok(f.some(function (e) { return e.includes("Nachname"); }));
+});
+
+test("Patient Versicherungsnummer nur Leerzeichen", function () {
+    var f = patientValidieren({
+        vorname: "Max", nachname: "M", geburtsdatum: "1990-01-01",
+        versicherungsnummer: "   ", krankenkasse: "AOK"
+    });
+    assert.ok(f.some(function (e) { return e.includes("Versicherungsnummer"); }));
+});
+
+test("Patient Krankenkasse nur Leerzeichen", function () {
+    var f = patientValidieren({
+        vorname: "Max", nachname: "M", geburtsdatum: "1990-01-01",
+        versicherungsnummer: "A1", krankenkasse: "   "
+    });
+    assert.ok(f.some(function (e) { return e.includes("Krankenkasse"); }));
+});
+
+test("Patient mit null-Werten ergibt Fehler", function () {
+    var f = patientValidieren({
+        vorname: null, nachname: null, geburtsdatum: null,
+        versicherungsnummer: null, krankenkasse: null
+    });
+    assert.strictEqual(f.length, 5);
+});
+
+console.log("  5 Tests bestanden");
+
+// --- Erweiterte Arzt-Validierung ---
+
+console.log("\n=== Erweiterte Arzt-Validierung ===");
+
+test("Arzt Vorname nur Leerzeichen", function () {
+    var f = arztValidieren({ vorname: "   ", nachname: "S", fachrichtung: "K" });
+    assert.ok(f.some(function (e) { return e.includes("Vorname"); }));
+});
+
+test("Arzt Fachrichtung nur Leerzeichen", function () {
+    var f = arztValidieren({ vorname: "Hans", nachname: "S", fachrichtung: "   " });
+    assert.ok(f.some(function (e) { return e.includes("Fachrichtung"); }));
+});
+
+test("Arzt mit null-Werten ergibt 3 Fehler", function () {
+    var f = arztValidieren({ vorname: null, nachname: null, fachrichtung: null });
+    assert.strictEqual(f.length, 3);
+});
+
+console.log("  3 Tests bestanden");
+
+// --- Erweiterte Termin-Validierung ---
+
+console.log("\n=== Erweiterte Termin-Validierung ===");
+
+test("Termin patient_id 0 ist ungueltig", function () {
+    var f = terminValidieren({ patient_id: 0, arzt_id: 1, datum: "2026-03-15", uhrzeit: "10:00" });
+    assert.ok(f.some(function (e) { return e.includes("Patient"); }));
+});
+
+test("Termin arzt_id 0 ist ungueltig", function () {
+    var f = terminValidieren({ patient_id: 1, arzt_id: 0, datum: "2026-03-15", uhrzeit: "10:00" });
+    assert.ok(f.some(function (e) { return e.includes("Arzt"); }));
+});
+
+test("Termin mit null datum", function () {
+    var f = terminValidieren({ patient_id: 1, arzt_id: 1, datum: null, uhrzeit: "10:00" });
+    assert.ok(f.some(function (e) { return e.includes("Datum"); }));
+});
+
+test("Termin mit null uhrzeit", function () {
+    var f = terminValidieren({ patient_id: 1, arzt_id: 1, datum: "2026-03-15", uhrzeit: null });
+    assert.ok(f.some(function (e) { return e.includes("Uhrzeit"); }));
+});
+
+console.log("  4 Tests bestanden");
+
+// --- Erweiterte wartezeitBerechnen Tests ---
+
+console.log("\n=== Erweiterte wartezeitBerechnen Tests ===");
+
+test("Undefined Ankunftszeit ergibt leeren String", function () {
+    assert.strictEqual(wartezeitBerechnen(undefined), "");
+});
+
+test("Genau 1 Minute wartezeit", function () {
+    var vor1Min = new Date(Date.now() - 61000).toISOString();
+    var ergebnis = wartezeitBerechnen(vor1Min);
+    assert.ok(ergebnis.includes("Min."));
+});
+
+test("Genau 60 Minuten zeigt Stunden", function () {
+    var vor60Min = new Date(Date.now() - 61 * 60000).toISOString();
+    var ergebnis = wartezeitBerechnen(vor60Min);
+    assert.ok(ergebnis.includes("Std."));
+});
+
+test("Mehrere Stunden korrekt", function () {
+    var vor150Min = new Date(Date.now() - 150 * 60000).toISOString();
+    var ergebnis = wartezeitBerechnen(vor150Min);
+    assert.ok(ergebnis.includes("2 Std."));
+    assert.ok(ergebnis.includes("30 Min."));
+});
+
+console.log("  4 Tests bestanden");
+
+// --- escapeHtml Erweitert ---
+
+console.log("\n=== escapeHtml Erweitert ===");
+
+test("Nur Sonderzeichen", function () {
+    var ergebnis = escapeHtml("< > & \"");
+    assert.ok(ergebnis.includes("&lt;"));
+    assert.ok(ergebnis.includes("&gt;"));
+    assert.ok(ergebnis.includes("&amp;"));
+    assert.ok(ergebnis.includes("&quot;"));
+});
+
+test("Umlaute bleiben erhalten", function () {
+    assert.strictEqual(escapeHtml("Aerzteueoe"), "Aerzteueoe");
+});
+
+test("Zahlen bleiben erhalten", function () {
+    assert.strictEqual(escapeHtml("12345"), "12345");
+});
+
+console.log("  3 Tests bestanden");
+
 console.log("\n=== Alle " + bestanden + " JS-Tests bestanden ===");

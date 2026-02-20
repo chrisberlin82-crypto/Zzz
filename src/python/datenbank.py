@@ -327,6 +327,18 @@ def arzt_loeschen(conn: sqlite3.Connection, arzt_id: int) -> bool:
     return cursor.rowcount > 0
 
 
+def arzt_suchen(conn: sqlite3.Connection, suchbegriff: str) -> list[dict]:
+    """Sucht Aerzte nach Name oder Fachrichtung."""
+    like = f"%{suchbegriff}%"
+    rows = conn.execute(
+        """SELECT * FROM aerzte
+           WHERE vorname LIKE ? OR nachname LIKE ? OR fachrichtung LIKE ?
+           ORDER BY nachname, vorname""",
+        (like, like, like),
+    ).fetchall()
+    return [_arzt_zu_dict(r) for r in rows]
+
+
 # --- Termine ---
 
 def termin_erstellen(conn: sqlite3.Connection, daten: dict) -> dict:
@@ -723,6 +735,13 @@ def anruf_aktualisieren(conn: sqlite3.Connection, anruf_id: int, daten: dict) ->
     conn.execute(f"UPDATE anrufe SET {', '.join(felder)} WHERE id = ?", werte)
     conn.commit()
     return anruf_nach_id(conn, anruf_id)
+
+
+def anruf_loeschen(conn: sqlite3.Connection, anruf_id: int) -> bool:
+    """Loescht einen Anruf."""
+    cursor = conn.execute("DELETE FROM anrufe WHERE id = ?", (anruf_id,))
+    conn.commit()
+    return cursor.rowcount > 0
 
 
 def anruf_aktive(conn: sqlite3.Connection) -> list[dict]:
