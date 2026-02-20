@@ -38,6 +38,16 @@ class Datenbank
                 erstellt_am TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ');
+        $this->pdo->exec('
+            CREATE TABLE IF NOT EXISTS verlauf (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                a REAL NOT NULL,
+                b REAL NOT NULL,
+                operation TEXT NOT NULL,
+                ergebnis REAL NOT NULL,
+                erstellt_am TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ');
     }
 
     public function benutzerErstellen(array $daten): array
@@ -103,6 +113,58 @@ class Datenbank
         $stmt = $this->pdo->prepare('DELETE FROM benutzer WHERE id = :id');
         $stmt->execute([':id' => $id]);
         return $stmt->rowCount() > 0;
+    }
+
+    public function benutzerSuchen(string $suchbegriff): array
+    {
+        $like = "%{$suchbegriff}%";
+        $stmt = $this->pdo->prepare(
+            'SELECT * FROM benutzer WHERE name LIKE :s1 OR email LIKE :s2 OR stadt LIKE :s3 ORDER BY id'
+        );
+        $stmt->execute([':s1' => $like, ':s2' => $like, ':s3' => $like]);
+        return $stmt->fetchAll();
+    }
+
+    public function berechnungSpeichern(float $a, float $b, string $operation, float $ergebnis): array
+    {
+        $stmt = $this->pdo->prepare(
+            'INSERT INTO verlauf (a, b, operation, ergebnis) VALUES (:a, :b, :op, :erg)'
+        );
+        $stmt->execute([':a' => $a, ':b' => $b, ':op' => $operation, ':erg' => $ergebnis]);
+
+        $id = (int) $this->pdo->lastInsertId();
+        $row = $this->pdo->prepare('SELECT * FROM verlauf WHERE id = :id');
+        $row->execute([':id' => $id]);
+        return $row->fetch();
+    }
+
+    public function verlaufLaden(int $limit = 20): array
+    {
+        $stmt = $this->pdo->prepare('SELECT * FROM verlauf ORDER BY id DESC LIMIT :limit');
+        $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+
+    public function verlaufLoeschen(): int
+    {
+        $stmt = $this->pdo->exec('DELETE FROM verlauf');
+        return (int) $stmt;
+    }
+
+    /**
+     * Formatiert eine Verlaufszeile fuer die API-Ausgabe.
+     */
+    public static function verlaufFormat(array $row): array
+    {
+        return [
+            'id' => (int) $row['id'],
+            'a' => (float) $row['a'],
+            'b' => (float) $row['b'],
+            'operation' => $row['operation'],
+            'ergebnis' => (float) $row['ergebnis'],
+            'erstellt_am' => $row['erstellt_am'],
+        ];
     }
 
     /**

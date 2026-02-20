@@ -39,11 +39,27 @@ try {
             default => throw new \InvalidArgumentException("Unbekannte Operation: {$operation}"),
         };
 
+        $db->berechnungSpeichern((float) $a, (float) $b, $operation, $ergebnis);
         echo json_encode(['ergebnis' => $ergebnis]);
+
+    // --- Verlauf ---
+    } elseif ($pfad === '/api/verlauf' && $methode === 'GET') {
+        $limit = isset($_GET['limit']) ? (int) $_GET['limit'] : 20;
+        $eintraege = $db->verlaufLaden($limit);
+        echo json_encode(array_map([Datenbank::class, 'verlaufFormat'], $eintraege));
+
+    } elseif ($pfad === '/api/verlauf' && $methode === 'DELETE') {
+        $anzahl = $db->verlaufLoeschen();
+        echo json_encode(['nachricht' => "{$anzahl} Eintraege geloescht"]);
 
     // --- Benutzer: Liste ---
     } elseif ($pfad === '/api/benutzer' && $methode === 'GET') {
-        $alle = $db->benutzerAlle();
+        $suche = isset($_GET['suche']) ? trim($_GET['suche']) : '';
+        if ($suche !== '') {
+            $alle = $db->benutzerSuchen($suche);
+        } else {
+            $alle = $db->benutzerAlle();
+        }
         $ergebnis = array_map([Datenbank::class, 'zeilenFormat'], $alle);
         echo json_encode($ergebnis);
 

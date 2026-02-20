@@ -131,6 +131,87 @@ class TestApiBenutzerCrud:
         assert resp.status_code == 409
 
 
+class TestApiVerlauf:
+    def test_verlauf_leer(self, client):
+        resp = client.get("/api/verlauf")
+        assert resp.status_code == 200
+        assert resp.get_json() == []
+
+    def test_verlauf_nach_berechnung(self, client):
+        client.post("/api/berechnen", json={"a": 2, "b": 3, "operation": "addieren"})
+        resp = client.get("/api/verlauf")
+        assert resp.status_code == 200
+        eintraege = resp.get_json()
+        assert len(eintraege) == 1
+        assert eintraege[0]["ergebnis"] == 5.0
+
+    def test_verlauf_mehrere(self, client):
+        client.post("/api/berechnen", json={"a": 2, "b": 3, "operation": "addieren"})
+        client.post("/api/berechnen", json={"a": 10, "b": 5, "operation": "subtrahieren"})
+        resp = client.get("/api/verlauf")
+        assert len(resp.get_json()) == 2
+
+    def test_verlauf_loeschen(self, client):
+        client.post("/api/berechnen", json={"a": 1, "b": 1, "operation": "addieren"})
+        resp = client.delete("/api/verlauf")
+        assert resp.status_code == 200
+        assert "geloescht" in resp.get_json()["nachricht"]
+        # Verlauf ist jetzt leer
+        resp2 = client.get("/api/verlauf")
+        assert resp2.get_json() == []
+
+    def test_verlauf_limit(self, client):
+        for i in range(5):
+            client.post("/api/berechnen", json={"a": i, "b": 1, "operation": "addieren"})
+        resp = client.get("/api/verlauf?limit=3")
+        assert len(resp.get_json()) == 3
+
+
+class TestApiBenutzerSuche:
+    def _benutzer_anlegen(self, client, name="Max", email="max@beispiel.de"):
+        return client.post("/api/benutzer", json={
+            "name": name, "email": email, "alter": 30
+        })
+
+    def test_suche_nach_name(self, client):
+        self._benutzer_anlegen(client, name="Max Mueller", email="max@t.de")
+        self._benutzer_anlegen(client, name="Anna Meier", email="anna@t.de")
+        resp = client.get("/api/benutzer?suche=Max")
+        assert resp.status_code == 200
+        ergebnis = resp.get_json()
+        assert len(ergebnis) == 1
+        assert ergebnis[0]["name"] == "Max Mueller"
+
+    def test_suche_nach_email(self, client):
+        self._benutzer_anlegen(client, email="max@beispiel.de")
+        resp = client.get("/api/benutzer?suche=beispiel")
+        assert len(resp.get_json()) == 1
+
+    def test_suche_nach_stadt(self, client):
+        # Benutzer erstellen und per PUT mit Stadt aktualisieren
+        resp1 = self._benutzer_anlegen(client, email="a@t.de")
+        resp2 = self._benutzer_anlegen(client, name="Bob", email="b@t.de")
+        id1 = resp1.get_json()["benutzer"]["id"]
+        id2 = resp2.get_json()["benutzer"]["id"]
+        client.put(f"/api/benutzer/{id1}", json={"stadt": "Berlin"})
+        client.put(f"/api/benutzer/{id2}", json={"stadt": "Hamburg"})
+        resp = client.get("/api/benutzer?suche=Hamburg")
+        ergebnis = resp.get_json()
+        assert len(ergebnis) == 1
+        assert ergebnis[0]["name"] == "Bob"
+
+    def test_suche_ohne_treffer(self, client):
+        self._benutzer_anlegen(client)
+        resp = client.get("/api/benutzer?suche=xyz_nicht_vorhanden")
+        assert resp.get_json() == []
+
+    def test_suche_leer_gibt_alle(self, client):
+        self._benutzer_anlegen(client, email="a@t.de")
+        self._benutzer_anlegen(client, name="Bob", email="b@t.de")
+        resp = client.get("/api/benutzer?suche=")
+        assert len(resp.get_json()) == 2
+
+
 class TestStatischeDateien:
     def test_index_seite(self, client):
         resp = client.get("/")

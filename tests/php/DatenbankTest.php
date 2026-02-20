@@ -126,6 +126,110 @@ class DatenbankTest extends TestCase
         $this->assertFalse($this->db->benutzerLoeschen(999));
     }
 
+    // --- Suchen ---
+
+    public function testBenutzerSuchenNachName(): void
+    {
+        $this->db->benutzerErstellen(['name' => 'Max Mueller', 'email' => 'max@t.de', 'alter' => 30]);
+        $this->db->benutzerErstellen(['name' => 'Anna Meier', 'email' => 'anna@t.de', 'alter' => 25]);
+        $ergebnis = $this->db->benutzerSuchen('Max');
+        $this->assertCount(1, $ergebnis);
+        $this->assertSame('Max Mueller', $ergebnis[0]['name']);
+    }
+
+    public function testBenutzerSuchenNachEmail(): void
+    {
+        $this->db->benutzerErstellen(['name' => 'Max', 'email' => 'max@beispiel.de', 'alter' => 30]);
+        $ergebnis = $this->db->benutzerSuchen('beispiel');
+        $this->assertCount(1, $ergebnis);
+    }
+
+    public function testBenutzerSuchenNachStadt(): void
+    {
+        $this->db->benutzerErstellen(['name' => 'Max', 'email' => 'max@t.de', 'alter' => 30, 'stadt' => 'Berlin']);
+        $this->db->benutzerErstellen(['name' => 'Anna', 'email' => 'anna@t.de', 'alter' => 25, 'stadt' => 'Hamburg']);
+        $ergebnis = $this->db->benutzerSuchen('Berlin');
+        $this->assertCount(1, $ergebnis);
+        $this->assertSame('Berlin', $ergebnis[0]['stadt']);
+    }
+
+    public function testBenutzerSuchenOhneTreffer(): void
+    {
+        $this->db->benutzerErstellen($this->beispielBenutzer());
+        $ergebnis = $this->db->benutzerSuchen('xyz_nicht_vorhanden');
+        $this->assertEmpty($ergebnis);
+    }
+
+    // --- Berechnung speichern ---
+
+    public function testBerechnungSpeichern(): void
+    {
+        $eintrag = $this->db->berechnungSpeichern(2.0, 3.0, 'addieren', 5.0);
+        $this->assertArrayHasKey('id', $eintrag);
+        $this->assertEquals(2.0, $eintrag['a']);
+        $this->assertEquals(3.0, $eintrag['b']);
+        $this->assertSame('addieren', $eintrag['operation']);
+        $this->assertEquals(5.0, $eintrag['ergebnis']);
+    }
+
+    // --- Verlauf laden ---
+
+    public function testVerlaufLadenLeer(): void
+    {
+        $this->assertEmpty($this->db->verlaufLaden());
+    }
+
+    public function testVerlaufLadenReihenfolge(): void
+    {
+        $this->db->berechnungSpeichern(1.0, 1.0, 'addieren', 2.0);
+        $this->db->berechnungSpeichern(2.0, 2.0, 'addieren', 4.0);
+        $eintraege = $this->db->verlaufLaden();
+        $this->assertCount(2, $eintraege);
+        $this->assertEquals(4.0, $eintraege[0]['ergebnis']); // neuester zuerst
+    }
+
+    public function testVerlaufLadenLimit(): void
+    {
+        for ($i = 0; $i < 5; $i++) {
+            $this->db->berechnungSpeichern((float) $i, 1.0, 'addieren', (float) ($i + 1));
+        }
+        $eintraege = $this->db->verlaufLaden(3);
+        $this->assertCount(3, $eintraege);
+    }
+
+    // --- Verlauf loeschen ---
+
+    public function testVerlaufLoeschen(): void
+    {
+        $this->db->berechnungSpeichern(1.0, 2.0, 'addieren', 3.0);
+        $this->db->berechnungSpeichern(3.0, 4.0, 'addieren', 7.0);
+        $anzahl = $this->db->verlaufLoeschen();
+        $this->assertSame(2, $anzahl);
+        $this->assertEmpty($this->db->verlaufLaden());
+    }
+
+    public function testVerlaufLoeschenLeer(): void
+    {
+        $anzahl = $this->db->verlaufLoeschen();
+        $this->assertSame(0, $anzahl);
+    }
+
+    // --- Verlauf-Format ---
+
+    public function testVerlaufFormat(): void
+    {
+        $row = [
+            'id' => 1, 'a' => 2.0, 'b' => 3.0,
+            'operation' => 'addieren', 'ergebnis' => 5.0,
+            'erstellt_am' => '2026-01-01 00:00:00',
+        ];
+        $formatted = Datenbank::verlaufFormat($row);
+        $this->assertSame(1, $formatted['id']);
+        $this->assertEquals(2.0, $formatted['a']);
+        $this->assertSame('addieren', $formatted['operation']);
+        $this->assertArrayHasKey('erstellt_am', $formatted);
+    }
+
     // --- Zeilen-Format ---
 
     public function testZeilenFormat(): void

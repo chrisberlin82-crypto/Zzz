@@ -7,7 +7,8 @@ import os
 from src.python.datenbank import (
     verbindung_herstellen, tabellen_erstellen,
     benutzer_erstellen, benutzer_alle, benutzer_nach_id,
-    benutzer_aktualisieren, benutzer_loeschen,
+    benutzer_aktualisieren, benutzer_loeschen, benutzer_suchen,
+    berechnung_speichern, verlauf_laden, verlauf_loeschen,
 )
 
 
@@ -109,6 +110,86 @@ class TestBenutzerLoeschen:
 
     def test_loeschen_nicht_vorhanden(self, db_conn):
         assert benutzer_loeschen(db_conn, 999) is False
+
+
+class TestBenutzerSuchen:
+    def test_suche_nach_name(self, db_conn):
+        benutzer_erstellen(db_conn, {"name": "Max Mustermann", "email": "max@t.de", "alter": 30})
+        benutzer_erstellen(db_conn, {"name": "Anna Meier", "email": "anna@t.de", "alter": 25})
+        ergebnis = benutzer_suchen(db_conn, "Max")
+        assert len(ergebnis) == 1
+        assert ergebnis[0]["name"] == "Max Mustermann"
+
+    def test_suche_nach_email(self, db_conn):
+        benutzer_erstellen(db_conn, {"name": "Max", "email": "max@beispiel.de", "alter": 30})
+        ergebnis = benutzer_suchen(db_conn, "beispiel")
+        assert len(ergebnis) == 1
+        assert ergebnis[0]["email"] == "max@beispiel.de"
+
+    def test_suche_nach_stadt(self, db_conn):
+        benutzer_erstellen(db_conn, {"name": "Max", "email": "max@t.de", "alter": 30, "stadt": "Berlin"})
+        benutzer_erstellen(db_conn, {"name": "Anna", "email": "anna@t.de", "alter": 25, "stadt": "Hamburg"})
+        ergebnis = benutzer_suchen(db_conn, "Berlin")
+        assert len(ergebnis) == 1
+        assert ergebnis[0]["stadt"] == "Berlin"
+
+    def test_suche_ohne_treffer(self, db_conn):
+        benutzer_erstellen(db_conn, {"name": "Max", "email": "max@t.de", "alter": 30})
+        ergebnis = benutzer_suchen(db_conn, "xyz_nicht_vorhanden")
+        assert len(ergebnis) == 0
+
+    def test_suche_mehrere_treffer(self, db_conn):
+        benutzer_erstellen(db_conn, {"name": "Max Mueller", "email": "max@t.de", "alter": 30})
+        benutzer_erstellen(db_conn, {"name": "Maximilian", "email": "maxi@t.de", "alter": 20})
+        ergebnis = benutzer_suchen(db_conn, "Max")
+        assert len(ergebnis) == 2
+
+
+class TestBerechnungSpeichern:
+    def test_speichern_gibt_dict_zurueck(self, db_conn):
+        eintrag = berechnung_speichern(db_conn, 2.0, 3.0, "addieren", 5.0)
+        assert eintrag["a"] == 2.0
+        assert eintrag["b"] == 3.0
+        assert eintrag["operation"] == "addieren"
+        assert eintrag["ergebnis"] == 5.0
+        assert eintrag["id"] is not None
+
+    def test_speichern_mehrere(self, db_conn):
+        berechnung_speichern(db_conn, 1.0, 2.0, "addieren", 3.0)
+        berechnung_speichern(db_conn, 10.0, 5.0, "subtrahieren", 5.0)
+        eintraege = verlauf_laden(db_conn)
+        assert len(eintraege) == 2
+
+
+class TestVerlaufLaden:
+    def test_leer(self, db_conn):
+        assert verlauf_laden(db_conn) == []
+
+    def test_reihenfolge_absteigend(self, db_conn):
+        berechnung_speichern(db_conn, 1.0, 1.0, "addieren", 2.0)
+        berechnung_speichern(db_conn, 2.0, 2.0, "addieren", 4.0)
+        eintraege = verlauf_laden(db_conn)
+        assert eintraege[0]["ergebnis"] == 4.0  # neuester zuerst
+        assert eintraege[1]["ergebnis"] == 2.0
+
+    def test_limit(self, db_conn):
+        for i in range(5):
+            berechnung_speichern(db_conn, float(i), 1.0, "addieren", float(i + 1))
+        eintraege = verlauf_laden(db_conn, limit=3)
+        assert len(eintraege) == 3
+
+
+class TestVerlaufLoeschen:
+    def test_loeschen_gibt_anzahl(self, db_conn):
+        berechnung_speichern(db_conn, 1.0, 2.0, "addieren", 3.0)
+        berechnung_speichern(db_conn, 3.0, 4.0, "addieren", 7.0)
+        anzahl = verlauf_loeschen(db_conn)
+        assert anzahl == 2
+        assert verlauf_laden(db_conn) == []
+
+    def test_loeschen_leer(self, db_conn):
+        anzahl = verlauf_loeschen(db_conn)
+        assert anzahl == 0
 
 
 class TestVerbindungDatei:
