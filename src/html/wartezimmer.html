@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MED Rezeption - Wartezimmer</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>MED Rezeption</h1>
+        <nav>
+            <a href="patienten.html">Patienten</a>
+            <a href="aerzte.html">Aerzte</a>
+            <a href="termine.html">Termine</a>
+            <a href="wartezimmer.html" class="active">Wartezimmer</a>
+            <a href="index.html">Rechner</a>
+            <a href="benutzer.html">Benutzer</a>
+        </nav>
+    </header>
+    <main>
+        <section id="wartezimmer-checkin">
+            <h2>Patient einchecken</h2>
+            <form id="checkin-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="checkin-patient">Patient</label>
+                        <select id="checkin-patient" required>
+                            <option value="">-- Patient waehlen --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="checkin-termin">Termin (optional)</label>
+                        <select id="checkin-termin">
+                            <option value="">-- Ohne Termin --</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="submit">Einchecken</button>
+            </form>
+            <div id="checkin-erfolg" class="ergebnis" hidden></div>
+            <div id="checkin-fehler" class="fehler" hidden></div>
+        </section>
+        <section id="wartezimmer-anzeige">
+            <div class="verlauf-header">
+                <h2>Wartezimmer</h2>
+                <span id="wartezimmer-anzahl" class="badge">0 wartend</span>
+            </div>
+            <div id="wartezimmer-liste"></div>
+        </section>
+    </main>
+    <script src="app.js"></script>
+</body>
+</html>

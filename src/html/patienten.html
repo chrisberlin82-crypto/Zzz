@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MED Rezeption - Patienten</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>MED Rezeption</h1>
+        <nav>
+            <a href="patienten.html" class="active">Patienten</a>
+            <a href="aerzte.html">Aerzte</a>
+            <a href="termine.html">Termine</a>
+            <a href="wartezimmer.html">Wartezimmer</a>
+            <a href="index.html">Rechner</a>
+            <a href="benutzer.html">Benutzer</a>
+        </nav>
+    </header>
+    <main>
+        <section id="patient-formular">
+            <h2 id="patient-formular-titel">Patient anlegen</h2>
+            <form id="patient-form">
+                <input type="hidden" id="patient-id" value="">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="patient-vorname">Vorname</label>
+                        <input type="text" id="patient-vorname" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="patient-nachname">Nachname</label>
+                        <input type="text" id="patient-nachname" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="patient-geburtsdatum">Geburtsdatum</label>
+                        <input type="date" id="patient-geburtsdatum" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="patient-versicherungsnummer">Versicherungsnummer</label>
+                        <input type="text" id="patient-versicherungsnummer" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="patient-krankenkasse">Krankenkasse</label>
+                    <input type="text" id="patient-krankenkasse" required>
+                </div>
+                <fieldset>
+                    <legend>Kontakt (optional)</legend>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="patient-telefon">Telefon</label>
+                            <input type="tel" id="patient-telefon">
+                        </div>
+                        <div class="form-group">
+                            <label for="patient-email">E-Mail</label>
+                            <input type="email" id="patient-email">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="patient-strasse">Strasse</label>
+                        <input type="text" id="patient-strasse">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="patient-plz">PLZ</label>
+                            <input type="text" id="patient-plz" pattern="[0-9]{5}" title="5-stellige PLZ">
+                        </div>
+                        <div class="form-group">
+                            <label for="patient-stadt">Stadt</label>
+                            <input type="text" id="patient-stadt">
+                        </div>
+                    </div>
+                </fieldset>
+                <div class="button-gruppe">
+                    <button type="submit" id="btn-patient-speichern">Speichern</button>
+                    <button type="button" id="btn-patient-abbrechen" hidden>Abbrechen</button>
+                </div>
+            </form>
+            <div id="patient-erfolg" class="ergebnis" hidden></div>
+            <div id="patient-fehler" class="fehler" hidden></div>
+        </section>
+        <section id="patienten-liste">
+            <h2>Patienten</h2>
+            <div class="form-group">
+                <input type="search" id="patient-suche" placeholder="Suche nach Name, Versicherungsnr. oder Stadt...">
+            </div>
+            <table id="patienten-tabelle">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Geburtsdatum</th>
+                        <th>Versicherungsnr.</th>
+                        <th>Krankenkasse</th>
+                        <th>Telefon</th>
+                        <th>Aktionen</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </section>
+    </main>
+    <script src="app.js"></script>
+</body>
+</html>

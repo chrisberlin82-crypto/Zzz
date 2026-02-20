@@ -48,7 +48,65 @@ class Datenbank
                 erstellt_am TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ');
+        $this->pdo->exec('
+            CREATE TABLE IF NOT EXISTS patienten (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                vorname TEXT NOT NULL,
+                nachname TEXT NOT NULL,
+                geburtsdatum TEXT NOT NULL,
+                versicherungsnummer TEXT NOT NULL UNIQUE,
+                krankenkasse TEXT NOT NULL,
+                telefon TEXT DEFAULT "",
+                email TEXT DEFAULT "",
+                strasse TEXT DEFAULT "",
+                plz TEXT DEFAULT "",
+                stadt TEXT DEFAULT "",
+                erstellt_am TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ');
+        $this->pdo->exec('
+            CREATE TABLE IF NOT EXISTS aerzte (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                titel TEXT DEFAULT "",
+                vorname TEXT NOT NULL,
+                nachname TEXT NOT NULL,
+                fachrichtung TEXT NOT NULL,
+                telefon TEXT DEFAULT "",
+                email TEXT DEFAULT "",
+                erstellt_am TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ');
+        $this->pdo->exec('
+            CREATE TABLE IF NOT EXISTS termine (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                patient_id INTEGER NOT NULL,
+                arzt_id INTEGER NOT NULL,
+                datum TEXT NOT NULL,
+                uhrzeit TEXT NOT NULL,
+                dauer_minuten INTEGER NOT NULL DEFAULT 15,
+                grund TEXT DEFAULT "",
+                status TEXT NOT NULL DEFAULT "geplant",
+                erstellt_am TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (patient_id) REFERENCES patienten(id),
+                FOREIGN KEY (arzt_id) REFERENCES aerzte(id)
+            )
+        ');
+        $this->pdo->exec('
+            CREATE TABLE IF NOT EXISTS wartezimmer (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                patient_id INTEGER NOT NULL,
+                termin_id INTEGER,
+                ankunft_zeit TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                status TEXT NOT NULL DEFAULT "wartend",
+                aufgerufen_zeit TIMESTAMP,
+                erstellt_am TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (patient_id) REFERENCES patienten(id),
+                FOREIGN KEY (termin_id) REFERENCES termine(id)
+            )
+        ');
     }
+
+    // --- Benutzer ---
 
     public function benutzerErstellen(array $daten): array
     {
@@ -125,6 +183,310 @@ class Datenbank
         return $stmt->fetchAll();
     }
 
+    // --- Patienten ---
+
+    public function patientErstellen(array $daten): array
+    {
+        $stmt = $this->pdo->prepare(
+            'INSERT INTO patienten (vorname, nachname, geburtsdatum, versicherungsnummer,
+             krankenkasse, telefon, email, strasse, plz, stadt)
+             VALUES (:vorname, :nachname, :geburtsdatum, :vnr, :kk, :tel, :email, :str, :plz, :stadt)'
+        );
+        $stmt->execute([
+            ':vorname' => $daten['vorname'],
+            ':nachname' => $daten['nachname'],
+            ':geburtsdatum' => $daten['geburtsdatum'],
+            ':vnr' => $daten['versicherungsnummer'],
+            ':kk' => $daten['krankenkasse'],
+            ':tel' => $daten['telefon'] ?? '',
+            ':email' => $daten['email'] ?? '',
+            ':str' => $daten['strasse'] ?? '',
+            ':plz' => $daten['plz'] ?? '',
+            ':stadt' => $daten['stadt'] ?? '',
+        ]);
+        return $this->patientNachId((int) $this->pdo->lastInsertId());
+    }
+
+    public function patientAlle(): array
+    {
+        return $this->pdo->query('SELECT * FROM patienten ORDER BY nachname, vorname')->fetchAll();
+    }
+
+    public function patientNachId(int $id): ?array
+    {
+        $stmt = $this->pdo->prepare('SELECT * FROM patienten WHERE id = :id');
+        $stmt->execute([':id' => $id]);
+        $row = $stmt->fetch();
+        return $row ?: null;
+    }
+
+    public function patientAktualisieren(int $id, array $daten): ?array
+    {
+        $felder = [];
+        $werte = [':id' => $id];
+        $zuordnung = [
+            'vorname' => 'vorname', 'nachname' => 'nachname', 'geburtsdatum' => 'geburtsdatum',
+            'versicherungsnummer' => 'versicherungsnummer', 'krankenkasse' => 'krankenkasse',
+            'telefon' => 'telefon', 'email' => 'email',
+            'strasse' => 'strasse', 'plz' => 'plz', 'stadt' => 'stadt',
+        ];
+
+        foreach ($zuordnung as $eingabe => $spalte) {
+            if (isset($daten[$eingabe])) {
+                $felder[] = "{$spalte} = :{$eingabe}";
+                $werte[":{$eingabe}"] = $daten[$eingabe];
+            }
+        }
+
+        if (empty($felder)) {
+            return $this->patientNachId($id);
+        }
+
+        $sql = 'UPDATE patienten SET ' . implode(', ', $felder) . ' WHERE id = :id';
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($werte);
+        return $this->patientNachId($id);
+    }
+
+    public function patientLoeschen(int $id): bool
+    {
+        $stmt = $this->pdo->prepare('DELETE FROM patienten WHERE id = :id');
+        $stmt->execute([':id' => $id]);
+        return $stmt->rowCount() > 0;
+    }
+
+    public function patientSuchen(string $suchbegriff): array
+    {
+        $like = "%{$suchbegriff}%";
+        $stmt = $this->pdo->prepare(
+            'SELECT * FROM patienten WHERE vorname LIKE :s1 OR nachname LIKE :s2
+             OR versicherungsnummer LIKE :s3 OR stadt LIKE :s4 ORDER BY nachname, vorname'
+        );
+        $stmt->execute([':s1' => $like, ':s2' => $like, ':s3' => $like, ':s4' => $like]);
+        return $stmt->fetchAll();
+    }
+
+    // --- Aerzte ---
+
+    public function arztErstellen(array $daten): array
+    {
+        $stmt = $this->pdo->prepare(
+            'INSERT INTO aerzte (titel, vorname, nachname, fachrichtung, telefon, email)
+             VALUES (:titel, :vorname, :nachname, :fach, :tel, :email)'
+        );
+        $stmt->execute([
+            ':titel' => $daten['titel'] ?? '',
+            ':vorname' => $daten['vorname'],
+            ':nachname' => $daten['nachname'],
+            ':fach' => $daten['fachrichtung'],
+            ':tel' => $daten['telefon'] ?? '',
+            ':email' => $daten['email'] ?? '',
+        ]);
+        return $this->arztNachId((int) $this->pdo->lastInsertId());
+    }
+
+    public function arztAlle(): array
+    {
+        return $this->pdo->query('SELECT * FROM aerzte ORDER BY nachname, vorname')->fetchAll();
+    }
+
+    public function arztNachId(int $id): ?array
+    {
+        $stmt = $this->pdo->prepare('SELECT * FROM aerzte WHERE id = :id');
+        $stmt->execute([':id' => $id]);
+        $row = $stmt->fetch();
+        return $row ?: null;
+    }
+
+    public function arztAktualisieren(int $id, array $daten): ?array
+    {
+        $felder = [];
+        $werte = [':id' => $id];
+        $zuordnung = [
+            'titel' => 'titel', 'vorname' => 'vorname', 'nachname' => 'nachname',
+            'fachrichtung' => 'fachrichtung', 'telefon' => 'telefon', 'email' => 'email',
+        ];
+
+        foreach ($zuordnung as $eingabe => $spalte) {
+            if (isset($daten[$eingabe])) {
+                $felder[] = "{$spalte} = :{$eingabe}";
+                $werte[":{$eingabe}"] = $daten[$eingabe];
+            }
+        }
+
+        if (empty($felder)) {
+            return $this->arztNachId($id);
+        }
+
+        $sql = 'UPDATE aerzte SET ' . implode(', ', $felder) . ' WHERE id = :id';
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($werte);
+        return $this->arztNachId($id);
+    }
+
+    public function arztLoeschen(int $id): bool
+    {
+        $stmt = $this->pdo->prepare('DELETE FROM aerzte WHERE id = :id');
+        $stmt->execute([':id' => $id]);
+        return $stmt->rowCount() > 0;
+    }
+
+    // --- Termine ---
+
+    public function terminErstellen(array $daten): array
+    {
+        $stmt = $this->pdo->prepare(
+            'INSERT INTO termine (patient_id, arzt_id, datum, uhrzeit, dauer_minuten, grund, status)
+             VALUES (:pid, :aid, :datum, :zeit, :dauer, :grund, :status)'
+        );
+        $stmt->execute([
+            ':pid' => $daten['patient_id'],
+            ':aid' => $daten['arzt_id'],
+            ':datum' => $daten['datum'],
+            ':zeit' => $daten['uhrzeit'],
+            ':dauer' => $daten['dauer_minuten'] ?? 15,
+            ':grund' => $daten['grund'] ?? '',
+            ':status' => $daten['status'] ?? 'geplant',
+        ]);
+        return $this->terminNachId((int) $this->pdo->lastInsertId());
+    }
+
+    public function terminAlle(?string $datum = null): array
+    {
+        $sql = 'SELECT t.*, p.vorname AS p_vorname, p.nachname AS p_nachname,
+                a.titel AS a_titel, a.vorname AS a_vorname, a.nachname AS a_nachname
+                FROM termine t
+                JOIN patienten p ON t.patient_id = p.id
+                JOIN aerzte a ON t.arzt_id = a.id';
+        if ($datum) {
+            $sql .= ' WHERE t.datum = :datum ORDER BY t.uhrzeit';
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([':datum' => $datum]);
+        } else {
+            $sql .= ' ORDER BY t.datum DESC, t.uhrzeit';
+            $stmt = $this->pdo->query($sql);
+        }
+        return $stmt->fetchAll();
+    }
+
+    public function terminNachId(int $id): ?array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT t.*, p.vorname AS p_vorname, p.nachname AS p_nachname,
+             a.titel AS a_titel, a.vorname AS a_vorname, a.nachname AS a_nachname
+             FROM termine t
+             JOIN patienten p ON t.patient_id = p.id
+             JOIN aerzte a ON t.arzt_id = a.id
+             WHERE t.id = :id'
+        );
+        $stmt->execute([':id' => $id]);
+        $row = $stmt->fetch();
+        return $row ?: null;
+    }
+
+    public function terminAktualisieren(int $id, array $daten): ?array
+    {
+        $felder = [];
+        $werte = [':id' => $id];
+        $zuordnung = [
+            'patient_id' => 'patient_id', 'arzt_id' => 'arzt_id',
+            'datum' => 'datum', 'uhrzeit' => 'uhrzeit',
+            'dauer_minuten' => 'dauer_minuten', 'grund' => 'grund', 'status' => 'status',
+        ];
+
+        foreach ($zuordnung as $eingabe => $spalte) {
+            if (isset($daten[$eingabe])) {
+                $felder[] = "{$spalte} = :{$eingabe}";
+                $werte[":{$eingabe}"] = $daten[$eingabe];
+            }
+        }
+
+        if (empty($felder)) {
+            return $this->terminNachId($id);
+        }
+
+        $sql = 'UPDATE termine SET ' . implode(', ', $felder) . ' WHERE id = :id';
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($werte);
+        return $this->terminNachId($id);
+    }
+
+    public function terminLoeschen(int $id): bool
+    {
+        $stmt = $this->pdo->prepare('DELETE FROM termine WHERE id = :id');
+        $stmt->execute([':id' => $id]);
+        return $stmt->rowCount() > 0;
+    }
+
+    // --- Wartezimmer ---
+
+    public function wartezimmerHinzufuegen(array $daten): array
+    {
+        $stmt = $this->pdo->prepare(
+            'INSERT INTO wartezimmer (patient_id, termin_id, status) VALUES (:pid, :tid, "wartend")'
+        );
+        $stmt->execute([
+            ':pid' => $daten['patient_id'],
+            ':tid' => $daten['termin_id'] ?? null,
+        ]);
+        return $this->wartezimmerNachId((int) $this->pdo->lastInsertId());
+    }
+
+    public function wartezimmerAktuelle(): array
+    {
+        $stmt = $this->pdo->query(
+            'SELECT w.*, p.vorname AS p_vorname, p.nachname AS p_nachname,
+             t.uhrzeit AS t_uhrzeit, t.grund AS t_grund,
+             a.titel AS a_titel, a.vorname AS a_vorname, a.nachname AS a_nachname
+             FROM wartezimmer w
+             JOIN patienten p ON w.patient_id = p.id
+             LEFT JOIN termine t ON w.termin_id = t.id
+             LEFT JOIN aerzte a ON t.arzt_id = a.id
+             WHERE w.status IN ("wartend", "aufgerufen")
+             ORDER BY w.ankunft_zeit'
+        );
+        return $stmt->fetchAll();
+    }
+
+    public function wartezimmerNachId(int $id): ?array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT w.*, p.vorname AS p_vorname, p.nachname AS p_nachname,
+             t.uhrzeit AS t_uhrzeit, t.grund AS t_grund,
+             a.titel AS a_titel, a.vorname AS a_vorname, a.nachname AS a_nachname
+             FROM wartezimmer w
+             JOIN patienten p ON w.patient_id = p.id
+             LEFT JOIN termine t ON w.termin_id = t.id
+             LEFT JOIN aerzte a ON t.arzt_id = a.id
+             WHERE w.id = :id'
+        );
+        $stmt->execute([':id' => $id]);
+        $row = $stmt->fetch();
+        return $row ?: null;
+    }
+
+    public function wartezimmerStatusAendern(int $id, string $status): ?array
+    {
+        if ($status === 'aufgerufen') {
+            $stmt = $this->pdo->prepare(
+                'UPDATE wartezimmer SET status = :status, aufgerufen_zeit = CURRENT_TIMESTAMP WHERE id = :id'
+            );
+        } else {
+            $stmt = $this->pdo->prepare('UPDATE wartezimmer SET status = :status WHERE id = :id');
+        }
+        $stmt->execute([':status' => $status, ':id' => $id]);
+        return $this->wartezimmerNachId($id);
+    }
+
+    public function wartezimmerEntfernen(int $id): bool
+    {
+        $stmt = $this->pdo->prepare('DELETE FROM wartezimmer WHERE id = :id');
+        $stmt->execute([':id' => $id]);
+        return $stmt->rowCount() > 0;
+    }
+
+    // --- Verlauf ---
+
     public function berechnungSpeichern(float $a, float $b, string $operation, float $ergebnis): array
     {
         $stmt = $this->pdo->prepare(
@@ -152,9 +514,8 @@ class Datenbank
         return (int) $stmt;
     }
 
-    /**
-     * Formatiert eine Verlaufszeile fuer die API-Ausgabe.
-     */
+    // --- Format-Helfer ---
+
     public static function verlaufFormat(array $row): array
     {
         return [
@@ -167,9 +528,6 @@ class Datenbank
         ];
     }
 
-    /**
-     * Formatiert eine DB-Zeile fuer die API-Ausgabe.
-     */
     public static function zeilenFormat(array $row): array
     {
         return [
@@ -180,6 +538,70 @@ class Datenbank
             'strasse' => $row['strasse'],
             'plz' => $row['plz'],
             'stadt' => $row['stadt'],
+        ];
+    }
+
+    public static function patientFormat(array $row): array
+    {
+        return [
+            'id' => (int) $row['id'],
+            'vorname' => $row['vorname'],
+            'nachname' => $row['nachname'],
+            'geburtsdatum' => $row['geburtsdatum'],
+            'versicherungsnummer' => $row['versicherungsnummer'],
+            'krankenkasse' => $row['krankenkasse'],
+            'telefon' => $row['telefon'],
+            'email' => $row['email'],
+            'strasse' => $row['strasse'],
+            'plz' => $row['plz'],
+            'stadt' => $row['stadt'],
+        ];
+    }
+
+    public static function arztFormat(array $row): array
+    {
+        return [
+            'id' => (int) $row['id'],
+            'titel' => $row['titel'],
+            'vorname' => $row['vorname'],
+            'nachname' => $row['nachname'],
+            'fachrichtung' => $row['fachrichtung'],
+            'telefon' => $row['telefon'],
+            'email' => $row['email'],
+        ];
+    }
+
+    public static function terminFormat(array $row): array
+    {
+        return [
+            'id' => (int) $row['id'],
+            'patient_id' => (int) $row['patient_id'],
+            'arzt_id' => (int) $row['arzt_id'],
+            'datum' => $row['datum'],
+            'uhrzeit' => $row['uhrzeit'],
+            'dauer_minuten' => (int) $row['dauer_minuten'],
+            'grund' => $row['grund'],
+            'status' => $row['status'],
+            'patient_name' => $row['p_vorname'] . ' ' . $row['p_nachname'],
+            'arzt_name' => trim(($row['a_titel'] ?? '') . ' ' . $row['a_vorname'] . ' ' . $row['a_nachname']),
+        ];
+    }
+
+    public static function wartezimmerFormat(array $row): array
+    {
+        return [
+            'id' => (int) $row['id'],
+            'patient_id' => (int) $row['patient_id'],
+            'termin_id' => $row['termin_id'] ? (int) $row['termin_id'] : null,
+            'ankunft_zeit' => $row['ankunft_zeit'],
+            'status' => $row['status'],
+            'aufgerufen_zeit' => $row['aufgerufen_zeit'],
+            'patient_name' => $row['p_vorname'] . ' ' . $row['p_nachname'],
+            'termin_uhrzeit' => $row['t_uhrzeit'] ?? null,
+            'termin_grund' => $row['t_grund'] ?? null,
+            'arzt_name' => isset($row['a_vorname']) && $row['a_vorname']
+                ? trim(($row['a_titel'] ?? '') . ' ' . $row['a_vorname'] . ' ' . $row['a_nachname'])
+                : null,
         ];
     }
 }

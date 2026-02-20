@@ -232,7 +232,7 @@ class TestStatischeDateien:
     def test_index_seite(self, client):
         resp = client.get("/")
         assert resp.status_code == 200
-        assert b"Zzz Rechner" in resp.data
+        assert b"MED Rezeption" in resp.data
 
     def test_benutzer_seite(self, client):
         resp = client.get("/benutzer.html")

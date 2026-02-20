@@ -1,4 +1,4 @@
-"""Flask Web-App fuer den Zzz Rechner und die Benutzerverwaltung."""
+"""Flask Web-App fuer MED Rezeption."""
 
 import sqlite3
 from flask import Flask, jsonify, request, send_from_directory
@@ -11,6 +11,14 @@ from src.python.datenbank import (
     benutzer_erstellen, benutzer_alle, benutzer_nach_id,
     benutzer_aktualisieren, benutzer_loeschen, benutzer_suchen,
     berechnung_speichern, verlauf_laden, verlauf_loeschen,
+    patient_erstellen, patient_alle, patient_nach_id,
+    patient_aktualisieren, patient_loeschen, patient_suchen,
+    arzt_erstellen, arzt_alle, arzt_nach_id,
+    arzt_aktualisieren, arzt_loeschen,
+    termin_erstellen, termin_alle, termin_nach_id,
+    termin_aktualisieren, termin_loeschen,
+    wartezimmer_hinzufuegen, wartezimmer_aktuelle, wartezimmer_nach_id,
+    wartezimmer_status_aendern, wartezimmer_entfernen,
 )
 
 app = Flask(__name__, static_folder=str(Path(__file__).resolve().parent.parent / "html"))
@@ -145,6 +153,246 @@ def api_benutzer_loeschen_route(benutzer_id):
     if benutzer_loeschen(db(), benutzer_id):
         return jsonify({"nachricht": "Benutzer geloescht"})
     return jsonify({"fehler": "Benutzer nicht gefunden"}), 404
+
+
+# --- Patienten API ---
+
+@app.route("/api/patienten", methods=["GET"])
+def api_patienten_liste():
+    suche = request.args.get("suche", "").strip()
+    if suche:
+        return jsonify(patient_suchen(db(), suche))
+    return jsonify(patient_alle(db()))
+
+
+@app.route("/api/patienten", methods=["POST"])
+def api_patient_erstellen_route():
+    daten = request.get_json()
+    if not daten:
+        return jsonify({"fehler": "Keine Daten erhalten"}), 400
+
+    fehler = []
+    if not daten.get("vorname"):
+        fehler.append("Vorname ist erforderlich")
+    if not daten.get("nachname"):
+        fehler.append("Nachname ist erforderlich")
+    if not daten.get("geburtsdatum"):
+        fehler.append("Geburtsdatum ist erforderlich")
+    if not daten.get("versicherungsnummer"):
+        fehler.append("Versicherungsnummer ist erforderlich")
+    if not daten.get("krankenkasse"):
+        fehler.append("Krankenkasse ist erforderlich")
+
+    if fehler:
+        return jsonify({"fehler": fehler}), 422
+
+    try:
+        patient = patient_erstellen(db(), daten)
+        return jsonify({"nachricht": "Patient gespeichert", "patient": patient}), 201
+    except sqlite3.IntegrityError:
+        return jsonify({"fehler": ["Versicherungsnummer existiert bereits"]}), 409
+
+
+@app.route("/api/patienten/<int:patient_id>", methods=["GET"])
+def api_patient_detail(patient_id):
+    patient = patient_nach_id(db(), patient_id)
+    if not patient:
+        return jsonify({"fehler": "Patient nicht gefunden"}), 404
+    return jsonify(patient)
+
+
+@app.route("/api/patienten/<int:patient_id>", methods=["PUT"])
+def api_patient_aktualisieren_route(patient_id):
+    daten = request.get_json()
+    if not daten:
+        return jsonify({"fehler": "Keine Daten erhalten"}), 400
+
+    patient = patient_nach_id(db(), patient_id)
+    if not patient:
+        return jsonify({"fehler": "Patient nicht gefunden"}), 404
+
+    try:
+        aktualisiert = patient_aktualisieren(db(), patient_id, daten)
+        return jsonify({"nachricht": "Patient aktualisiert", "patient": aktualisiert})
+    except sqlite3.IntegrityError:
+        return jsonify({"fehler": ["Versicherungsnummer existiert bereits"]}), 409
+
+
+@app.route("/api/patienten/<int:patient_id>", methods=["DELETE"])
+def api_patient_loeschen_route(patient_id):
+    if patient_loeschen(db(), patient_id):
+        return jsonify({"nachricht": "Patient geloescht"})
+    return jsonify({"fehler": "Patient nicht gefunden"}), 404
+
+
+# --- Aerzte API ---
+
+@app.route("/api/aerzte", methods=["GET"])
+def api_aerzte_liste():
+    return jsonify(arzt_alle(db()))
+
+
+@app.route("/api/aerzte", methods=["POST"])
+def api_arzt_erstellen_route():
+    daten = request.get_json()
+    if not daten:
+        return jsonify({"fehler": "Keine Daten erhalten"}), 400
+
+    fehler = []
+    if not daten.get("vorname"):
+        fehler.append("Vorname ist erforderlich")
+    if not daten.get("nachname"):
+        fehler.append("Nachname ist erforderlich")
+    if not daten.get("fachrichtung"):
+        fehler.append("Fachrichtung ist erforderlich")
+
+    if fehler:
+        return jsonify({"fehler": fehler}), 422
+
+    arzt = arzt_erstellen(db(), daten)
+    return jsonify({"nachricht": "Arzt gespeichert", "arzt": arzt}), 201
+
+
+@app.route("/api/aerzte/<int:arzt_id>", methods=["GET"])
+def api_arzt_detail(arzt_id):
+    arzt = arzt_nach_id(db(), arzt_id)
+    if not arzt:
+        return jsonify({"fehler": "Arzt nicht gefunden"}), 404
+    return jsonify(arzt)
+
+
+@app.route("/api/aerzte/<int:arzt_id>", methods=["PUT"])
+def api_arzt_aktualisieren_route(arzt_id):
+    daten = request.get_json()
+    if not daten:
+        return jsonify({"fehler": "Keine Daten erhalten"}), 400
+
+    arzt = arzt_nach_id(db(), arzt_id)
+    if not arzt:
+        return jsonify({"fehler": "Arzt nicht gefunden"}), 404
+
+    aktualisiert = arzt_aktualisieren(db(), arzt_id, daten)
+    return jsonify({"nachricht": "Arzt aktualisiert", "arzt": aktualisiert})
+
+
+@app.route("/api/aerzte/<int:arzt_id>", methods=["DELETE"])
+def api_arzt_loeschen_route(arzt_id):
+    if arzt_loeschen(db(), arzt_id):
+        return jsonify({"nachricht": "Arzt geloescht"})
+    return jsonify({"fehler": "Arzt nicht gefunden"}), 404
+
+
+# --- Termine API ---
+
+@app.route("/api/termine", methods=["GET"])
+def api_termine_liste():
+    datum = request.args.get("datum", "").strip()
+    return jsonify(termin_alle(db(), datum or None))
+
+
+@app.route("/api/termine", methods=["POST"])
+def api_termin_erstellen_route():
+    daten = request.get_json()
+    if not daten:
+        return jsonify({"fehler": "Keine Daten erhalten"}), 400
+
+    fehler = []
+    if not daten.get("patient_id"):
+        fehler.append("Patient ist erforderlich")
+    if not daten.get("arzt_id"):
+        fehler.append("Arzt ist erforderlich")
+    if not daten.get("datum"):
+        fehler.append("Datum ist erforderlich")
+    if not daten.get("uhrzeit"):
+        fehler.append("Uhrzeit ist erforderlich")
+
+    if fehler:
+        return jsonify({"fehler": fehler}), 422
+
+    if daten.get("patient_id") and not patient_nach_id(db(), daten["patient_id"]):
+        return jsonify({"fehler": ["Patient nicht gefunden"]}), 404
+    if daten.get("arzt_id") and not arzt_nach_id(db(), daten["arzt_id"]):
+        return jsonify({"fehler": ["Arzt nicht gefunden"]}), 404
+
+    termin = termin_erstellen(db(), daten)
+    return jsonify({"nachricht": "Termin gespeichert", "termin": termin}), 201
+
+
+@app.route("/api/termine/<int:termin_id>", methods=["GET"])
+def api_termin_detail(termin_id):
+    termin = termin_nach_id(db(), termin_id)
+    if not termin:
+        return jsonify({"fehler": "Termin nicht gefunden"}), 404
+    return jsonify(termin)
+
+
+@app.route("/api/termine/<int:termin_id>", methods=["PUT"])
+def api_termin_aktualisieren_route(termin_id):
+    daten = request.get_json()
+    if not daten:
+        return jsonify({"fehler": "Keine Daten erhalten"}), 400
+
+    termin = termin_nach_id(db(), termin_id)
+    if not termin:
+        return jsonify({"fehler": "Termin nicht gefunden"}), 404
+
+    aktualisiert = termin_aktualisieren(db(), termin_id, daten)
+    return jsonify({"nachricht": "Termin aktualisiert", "termin": aktualisiert})
+
+
+@app.route("/api/termine/<int:termin_id>", methods=["DELETE"])
+def api_termin_loeschen_route(termin_id):
+    if termin_loeschen(db(), termin_id):
+        return jsonify({"nachricht": "Termin geloescht"})
+    return jsonify({"fehler": "Termin nicht gefunden"}), 404
+
+
+# --- Wartezimmer API ---
+
+@app.route("/api/wartezimmer", methods=["GET"])
+def api_wartezimmer_liste():
+    return jsonify(wartezimmer_aktuelle(db()))
+
+
+@app.route("/api/wartezimmer", methods=["POST"])
+def api_wartezimmer_hinzufuegen_route():
+    daten = request.get_json()
+    if not daten:
+        return jsonify({"fehler": "Keine Daten erhalten"}), 400
+
+    if not daten.get("patient_id"):
+        return jsonify({"fehler": ["Patient ist erforderlich"]}), 422
+
+    if not patient_nach_id(db(), daten["patient_id"]):
+        return jsonify({"fehler": ["Patient nicht gefunden"]}), 404
+
+    eintrag = wartezimmer_hinzufuegen(db(), daten)
+    return jsonify({"nachricht": "Patient eingecheckt", "eintrag": eintrag}), 201
+
+
+@app.route("/api/wartezimmer/<int:eintrag_id>", methods=["PUT"])
+def api_wartezimmer_status_route(eintrag_id):
+    daten = request.get_json()
+    if not daten:
+        return jsonify({"fehler": "Keine Daten erhalten"}), 400
+
+    eintrag = wartezimmer_nach_id(db(), eintrag_id)
+    if not eintrag:
+        return jsonify({"fehler": "Eintrag nicht gefunden"}), 404
+
+    neuer_status = daten.get("status")
+    if neuer_status not in ("wartend", "aufgerufen", "in_behandlung", "fertig"):
+        return jsonify({"fehler": "Ungueltiger Status"}), 400
+
+    aktualisiert = wartezimmer_status_aendern(db(), eintrag_id, neuer_status)
+    return jsonify({"nachricht": "Status aktualisiert", "eintrag": aktualisiert})
+
+
+@app.route("/api/wartezimmer/<int:eintrag_id>", methods=["DELETE"])
+def api_wartezimmer_entfernen_route(eintrag_id):
+    if wartezimmer_entfernen(db(), eintrag_id):
+        return jsonify({"nachricht": "Eintrag entfernt"})
+    return jsonify({"fehler": "Eintrag nicht gefunden"}), 404
 
 
 if __name__ == "__main__":
