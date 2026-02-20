@@ -25,6 +25,11 @@ global.document = {
 var app = require("../../src/html/app.js");
 var berechnen = app.berechnen;
 var benutzerValidieren = app.benutzerValidieren;
+var patientValidieren = app.patientValidieren;
+var arztValidieren = app.arztValidieren;
+var terminValidieren = app.terminValidieren;
+var wartezeitBerechnen = app.wartezeitBerechnen;
+var STATUS_KLASSEN = app.STATUS_KLASSEN;
 var escapeHtml = app.escapeHtml;
 var OP_SYMBOLE = app.OP_SYMBOLE;
 
@@ -252,6 +257,202 @@ test("Dividieren ist /", function () {
 
 test("Alle 4 Operationen vorhanden", function () {
     assert.strictEqual(Object.keys(OP_SYMBOLE).length, 4);
+});
+
+console.log("  5 Tests bestanden");
+
+// --- Patienten-Validierung Tests ---
+
+console.log("\n=== Patienten-Validierung Tests ===");
+
+test("Gueltige Patientendaten ohne Fehler", function () {
+    var f = patientValidieren({
+        vorname: "Max", nachname: "Mustermann", geburtsdatum: "1990-05-15",
+        versicherungsnummer: "A123", krankenkasse: "AOK"
+    });
+    assert.strictEqual(f.length, 0);
+});
+
+test("Patient ohne Vorname", function () {
+    var f = patientValidieren({
+        vorname: "", nachname: "M", geburtsdatum: "1990-01-01",
+        versicherungsnummer: "A1", krankenkasse: "AOK"
+    });
+    assert.ok(f.length > 0);
+    assert.ok(f[0].includes("Vorname"));
+});
+
+test("Patient ohne Nachname", function () {
+    var f = patientValidieren({
+        vorname: "Max", nachname: "", geburtsdatum: "1990-01-01",
+        versicherungsnummer: "A1", krankenkasse: "AOK"
+    });
+    assert.ok(f.some(function (e) { return e.includes("Nachname"); }));
+});
+
+test("Patient ohne Geburtsdatum", function () {
+    var f = patientValidieren({
+        vorname: "Max", nachname: "M", geburtsdatum: "",
+        versicherungsnummer: "A1", krankenkasse: "AOK"
+    });
+    assert.ok(f.some(function (e) { return e.includes("Geburtsdatum"); }));
+});
+
+test("Patient ohne Versicherungsnummer", function () {
+    var f = patientValidieren({
+        vorname: "Max", nachname: "M", geburtsdatum: "1990-01-01",
+        versicherungsnummer: "", krankenkasse: "AOK"
+    });
+    assert.ok(f.some(function (e) { return e.includes("Versicherungsnummer"); }));
+});
+
+test("Patient ohne Krankenkasse", function () {
+    var f = patientValidieren({
+        vorname: "Max", nachname: "M", geburtsdatum: "1990-01-01",
+        versicherungsnummer: "A1", krankenkasse: ""
+    });
+    assert.ok(f.some(function (e) { return e.includes("Krankenkasse"); }));
+});
+
+test("Patient alle Felder leer ergibt 5 Fehler", function () {
+    var f = patientValidieren({
+        vorname: "", nachname: "", geburtsdatum: "",
+        versicherungsnummer: "", krankenkasse: ""
+    });
+    assert.strictEqual(f.length, 5);
+});
+
+test("Patient fehlende Felder ergibt 5 Fehler", function () {
+    var f = patientValidieren({});
+    assert.strictEqual(f.length, 5);
+});
+
+console.log("  8 Tests bestanden");
+
+// --- Aerzte-Validierung Tests ---
+
+console.log("\n=== Aerzte-Validierung Tests ===");
+
+test("Gueltige Arztdaten ohne Fehler", function () {
+    var f = arztValidieren({ vorname: "Hans", nachname: "Schmidt", fachrichtung: "Allgemeinmedizin" });
+    assert.strictEqual(f.length, 0);
+});
+
+test("Arzt ohne Vorname", function () {
+    var f = arztValidieren({ vorname: "", nachname: "S", fachrichtung: "Kardiologie" });
+    assert.ok(f.some(function (e) { return e.includes("Vorname"); }));
+});
+
+test("Arzt ohne Nachname", function () {
+    var f = arztValidieren({ vorname: "Hans", nachname: "", fachrichtung: "Kardiologie" });
+    assert.ok(f.some(function (e) { return e.includes("Nachname"); }));
+});
+
+test("Arzt ohne Fachrichtung", function () {
+    var f = arztValidieren({ vorname: "Hans", nachname: "S", fachrichtung: "" });
+    assert.ok(f.some(function (e) { return e.includes("Fachrichtung"); }));
+});
+
+test("Arzt alle leer ergibt 3 Fehler", function () {
+    var f = arztValidieren({ vorname: "", nachname: "", fachrichtung: "" });
+    assert.strictEqual(f.length, 3);
+});
+
+test("Arzt fehlende Felder ergibt 3 Fehler", function () {
+    var f = arztValidieren({});
+    assert.strictEqual(f.length, 3);
+});
+
+console.log("  6 Tests bestanden");
+
+// --- Termin-Validierung Tests ---
+
+console.log("\n=== Termin-Validierung Tests ===");
+
+test("Gueltiger Termin ohne Fehler", function () {
+    var f = terminValidieren({ patient_id: 1, arzt_id: 2, datum: "2026-03-15", uhrzeit: "10:30" });
+    assert.strictEqual(f.length, 0);
+});
+
+test("Termin ohne Patient", function () {
+    var f = terminValidieren({ patient_id: null, arzt_id: 2, datum: "2026-03-15", uhrzeit: "10:30" });
+    assert.ok(f.some(function (e) { return e.includes("Patient"); }));
+});
+
+test("Termin ohne Arzt", function () {
+    var f = terminValidieren({ patient_id: 1, arzt_id: null, datum: "2026-03-15", uhrzeit: "10:30" });
+    assert.ok(f.some(function (e) { return e.includes("Arzt"); }));
+});
+
+test("Termin ohne Datum", function () {
+    var f = terminValidieren({ patient_id: 1, arzt_id: 2, datum: "", uhrzeit: "10:30" });
+    assert.ok(f.some(function (e) { return e.includes("Datum"); }));
+});
+
+test("Termin ohne Uhrzeit", function () {
+    var f = terminValidieren({ patient_id: 1, arzt_id: 2, datum: "2026-03-15", uhrzeit: "" });
+    assert.ok(f.some(function (e) { return e.includes("Uhrzeit"); }));
+});
+
+test("Termin alle leer ergibt 4 Fehler", function () {
+    var f = terminValidieren({});
+    assert.strictEqual(f.length, 4);
+});
+
+console.log("  6 Tests bestanden");
+
+// --- wartezeitBerechnen Tests ---
+
+console.log("\n=== wartezeitBerechnen Tests ===");
+
+test("Leere Ankunftszeit ergibt leeren String", function () {
+    assert.strictEqual(wartezeitBerechnen(""), "");
+    assert.strictEqual(wartezeitBerechnen(null), "");
+});
+
+test("Gerade eben fuer aktuelle Zeit", function () {
+    var jetzt = new Date().toISOString();
+    assert.strictEqual(wartezeitBerechnen(jetzt), "gerade eben");
+});
+
+test("Minuten unter 60 zeigt Min.", function () {
+    var vor10Min = new Date(Date.now() - 10 * 60000).toISOString();
+    var ergebnis = wartezeitBerechnen(vor10Min);
+    assert.ok(ergebnis.includes("Min."));
+    assert.ok(!ergebnis.includes("Std."));
+});
+
+test("Ueber 60 Minuten zeigt Stunden", function () {
+    var vor90Min = new Date(Date.now() - 90 * 60000).toISOString();
+    var ergebnis = wartezeitBerechnen(vor90Min);
+    assert.ok(ergebnis.includes("Std."));
+    assert.ok(ergebnis.includes("Min."));
+});
+
+console.log("  4 Tests bestanden");
+
+// --- STATUS_KLASSEN Tests ---
+
+console.log("\n=== STATUS_KLASSEN Tests ===");
+
+test("Geplant hat Klasse", function () {
+    assert.strictEqual(STATUS_KLASSEN.geplant, "status-geplant");
+});
+
+test("Bestaetigt hat Klasse", function () {
+    assert.strictEqual(STATUS_KLASSEN.bestaetigt, "status-bestaetigt");
+});
+
+test("Abgesagt hat Klasse", function () {
+    assert.strictEqual(STATUS_KLASSEN.abgesagt, "status-abgesagt");
+});
+
+test("Abgeschlossen hat Klasse", function () {
+    assert.strictEqual(STATUS_KLASSEN.abgeschlossen, "status-abgeschlossen");
+});
+
+test("Alle 4 Status vorhanden", function () {
+    assert.strictEqual(Object.keys(STATUS_KLASSEN).length, 4);
 });
 
 console.log("  5 Tests bestanden");

@@ -338,6 +338,63 @@ function benutzerZurTabelle(daten) {
     tbody.appendChild(tr);
 }
 
+// ===== Patienten-Validierung =====
+
+function patientValidieren(daten) {
+    var fehler = [];
+    if (!daten.vorname || daten.vorname.trim().length === 0) {
+        fehler.push("Vorname ist erforderlich");
+    }
+    if (!daten.nachname || daten.nachname.trim().length === 0) {
+        fehler.push("Nachname ist erforderlich");
+    }
+    if (!daten.geburtsdatum) {
+        fehler.push("Geburtsdatum ist erforderlich");
+    }
+    if (!daten.versicherungsnummer || daten.versicherungsnummer.trim().length === 0) {
+        fehler.push("Versicherungsnummer ist erforderlich");
+    }
+    if (!daten.krankenkasse || daten.krankenkasse.trim().length === 0) {
+        fehler.push("Krankenkasse ist erforderlich");
+    }
+    return fehler;
+}
+
+// ===== Aerzte-Validierung =====
+
+function arztValidieren(daten) {
+    var fehler = [];
+    if (!daten.vorname || daten.vorname.trim().length === 0) {
+        fehler.push("Vorname ist erforderlich");
+    }
+    if (!daten.nachname || daten.nachname.trim().length === 0) {
+        fehler.push("Nachname ist erforderlich");
+    }
+    if (!daten.fachrichtung || daten.fachrichtung.trim().length === 0) {
+        fehler.push("Fachrichtung ist erforderlich");
+    }
+    return fehler;
+}
+
+// ===== Termin-Validierung =====
+
+function terminValidieren(daten) {
+    var fehler = [];
+    if (!daten.patient_id) {
+        fehler.push("Patient ist erforderlich");
+    }
+    if (!daten.arzt_id) {
+        fehler.push("Arzt ist erforderlich");
+    }
+    if (!daten.datum) {
+        fehler.push("Datum ist erforderlich");
+    }
+    if (!daten.uhrzeit) {
+        fehler.push("Uhrzeit ist erforderlich");
+    }
+    return fehler;
+}
+
 // ===== Patienten =====
 
 async function patientenLadenApi(suche) {
@@ -423,6 +480,14 @@ function initPatienten() {
 
         var erfolgDiv = document.getElementById("patient-erfolg");
         var fehlerDiv = document.getElementById("patient-fehler");
+
+        var fehler = patientValidieren(daten);
+        if (fehler.length > 0) {
+            fehlerDiv.textContent = fehler.join(", ");
+            fehlerDiv.hidden = false;
+            erfolgDiv.hidden = true;
+            return;
+        }
 
         try {
             if (editId) {
@@ -569,6 +634,14 @@ function initAerzte() {
 
         var erfolgDiv = document.getElementById("arzt-erfolg");
         var fehlerDiv = document.getElementById("arzt-fehler");
+
+        var fehler = arztValidieren(daten);
+        if (fehler.length > 0) {
+            fehlerDiv.textContent = fehler.join(", ");
+            fehlerDiv.hidden = false;
+            erfolgDiv.hidden = true;
+            return;
+        }
 
         try {
             if (editId) {
@@ -721,6 +794,14 @@ function initTermine() {
 
         var erfolgDiv = document.getElementById("termin-erfolg");
         var fehlerDiv = document.getElementById("termin-fehler");
+
+        var fehler = terminValidieren(daten);
+        if (fehler.length > 0) {
+            fehlerDiv.textContent = fehler.join(", ");
+            fehlerDiv.hidden = false;
+            erfolgDiv.hidden = true;
+            return;
+        }
 
         try {
             if (editId) {
@@ -1373,7 +1454,11 @@ function escapeHtml(text) {
 
 /** Exportieren fuer Tests (Node.js) */
 if (typeof module !== "undefined" && module.exports) {
-    module.exports = { berechnen, benutzerValidieren, escapeHtml, OP_SYMBOLE };
+    module.exports = {
+        berechnen, benutzerValidieren, escapeHtml, OP_SYMBOLE,
+        patientValidieren, arztValidieren, terminValidieren,
+        wartezeitBerechnen, STATUS_KLASSEN,
+    };
 }
 
 /** Init (nur im Browser) */
