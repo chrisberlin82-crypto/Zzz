@@ -1,0 +1,26 @@
+[project]
+name = "zzz"
+version = "0.1.0"
+description = "Zzz - Webbasierte Loesung mit Python, PHP und HTML"
+requires-python = ">=3.11"
+dependencies = [
+    "flask>=3.0",
+    "jsonschema>=4.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests/python", "tests/html"]
+addopts = "--cov=src/python --cov-report=term-missing"
+
+[tool.coverage.run]
+source = ["src/python"]
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = true

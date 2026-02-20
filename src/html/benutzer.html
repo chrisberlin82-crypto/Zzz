@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MED Rezeption - Benutzer</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>MED Rezeption</h1>
+        <nav>
+            <a href="patienten.html">Patienten</a>
+            <a href="aerzte.html">Aerzte</a>
+            <a href="termine.html">Termine</a>
+            <a href="wartezimmer.html">Wartezimmer</a>
+            <a href="agenten.html">Agenten</a>
+            <a href="softphone.html">Softphone</a>
+            <a href="index.html">Rechner</a>
+            <a href="benutzer.html" class="active">Benutzer</a>
+        </nav>
+    </header>
+    <main>
+        <section id="benutzer-formular">
+            <h2 id="formular-titel">Benutzer anlegen</h2>
+            <form id="benutzer-form">
+                <input type="hidden" id="benutzer-id" value="">
+                <div class="form-group">
+                    <label for="name">Name</label>
+                    <input type="text" id="name" name="name" required minlength="1" maxlength="100">
+                </div>
+                <div class="form-group">
+                    <label for="email">E-Mail</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="alter">Alter</label>
+                    <input type="number" id="alter" name="alter" required min="0" max="150">
+                </div>
+                <fieldset>
+                    <legend>Adresse (optional)</legend>
+                    <div class="form-group">
+                        <label for="strasse">Stra&szlig;e</label>
+                        <input type="text" id="strasse" name="strasse">
+                    </div>
+                    <div class="form-group">
+                        <label for="plz">PLZ</label>
+                        <input type="text" id="plz" name="plz" pattern="[0-9]{5}" title="5-stellige Postleitzahl">
+                    </div>
+                    <div class="form-group">
+                        <label for="stadt">Stadt</label>
+                        <input type="text" id="stadt" name="stadt">
+                    </div>
+                </fieldset>
+                <div class="button-gruppe">
+                    <button type="submit" id="btn-speichern">Speichern</button>
+                    <button type="button" id="btn-abbrechen" hidden>Abbrechen</button>
+                </div>
+            </form>
+            <div id="benutzer-erfolg" class="ergebnis" hidden>
+                Benutzer erfolgreich gespeichert!
+            </div>
+            <div id="benutzer-fehler" class="fehler" hidden></div>
+        </section>
+        <section id="benutzer-liste">
+            <h2>Gespeicherte Benutzer</h2>
+            <div class="form-group">
+                <input type="search" id="benutzer-suche" placeholder="Suche nach Name, E-Mail oder Stadt...">
+            </div>
+            <table id="benutzer-tabelle">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>E-Mail</th>
+                        <th>Alter</th>
+                        <th>Stadt</th>
+                        <th>Aktionen</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </section>
+    </main>
+    <script src="app.js"></script>
+</body>
+</html>

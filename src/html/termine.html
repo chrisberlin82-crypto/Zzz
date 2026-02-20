@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MED Rezeption - Termine</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>MED Rezeption</h1>
+        <nav>
+            <a href="patienten.html">Patienten</a>
+            <a href="aerzte.html">Aerzte</a>
+            <a href="termine.html" class="active">Termine</a>
+            <a href="wartezimmer.html">Wartezimmer</a>
+            <a href="agenten.html">Agenten</a>
+            <a href="softphone.html">Softphone</a>
+            <a href="index.html">Rechner</a>
+            <a href="benutzer.html">Benutzer</a>
+        </nav>
+    </header>
+    <main>
+        <section id="termin-formular">
+            <h2 id="termin-formular-titel">Termin anlegen</h2>
+            <form id="termin-form">
+                <input type="hidden" id="termin-id" value="">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="termin-patient">Patient</label>
+                        <select id="termin-patient" required>
+                            <option value="">-- Patient waehlen --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="termin-arzt">Arzt</label>
+                        <select id="termin-arzt" required>
+                            <option value="">-- Arzt waehlen --</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="termin-datum">Datum</label>
+                        <input type="date" id="termin-datum" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="termin-uhrzeit">Uhrzeit</label>
+                        <input type="time" id="termin-uhrzeit" required>
+                    </div>
+                    <div class="form-group" style="flex:0.5">
+                        <label for="termin-dauer">Dauer (Min.)</label>
+                        <input type="number" id="termin-dauer" value="15" min="5" max="120" step="5">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="termin-grund">Grund</label>
+                    <input type="text" id="termin-grund" placeholder="z.B. Vorsorgeuntersuchung, Kontrolle...">
+                </div>
+                <div class="button-gruppe">
+                    <button type="submit" id="btn-termin-speichern">Speichern</button>
+                    <button type="button" id="btn-termin-abbrechen" hidden>Abbrechen</button>
+                </div>
+            </form>
+            <div id="termin-erfolg" class="ergebnis" hidden></div>
+            <div id="termin-fehler" class="fehler" hidden></div>
+        </section>
+        <section id="termine-liste">
+            <div class="verlauf-header">
+                <h2>Termine</h2>
+                <div class="form-group" style="margin-bottom:0">
+                    <input type="date" id="termin-filter-datum" title="Nach Datum filtern">
+                </div>
+            </div>
+            <table id="termine-tabelle">
+                <thead>
+                    <tr>
+                        <th>Datum</th>
+                        <th>Uhrzeit</th>
+                        <th>Patient</th>
+                        <th>Arzt</th>
+                        <th>Grund</th>
+                        <th>Status</th>
+                        <th>Aktionen</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </section>
+    </main>
+    <script src="app.js"></script>
+</body>
+</html>

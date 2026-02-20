@@ -1,0 +1,535 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: system-ui, -apple-system, sans-serif;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 1rem;
+    background: #f5f5f5;
+    color: #333;
+}
+
+header {
+    margin-bottom: 2rem;
+}
+
+header h1 {
+    margin-bottom: 0.5rem;
+    color: #2563eb;
+}
+
+nav {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+nav a {
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    color: #333;
+    background: #ddd;
+    font-size: 0.9rem;
+}
+
+nav a.active {
+    background: #2563eb;
+    color: white;
+}
+
+nav a:hover:not(.active) {
+    background: #c0c0c0;
+}
+
+main {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+h2 {
+    margin-bottom: 1rem;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-row {
+    display: flex;
+    gap: 1rem;
+}
+
+.form-row .form-group {
+    flex: 1;
+}
+
+label {
+    display: block;
+    margin-bottom: 0.25rem;
+    font-weight: 600;
+}
+
+input, select {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 1rem;
+}
+
+fieldset {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+legend {
+    font-weight: 600;
+    padding: 0 0.5rem;
+}
+
+button {
+    padding: 0.75rem 1.5rem;
+    background: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #1d4ed8;
+}
+
+.button-gruppe {
+    display: flex;
+    gap: 0.5rem;
+}
+
+#btn-abbrechen, #btn-patient-abbrechen, #btn-arzt-abbrechen, #btn-termin-abbrechen {
+    background: #6c757d;
+}
+
+#btn-abbrechen:hover, #btn-patient-abbrechen:hover, #btn-arzt-abbrechen:hover, #btn-termin-abbrechen:hover {
+    background: #545b62;
+}
+
+.ergebnis {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: #d4edda;
+    border-radius: 4px;
+    color: #155724;
+}
+
+.fehler {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: #f8d7da;
+    border-radius: 4px;
+    color: #721c24;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+}
+
+th, td {
+    text-align: left;
+    padding: 0.75rem;
+    border-bottom: 1px solid #ddd;
+}
+
+th {
+    background: #f0f0f0;
+    font-weight: 600;
+}
+
+.aktionen {
+    white-space: nowrap;
+}
+
+.btn-bearbeiten, .btn-loeschen {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.875rem;
+}
+
+.btn-bearbeiten {
+    background: #ffc107;
+    color: #333;
+}
+
+.btn-bearbeiten:hover {
+    background: #e0a800;
+}
+
+.btn-loeschen {
+    background: #dc3545;
+    color: white;
+}
+
+.btn-loeschen:hover {
+    background: #c82333;
+}
+
+section + section {
+    margin-top: 2rem;
+}
+
+.verlauf-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.verlauf-header .btn-loeschen {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.875rem;
+}
+
+#fehler-seite {
+    text-align: center;
+    padding: 3rem 1rem;
+}
+
+#fehler-seite h2 {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    color: #dc3545;
+}
+
+#fehler-seite p {
+    margin-bottom: 2rem;
+    color: #666;
+}
+
+.btn-zurueck {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    background: #2563eb;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+}
+
+.btn-zurueck:hover {
+    background: #1d4ed8;
+}
+
+#benutzer-suche, #patient-suche {
+    margin-bottom: 0;
+}
+
+/* --- Wartezimmer Karten --- */
+
+.warte-karte {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.warte-karte.wartend {
+    border-left: 4px solid #ffc107;
+}
+
+.warte-karte.aufgerufen {
+    border-left: 4px solid #28a745;
+    background: #f0fff0;
+}
+
+.warte-info h3 {
+    margin-bottom: 0.25rem;
+}
+
+.warte-info p {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.warte-aktionen {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn-aufrufen {
+    background: #28a745;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+}
+
+.btn-aufrufen:hover {
+    background: #218838;
+}
+
+.btn-fertig {
+    background: #17a2b8;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+}
+
+.btn-fertig:hover {
+    background: #138496;
+}
+
+.badge {
+    background: #2563eb;
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.875rem;
+}
+
+.wartezeit {
+    font-weight: 600;
+    color: #856404;
+}
+
+/* --- Status-Badges --- */
+
+.status-badge {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.status-geplant { background: #e2e3e5; color: #383d41; }
+.status-bestaetigt { background: #d4edda; color: #155724; }
+.status-abgesagt { background: #f8d7da; color: #721c24; }
+.status-abgeschlossen { background: #cce5ff; color: #004085; }
+
+/* --- Section Header --- */
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.section-header h2 {
+    margin-bottom: 0;
+}
+
+/* --- Agenten-Board --- */
+
+.agenten-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.agent-karte {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 1rem;
+    position: relative;
+}
+
+.agent-karte .agent-status-punkt {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 0.5rem;
+}
+
+.agent-karte .agent-status-punkt.online { background: #28a745; }
+.agent-karte .agent-status-punkt.offline { background: #dc3545; }
+.agent-karte .agent-status-punkt.pause { background: #ffc107; }
+.agent-karte .agent-status-punkt.besetzt { background: #17a2b8; }
+
+.agent-karte h3 {
+    margin-bottom: 0.25rem;
+}
+
+.agent-karte p {
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+}
+
+.agent-karte .agent-aktionen {
+    display: flex;
+    gap: 0.25rem;
+    margin-top: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.agent-karte .agent-aktionen button {
+    padding: 0.2rem 0.5rem;
+    font-size: 0.75rem;
+}
+
+.badge-rot {
+    background: #dc3545;
+}
+
+.anruf-karte {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-left: 4px solid #17a2b8;
+}
+
+.anruf-karte.klingelt {
+    border-left-color: #ffc107;
+    background: #fff9e6;
+}
+
+.anruf-karte.verbunden {
+    border-left-color: #28a745;
+    background: #f0fff0;
+}
+
+/* --- Softphone --- */
+
+.softphone-panel {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.softphone-panel h3 {
+    margin-bottom: 1rem;
+}
+
+.sip-status {
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 1rem;
+}
+
+.sip-status.online {
+    background: #d4edda;
+    color: #155724;
+}
+
+.sip-status.offline {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.sip-status.verbindend {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.dialpad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    max-width: 250px;
+    margin: 1rem auto;
+}
+
+.dialpad-taste {
+    padding: 1rem;
+    font-size: 1.2rem;
+    background: #f0f0f0;
+    color: #333;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.dialpad-taste:hover {
+    background: #e0e0e0;
+}
+
+.anruf-buttons {
+    justify-content: center;
+    margin-top: 1rem;
+}
+
+.btn-anrufen {
+    background: #28a745;
+    padding: 0.75rem 2rem;
+}
+
+.btn-anrufen:hover {
+    background: #218838;
+}
+
+.btn-auflegen {
+    background: #dc3545;
+    padding: 0.75rem 2rem;
+}
+
+.btn-auflegen:hover {
+    background: #c82333;
+}
+
+.btn-annehmen {
+    background: #28a745;
+    padding: 0.75rem 2rem;
+}
+
+.btn-annehmen:hover {
+    background: #218838;
+}
+
+#anruf-info {
+    text-align: center;
+}
+
+#anruf-gegenstelle {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+#anruf-timer {
+    font-size: 2rem;
+    font-family: monospace;
+    color: #2563eb;
+    margin-bottom: 0.5rem;
+}
+
+#anruf-status-anzeige {
+    color: #666;
+}
+
+/* --- Responsive --- */
+
+@media (max-width: 640px) {
+    .form-row {
+        flex-direction: column;
+        gap: 0;
+    }
+    nav {
+        gap: 0.25rem;
+    }
+    nav a {
+        font-size: 0.8rem;
+        padding: 0.4rem 0.6rem;
+    }
+    th, td {
+        padding: 0.4rem;
+        font-size: 0.85rem;
+    }
+}

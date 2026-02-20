@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Wartezimmer-Eintrag",
+  "description": "Schema fuer einen Wartezimmer-Eintrag",
+  "type": "object",
+  "required": ["patient_id"],
+  "properties": {
+    "patient_id": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "termin_id": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "status": {
+      "type": "string",
+      "enum": ["wartend", "aufgerufen", "in_behandlung", "fertig"]
+    }
+  },
+  "additionalProperties": false
+}

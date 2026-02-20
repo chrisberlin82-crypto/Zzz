@@ -1,0 +1,36 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Arzt",
+  "description": "Schema fuer ein Arzt-Objekt",
+  "type": "object",
+  "required": ["vorname", "nachname", "fachrichtung"],
+  "properties": {
+    "titel": {
+      "type": "string",
+      "maxLength": 50
+    },
+    "vorname": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "nachname": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "fachrichtung": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "telefon": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string",
+      "format": "email"
+    }
+  },
+  "additionalProperties": false
+}

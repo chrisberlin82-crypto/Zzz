@@ -1,0 +1,34 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Benutzer",
+  "description": "Schema fuer ein Benutzer-Objekt",
+  "type": "object",
+  "required": ["name", "email", "alter"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "email": {
+      "type": "string",
+      "format": "email"
+    },
+    "alter": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 150
+    },
+    "strasse": {
+      "type": "string"
+    },
+    "plz": {
+      "type": "string",
+      "pattern": "^[0-9]{5}$"
+    },
+    "stadt": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}
