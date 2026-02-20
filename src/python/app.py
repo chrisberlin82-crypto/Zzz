@@ -1,16 +1,32 @@
 """Flask Web-App fuer den Zzz Rechner und die Benutzerverwaltung."""
 
+import sqlite3
 from flask import Flask, jsonify, request, send_from_directory
 from pathlib import Path
 
 from src.python.rechner import addieren, subtrahieren, multiplizieren, dividieren
 from src.python.validator import schema_laden, validieren
+from src.python.datenbank import (
+    verbindung_herstellen, tabellen_erstellen,
+    benutzer_erstellen, benutzer_alle, benutzer_nach_id,
+    benutzer_aktualisieren, benutzer_loeschen,
+)
 
 app = Flask(__name__, static_folder=str(Path(__file__).resolve().parent.parent / "html"))
 
 SCHEMA_PFAD = Path(__file__).resolve().parent.parent / "json" / "schemas" / "benutzer.json"
-benutzer_liste = []
 
+
+def db():
+    """Gibt eine DB-Verbindung zurueck (pro Request)."""
+    if not hasattr(app, "_db_conn") or app._db_conn is None:
+        db_pfad = app.config.get("DB_PFAD")
+        app._db_conn = verbindung_herstellen(db_pfad)
+        tabellen_erstellen(app._db_conn)
+    return app._db_conn
+
+
+# --- Statische Dateien ---
 
 @app.route("/")
 def index():
@@ -21,6 +37,8 @@ def index():
 def statische_dateien(dateiname):
     return send_from_directory(app.static_folder, dateiname)
 
+
+# --- Rechner API ---
 
 @app.route("/api/berechnen", methods=["POST"])
 def api_berechnen():
@@ -52,13 +70,15 @@ def api_berechnen():
         return jsonify({"fehler": str(e)}), 400
 
 
+# --- Benutzer API (CRUD) ---
+
 @app.route("/api/benutzer", methods=["GET"])
 def api_benutzer_liste():
-    return jsonify(benutzer_liste)
+    return jsonify(benutzer_alle(db()))
 
 
 @app.route("/api/benutzer", methods=["POST"])
-def api_benutzer_erstellen():
+def api_benutzer_erstellen_route():
     daten = request.get_json()
     if not daten:
         return jsonify({"fehler": "Keine Daten erhalten"}), 400
@@ -69,8 +89,43 @@ def api_benutzer_erstellen():
     if fehler:
         return jsonify({"fehler": fehler}), 422
 
-    benutzer_liste.append(daten)
-    return jsonify({"nachricht": "Benutzer gespeichert", "benutzer": daten}), 201
+    try:
+        benutzer = benutzer_erstellen(db(), daten)
+        return jsonify({"nachricht": "Benutzer gespeichert", "benutzer": benutzer}), 201
+    except sqlite3.IntegrityError:
+        return jsonify({"fehler": ["E-Mail-Adresse existiert bereits"]}), 409
+
+
+@app.route("/api/benutzer/<int:benutzer_id>", methods=["GET"])
+def api_benutzer_detail(benutzer_id):
+    benutzer = benutzer_nach_id(db(), benutzer_id)
+    if not benutzer:
+        return jsonify({"fehler": "Benutzer nicht gefunden"}), 404
+    return jsonify(benutzer)
+
+
+@app.route("/api/benutzer/<int:benutzer_id>", methods=["PUT"])
+def api_benutzer_aktualisieren_route(benutzer_id):
+    daten = request.get_json()
+    if not daten:
+        return jsonify({"fehler": "Keine Daten erhalten"}), 400
+
+    benutzer = benutzer_nach_id(db(), benutzer_id)
+    if not benutzer:
+        return jsonify({"fehler": "Benutzer nicht gefunden"}), 404
+
+    try:
+        aktualisiert = benutzer_aktualisieren(db(), benutzer_id, daten)
+        return jsonify({"nachricht": "Benutzer aktualisiert", "benutzer": aktualisiert})
+    except sqlite3.IntegrityError:
+        return jsonify({"fehler": ["E-Mail-Adresse existiert bereits"]}), 409
+
+
+@app.route("/api/benutzer/<int:benutzer_id>", methods=["DELETE"])
+def api_benutzer_loeschen_route(benutzer_id):
+    if benutzer_loeschen(db(), benutzer_id):
+        return jsonify({"nachricht": "Benutzer geloescht"})
+    return jsonify({"fehler": "Benutzer nicht gefunden"}), 404
 
 
 if __name__ == "__main__":

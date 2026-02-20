@@ -1,6 +1,6 @@
 /** Zzz Frontend-Logik */
 
-const API_BASE = "/api";
+var API_BASE = "/api";
 
 /** Rechner (Client-Fallback) */
 function berechnen(a, operation, b) {
@@ -21,12 +21,12 @@ function berechnen(a, operation, b) {
 
 /** API-Aufruf fuer Berechnung */
 async function berechnenApi(a, operation, b) {
-    const response = await fetch(API_BASE + "/berechnen", {
+    var response = await fetch(API_BASE + "/berechnen", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ a: a, b: b, operation: operation }),
     });
-    const daten = await response.json();
+    var daten = await response.json();
     if (!response.ok) {
         throw new Error(daten.fehler || "Serverfehler");
     }
@@ -71,7 +71,7 @@ function benutzerValidieren(daten) {
         fehler.push("Name ist erforderlich");
     }
     if (!daten.email || !daten.email.includes("@")) {
-        fehler.push("Gültige E-Mail-Adresse ist erforderlich");
+        fehler.push("Gueltige E-Mail-Adresse ist erforderlich");
     }
     if (daten.alter === undefined || daten.alter < 0 || daten.alter > 150) {
         fehler.push("Alter muss zwischen 0 und 150 liegen");
@@ -83,7 +83,7 @@ function benutzerValidieren(daten) {
     return fehler;
 }
 
-/** API-Aufruf fuer Benutzer speichern */
+/** API: Benutzer speichern (POST) */
 async function benutzerSpeichernApi(daten) {
     var response = await fetch(API_BASE + "/benutzer", {
         method: "POST",
@@ -100,7 +100,36 @@ async function benutzerSpeichernApi(daten) {
     return ergebnis;
 }
 
-/** API-Aufruf fuer Benutzerliste laden */
+/** API: Benutzer aktualisieren (PUT) */
+async function benutzerAktualisierenApi(id, daten) {
+    var response = await fetch(API_BASE + "/benutzer/" + id, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(daten),
+    });
+    var ergebnis = await response.json();
+    if (!response.ok) {
+        var msg = Array.isArray(ergebnis.fehler)
+            ? ergebnis.fehler.join(", ")
+            : ergebnis.fehler;
+        throw new Error(msg || "Serverfehler");
+    }
+    return ergebnis;
+}
+
+/** API: Benutzer loeschen (DELETE) */
+async function benutzerLoeschenApi(id) {
+    var response = await fetch(API_BASE + "/benutzer/" + id, {
+        method: "DELETE",
+    });
+    var ergebnis = await response.json();
+    if (!response.ok) {
+        throw new Error(ergebnis.fehler || "Serverfehler");
+    }
+    return ergebnis;
+}
+
+/** API: Benutzerliste laden (GET) */
 async function benutzerLadenApi() {
     var response = await fetch(API_BASE + "/benutzer");
     if (!response.ok) throw new Error("Fehler beim Laden der Benutzer");
@@ -111,10 +140,19 @@ function initBenutzerFormular() {
     var form = document.getElementById("benutzer-form");
     if (!form) return;
 
+    var btnAbbrechen = document.getElementById("btn-abbrechen");
+
     benutzerListeAktualisieren();
+
+    if (btnAbbrechen) {
+        btnAbbrechen.addEventListener("click", function () {
+            formularZuruecksetzen();
+        });
+    }
 
     form.addEventListener("submit", async function (e) {
         e.preventDefault();
+        var bearbeitenId = document.getElementById("benutzer-id").value;
         var daten = {
             name: document.getElementById("name").value,
             email: document.getElementById("email").value,
@@ -136,18 +174,58 @@ function initBenutzerFormular() {
         }
 
         try {
-            await benutzerSpeichernApi(daten);
+            if (bearbeitenId) {
+                await benutzerAktualisierenApi(bearbeitenId, daten);
+                erfolgDiv.textContent = "Benutzer aktualisiert!";
+            } else {
+                await benutzerSpeichernApi(daten);
+                erfolgDiv.textContent = "Benutzer erfolgreich gespeichert!";
+            }
             erfolgDiv.hidden = false;
             fehlerDiv.hidden = true;
-            form.reset();
+            formularZuruecksetzen();
             benutzerListeAktualisieren();
         } catch (err) {
-            benutzerZurTabelle(daten);
-            erfolgDiv.hidden = false;
-            fehlerDiv.hidden = true;
-            form.reset();
+            fehlerDiv.textContent = err.message;
+            fehlerDiv.hidden = false;
+            erfolgDiv.hidden = true;
         }
     });
+}
+
+function formularZuruecksetzen() {
+    var form = document.getElementById("benutzer-form");
+    if (form) form.reset();
+    document.getElementById("benutzer-id").value = "";
+    document.getElementById("formular-titel").textContent = "Benutzer anlegen";
+    document.getElementById("btn-speichern").textContent = "Speichern";
+    var btnAbbrechen = document.getElementById("btn-abbrechen");
+    if (btnAbbrechen) btnAbbrechen.hidden = true;
+}
+
+function benutzerBearbeiten(benutzer) {
+    document.getElementById("benutzer-id").value = benutzer.id;
+    document.getElementById("name").value = benutzer.name;
+    document.getElementById("email").value = benutzer.email;
+    document.getElementById("alter").value = benutzer.alter;
+    document.getElementById("strasse").value = benutzer.strasse || "";
+    document.getElementById("plz").value = benutzer.plz || "";
+    document.getElementById("stadt").value = benutzer.stadt || "";
+    document.getElementById("formular-titel").textContent = "Benutzer bearbeiten";
+    document.getElementById("btn-speichern").textContent = "Aktualisieren";
+    var btnAbbrechen = document.getElementById("btn-abbrechen");
+    if (btnAbbrechen) btnAbbrechen.hidden = false;
+    document.getElementById("benutzer-formular").scrollIntoView({ behavior: "smooth" });
+}
+
+async function benutzerEntfernen(id) {
+    if (!confirm("Benutzer wirklich loeschen?")) return;
+    try {
+        await benutzerLoeschenApi(id);
+        benutzerListeAktualisieren();
+    } catch (err) {
+        alert("Fehler: " + err.message);
+    }
 }
 
 async function benutzerListeAktualisieren() {
@@ -169,11 +247,28 @@ function benutzerZurTabelle(daten) {
     if (!tbody) return;
 
     var tr = document.createElement("tr");
+    tr.setAttribute("data-id", daten.id);
     tr.innerHTML =
+        "<td>" + (daten.id || "") + "</td>" +
         "<td>" + escapeHtml(daten.name) + "</td>" +
         "<td>" + escapeHtml(daten.email) + "</td>" +
         "<td>" + daten.alter + "</td>" +
-        "<td>" + escapeHtml(daten.stadt || "-") + "</td>";
+        "<td>" + escapeHtml(daten.stadt || "-") + "</td>" +
+        '<td class="aktionen">' +
+            '<button class="btn-bearbeiten" title="Bearbeiten">Bearbeiten</button> ' +
+            '<button class="btn-loeschen" title="Loeschen">Loeschen</button>' +
+        "</td>";
+
+    var btnBearbeiten = tr.querySelector(".btn-bearbeiten");
+    var btnLoeschen = tr.querySelector(".btn-loeschen");
+
+    btnBearbeiten.addEventListener("click", function () {
+        benutzerBearbeiten(daten);
+    });
+    btnLoeschen.addEventListener("click", function () {
+        benutzerEntfernen(daten.id);
+    });
+
     tbody.appendChild(tr);
 }
 

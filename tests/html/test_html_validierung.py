@@ -1,4 +1,4 @@
-"""Tests zur HTML-Validierung und Strukturprüfung."""
+"""Tests zur HTML-Validierung und Strukturpruefung."""
 
 from html.parser import HTMLParser
 from pathlib import Path
@@ -9,7 +9,7 @@ HTML_DIR = Path(__file__).resolve().parent.parent.parent / "src" / "html"
 
 
 class HtmlStrukturParser(HTMLParser):
-    """Einfacher HTML-Parser zur Strukturprüfung."""
+    """Einfacher HTML-Parser zur Strukturpruefung."""
 
     def __init__(self):
         super().__init__()
@@ -131,3 +131,19 @@ class TestBenutzerHtml:
     def test_hat_plz_pattern(self):
         inhalt = (HTML_DIR / "benutzer.html").read_text(encoding="utf-8")
         assert 'pattern="[0-9]{5}"' in inhalt
+
+    def test_hat_bearbeiten_button_id(self):
+        inhalt = (HTML_DIR / "benutzer.html").read_text(encoding="utf-8")
+        assert 'id="btn-speichern"' in inhalt
+
+    def test_hat_abbrechen_button(self):
+        inhalt = (HTML_DIR / "benutzer.html").read_text(encoding="utf-8")
+        assert 'id="btn-abbrechen"' in inhalt
+
+    def test_hat_hidden_id_feld(self):
+        inhalt = (HTML_DIR / "benutzer.html").read_text(encoding="utf-8")
+        assert 'id="benutzer-id"' in inhalt
+
+    def test_hat_aktionen_spalte(self):
+        inhalt = (HTML_DIR / "benutzer.html").read_text(encoding="utf-8")
+        assert "Aktionen" in inhalt

@@ -5,7 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../../vendor/autoload.php';
 
 use Zzz\Rechner;
-use Zzz\JsonHelper;
+use Zzz\Datenbank;
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -13,9 +13,11 @@ $methode = $_SERVER['REQUEST_METHOD'];
 $pfad = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
 $rechner = new Rechner();
-$jsonHelper = new JsonHelper();
+$db = new Datenbank();
+$db->tabellenErstellen();
 
 try {
+    // --- Rechner ---
     if ($pfad === '/api/berechnen' && $methode === 'POST') {
         $eingabe = json_decode(file_get_contents('php://input'), true, 512, JSON_THROW_ON_ERROR);
 
@@ -39,6 +41,13 @@ try {
 
         echo json_encode(['ergebnis' => $ergebnis]);
 
+    // --- Benutzer: Liste ---
+    } elseif ($pfad === '/api/benutzer' && $methode === 'GET') {
+        $alle = $db->benutzerAlle();
+        $ergebnis = array_map([Datenbank::class, 'zeilenFormat'], $alle);
+        echo json_encode($ergebnis);
+
+    // --- Benutzer: Erstellen ---
     } elseif ($pfad === '/api/benutzer' && $methode === 'POST') {
         $daten = json_decode(file_get_contents('php://input'), true, 512, JSON_THROW_ON_ERROR);
 
@@ -59,8 +68,62 @@ try {
             exit;
         }
 
-        http_response_code(201);
-        echo json_encode(['nachricht' => 'Benutzer gespeichert', 'benutzer' => $daten]);
+        try {
+            $benutzer = $db->benutzerErstellen($daten);
+            http_response_code(201);
+            echo json_encode([
+                'nachricht' => 'Benutzer gespeichert',
+                'benutzer' => Datenbank::zeilenFormat($benutzer),
+            ]);
+        } catch (\PDOException $e) {
+            http_response_code(409);
+            echo json_encode(['fehler' => ['E-Mail-Adresse existiert bereits']]);
+        }
+
+    // --- Benutzer: Detail / Aktualisieren / Loeschen ---
+    } elseif (preg_match('#^/api/benutzer/(\d+)$#', $pfad, $matches)) {
+        $id = (int) $matches[1];
+
+        if ($methode === 'GET') {
+            $benutzer = $db->benutzerNachId($id);
+            if (!$benutzer) {
+                http_response_code(404);
+                echo json_encode(['fehler' => 'Benutzer nicht gefunden']);
+                exit;
+            }
+            echo json_encode(Datenbank::zeilenFormat($benutzer));
+
+        } elseif ($methode === 'PUT') {
+            $daten = json_decode(file_get_contents('php://input'), true, 512, JSON_THROW_ON_ERROR);
+            $benutzer = $db->benutzerNachId($id);
+            if (!$benutzer) {
+                http_response_code(404);
+                echo json_encode(['fehler' => 'Benutzer nicht gefunden']);
+                exit;
+            }
+            try {
+                $aktualisiert = $db->benutzerAktualisieren($id, $daten);
+                echo json_encode([
+                    'nachricht' => 'Benutzer aktualisiert',
+                    'benutzer' => Datenbank::zeilenFormat($aktualisiert),
+                ]);
+            } catch (\PDOException $e) {
+                http_response_code(409);
+                echo json_encode(['fehler' => ['E-Mail-Adresse existiert bereits']]);
+            }
+
+        } elseif ($methode === 'DELETE') {
+            if ($db->benutzerLoeschen($id)) {
+                echo json_encode(['nachricht' => 'Benutzer geloescht']);
+            } else {
+                http_response_code(404);
+                echo json_encode(['fehler' => 'Benutzer nicht gefunden']);
+            }
+
+        } else {
+            http_response_code(405);
+            echo json_encode(['fehler' => 'Methode nicht erlaubt']);
+        }
 
     } else {
         http_response_code(404);

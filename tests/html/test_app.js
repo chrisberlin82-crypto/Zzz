@@ -1,7 +1,10 @@
 /** Unit-Tests fuer app.js (Node.js) */
 
-const assert = require("assert");
-const { berechnen, benutzerValidieren, escapeHtml } = require("../../src/html/app.js");
+var assert = require("assert");
+var app = require("../../src/html/app.js");
+var berechnen = app.berechnen;
+var benutzerValidieren = app.benutzerValidieren;
+var escapeHtml = app.escapeHtml;
 
 // --- Rechner Tests ---
 
@@ -36,48 +39,48 @@ console.log("  9 Tests bestanden");
 console.log("\n=== Benutzer-Validierung Tests ===");
 
 // Gueltige Daten
-var fehler1 = benutzerValidieren({ name: "Max", email: "max@test.de", alter: 30 });
-assert.strictEqual(fehler1.length, 0, "Gueltige Daten haben keine Fehler");
+var f1 = benutzerValidieren({ name: "Max", email: "max@test.de", alter: 30 });
+assert.strictEqual(f1.length, 0, "Gueltige Daten haben keine Fehler");
 
 // Leerer Name
-var fehler2 = benutzerValidieren({ name: "", email: "max@test.de", alter: 30 });
-assert.ok(fehler2.length > 0, "Leerer Name erzeugt Fehler");
-assert.ok(fehler2[0].includes("Name"), "Fehlermeldung erwaehnt Name");
+var f2 = benutzerValidieren({ name: "", email: "max@test.de", alter: 30 });
+assert.ok(f2.length > 0, "Leerer Name erzeugt Fehler");
+assert.ok(f2[0].includes("Name"), "Fehlermeldung erwaehnt Name");
 
 // Ohne @-Zeichen in Email
-var fehler3 = benutzerValidieren({ name: "Max", email: "ungueltig", alter: 30 });
-assert.ok(fehler3.length > 0, "Ungueltige Email erzeugt Fehler");
+var f3 = benutzerValidieren({ name: "Max", email: "ungueltig", alter: 30 });
+assert.ok(f3.length > 0, "Ungueltige Email erzeugt Fehler");
 
 // Alter zu hoch
-var fehler4 = benutzerValidieren({ name: "Max", email: "max@test.de", alter: 200 });
-assert.ok(fehler4.length > 0, "Alter > 150 erzeugt Fehler");
+var f4 = benutzerValidieren({ name: "Max", email: "max@test.de", alter: 200 });
+assert.ok(f4.length > 0, "Alter > 150 erzeugt Fehler");
 
 // Alter negativ
-var fehler5 = benutzerValidieren({ name: "Max", email: "max@test.de", alter: -1 });
-assert.ok(fehler5.length > 0, "Negatives Alter erzeugt Fehler");
+var f5 = benutzerValidieren({ name: "Max", email: "max@test.de", alter: -1 });
+assert.ok(f5.length > 0, "Negatives Alter erzeugt Fehler");
 
 // Ungueltige PLZ
-var fehler6 = benutzerValidieren({ name: "Max", email: "max@test.de", alter: 30, plz: "123" });
-assert.ok(fehler6.length > 0, "PLZ mit 3 Ziffern erzeugt Fehler");
+var f6 = benutzerValidieren({ name: "Max", email: "max@test.de", alter: 30, plz: "123" });
+assert.ok(f6.length > 0, "PLZ mit 3 Ziffern erzeugt Fehler");
 
 // Gueltige PLZ
-var fehler7 = benutzerValidieren({ name: "Max", email: "max@test.de", alter: 30, plz: "10115" });
-assert.strictEqual(fehler7.length, 0, "Gueltige PLZ erzeugt keinen Fehler");
+var f7 = benutzerValidieren({ name: "Max", email: "max@test.de", alter: 30, plz: "10115" });
+assert.strictEqual(f7.length, 0, "Gueltige PLZ erzeugt keinen Fehler");
 
 // Alle Felder ungueltig
-var fehler8 = benutzerValidieren({ name: "", email: "", alter: -1 });
-assert.strictEqual(fehler8.length, 3, "3 ungueltige Felder erzeugen 3 Fehler");
+var f8 = benutzerValidieren({ name: "", email: "", alter: -1 });
+assert.strictEqual(f8.length, 3, "3 ungueltige Felder erzeugen 3 Fehler");
 
 // Alter undefined
-var fehler9 = benutzerValidieren({ name: "Max", email: "max@test.de" });
-assert.ok(fehler9.length > 0, "Fehlendes Alter erzeugt Fehler");
+var f9 = benutzerValidieren({ name: "Max", email: "max@test.de" });
+assert.ok(f9.length > 0, "Fehlendes Alter erzeugt Fehler");
 
 // Vollstaendige Adresse
-var fehler10 = benutzerValidieren({
+var f10 = benutzerValidieren({
     name: "Anna", email: "anna@test.de", alter: 25,
     strasse: "Hauptstr. 1", plz: "10115", stadt: "Berlin"
 });
-assert.strictEqual(fehler10.length, 0, "Vollstaendige Daten mit Adresse sind gueltig");
+assert.strictEqual(f10.length, 0, "Vollstaendige Daten mit Adresse sind gueltig");
 
 console.log("  10 Tests bestanden");
 
@@ -85,7 +88,6 @@ console.log("  10 Tests bestanden");
 
 console.log("\n=== escapeHtml Tests ===");
 
-// In Node.js gibt es kein document.createElement, also testen wir den Export nur
 assert.strictEqual(typeof escapeHtml, "function", "escapeHtml ist exportiert");
 
 console.log("  1 Test bestanden");

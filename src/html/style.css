@@ -94,6 +94,19 @@ button:hover {
     background: #357abd;
 }
 
+.button-gruppe {
+    display: flex;
+    gap: 0.5rem;
+}
+
+#btn-abbrechen {
+    background: #6c757d;
+}
+
+#btn-abbrechen:hover {
+    background: #545b62;
+}
+
 .ergebnis {
     margin-top: 1rem;
     padding: 1rem;
@@ -125,6 +138,33 @@ th, td {
 th {
     background: #f0f0f0;
     font-weight: 600;
+}
+
+.aktionen {
+    white-space: nowrap;
+}
+
+.btn-bearbeiten, .btn-loeschen {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.875rem;
+}
+
+.btn-bearbeiten {
+    background: #ffc107;
+    color: #333;
+}
+
+.btn-bearbeiten:hover {
+    background: #e0a800;
+}
+
+.btn-loeschen {
+    background: #dc3545;
+    color: white;
+}
+
+.btn-loeschen:hover {
+    background: #c82333;
 }
 
 section + section {
