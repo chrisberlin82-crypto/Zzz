@@ -7,10 +7,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 COPY pyproject.toml ./
-RUN pip install --no-cache-dir flask jsonschema
+RUN pip install --no-cache-dir flask jsonschema gunicorn
 
 COPY src/ src/
 
+RUN mkdir -p /app/daten
+
 EXPOSE 5000
 
-CMD ["python", "-m", "flask", "--app", "src.python.app", "run", "--host", "0.0.0.0", "--port", "5000"]
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "3", "--timeout", "120", "src.python.app:app"]

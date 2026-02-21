@@ -6,6 +6,7 @@ requires-python = ">=3.11"
 dependencies = [
     "flask>=3.0",
     "jsonschema>=4.0",
+    "gunicorn>=22.0",
 ]
 
 [project.optional-dependencies]
