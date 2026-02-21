@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500">
+  <defs>
+    <style>
+      text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    </style>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="500" fill="#f1f5f9"/>
+
+  <!-- Sidebar -->
+  <rect x="0" y="0" width="180" height="500" fill="#1e293b"/>
+
+  <!-- Logo -->
+  <rect x="16" y="14" width="148" height="32" rx="6" fill="#2563eb" opacity="0.15"/>
+  <text x="90" y="35" fill="#ffffff" font-size="14" font-weight="700" text-anchor="middle">MED Rezeption</text>
+
+  <!-- Nav Items -->
+  <!-- Dashboard - active -->
+  <rect x="10" y="60" width="160" height="34" rx="6" fill="#2563eb" opacity="0.25"/>
+  <rect x="20" y="70" width="14" height="14" rx="3" fill="#2563eb"/>
+  <text x="42" y="82" fill="#ffffff" font-size="12" font-weight="600">Dashboard</text>
+
+  <!-- Patienten -->
+  <rect x="20" y="106" width="14" height="14" rx="3" fill="#475569"/>
+  <text x="42" y="118" fill="#94a3b8" font-size="12">Patienten</text>
+
+  <!-- Aerzte -->
+  <rect x="20" y="136" width="14" height="14" rx="3" fill="#475569"/>
+  <text x="42" y="148" fill="#94a3b8" font-size="12">Aerzte</text>
+
+  <!-- Termine -->
+  <rect x="20" y="166" width="14" height="14" rx="3" fill="#475569"/>
+  <text x="42" y="178" fill="#94a3b8" font-size="12">Termine</text>
+
+  <!-- Wartezimmer -->
+  <rect x="20" y="196" width="14" height="14" rx="3" fill="#475569"/>
+  <text x="42" y="208" fill="#94a3b8" font-size="12">Wartezimmer</text>
+
+  <!-- Callflow Editor -->
+  <rect x="20" y="226" width="14" height="14" rx="3" fill="#475569"/>
+  <text x="42" y="238" fill="#94a3b8" font-size="12">Callflow Editor</text>
+
+  <!-- Topbar -->
+  <rect x="180" y="0" width="620" height="48" fill="#ffffff"/>
+  <line x1="180" y1="48" x2="800" y2="48" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="200" y="30" fill="#1e293b" font-size="16" font-weight="700">Dashboard</text>
+
+  <!-- Stat Cards Row -->
+  <!-- Card 1: Patienten -->
+  <rect x="192" y="60" width="112" height="62" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <circle cx="214" cy="82" r="12" fill="#2563eb" opacity="0.15"/>
+  <rect x="208" y="78" width="12" height="8" rx="2" fill="#2563eb"/>
+  <text x="234" y="80" fill="#64748b" font-size="9">Patienten</text>
+  <text x="234" y="96" fill="#1e293b" font-size="18" font-weight="700">0</text>
+
+  <!-- Card 2: Aerzte -->
+  <rect x="312" y="60" width="112" height="62" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <circle cx="334" cy="82" r="12" fill="#22c55e" opacity="0.15"/>
+  <rect x="328" y="78" width="12" height="8" rx="2" fill="#22c55e"/>
+  <text x="354" y="80" fill="#64748b" font-size="9">Aerzte</text>
+  <text x="354" y="96" fill="#1e293b" font-size="18" font-weight="700">0</text>
+
+  <!-- Card 3: Termine heute -->
+  <rect x="432" y="60" width="112" height="62" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <circle cx="454" cy="82" r="12" fill="#06b6d4" opacity="0.15"/>
+  <rect x="448" y="78" width="12" height="8" rx="2" fill="#06b6d4"/>
+  <text x="474" y="80" fill="#64748b" font-size="9">Termine heute</text>
+  <text x="474" y="96" fill="#1e293b" font-size="18" font-weight="700">0</text>
+
+  <!-- Card 4: Wartezimmer -->
+  <rect x="552" y="60" width="112" height="62" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <circle cx="574" cy="82" r="12" fill="#f59e0b" opacity="0.15"/>
+  <rect x="568" y="78" width="12" height="8" rx="2" fill="#f59e0b"/>
+  <text x="594" y="80" fill="#64748b" font-size="9">Wartezimmer</text>
+  <text x="594" y="96" fill="#1e293b" font-size="18" font-weight="700">0</text>
+
+  <!-- Card 5: Agenten online -->
+  <rect x="672" y="60" width="112" height="62" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <circle cx="694" cy="82" r="12" fill="#ef4444" opacity="0.15"/>
+  <rect x="688" y="78" width="12" height="8" rx="2" fill="#ef4444"/>
+  <text x="714" y="80" fill="#64748b" font-size="9">Agenten online</text>
+  <text x="714" y="96" fill="#1e293b" font-size="18" font-weight="700">0</text>
+
+  <!-- Heutige Termine Card -->
+  <rect x="192" y="134" width="370" height="340" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="208" y="158" fill="#1e293b" font-size="13" font-weight="700">Heutige Termine</text>
+
+  <!-- Table Header -->
+  <rect x="192" y="168" width="370" height="28" fill="#f8fafc"/>
+  <text x="208" y="186" fill="#64748b" font-size="10" font-weight="600">Uhrzeit</text>
+  <text x="278" y="186" fill="#64748b" font-size="10" font-weight="600">Patient</text>
+  <text x="378" y="186" fill="#64748b" font-size="10" font-weight="600">Arzt</text>
+  <text x="478" y="186" fill="#64748b" font-size="10" font-weight="600">Status</text>
+  <line x1="192" y1="196" x2="562" y2="196" stroke="#e2e8f0" stroke-width="1"/>
+
+  <!-- Empty state -->
+  <text x="377" y="260" fill="#94a3b8" font-size="11" text-anchor="middle">Keine Termine fuer heute</text>
+  <rect x="347" y="230" width="60" height="4" rx="2" fill="#e2e8f0"/>
+  <rect x="337" y="218" width="80" height="4" rx="2" fill="#e2e8f0"/>
+
+  <!-- Wartezimmer Card -->
+  <rect x="572" y="134" width="214" height="340" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="588" y="158" fill="#1e293b" font-size="13" font-weight="700">Wartezimmer</text>
+  <rect x="728" y="145" width="42" height="18" rx="9" fill="#f59e0b" opacity="0.15"/>
+  <text x="749" y="157" fill="#f59e0b" font-size="9" font-weight="600" text-anchor="middle">0</text>
+
+  <!-- Empty state -->
+  <text x="679" y="300" fill="#94a3b8" font-size="11" text-anchor="middle">Niemand wartet</text>
+  <rect x="649" y="270" width="60" height="4" rx="2" fill="#e2e8f0"/>
+  <rect x="639" y="258" width="80" height="4" rx="2" fill="#e2e8f0"/>
+
+  <!-- Chat Bubble -->
+  <circle cx="764" cy="466" r="22" fill="#2563eb"/>
+  <rect x="754" y="456" width="20" height="14" rx="4" fill="#ffffff"/>
+  <circle cx="760" cy="463" r="1.5" fill="#2563eb"/>
+  <circle cx="764" cy="463" r="1.5" fill="#2563eb"/>
+  <circle cx="768" cy="463" r="1.5" fill="#2563eb"/>
+</svg>
