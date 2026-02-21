@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MED Rezeption - Wartezimmer</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-logo"><h2>MED Rezeption</h2><small>Praxisverwaltung</small></div>
+        <nav class="sidebar-nav">
+            <a href="index.html"><i class="fa-solid fa-chart-pie nav-icon"></i> Dashboard</a>
+            <a href="patienten.html"><i class="fa-solid fa-users nav-icon"></i> Patienten</a>
+            <a href="aerzte.html"><i class="fa-solid fa-user-doctor nav-icon"></i> Aerzte</a>
+            <a href="termine.html"><i class="fa-solid fa-calendar-days nav-icon"></i> Termine</a>
+            <a href="wartezimmer.html" class="active"><i class="fa-solid fa-couch nav-icon"></i> Wartezimmer</a>
+            <a href="callflow.html"><i class="fa-solid fa-diagram-project nav-icon"></i> Callflow Editor</a>
+            <a href="voicebot.html"><i class="fa-solid fa-robot nav-icon"></i> Voicebot</a>
+            <a href="agenten.html"><i class="fa-solid fa-headset nav-icon"></i> Agenten</a>
+            <a href="softphone.html"><i class="fa-solid fa-phone nav-icon"></i> Softphone</a>
+            <a href="uebersetzung.html"><i class="fa-solid fa-language nav-icon"></i> Uebersetzer</a>
+            <a href="benutzer.html"><i class="fa-solid fa-user-gear nav-icon"></i> Benutzer</a>
+        </nav>
+        <div class="sidebar-footer"><button id="btn-demo-reset" type="button">Demo zuruecksetzen</button></div>
+    </aside>
+    <div class="main-wrapper">
+        <header class="topbar">
+            <button id="menu-toggle" type="button"><i class="fa-solid fa-bars"></i></button>
+            <h1>Wartezimmer</h1>
+            <div class="topbar-right"><span class="badge" id="wartezimmer-anzahl">0 wartend</span></div>
+        </header>
+        <main>
+            <section class="card">
+                <h2>Patient einchecken</h2>
+                <form id="checkin-form">
+                    <div class="form-row">
+                        <div class="form-group"><label for="checkin-patient">Patient</label><select id="checkin-patient" required><option value="">-- Patient waehlen --</option></select></div>
+                        <div class="form-group"><label for="checkin-termin">Termin</label><select id="checkin-termin"><option value="">-- Ohne Termin --</option></select></div>
+                    </div>
+                    <button type="submit">Einchecken</button>
+                </form>
+                <div id="checkin-erfolg" class="ergebnis" hidden></div>
+                <div id="checkin-fehler" class="fehler" hidden></div>
+            </section>
+            <section class="card">
+                <h2>Wartende Patienten</h2>
+                <div id="wartezimmer-liste"></div>
+            </section>
+        </main>
+    </div>
+    <button id="chat-toggle" type="button"><i class="fa-solid fa-comment-dots"></i></button>
+    <div id="chat-fenster">
+        <div class="chat-header"><span><i class="fa-solid fa-robot"></i> Praxis-Assistent</span><button id="chat-schliessen" type="button"><i class="fa-solid fa-xmark"></i></button></div>
+        <div id="chat-nachrichten"></div>
+        <div class="chat-eingabe">
+            <input id="chat-input" type="text" placeholder="Frage stellen oder sprechen...">
+            <button id="chat-mikrofon" type="button" title="Sprechen"><i class="fa-solid fa-microphone"></i></button>
+            <button id="chat-senden" type="button"><i class="fa-solid fa-paper-plane"></i></button>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
