@@ -5,20 +5,20 @@
 }
 
 :root {
-    --primary: #2563eb;
-    --primary-dark: #1d4ed8;
-    --sidebar-bg: #1e293b;
+    --primary: #0891b2;
+    --primary-dark: #0e7490;
+    --sidebar-bg: #0f172a;
     --sidebar-text: #94a3b8;
-    --sidebar-active: #3b82f6;
+    --sidebar-active: #22d3ee;
     --success: #22c55e;
     --warning: #f59e0b;
     --danger: #ef4444;
     --info: #06b6d4;
-    --bg: #f1f5f9;
+    --bg: #f0f9ff;
     --card: #ffffff;
-    --text: #1e293b;
+    --text: #0f172a;
     --text-muted: #64748b;
-    --border: #e2e8f0;
+    --border: #e0f2fe;
     --radius: 8px;
 }
 
@@ -263,7 +263,7 @@ input, select, textarea {
 input:focus, select:focus, textarea:focus {
     outline: none;
     border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+    box-shadow: 0 0 0 3px rgba(8,145,178,0.12);
 }
 
 fieldset {
@@ -465,7 +465,7 @@ section + section, .card + .card {
 .status-geplant { background: #e2e8f0; color: #475569; }
 .status-bestaetigt { background: #dcfce7; color: #166534; }
 .status-abgesagt { background: #fef2f2; color: #991b1b; }
-.status-abgeschlossen { background: #dbeafe; color: #1e40af; }
+.status-abgeschlossen { background: #cffafe; color: #155e75; }
 
 .badge {
     background: var(--primary);
@@ -761,7 +761,7 @@ section + section, .card + .card {
     border: none;
     font-size: 1.5rem;
     cursor: pointer;
-    box-shadow: 0 4px 12px rgba(37,99,235,0.4);
+    box-shadow: 0 4px 12px rgba(8,145,178,0.4);
     z-index: 1000;
     display: flex;
     align-items: center;
@@ -1037,7 +1037,7 @@ section + section, .card + .card {
 .callflow-node-header.typ-dtmf { background: #7c3aed; }
 .callflow-node-header.typ-voicebot { background: #059669; }
 .callflow-node-header.typ-warteschlange { background: #d97706; }
-.callflow-node-header.typ-transfer { background: #2563eb; }
+.callflow-node-header.typ-transfer { background: #0891b2; }
 .callflow-node-header.typ-bedingung { background: #dc2626; }
 .callflow-node-header.typ-aufnahme { background: #7c3aed; }
 .callflow-node-header.typ-ende { background: #64748b; }

@@ -134,7 +134,7 @@ function guardAbmelden() {
 var ROLLEN = {
     admin:           { label: "Admin",           icon: "fa-user-gear",   farbe: "#dc2626", seiten: ["index.html","patienten.html","aerzte.html","termine.html","wartezimmer.html","agenten.html","softphone.html","voicebot.html","callflow.html","uebersetzung.html","standort.html","benutzer.html"] },
     standortleitung: { label: "Standortleitung", icon: "fa-building",    farbe: "#7c3aed", seiten: ["index.html","patienten.html","aerzte.html","termine.html","wartezimmer.html","agenten.html","softphone.html","voicebot.html","callflow.html","uebersetzung.html","standort.html"] },
-    teamleitung:     { label: "Teamleitung",     icon: "fa-users-gear",  farbe: "#2563eb", seiten: ["index.html","patienten.html","aerzte.html","termine.html","wartezimmer.html","agenten.html","softphone.html","voicebot.html","uebersetzung.html"] },
+    teamleitung:     { label: "Teamleitung",     icon: "fa-users-gear",  farbe: "#0891b2", seiten: ["index.html","patienten.html","aerzte.html","termine.html","wartezimmer.html","agenten.html","softphone.html","voicebot.html","uebersetzung.html"] },
     agent:           { label: "Agent",            icon: "fa-headset",     farbe: "#059669", seiten: ["index.html","patienten.html","termine.html","wartezimmer.html","softphone.html","uebersetzung.html"] }
 };
 

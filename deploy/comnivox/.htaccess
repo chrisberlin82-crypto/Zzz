@@ -1,13 +1,14 @@
-# MED Rezeption - Demo auf Comnivox Webspace
-# Kopiere diesen Ordner komplett auf den Webspace
+# MED Rezeption - Demo im Unterverzeichnis /app/ auf Comnivox Webspace
+# Diese .htaccess gilt NUR fuer das Unterverzeichnis, nicht fuer die Hauptseite
 
 # PHP als API-Backend
 RewriteEngine On
+RewriteBase /app/
 
 # API-Anfragen an api.php weiterleiten
 RewriteRule ^api/(.*)$ api.php [QSA,L]
 
-# SPA-Fallback: Nicht existierende Dateien -> index.html
+# SPA-Fallback: Nicht existierende Dateien -> 404.html
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^(.*)$ 404.html [L]
