@@ -1,14 +1,14 @@
 # ============================================================
-# Deploy MED Rezeption Demo auf Comnivox Webspace (PowerShell)
+# Deploy MED Rezeption auf Comnivox Webspace (PowerShell)
 # ============================================================
-# WICHTIG: Die bestehende Homepage auf comnivox.com bleibt
-# unangetastet! Die Demo wird NUR in /app/ deployed.
+# Deployed direkt in public_html/ -> comnivox.com
+# Die alte Wartungsseite wird ersetzt.
 #
 # Verwendung:
 #   .\deploy-comnivox.ps1 -SshHost "chris@comnivox.com"
 #
 # Ergebnis:
-#   https://comnivox.com/app/
+#   https://comnivox.com
 #
 # Voraussetzungen:
 #   - OpenSSH-Client (ab Windows 10 dabei)
@@ -22,20 +22,19 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$AppSubdir = "app"
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ProjectDir = (Resolve-Path "$ScriptDir\..\..").Path
-$RemoteDir = "public_html/$AppSubdir"
+$RemoteDir = "public_html"
 
 Write-Host ""
-Write-Host "=== MED Rezeption Demo-Deployment auf Comnivox ===" -ForegroundColor Cyan
+Write-Host "=== MED Rezeption Deployment auf Comnivox ===" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "  Host:     $SshHost"
 Write-Host "  Remote:   $RemoteDir"
-Write-Host "  URL:      https://comnivox.com/$AppSubdir/"
+Write-Host "  URL:      https://comnivox.com"
 Write-Host ""
-Write-Host "  SICHERHEIT: Nur /$AppSubdir/ wird aktualisiert." -ForegroundColor Yellow
-Write-Host "              Die Comnivox-Homepage bleibt unangetastet."
+Write-Host "  ACHTUNG: Die aktuelle Wartungsseite wird ersetzt!" -ForegroundColor Yellow
+Write-Host "           comnivox.com zeigt danach MED Rezeption."
 Write-Host ""
 
 $antwort = Read-Host "Deployment starten? (j/n)"
@@ -74,8 +73,8 @@ try {
     Write-Host "[3/6] Kopiere .htaccess..." -ForegroundColor Green
     Copy-Item "$ScriptDir\.htaccess" "$BuildDir\.htaccess" -Force
 
-    # [4/6] Altes app-Verzeichnis auf Server leeren (NUR /app/, NICHT public_html!)
-    Write-Host "[4/6] Raeume altes $AppSubdir/ auf Server auf..." -ForegroundColor Green
+    # [4/6] Alte Dateien auf Server aufraemen (NUR Inhalte, nicht den Ordner selbst)
+    Write-Host "[4/6] Raeume altes $RemoteDir/ auf..." -ForegroundColor Green
     ssh $SshHost "rm -rf $RemoteDir/* && mkdir -p $RemoteDir"
     if ($LASTEXITCODE -ne 0) {
         Write-Host "FEHLER: SSH-Verbindung fehlgeschlagen!" -ForegroundColor Red
@@ -90,19 +89,21 @@ try {
         exit 1
     }
 
+    # .htaccess separat hochladen (wird von scp * manchmal uebersprungen)
+    scp "$BuildDir\.htaccess" "${SshHost}:${RemoteDir}/.htaccess"
+
     # [6/6] Pruefen ob Upload erfolgreich war
     Write-Host "[6/6] Pruefe Upload..." -ForegroundColor Green
     $dateiAnzahl = ssh $SshHost "find $RemoteDir -type f | wc -l"
     Write-Host "       $dateiAnzahl Dateien auf Server." -ForegroundColor Gray
 
     Write-Host ""
-    Write-Host "=== Demo erfolgreich deployed ===" -ForegroundColor Cyan
+    Write-Host "=== MED Rezeption erfolgreich deployed ===" -ForegroundColor Cyan
     Write-Host ""
-    Write-Host "  URL:  https://comnivox.com/$AppSubdir/" -ForegroundColor Green
+    Write-Host "  URL:  https://comnivox.com" -ForegroundColor Green
     Write-Host ""
     Write-Host "  Die Demo laeuft im Browser (localStorage)."
     Write-Host "  PHP-Backend ist optional fuer Server-seitige Daten."
-    Write-Host "  Die Homepage auf comnivox.com wurde NICHT veraendert."
     Write-Host ""
 }
 catch {

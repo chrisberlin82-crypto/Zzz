@@ -1,9 +1,9 @@
 #!/bin/bash
 # ============================================================
-# Deploy Demo auf Comnivox Webspace (Unterverzeichnis)
+# Deploy MED Rezeption auf Comnivox Webspace (Root)
 # ============================================================
-# WICHTIG: Die bestehende Homepage auf comnivox.com bleibt
-# unangetastet! Die Demo wird in ein Unterverzeichnis deployed.
+# Deployed direkt in public_html/ -> comnivox.com
+# Die alte Wartungsseite wird ersetzt.
 #
 # Verwendung:
 #   ./deploy-comnivox.sh user@comnivox-server
@@ -11,35 +11,27 @@
 # Beispiel:
 #   ./deploy-comnivox.sh chris@comnivox.com
 #
-# Die Demo ist dann erreichbar unter:
-#   https://comnivox.com/app/
+# Ergebnis:
+#   https://comnivox.com
 #
 # Voraussetzungen:
 #   - SSH-Zugang zum Webspace
-#   - Die bestehende Homepage liegt im Document Root (public_html/)
-#   - Das Unterverzeichnis /app/ wird NUR fuer die Demo genutzt
 # ============================================================
 
 set -e
 
 SSH_HOST="${1:?Fehler: SSH-Host angeben (z.B. chris@comnivox.com)}"
 
-# Unterverzeichnis auf dem Webspace (aendern falls gewuenscht)
-APP_SUBDIR="app"
-
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+REMOTE_DIR="public_html"
 
-# Standard-Pfad fuer Webspace (public_html ist typisch fuer Plesk/cPanel)
-REMOTE_DIR="public_html/${APP_SUBDIR}"
-
-echo "=== MED Rezeption Demo-Deployment auf Comnivox ==="
+echo "=== MED Rezeption Deployment auf Comnivox ==="
 echo "Host:   $SSH_HOST"
 echo "Pfad:   $REMOTE_DIR"
-echo "URL:    https://comnivox.com/${APP_SUBDIR}/"
+echo "URL:    https://comnivox.com"
 echo ""
-echo "SICHERHEIT: Die bestehende Homepage wird NICHT veraendert."
-echo "             Nur das Unterverzeichnis /${APP_SUBDIR}/ wird aktualisiert."
+echo "ACHTUNG: Die aktuelle Wartungsseite wird ersetzt!"
 echo ""
 
 # Temporaeres Build-Verzeichnis
@@ -60,17 +52,17 @@ fi
 
 # Composer-Abhaengigkeiten (falls vorhanden)
 if [ -d "$PROJECT_DIR/vendor" ]; then
-    echo "[2b/5] Kopiere Composer-Vendor..."
+    echo "       Kopiere Composer-Vendor..."
     cp -r "$PROJECT_DIR/vendor" "$BUILD_DIR/vendor"
 fi
 
-echo "[3/5] Kopiere .htaccess fuer Unterverzeichnis..."
+echo "[3/5] Kopiere .htaccess..."
 cp "$SCRIPT_DIR/.htaccess" "$BUILD_DIR/.htaccess"
 
-echo "[4/5] Erstelle Unterverzeichnis auf Server..."
-ssh "$SSH_HOST" "mkdir -p $REMOTE_DIR"
+echo "[4/5] Raeume Server auf und erstelle Verzeichnis..."
+ssh "$SSH_HOST" "rm -rf $REMOTE_DIR/* && mkdir -p $REMOTE_DIR"
 
-echo "[5/5] Lade hoch via rsync (NUR in /${APP_SUBDIR}/)..."
+echo "[5/5] Lade hoch via rsync..."
 rsync -avz --delete \
     --exclude='*.sqlite' \
     --exclude='*.db' \
@@ -78,10 +70,9 @@ rsync -avz --delete \
     "$BUILD_DIR/" "$SSH_HOST:$REMOTE_DIR/"
 
 echo ""
-echo "=== Demo erfolgreich deployed ==="
+echo "=== MED Rezeption erfolgreich deployed ==="
 echo ""
-echo "URL:  https://comnivox.com/${APP_SUBDIR}/"
+echo "URL:  https://comnivox.com"
 echo ""
-echo "Hinweis: Die Demo laeuft komplett im Browser (localStorage)."
+echo "Hinweis: Die Demo laeuft im Browser (localStorage)."
 echo "         Das PHP-Backend ist optional fuer Server-seitige Daten."
-echo "         Die Homepage auf comnivox.com wurde NICHT veraendert."

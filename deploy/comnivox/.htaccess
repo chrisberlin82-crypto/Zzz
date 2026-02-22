@@ -1,9 +1,9 @@
-# MED Rezeption - Demo im Unterverzeichnis /app/ auf Comnivox Webspace
-# Diese .htaccess gilt NUR fuer das Unterverzeichnis, nicht fuer die Hauptseite
+# MED Rezeption - Demo auf Comnivox Webspace (Root)
+# Deployed direkt in public_html/ -> erreichbar unter comnivox.com
 
 # PHP als API-Backend
 RewriteEngine On
-RewriteBase /app/
+RewriteBase /
 
 # API-Anfragen an api.php weiterleiten
 RewriteRule ^api/(.*)$ api.php [QSA,L]
