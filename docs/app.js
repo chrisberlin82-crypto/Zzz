@@ -130,21 +130,71 @@ function guardAbmelden() {
     window.location.href = "portal.html";
 }
 
+// Rollen-Konfiguration: Wer darf was sehen
+var ROLLEN = {
+    admin:           { label: "Admin",           icon: "fa-user-gear",   farbe: "#dc2626", seiten: ["index.html","patienten.html","aerzte.html","termine.html","wartezimmer.html","agenten.html","softphone.html","voicebot.html","callflow.html","uebersetzung.html","standort.html","benutzer.html"] },
+    standortleitung: { label: "Standortleitung", icon: "fa-building",    farbe: "#7c3aed", seiten: ["index.html","patienten.html","aerzte.html","termine.html","wartezimmer.html","agenten.html","softphone.html","voicebot.html","callflow.html","uebersetzung.html","standort.html"] },
+    teamleitung:     { label: "Teamleitung",     icon: "fa-users-gear",  farbe: "#2563eb", seiten: ["index.html","patienten.html","aerzte.html","termine.html","wartezimmer.html","agenten.html","softphone.html","voicebot.html","uebersetzung.html"] },
+    agent:           { label: "Agent",            icon: "fa-headset",     farbe: "#059669", seiten: ["index.html","patienten.html","termine.html","wartezimmer.html","softphone.html","uebersetzung.html"] }
+};
+
 function guardInfoAnzeigen() {
     var auth = sessionStorage.getItem("med_guard_auth") || localStorage.getItem("med_guard_auth");
     if (!auth) return;
     try {
         var daten = JSON.parse(auth);
+        var rolle = ROLLEN[daten.rolle] || ROLLEN.agent;
+
+        // Topbar: Name + Rolle + Abmelden
         var topbar = document.querySelector(".topbar-right");
         if (topbar) {
-            topbar.innerHTML = '<span style="margin-right:0.5rem"><i class="fa-solid fa-user-circle"></i> ' +
-                escapeHtmlSafe(daten.name) + ' <small>(' + escapeHtmlSafe(daten.rolle) + ')</small></span>' +
+            topbar.innerHTML = '<span style="margin-right:0.5rem"><i class="fa-solid ' + rolle.icon + '" style="color:' + rolle.farbe + '"></i> ' +
+                escapeHtmlSafe(daten.name) + ' <small style="background:' + rolle.farbe + ';color:#fff;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem">' + escapeHtmlSafe(rolle.label) + '</small></span>' +
                 '<button type="button" id="btn-abmelden" style="padding:0.3rem 0.7rem;font-size:0.8rem;background:#64748b;border-radius:6px">' +
                 '<i class="fa-solid fa-right-from-bracket"></i> Abmelden</button>';
             var btn = document.getElementById("btn-abmelden");
             if (btn) btn.addEventListener("click", guardAbmelden);
         }
+
+        // Sidebar: Nur erlaubte Seiten anzeigen
+        rollenSidebarAnpassen(daten.rolle);
+
+        // Seitenzugriff pruefen
+        rollenSeitePruefen(daten.rolle);
     } catch (e) {}
+}
+
+function rollenSidebarAnpassen(rolleKey) {
+    var rolle = ROLLEN[rolleKey];
+    if (!rolle) return;
+    var erlaubteSeiten = rolle.seiten;
+
+    var links = document.querySelectorAll(".sidebar a");
+    for (var i = 0; i < links.length; i++) {
+        var href = links[i].getAttribute("href");
+        if (!href) continue;
+        // Seite aus href extrahieren (z.B. "patienten.html")
+        var seite = href.split("/").pop().split("?")[0];
+        if (erlaubteSeiten.indexOf(seite) === -1) {
+            links[i].style.display = "none";
+        }
+    }
+}
+
+function rollenSeitePruefen(rolleKey) {
+    var rolle = ROLLEN[rolleKey];
+    if (!rolle) return;
+    var erlaubteSeiten = rolle.seiten;
+
+    // Aktuelle Seite ermitteln
+    var aktuelleSeite = window.location.pathname.split("/").pop() || "index.html";
+    if (aktuelleSeite === "") aktuelleSeite = "index.html";
+
+    // Ist diese Seite fuer die Rolle erlaubt?
+    if (erlaubteSeiten.indexOf(aktuelleSeite) === -1) {
+        // Zurueck zum Dashboard
+        window.location.href = "index.html";
+    }
 }
 
 function escapeHtmlSafe(text) {

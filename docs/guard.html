@@ -202,9 +202,9 @@
     <div class="guard-container">
         <div class="guard-card">
             <div class="guard-header">
-                <div class="guard-icon"><i class="fa-solid fa-stethoscope"></i></div>
-                <h1>MED Rezeption</h1>
-                <p>Praxisverwaltungssystem</p>
+                <div class="guard-icon"><i class="fa-solid fa-building-shield"></i></div>
+                <h1 id="guard-titel">MED Rezeption</h1>
+                <p id="guard-untertitel">Verwaltungssystem</p>
             </div>
             <div class="guard-body">
                 <form id="guard-form">
@@ -229,8 +229,8 @@
             <div class="guard-footer">
                 <div class="guard-demo-info">
                     <strong><i class="fa-solid fa-info-circle"></i> Demo-Zugangsdaten</strong>
-                    Benutzer: <code>admin</code> &nbsp; Passwort: <code>demo</code><br>
-                    Oder: <code>arzt</code> / <code>demo</code> &nbsp; | &nbsp; <code>rezeption</code> / <code>demo</code>
+                    <code>admin</code> / <code>teamleitung</code> / <code>standortleitung</code> / <code>agent</code><br>
+                    Passwort: <code>demo</code>
                 </div>
             </div>
         </div>
@@ -239,9 +239,10 @@
     <script>
     (function() {
         var GUELTIGE_BENUTZER = {
-            "admin":     { passwort: "demo", name: "Admin",          rolle: "admin" },
-            "arzt":      { passwort: "demo", name: "Dr. Schneider",  rolle: "arzt" },
-            "rezeption": { passwort: "demo", name: "Lisa Meier",     rolle: "rezeption" }
+            "admin":           { passwort: "demo", name: "Administrator",    rolle: "admin" },
+            "teamleitung":     { passwort: "demo", name: "Frank Weber",      rolle: "teamleitung" },
+            "standortleitung": { passwort: "demo", name: "Dr. Sabine Gross", rolle: "standortleitung" },
+            "agent":           { passwort: "demo", name: "Lisa Meier",       rolle: "agent" }
         };
 
         // Check ob Portal-Zutrittscode eingegeben wurde
