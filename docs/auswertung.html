@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MED Rezeption - Auswertungen &amp; Kosten</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-logo"><h2>MED Rezeption</h2><small>Praxisverwaltung</small></div>
+        <nav class="sidebar-nav">
+            <a href="index.html"><i class="fa-solid fa-chart-pie nav-icon"></i> Dashboard</a>
+            <a href="patienten.html"><i class="fa-solid fa-users nav-icon"></i> Patienten</a>
+            <a href="aerzte.html"><i class="fa-solid fa-user-doctor nav-icon"></i> Aerzte</a>
+            <a href="termine.html"><i class="fa-solid fa-calendar-days nav-icon"></i> Termine</a>
+            <a href="wartezimmer.html"><i class="fa-solid fa-couch nav-icon"></i> Wartezimmer</a>
+            <a href="wissensdatenbank.html"><i class="fa-solid fa-book nav-icon"></i> Wissensdatenbank</a>
+            <a href="ansagen.html"><i class="fa-solid fa-tower-broadcast nav-icon"></i> Ansagen Generator</a>
+            <a href="auswertung.html" class="active"><i class="fa-solid fa-chart-line nav-icon"></i> Auswertungen</a>
+            <a href="standort.html"><i class="fa-solid fa-building nav-icon"></i> Standort &amp; ACD</a>
+            <a href="callflow.html"><i class="fa-solid fa-diagram-project nav-icon"></i> Callflow Editor</a>
+            <a href="voicebot.html"><i class="fa-solid fa-robot nav-icon"></i> Voicebot</a>
+            <a href="agenten.html"><i class="fa-solid fa-headset nav-icon"></i> Agenten</a>
+            <a href="softphone.html"><i class="fa-solid fa-phone nav-icon"></i> Softphone</a>
+            <a href="uebersetzung.html"><i class="fa-solid fa-language nav-icon"></i> Uebersetzer</a>
+            <a href="benutzer.html"><i class="fa-solid fa-user-gear nav-icon"></i> Benutzer</a>
+        </nav>
+        <div class="sidebar-footer"><button id="btn-demo-reset" type="button">Demo zuruecksetzen</button></div>
+    </aside>
+    <div class="main-wrapper">
+        <header class="topbar">
+            <button id="menu-toggle" type="button"><i class="fa-solid fa-bars"></i></button>
+            <h1><i class="fa-solid fa-chart-line"></i> Auswertungen &amp; Kosten</h1>
+            <div class="topbar-right">Demo-Modus</div>
+        </header>
+        <main>
+            <!-- Zeitraum-Filter -->
+            <div class="card" style="margin-bottom:1.5rem">
+                <div style="display:flex;gap:1rem;align-items:center;flex-wrap:wrap">
+                    <div class="form-group" style="margin:0">
+                        <label for="aw-zeitraum" style="font-size:0.8rem;margin-bottom:0.25rem">Zeitraum</label>
+                        <select id="aw-zeitraum">
+                            <option value="heute">Heute</option>
+                            <option value="woche" selected>Diese Woche</option>
+                            <option value="monat">Dieser Monat</option>
+                            <option value="quartal">Quartal</option>
+                            <option value="jahr">Dieses Jahr</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin:0">
+                        <label for="aw-von" style="font-size:0.8rem;margin-bottom:0.25rem">Von</label>
+                        <input type="date" id="aw-von">
+                    </div>
+                    <div class="form-group" style="margin:0">
+                        <label for="aw-bis" style="font-size:0.8rem;margin-bottom:0.25rem">Bis</label>
+                        <input type="date" id="aw-bis">
+                    </div>
+                    <div class="form-group" style="margin:0">
+                        <label for="aw-standort" style="font-size:0.8rem;margin-bottom:0.25rem">Standort</label>
+                        <select id="aw-standort">
+                            <option value="">Alle Standorte</option>
+                            <option value="hauptpraxis">Hauptpraxis</option>
+                            <option value="filiale1">Filiale Nord</option>
+                            <option value="filiale2">Filiale Sued</option>
+                        </select>
+                    </div>
+                    <button type="button" id="btn-aw-aktualisieren" class="btn-primary" style="margin-top:auto"><i class="fa-solid fa-rotate"></i> Aktualisieren</button>
+                    <button type="button" id="btn-aw-export" style="margin-top:auto;background:var(--success)"><i class="fa-solid fa-file-csv"></i> CSV Export</button>
+                </div>
+            </div>
+
+            <!-- KPI Uebersicht -->
+            <div class="stat-grid" style="margin-bottom:1.5rem">
+                <div class="stat-card">
+                    <div class="stat-icon bg-primary"><i class="fa-solid fa-phone"></i></div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="aw-anrufe-gesamt">0</div>
+                        <div class="stat-label">Anrufe gesamt</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon bg-success"><i class="fa-solid fa-phone-volume"></i></div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="aw-angenommen">0</div>
+                        <div class="stat-label">Angenommen</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon bg-danger"><i class="fa-solid fa-phone-slash"></i></div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="aw-verpasst">0</div>
+                        <div class="stat-label">Verpasst</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon bg-info"><i class="fa-solid fa-robot"></i></div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="aw-voicebot">0</div>
+                        <div class="stat-label">Voicebot erledigt</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon bg-warning"><i class="fa-solid fa-clock"></i></div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="aw-wartezeit">0s</div>
+                        <div class="stat-label">Avg. Wartezeit</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:#7c3aed"><i class="fa-solid fa-stopwatch"></i></div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="aw-gespraechsdauer">0s</div>
+                        <div class="stat-label">Avg. Gespraechsdauer</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Anrufverlauf Chart (CSS-basiert) -->
+            <div class="card" style="margin-bottom:1.5rem">
+                <h2><i class="fa-solid fa-chart-bar"></i> Anrufverlauf</h2>
+                <div id="aw-chart-anrufe" style="margin-top:1rem;display:flex;align-items:flex-end;gap:4px;height:200px;padding:0 0.5rem;border-bottom:2px solid var(--border)"></div>
+                <div id="aw-chart-labels" style="display:flex;gap:4px;padding:0.5rem 0.5rem 0;font-size:0.7rem;color:var(--text-muted)"></div>
+                <div style="display:flex;gap:1.5rem;margin-top:0.75rem;font-size:0.8rem;color:var(--text-muted)">
+                    <span><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:var(--primary);vertical-align:middle"></span> Angenommen</span>
+                    <span><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:var(--danger);vertical-align:middle"></span> Verpasst</span>
+                    <span><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:var(--info);vertical-align:middle"></span> Voicebot</span>
+                </div>
+            </div>
+
+            <!-- Zwei-Spalten: Agenten-Performance + Kosten -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem">
+                <!-- Agenten-Performance -->
+                <div class="card">
+                    <h2><i class="fa-solid fa-headset"></i> Agenten-Performance</h2>
+                    <table style="width:100%;margin-top:1rem;font-size:0.85rem" id="aw-agenten-tabelle">
+                        <thead>
+                            <tr>
+                                <th>Agent</th>
+                                <th>Anrufe</th>
+                                <th>Avg. Dauer</th>
+                                <th>Erreichbarkeit</th>
+                                <th>Bewertung</th>
+                            </tr>
+                        </thead>
+                        <tbody id="aw-agenten-body"></tbody>
+                    </table>
+                </div>
+
+                <!-- Kosten -->
+                <div class="card">
+                    <h2><i class="fa-solid fa-euro-sign"></i> Kosten &amp; Ersparnis</h2>
+                    <div id="aw-kosten-bereich" style="margin-top:1rem"></div>
+                </div>
+            </div>
+
+            <!-- Zwei-Spalten: Top Anrufgruende + Erreichbarkeit-Verlauf -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem">
+                <!-- Top Anrufgruende -->
+                <div class="card">
+                    <h2><i class="fa-solid fa-list-ol"></i> Top Anrufgruende</h2>
+                    <div id="aw-anrufgruende" style="margin-top:1rem"></div>
+                </div>
+
+                <!-- Erreichbarkeit nach Tageszeit -->
+                <div class="card">
+                    <h2><i class="fa-solid fa-clock"></i> Erreichbarkeit nach Tageszeit</h2>
+                    <div id="aw-tageszeit" style="margin-top:1rem"></div>
+                </div>
+            </div>
+
+            <!-- Einzelverbindungsnachweis -->
+            <div class="card">
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                    <h2><i class="fa-solid fa-list"></i> Einzelverbindungsnachweis (EVN)</h2>
+                    <div style="display:flex;gap:0.5rem">
+                        <input type="text" id="aw-evn-suche" placeholder="Suchen..." style="font-size:0.85rem;width:200px">
+                        <select id="aw-evn-filter" style="font-size:0.85rem">
+                            <option value="">Alle</option>
+                            <option value="angenommen">Angenommen</option>
+                            <option value="verpasst">Verpasst</option>
+                            <option value="voicebot">Voicebot</option>
+                            <option value="weiterleitung">Weiterleitung</option>
+                        </select>
+                    </div>
+                </div>
+                <table style="width:100%;margin-top:1rem;font-size:0.85rem">
+                    <thead>
+                        <tr>
+                            <th>Datum/Zeit</th>
+                            <th>Rufnummer</th>
+                            <th>Richtung</th>
+                            <th>Agent</th>
+                            <th>Dauer</th>
+                            <th>Status</th>
+                            <th>Kosten</th>
+                        </tr>
+                    </thead>
+                    <tbody id="aw-evn-body"></tbody>
+                </table>
+                <div id="aw-evn-paging" style="display:flex;justify-content:space-between;align-items:center;margin-top:1rem;font-size:0.85rem"></div>
+            </div>
+        </main>
+    </div>
+    <button id="chat-toggle" type="button"><i class="fa-solid fa-comment-dots"></i></button>
+    <div id="chat-fenster">
+        <div class="chat-header"><span><i class="fa-solid fa-robot"></i> Praxis-Assistent</span><button id="chat-schliessen" type="button"><i class="fa-solid fa-xmark"></i></button></div>
+        <div id="chat-nachrichten"></div>
+        <div class="chat-eingabe">
+            <input id="chat-input" type="text" placeholder="Frage stellen oder sprechen...">
+            <button id="chat-mikrofon" type="button" title="Sprechen"><i class="fa-solid fa-microphone"></i></button>
+            <button id="chat-senden" type="button"><i class="fa-solid fa-paper-plane"></i></button>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>

@@ -16,6 +16,7 @@ PAGES = [
     ("wartezimmer.html",        "wartezimmer",      "fa-couch",             "Wartezimmer",          ["admin","teamleitung","standortleitung","agent"]),
     ("wissensdatenbank.html",   "wissensdatenbank", "fa-book",              "Wissensdatenbank",     ["admin","teamleitung","standortleitung","agent"]),
     ("ansagen.html",            "ansagen",          "fa-tower-broadcast",   "Ansagen Generator",    ["admin","teamleitung"]),
+    ("auswertung.html",         "auswertung",       "fa-chart-line",        "Auswertungen",         ["admin","teamleitung","standortleitung"]),
     ("standort.html",           "standort",         "fa-building",          "Standort &amp; ACD",   ["admin","teamleitung","standortleitung"]),
     ("callflow.html",           "callflow",         "fa-diagram-project",   "Callflow Editor",      ["admin","teamleitung"]),
     ("voicebot.html",           "voicebot",         "fa-robot",             "Voicebot",             ["admin","teamleitung"]),

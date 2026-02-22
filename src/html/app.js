@@ -131,7 +131,7 @@ function guardAbmelden() {
 }
 
 // Rollen-Konfiguration: Wer darf was sehen
-var ALLE_SEITEN = ["index.html","patienten.html","aerzte.html","termine.html","wartezimmer.html","wissensdatenbank.html","ansagen.html","agenten.html","softphone.html","voicebot.html","callflow.html","uebersetzung.html","standort.html","benutzer.html"];
+var ALLE_SEITEN = ["index.html","patienten.html","aerzte.html","termine.html","wartezimmer.html","wissensdatenbank.html","ansagen.html","auswertung.html","agenten.html","softphone.html","voicebot.html","callflow.html","uebersetzung.html","standort.html","benutzer.html"];
 var ROLLEN = {
     admin:           { label: "Admin",           icon: "fa-user-gear",   farbe: "#dc2626", seiten: ALLE_SEITEN },
     standortleitung: { label: "Standortleitung", icon: "fa-building",    farbe: "#7c3aed", seiten: ALLE_SEITEN },
@@ -3463,6 +3463,349 @@ function initAnsagenGenerator() {
     listeAnzeigen();
 }
 
+// ===== AUSWERTUNGEN & KOSTEN =====
+
+function initAuswertungen() {
+    var container = document.getElementById("aw-agenten-body");
+    if (!container) return;
+
+    var agenten = dbLaden("agenten");
+
+    // Demo-Daten fuer Anrufstatistik
+    var DEMO_STATS = {
+        heute:   { anrufe: 47, angenommen: 38, verpasst: 4, voicebot: 5, wartezeit: 8, gespraech: 195 },
+        woche:   { anrufe: 312, angenommen: 267, verpasst: 22, voicebot: 23, wartezeit: 11, gespraech: 203 },
+        monat:   { anrufe: 1284, angenommen: 1098, verpasst: 87, voicebot: 99, wartezeit: 13, gespraech: 198 },
+        quartal: { anrufe: 3847, angenommen: 3302, verpasst: 248, voicebot: 297, wartezeit: 12, gespraech: 201 },
+        jahr:    { anrufe: 15392, angenommen: 13187, verpasst: 993, voicebot: 1212, wartezeit: 11, gespraech: 200 }
+    };
+
+    // Anrufgruende
+    var ANRUF_GRUENDE = [
+        { grund: "Terminvergabe", prozent: 34, farbe: "var(--primary)" },
+        { grund: "Rezeptbestellung", prozent: 22, farbe: "var(--success)" },
+        { grund: "Befundanfrage", prozent: 15, farbe: "var(--warning)" },
+        { grund: "Ueberweisung", prozent: 11, farbe: "var(--info)" },
+        { grund: "Allg. Auskunft", prozent: 8, farbe: "#7c3aed" },
+        { grund: "Notfall/Dringend", prozent: 6, farbe: "var(--danger)" },
+        { grund: "Sonstiges", prozent: 4, farbe: "#94a3b8" }
+    ];
+
+    // Tageszeit-Erreichbarkeit
+    var TAGESZEIT = [
+        { zeit: "07:00-08:00", erreich: 95, anrufe: 12 },
+        { zeit: "08:00-09:00", erreich: 88, anrufe: 38 },
+        { zeit: "09:00-10:00", erreich: 82, anrufe: 52 },
+        { zeit: "10:00-11:00", erreich: 79, anrufe: 48 },
+        { zeit: "11:00-12:00", erreich: 85, anrufe: 41 },
+        { zeit: "12:00-13:00", erreich: 72, anrufe: 22 },
+        { zeit: "13:00-14:00", erreich: 68, anrufe: 18 },
+        { zeit: "14:00-15:00", erreich: 83, anrufe: 35 },
+        { zeit: "15:00-16:00", erreich: 87, anrufe: 28 },
+        { zeit: "16:00-17:00", erreich: 91, anrufe: 15 },
+        { zeit: "17:00-18:00", erreich: 94, anrufe: 8 }
+    ];
+
+    // EVN Demo-Daten
+    var EVN_DATEN = [];
+    var rufnummern = ["0171-2345678", "030-1234567", "089-9876543", "040-5551234", "0152-8765432", "0163-3456789", "0221-7654321", "069-1112233", "0711-4445566", "0351-8889900"];
+    var namen = ["Hr. Weber", "Fr. Mueller", "Hr. Schmidt", "Fr. Klein", "Hr. Braun", "Fr. Fischer", "Hr. Hoffmann", "Fr. Wagner", "Hr. Becker", "Fr. Schulz"];
+    var statusOptionen = ["angenommen", "angenommen", "angenommen", "angenommen", "verpasst", "voicebot", "weiterleitung"];
+    var agentenNamen = agenten.map(function (a) { return a.name; });
+    if (agentenNamen.length === 0) agentenNamen = ["Lisa M.", "Tom R.", "Sarah K.", "Max B."];
+
+    for (var i = 0; i < 50; i++) {
+        var d = new Date();
+        d.setMinutes(d.getMinutes() - Math.floor(Math.random() * 7 * 24 * 60));
+        var status = statusOptionen[Math.floor(Math.random() * statusOptionen.length)];
+        var dauer = status === "verpasst" ? 0 : Math.floor(Math.random() * 420 + 15);
+        var kosten = status === "voicebot" ? (Math.random() * 0.15 + 0.02).toFixed(2) : (dauer / 60 * 0.039).toFixed(2);
+        EVN_DATEN.push({
+            datum: d.toISOString().split("T")[0] + " " + ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2),
+            rufnummer: rufnummern[Math.floor(Math.random() * rufnummern.length)],
+            name: namen[Math.floor(Math.random() * namen.length)],
+            richtung: Math.random() > 0.15 ? "eingehend" : "ausgehend",
+            agent: status === "voicebot" ? "Voicebot" : agentenNamen[Math.floor(Math.random() * agentenNamen.length)],
+            dauer: dauer,
+            status: status,
+            kosten: kosten
+        });
+    }
+    EVN_DATEN.sort(function (a, b) { return b.datum.localeCompare(a.datum); });
+
+    var aktuellerZeitraum = "woche";
+    var evnSeite = 0;
+    var EVN_PRO_SEITE = 10;
+
+    function kpiAktualisieren() {
+        var s = DEMO_STATS[aktuellerZeitraum] || DEMO_STATS.woche;
+        setText("aw-anrufe-gesamt", s.anrufe.toLocaleString("de-DE"));
+        setText("aw-angenommen", s.angenommen.toLocaleString("de-DE"));
+        setText("aw-verpasst", s.verpasst.toLocaleString("de-DE"));
+        setText("aw-voicebot", s.voicebot.toLocaleString("de-DE"));
+        setText("aw-wartezeit", s.wartezeit + "s");
+        setText("aw-gespraechsdauer", Math.floor(s.gespraech / 60) + ":" + ("0" + (s.gespraech % 60)).slice(-2));
+    }
+
+    function setText(id, val) {
+        var el = document.getElementById(id);
+        if (el) el.textContent = val;
+    }
+
+    function chartZeichnen() {
+        var chartDiv = document.getElementById("aw-chart-anrufe");
+        var labelsDiv = document.getElementById("aw-chart-labels");
+        if (!chartDiv) return;
+
+        var tage = aktuellerZeitraum === "heute" ? 24 : aktuellerZeitraum === "woche" ? 7 : aktuellerZeitraum === "monat" ? 30 : aktuellerZeitraum === "quartal" ? 12 : 12;
+        var labels = [];
+        var daten = [];
+        var wochentage = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
+        var monate = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
+
+        for (var i = 0; i < tage; i++) {
+            var ang = Math.floor(Math.random() * 30 + 20);
+            var verp = Math.floor(Math.random() * 6);
+            var bot = Math.floor(Math.random() * 8 + 2);
+            daten.push({ angenommen: ang, verpasst: verp, voicebot: bot });
+
+            if (aktuellerZeitraum === "heute") {
+                labels.push((7 + i) + ":00");
+            } else if (aktuellerZeitraum === "woche") {
+                labels.push(wochentage[i % 7]);
+            } else if (aktuellerZeitraum === "monat") {
+                labels.push((i + 1) + ".");
+            } else {
+                labels.push(monate[i % 12]);
+            }
+        }
+
+        var maxWert = Math.max.apply(null, daten.map(function (d) { return d.angenommen + d.verpasst + d.voicebot; }));
+        if (maxWert === 0) maxWert = 1;
+
+        var chartHtml = "";
+        var labelsHtml = "";
+        var barWidth = Math.max(8, Math.floor(100 / tage) - 1);
+
+        daten.forEach(function (d, idx) {
+            var gesamt = d.angenommen + d.verpasst + d.voicebot;
+            var hAng = Math.round((d.angenommen / maxWert) * 180);
+            var hVerp = Math.round((d.verpasst / maxWert) * 180);
+            var hBot = Math.round((d.voicebot / maxWert) * 180);
+
+            chartHtml += '<div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:1px" title="' + labels[idx] + ': ' + gesamt + ' Anrufe">' +
+                '<div style="width:100%;max-width:' + barWidth + 'px;height:' + hBot + 'px;background:var(--info);border-radius:2px 2px 0 0"></div>' +
+                '<div style="width:100%;max-width:' + barWidth + 'px;height:' + hVerp + 'px;background:var(--danger)"></div>' +
+                '<div style="width:100%;max-width:' + barWidth + 'px;height:' + hAng + 'px;background:var(--primary);border-radius:0 0 2px 2px"></div>' +
+                '</div>';
+            labelsHtml += '<div style="flex:1;text-align:center">' + labels[idx] + '</div>';
+        });
+
+        chartDiv.innerHTML = chartHtml;
+        labelsDiv.innerHTML = labelsHtml;
+    }
+
+    function agentenPerformance() {
+        var body = document.getElementById("aw-agenten-body");
+        if (!body) return;
+        body.innerHTML = "";
+
+        var liste = agenten.length > 0 ? agenten : [
+            { name: "Lisa M." }, { name: "Tom R." }, { name: "Sarah K." }, { name: "Max B." }
+        ];
+
+        liste.forEach(function (a) {
+            var anrufe = Math.floor(Math.random() * 40 + 10);
+            var avgDauer = Math.floor(Math.random() * 200 + 80);
+            var erreich = Math.floor(Math.random() * 15 + 85);
+            var bewertung = (Math.random() * 1.5 + 3.5).toFixed(1);
+
+            var erreichFarbe = erreich >= 90 ? "var(--success)" : erreich >= 80 ? "var(--warning)" : "var(--danger)";
+            var sterne = "";
+            for (var s = 1; s <= 5; s++) {
+                sterne += '<i class="fa-' + (s <= Math.round(parseFloat(bewertung)) ? "solid" : "regular") + ' fa-star" style="color:' + (s <= Math.round(parseFloat(bewertung)) ? "#f59e0b" : "#d1d5db") + ';font-size:0.75rem"></i>';
+            }
+
+            var tr = document.createElement("tr");
+            tr.innerHTML = '<td><strong>' + escapeHtml(a.name) + '</strong></td>' +
+                '<td>' + anrufe + '</td>' +
+                '<td>' + Math.floor(avgDauer / 60) + ':' + ('0' + (avgDauer % 60)).slice(-2) + '</td>' +
+                '<td><span style="color:' + erreichFarbe + ';font-weight:700">' + erreich + '%</span></td>' +
+                '<td>' + sterne + ' <small>' + bewertung + '</small></td>';
+            body.appendChild(tr);
+        });
+    }
+
+    function kostenAnzeigen() {
+        var bereich = document.getElementById("aw-kosten-bereich");
+        if (!bereich) return;
+
+        var s = DEMO_STATS[aktuellerZeitraum] || DEMO_STATS.woche;
+        var kostenProAnruf = 0.039;
+        var kostenBot = 0.05;
+        var kostenAgent = 2.80;
+        var kostenOhneBot = s.anrufe * kostenAgent;
+        var kostenMitBot = (s.anrufe - s.voicebot) * kostenAgent + s.voicebot * kostenBot;
+        var ersparnis = kostenOhneBot - kostenMitBot;
+        var prozent = Math.round((ersparnis / kostenOhneBot) * 100);
+
+        bereich.innerHTML =
+            '<div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">' +
+            '<div style="background:var(--bg);border-radius:var(--radius);padding:1rem;text-align:center">' +
+            '<div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.25rem">Telefonie-Kosten</div>' +
+            '<div style="font-size:1.5rem;font-weight:700;color:var(--text)">' + kostenMitBot.toFixed(2) + ' &euro;</div>' +
+            '</div>' +
+            '<div style="background:#f0fdf4;border-radius:var(--radius);padding:1rem;text-align:center">' +
+            '<div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.25rem">Ersparnis durch Bot</div>' +
+            '<div style="font-size:1.5rem;font-weight:700;color:var(--success)">' + ersparnis.toFixed(2) + ' &euro; <small>(' + prozent + '%)</small></div>' +
+            '</div>' +
+            '</div>' +
+
+            '<h3 style="font-size:0.9rem;margin-bottom:0.75rem"><i class="fa-solid fa-receipt"></i> Kostenaufschluesselung</h3>' +
+            '<table style="width:100%;font-size:0.85rem">' +
+            '<tr><td>Agenten-Gespraeche (' + (s.anrufe - s.voicebot) + ' x ' + kostenAgent.toFixed(2) + ' &euro;)</td><td style="text-align:right;font-weight:600">' + ((s.anrufe - s.voicebot) * kostenAgent).toFixed(2) + ' &euro;</td></tr>' +
+            '<tr><td>Voicebot-Gespraeche (' + s.voicebot + ' x ' + kostenBot.toFixed(2) + ' &euro;)</td><td style="text-align:right;font-weight:600">' + (s.voicebot * kostenBot).toFixed(2) + ' &euro;</td></tr>' +
+            '<tr><td>Telekom-Kosten (geschaetzt)</td><td style="text-align:right;font-weight:600">' + (s.anrufe * kostenProAnruf).toFixed(2) + ' &euro;</td></tr>' +
+            '<tr style="border-top:2px solid var(--border);font-weight:700"><td>Gesamt</td><td style="text-align:right">' + (kostenMitBot + s.anrufe * kostenProAnruf).toFixed(2) + ' &euro;</td></tr>' +
+            '</table>' +
+
+            '<div style="margin-top:1rem;padding:0.75rem;background:#eff6ff;border-radius:var(--radius);border:1px solid #bfdbfe">' +
+            '<div style="font-size:0.8rem;color:#1e40af"><i class="fa-solid fa-lightbulb"></i> <strong>Tipp:</strong> Ohne Voicebot haetten Sie ' + kostenOhneBot.toFixed(2) + ' &euro; gezahlt. Der Bot spart Ihnen <strong>' + prozent + '%</strong> der Personalkosten.</div>' +
+            '</div>';
+    }
+
+    function anrufgruendeZeichnen() {
+        var bereich = document.getElementById("aw-anrufgruende");
+        if (!bereich) return;
+        var html = "";
+        ANRUF_GRUENDE.forEach(function (g) {
+            html += '<div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.6rem">' +
+                '<span style="min-width:120px;font-size:0.85rem;font-weight:600">' + escapeHtml(g.grund) + '</span>' +
+                '<div style="flex:1;background:var(--bg);border-radius:4px;height:20px;overflow:hidden;position:relative">' +
+                '<div style="width:' + g.prozent + '%;height:100%;background:' + g.farbe + ';border-radius:4px;transition:width 0.5s"></div>' +
+                '</div>' +
+                '<span style="font-size:0.85rem;font-weight:700;min-width:35px;text-align:right">' + g.prozent + '%</span></div>';
+        });
+        bereich.innerHTML = html;
+    }
+
+    function tageszeitZeichnen() {
+        var bereich = document.getElementById("aw-tageszeit");
+        if (!bereich) return;
+        var html = '<table style="width:100%;font-size:0.85rem"><thead><tr><th>Uhrzeit</th><th>Anrufe</th><th>Erreichbarkeit</th><th></th></tr></thead><tbody>';
+        TAGESZEIT.forEach(function (t) {
+            var farbe = t.erreich >= 90 ? "var(--success)" : t.erreich >= 80 ? "var(--warning)" : "var(--danger)";
+            html += '<tr><td>' + t.zeit + '</td><td>' + t.anrufe + '</td>' +
+                '<td style="font-weight:700;color:' + farbe + '">' + t.erreich + '%</td>' +
+                '<td style="width:120px"><div style="background:var(--bg);border-radius:4px;height:6px;overflow:hidden"><div style="width:' + t.erreich + '%;height:100%;background:' + farbe + ';border-radius:4px"></div></div></td></tr>';
+        });
+        html += '</tbody></table>';
+        bereich.innerHTML = html;
+    }
+
+    function evnAnzeigen() {
+        var body = document.getElementById("aw-evn-body");
+        var paging = document.getElementById("aw-evn-paging");
+        if (!body) return;
+
+        var suche = (document.getElementById("aw-evn-suche") || {}).value || "";
+        var filter = (document.getElementById("aw-evn-filter") || {}).value || "";
+
+        var gefiltert = EVN_DATEN.filter(function (e) {
+            if (filter && e.status !== filter) return false;
+            if (suche) {
+                var s = suche.toLowerCase();
+                return e.rufnummer.indexOf(s) !== -1 || e.name.toLowerCase().indexOf(s) !== -1 || e.agent.toLowerCase().indexOf(s) !== -1;
+            }
+            return true;
+        });
+
+        var start = evnSeite * EVN_PRO_SEITE;
+        var seite = gefiltert.slice(start, start + EVN_PRO_SEITE);
+
+        body.innerHTML = "";
+        seite.forEach(function (e) {
+            var statusBadge = {
+                angenommen: "status-bestaetigt",
+                verpasst: "status-abgesagt",
+                voicebot: "status-geplant",
+                weiterleitung: "status-geplant"
+            };
+            var richtungIcon = e.richtung === "eingehend" ? '<i class="fa-solid fa-arrow-down" style="color:var(--success)"></i>' : '<i class="fa-solid fa-arrow-up" style="color:var(--primary)"></i>';
+            var tr = document.createElement("tr");
+            tr.innerHTML = '<td>' + escapeHtml(e.datum) + '</td>' +
+                '<td>' + escapeHtml(e.rufnummer) + '<br><small style="color:var(--text-muted)">' + escapeHtml(e.name) + '</small></td>' +
+                '<td>' + richtungIcon + ' ' + escapeHtml(e.richtung) + '</td>' +
+                '<td>' + escapeHtml(e.agent) + '</td>' +
+                '<td>' + (e.dauer > 0 ? Math.floor(e.dauer / 60) + ':' + ('0' + (e.dauer % 60)).slice(-2) : '-') + '</td>' +
+                '<td><span class="status-badge ' + (statusBadge[e.status] || "") + '">' + escapeHtml(e.status) + '</span></td>' +
+                '<td>' + e.kosten + ' &euro;</td>';
+            body.appendChild(tr);
+        });
+
+        if (paging) {
+            var gesamtSeiten = Math.ceil(gefiltert.length / EVN_PRO_SEITE);
+            paging.innerHTML = '<span>' + gefiltert.length + ' Eintraege (Seite ' + (evnSeite + 1) + '/' + Math.max(1, gesamtSeiten) + ')</span>' +
+                '<div style="display:flex;gap:0.5rem">' +
+                '<button type="button" id="aw-evn-zurueck" style="padding:0.3rem 0.7rem;font-size:0.8rem" ' + (evnSeite === 0 ? 'disabled' : '') + '><i class="fa-solid fa-chevron-left"></i></button>' +
+                '<button type="button" id="aw-evn-vor" style="padding:0.3rem 0.7rem;font-size:0.8rem" ' + (evnSeite >= gesamtSeiten - 1 ? 'disabled' : '') + '><i class="fa-solid fa-chevron-right"></i></button></div>';
+
+            var btnZ = document.getElementById("aw-evn-zurueck");
+            var btnV = document.getElementById("aw-evn-vor");
+            if (btnZ) btnZ.addEventListener("click", function () { if (evnSeite > 0) { evnSeite--; evnAnzeigen(); } });
+            if (btnV) btnV.addEventListener("click", function () { evnSeite++; evnAnzeigen(); });
+        }
+    }
+
+    function allesAktualisieren() {
+        kpiAktualisieren();
+        chartZeichnen();
+        agentenPerformance();
+        kostenAnzeigen();
+        anrufgruendeZeichnen();
+        tageszeitZeichnen();
+        evnSeite = 0;
+        evnAnzeigen();
+    }
+
+    // Event Listener
+    var zeitraumSel = document.getElementById("aw-zeitraum");
+    if (zeitraumSel) {
+        zeitraumSel.addEventListener("change", function () {
+            aktuellerZeitraum = this.value;
+            allesAktualisieren();
+        });
+    }
+
+    var btnAkt = document.getElementById("btn-aw-aktualisieren");
+    if (btnAkt) btnAkt.addEventListener("click", allesAktualisieren);
+
+    var btnExport = document.getElementById("btn-aw-export");
+    if (btnExport) {
+        btnExport.addEventListener("click", function () {
+            var csv = "Datum;Rufnummer;Name;Richtung;Agent;Dauer (s);Status;Kosten\n";
+            EVN_DATEN.forEach(function (e) {
+                csv += e.datum + ";" + e.rufnummer + ";" + e.name + ";" + e.richtung + ";" + e.agent + ";" + e.dauer + ";" + e.status + ";" + e.kosten + "\n";
+            });
+            var blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement("a");
+            a.href = url;
+            a.download = "auswertung_" + aktuellerZeitraum + ".csv";
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+    }
+
+    var evnSuche = document.getElementById("aw-evn-suche");
+    var evnFilter = document.getElementById("aw-evn-filter");
+    if (evnSuche) evnSuche.addEventListener("input", function () { evnSeite = 0; evnAnzeigen(); });
+    if (evnFilter) evnFilter.addEventListener("change", function () { evnSeite = 0; evnAnzeigen(); });
+
+    // Initialisieren
+    allesAktualisieren();
+}
+
 // Globale Funktionen fuer onclick-Handler im HTML
 if (typeof window !== "undefined") {
     window.callflowPropsSpeichern = callflowPropsSpeichern;
@@ -3503,6 +3846,7 @@ if (typeof document !== "undefined") {
         initStandortSeite();
         initWissensdatenbank();
         initAnsagenGenerator();
+        initAuswertungen();
         initDemoReset();
 
         // Mobile Sidebar Toggle
