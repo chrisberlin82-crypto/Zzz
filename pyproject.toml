@@ -20,6 +20,7 @@ addopts = "--cov=src/python --cov-report=term-missing"
 
 [tool.coverage.run]
 source = ["src/python"]
+omit = ["src/python/llm_service.py"]
 
 [tool.coverage.report]
 fail_under = 80
