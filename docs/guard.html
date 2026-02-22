@@ -244,6 +244,12 @@
             "rezeption": { passwort: "demo", name: "Lisa Meier",     rolle: "rezeption" }
         };
 
+        // Check ob Portal-Zutrittscode eingegeben wurde
+        if (!sessionStorage.getItem("med_portal_ok")) {
+            window.location.href = "portal.html";
+            return;
+        }
+
         // Check ob bereits eingeloggt
         if (sessionStorage.getItem("med_guard_auth") || localStorage.getItem("med_guard_auth")) {
             window.location.href = "index.html";

@@ -105,6 +105,11 @@ function modusAnzeigeAktualisieren() {
 // ===== Guard / Auth Check =====
 
 function guardPruefen() {
+    // Portal-Check: Zutrittscode muss eingegeben sein
+    if (!sessionStorage.getItem("med_portal_ok")) {
+        window.location.href = "portal.html";
+        return null;
+    }
     var auth = sessionStorage.getItem("med_guard_auth") || localStorage.getItem("med_guard_auth");
     if (!auth) {
         window.location.href = "guard.html";
@@ -121,7 +126,8 @@ function guardPruefen() {
 function guardAbmelden() {
     sessionStorage.removeItem("med_guard_auth");
     localStorage.removeItem("med_guard_auth");
-    window.location.href = "guard.html";
+    sessionStorage.removeItem("med_portal_ok");
+    window.location.href = "portal.html";
 }
 
 function guardInfoAnzeigen() {
