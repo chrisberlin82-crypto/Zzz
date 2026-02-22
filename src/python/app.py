@@ -8,7 +8,7 @@ from src.python.rechner import addieren, subtrahieren, multiplizieren, dividiere
 from src.python.validator import schema_laden, validieren
 from src.python.llm_service import (
     chat_antwort, voicebot_dialog, uebersetzen as llm_uebersetzen,
-    llm_verfuegbar,
+    llm_verfuegbar, branchen_liste, BRANCHEN,
 )
 from src.python.datenbank import (
     verbindung_herstellen, tabellen_erstellen,
@@ -562,13 +562,23 @@ def api_anruf_loeschen_route(anruf_id):
 
 @app.route("/api/llm/status", methods=["GET"])
 def api_llm_status():
-    """Prueft ob das LLM verfuegbar ist."""
-    return jsonify({"verfuegbar": llm_verfuegbar(), "modus": "live" if llm_verfuegbar() else "demo"})
+    """Prueft ob das LLM verfuegbar ist und gibt Branchen-Info zurueck."""
+    return jsonify({
+        "verfuegbar": llm_verfuegbar(),
+        "modus": "live" if llm_verfuegbar() else "demo",
+        "branchen": branchen_liste(),
+    })
+
+
+@app.route("/api/branchen", methods=["GET"])
+def api_branchen():
+    """Gibt alle verfuegbaren Branchen mit Konfiguration zurueck."""
+    return jsonify(BRANCHEN)
 
 
 @app.route("/api/chat", methods=["POST"])
 def api_chat():
-    """Chat mit dem eingesperrten Praxis-Assistenten."""
+    """Chat mit dem eingesperrten Buero-Assistenten."""
     daten = request.get_json()
     if not daten or not daten.get("text"):
         return jsonify({"fehler": "Kein Text erhalten"}), 400
@@ -577,7 +587,9 @@ def api_chat():
         return jsonify({"fehler": "LLM nicht konfiguriert", "modus": "demo"}), 503
 
     verlauf = daten.get("verlauf", [])
-    ergebnis = chat_antwort(daten["text"], db, verlauf)
+    branche = daten.get("branche", None)
+    firmen_name = daten.get("firmen_name", "")
+    ergebnis = chat_antwort(daten["text"], db, verlauf, branche, firmen_name)
 
     if "fehler" in ergebnis:
         return jsonify(ergebnis), 500
@@ -598,8 +610,10 @@ def api_voicebot_dialog():
     eingabe = daten.get("eingabe", "")
     schritt = daten.get("schritt", 0)
     dialog_typ = daten.get("dialog_typ", "allgemein")
+    branche = daten.get("branche", None)
+    firmen_name = daten.get("firmen_name", "")
 
-    ergebnis = voicebot_dialog(eingabe, schritt, dialog_typ, db)
+    ergebnis = voicebot_dialog(eingabe, schritt, dialog_typ, db, branche, firmen_name)
 
     if "fehler" in ergebnis:
         return jsonify(ergebnis), 500
@@ -609,7 +623,7 @@ def api_voicebot_dialog():
 
 @app.route("/api/uebersetzen", methods=["POST"])
 def api_uebersetzen():
-    """Medizinische Uebersetzung mit LLM."""
+    """Uebersetzung mit LLM im Buero-Kontext."""
     daten = request.get_json()
     if not daten or not daten.get("text"):
         return jsonify({"fehler": "Kein Text erhalten"}), 400
@@ -617,11 +631,13 @@ def api_uebersetzen():
     von = daten.get("von", "de")
     nach = daten.get("nach", "en")
     text = daten["text"]
+    branche = daten.get("branche", None)
+    firmen_name = daten.get("firmen_name", "")
 
     if not llm_verfuegbar():
         return jsonify({"fehler": "LLM nicht konfiguriert", "modus": "demo"}), 503
 
-    ergebnis = llm_uebersetzen(text, von, nach)
+    ergebnis = llm_uebersetzen(text, von, nach, branche, firmen_name)
 
     if "fehler" in ergebnis:
         return jsonify(ergebnis), 500

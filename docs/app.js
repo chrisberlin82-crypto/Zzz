@@ -2,6 +2,69 @@
 
 var API_BASE = "/api";
 
+// ===== Branchen-Konfiguration (Office-Typen) =====
+
+var BRANCHEN = {
+    arztpraxis: { label: "Arztpraxis", buero_name: "Praxis", verwaltung: "Praxisverwaltung", assistent: "Praxis-Assistent", kunden: "Patienten", mitarbeiter: "Aerzte", dienste: ["Terminvergabe", "Rezeptbestellung", "Weiterleitung an Rezeption"], notfall: "Bei Notfaellen rufen Sie 112 an.", spezial: "Keine medizinischen Diagnosen oder Behandlungsratschlaege." },
+    zahnarzt: { label: "Zahnarztpraxis", buero_name: "Praxis", verwaltung: "Praxisverwaltung", assistent: "Praxis-Assistent", kunden: "Patienten", mitarbeiter: "Zahnaerzte", dienste: ["Terminvergabe", "Rezeptbestellung", "Weiterleitung"], notfall: "Bei Notfaellen rufen Sie 112 an.", spezial: "" },
+    anwalt: { label: "Rechtsanwaltskanzlei", buero_name: "Kanzlei", verwaltung: "Kanzleiverwaltung", assistent: "Kanzlei-Assistent", kunden: "Mandanten", mitarbeiter: "Anwaelte", dienste: ["Terminvergabe", "Dokumentenanfrage", "Weiterleitung"], notfall: "", spezial: "Keine Rechtsberatung erteilen." },
+    steuerberater: { label: "Steuerberatungsbuero", buero_name: "Buero", verwaltung: "Bueroverwaltung", assistent: "Buero-Assistent", kunden: "Mandanten", mitarbeiter: "Steuerberater", dienste: ["Terminvergabe", "Dokumentenanfrage", "Weiterleitung"], notfall: "", spezial: "" },
+    friseur: { label: "Friseursalon", buero_name: "Salon", verwaltung: "Salonverwaltung", assistent: "Salon-Assistent", kunden: "Kunden", mitarbeiter: "Friseure", dienste: ["Terminvergabe", "Weiterleitung"], notfall: "", spezial: "" },
+    werkstatt: { label: "KFZ-Werkstatt", buero_name: "Werkstatt", verwaltung: "Werkstattverwaltung", assistent: "Werkstatt-Assistent", kunden: "Kunden", mitarbeiter: "Mechaniker", dienste: ["Terminvergabe", "Statusabfrage", "Weiterleitung"], notfall: "Pannen: ADAC 0800-5 10 11 12", spezial: "" },
+    tierarzt: { label: "Tierarztpraxis", buero_name: "Praxis", verwaltung: "Praxisverwaltung", assistent: "Praxis-Assistent", kunden: "Tierhalter", mitarbeiter: "Tieraerzte", dienste: ["Terminvergabe", "Weiterleitung"], notfall: "Tier-Notfall: Sofort vorbeikommen.", spezial: "" },
+    allgemein: { label: "Allgemeines Buero", buero_name: "Buero", verwaltung: "Bueroverwaltung", assistent: "Buero-Assistent", kunden: "Kunden", mitarbeiter: "Mitarbeiter", dienste: ["Terminvergabe", "Weiterleitung"], notfall: "", spezial: "" }
+};
+
+var MED_BRANCHE_KEY = "arztpraxis";
+var MED_BRANCHE = BRANCHEN.arztpraxis;
+var MED_FIRMEN_NAME = "";
+
+function brancheLaden() {
+    try {
+        var gespeichert = localStorage.getItem("med_branche");
+        if (gespeichert) {
+            var daten = JSON.parse(gespeichert);
+            MED_BRANCHE_KEY = daten.key || "arztpraxis";
+            MED_FIRMEN_NAME = daten.firmen_name || "";
+            MED_BRANCHE = BRANCHEN[MED_BRANCHE_KEY] || BRANCHEN.arztpraxis;
+        }
+    } catch (e) {}
+}
+
+function brancheSpeichern(key, firmenName) {
+    MED_BRANCHE_KEY = key;
+    MED_BRANCHE = BRANCHEN[key] || BRANCHEN.arztpraxis;
+    MED_FIRMEN_NAME = firmenName || "";
+    localStorage.setItem("med_branche", JSON.stringify({ key: key, firmen_name: firmenName }));
+    brancheAnwenden();
+}
+
+function brancheAnwenden() {
+    var b = MED_BRANCHE;
+    var name = MED_FIRMEN_NAME || b.label;
+
+    // Sidebar-Titel
+    var sidebarTitel = document.querySelectorAll(".sidebar h2");
+    for (var i = 0; i < sidebarTitel.length; i++) {
+        sidebarTitel[i].textContent = name;
+    }
+    var sidebarSub = document.querySelectorAll(".sidebar small");
+    for (var j = 0; j < sidebarSub.length; j++) {
+        sidebarSub[j].textContent = b.verwaltung;
+    }
+
+    // Chat-Assistent Label
+    var chatHeaders = document.querySelectorAll(".chat-header span");
+    for (var k = 0; k < chatHeaders.length; k++) {
+        chatHeaders[k].innerHTML = '<i class="fa-solid fa-robot"></i> ' + escapeHtmlSafe(b.assistent);
+    }
+
+    // Seiten-Titel
+    if (document.title.indexOf("MED Rezeption") !== -1 || document.title.indexOf(b.label) !== -1) {
+        document.title = document.title.replace(/MED Rezeption|[\w\-]+praxis|[\w\-]+kanzlei|[\w\-]+buero|[\w\-]+salon|[\w\-]+werkstatt/gi, name);
+    }
+}
+
 // ===== Modus-Erkennung (Demo / Live) =====
 
 var MED_MODUS = "demo"; // "demo" = localStorage, "live" = Backend + LLM
@@ -33,7 +96,6 @@ function modusAnzeigeAktualisieren() {
     var badges = document.querySelectorAll(".topbar-right");
     for (var i = 0; i < badges.length; i++) {
         var badge = badges[i];
-        // Nur ersetzen wenn noch "Demo-Modus" steht
         if (badge.textContent.trim() === "Demo-Modus") {
             badge.innerHTML = '<span class="badge badge-gruen"><i class="fa-solid fa-circle" style="font-size:0.5rem"></i> Live-Modus (KI aktiv)</span>';
         }
@@ -1531,7 +1593,7 @@ function initChatWidget() {
         if (!sichtbar) {
             var msgs = document.getElementById("chat-nachrichten");
             if (msgs && msgs.children.length === 0) {
-                chatNachrichtHinzufuegen("bot", "Hallo! Ich bin der Praxis-Assistent. Wie kann ich helfen? Fragen Sie mich nach Patienten, Terminen, Aerzten oder dem Wartezimmer.");
+                chatNachrichtHinzufuegen("bot", "Hallo! Ich bin der " + MED_BRANCHE.assistent + ". Wie kann ich helfen? Fragen Sie mich nach " + MED_BRANCHE.kunden + ", Terminen, " + MED_BRANCHE.mitarbeiter + " oder dem Wartezimmer.");
             }
             if (input) input.focus();
         }
@@ -1603,7 +1665,7 @@ function chatLlmAnfrage(text) {
         chatVerlauf.push({ role: "assistant", content: antwort });
         sprachAusgabe(antwort);
     };
-    xhr.send(JSON.stringify({ text: text, verlauf: chatVerlauf.slice(-10) }));
+    xhr.send(JSON.stringify({ text: text, verlauf: chatVerlauf.slice(-10), branche: MED_BRANCHE_KEY, firmen_name: MED_FIRMEN_NAME }));
 }
 
 function chatNachrichtHinzufuegen(typ, text) {
@@ -1618,25 +1680,27 @@ function chatNachrichtHinzufuegen(typ, text) {
 
 function chatAntwortGenerieren(frage) {
     var f = frage.toLowerCase();
+    var b = MED_BRANCHE;
+    var name = MED_FIRMEN_NAME || b.label;
 
     if (f.includes("hallo") || f.includes("hi") || f.includes("guten")) {
-        return "Hallo! Willkommen in der MED Rezeption. Wie kann ich Ihnen helfen?";
+        return "Hallo! Willkommen bei " + name + ". Wie kann ich Ihnen helfen?";
     }
 
-    if (f.includes("patient")) {
+    if (f.includes("patient") || f.includes("kunde") || f.includes("mandant") || f.includes("klient")) {
         var patienten = dbLaden("patienten");
-        if (patienten.length === 0) return "Aktuell sind keine Patienten angelegt.";
+        if (patienten.length === 0) return "Aktuell sind keine " + b.kunden + " angelegt.";
         var namen = patienten.map(function (p) { return p.vorname + " " + p.nachname; }).join(", ");
-        return "Wir haben " + patienten.length + " Patienten: " + namen + ". Gehen Sie zur Patienten-Seite fuer Details.";
+        return "Wir haben " + patienten.length + " " + b.kunden + ": " + namen + ".";
     }
 
-    if (f.includes("arzt") || f.includes("aerzt") || f.includes("doktor")) {
+    if (f.includes("arzt") || f.includes("aerzt") || f.includes("doktor") || f.includes("mitarbeiter") || f.includes("anwalt") || f.includes("berater") || f.includes("friseur") || f.includes("mechaniker")) {
         var aerzte = dbLaden("aerzte");
-        if (aerzte.length === 0) return "Keine Aerzte angelegt.";
+        if (aerzte.length === 0) return "Keine " + b.mitarbeiter + " angelegt.";
         var infos = aerzte.map(function (a) {
             return ((a.titel || "") + " " + a.vorname + " " + a.nachname).trim() + " (" + a.fachrichtung + ")";
         }).join(", ");
-        return "Unsere Aerzte: " + infos;
+        return "Unsere " + b.mitarbeiter + ": " + infos;
     }
 
     if (f.includes("termin")) {
@@ -1650,12 +1714,12 @@ function chatAntwortGenerieren(frage) {
     if (f.includes("warte")) {
         var wartezimmer = dbLaden("wartezimmer").filter(function (w) { return w.status !== "fertig"; });
         if (wartezimmer.length === 0) return "Das Wartezimmer ist leer.";
-        return wartezimmer.length + " Patient(en) im Wartezimmer: " +
+        return wartezimmer.length + " " + b.kunden + " im Wartezimmer: " +
             wartezimmer.map(function (w) { return w.patient_name + " (" + w.status + ")"; }).join(", ");
     }
 
     if (f.includes("hilfe") || f.includes("help")) {
-        return "Ich kann Ihnen helfen mit: Patienten-Info, Aerzte-Info, Termine heute, Wartezimmer-Status, Voicebot, Callflow, Uebersetzer. Stellen Sie einfach eine Frage oder sprechen Sie mich per Mikrofon an!";
+        return "Ich kann Ihnen helfen mit: " + b.kunden + "-Info, " + b.mitarbeiter + "-Info, Termine heute, Wartezimmer-Status, Voicebot, Callflow, Uebersetzer.";
     }
 
     if (f.includes("agent")) {
@@ -1665,24 +1729,28 @@ function chatAntwortGenerieren(frage) {
     }
 
     if (f.includes("voicebot") || f.includes("sprachbot")) {
-        return "Der Voicebot bearbeitet automatisch eingehende Anrufe. Er kann Termine vergeben, Rezepte entgegennehmen und an die Rezeption weiterleiten. Konfigurieren Sie ihn unter 'Voicebot'.";
+        return "Der Voicebot bearbeitet automatisch eingehende Anrufe. Dienste: " + b.dienste.join(", ") + ". Konfigurieren Sie ihn unter 'Voicebot'.";
     }
 
     if (f.includes("callflow") || f.includes("anrufablauf")) {
-        return "Im Callflow Editor koennen Sie den Anrufablauf visuell gestalten. Fuegen Sie Bausteine wie Ansagen, DTMF-Menues, Voicebot-Dialoge und Warteschlangen hinzu.";
+        return "Im Callflow Editor koennen Sie den Anrufablauf visuell gestalten.";
     }
 
     if (f.includes("uebersetz") || f.includes("sprache") || f.includes("translation")) {
-        return "Der Uebersetzer hilft bei der Kommunikation mit fremdsprachigen Patienten. Er unterstuetzt Deutsch, Englisch, Tuerkisch, Arabisch, Russisch und Polnisch.";
+        return "Der Uebersetzer hilft bei der Kommunikation mit fremdsprachigen " + b.kunden + ". Er unterstuetzt 6 Sprachen.";
+    }
+
+    if (f.includes("branche") || f.includes("buero")) {
+        return "Aktuelle Branche: " + b.label + " (" + b.buero_name + "). Aendern Sie die Branche in den Standort-Einstellungen.";
     }
 
     if (f.includes("demo") || f.includes("reset") || f.includes("zurueck")) {
         localStorage.removeItem("med_demo_geladen");
         demoDatenLaden();
-        return "Demo-Daten wurden zurueckgesetzt! Laden Sie die Seite neu um die Aenderungen zu sehen.";
+        return "Demo-Daten wurden zurueckgesetzt! Laden Sie die Seite neu.";
     }
 
-    return "Das habe ich nicht verstanden. Fragen Sie mich nach: Patienten, Aerzte, Termine, Wartezimmer, Voicebot, Callflow, Uebersetzer oder 'hilfe'.";
+    return "Das habe ich nicht verstanden. Fragen Sie mich nach: " + b.kunden + ", " + b.mitarbeiter + ", Termine, Wartezimmer, Voicebot, Callflow, Uebersetzer oder 'hilfe'.";
 }
 
 // ===== Hilfsfunktionen =====
@@ -2027,10 +2095,15 @@ function voicebotTestStarten() {
         vbTestNachricht("system", "[Live-Modus: KI-Voicebot aktiv]");
         voicebotLlmAnfrage("start", 0, "allgemein");
     } else {
-        vbTestNachricht("bot", "Willkommen bei der Arztpraxis MED Rezeption.");
-        vbTestNachricht("bot", "Druecken Sie 1 fuer Terminvergabe, 2 fuer Rezeptbestellung, 3 fuer die Rezeption, oder 0 fuer die Warteschlange.");
+        var vbName = MED_FIRMEN_NAME || MED_BRANCHE.label;
+        var vbDienste = MED_BRANCHE.dienste;
+        var vbMenue = [];
+        for (var d = 0; d < vbDienste.length && d < 3; d++) vbMenue.push((d + 1) + " fuer " + vbDienste[d]);
+        vbMenue.push("0 fuer die Warteschlange");
+        vbTestNachricht("bot", "Willkommen bei " + vbName + ".");
+        vbTestNachricht("bot", "Druecken Sie " + vbMenue.join(", ") + ".");
         vbTestNachricht("system", "Warte auf DTMF-Eingabe...");
-        sprachAusgabe("Willkommen bei der Arztpraxis. Druecken Sie 1 fuer Terminvergabe, 2 fuer Rezeptbestellung, 3 fuer die Rezeption.");
+        sprachAusgabe("Willkommen bei " + vbName + ". Druecken Sie " + vbMenue.join(", ") + ".");
     }
 }
 
@@ -2122,7 +2195,7 @@ function voicebotLlmAnfrage(eingabe, schritt, dialogTyp) {
     xhr.onerror = function () {
         vbTestNachricht("system", "KI nicht erreichbar.");
     };
-    xhr.send(JSON.stringify({ eingabe: eingabe, schritt: schritt, dialog_typ: dialogTyp }));
+    xhr.send(JSON.stringify({ eingabe: eingabe, schritt: schritt, dialog_typ: dialogTyp, branche: MED_BRANCHE_KEY, firmen_name: MED_FIRMEN_NAME }));
 }
 
 function vbTestNachricht(typ, text) {
@@ -2299,7 +2372,7 @@ function uebersetzenLlm(eingabe, von, nach, ausgabe) {
         uebersetzenDemo(eingabe, von, nach, ausgabe);
         ueVerlaufSpeichern(eingabe, ausgabe.textContent, von, nach);
     };
-    xhr.send(JSON.stringify({ text: eingabe, von: von, nach: nach }));
+    xhr.send(JSON.stringify({ text: eingabe, von: von, nach: nach, branche: MED_BRANCHE_KEY, firmen_name: MED_FIRMEN_NAME }));
 }
 
 function uebersetzenDemo(eingabe, von, nach, ausgabe) {
@@ -2458,10 +2531,67 @@ function aktuellenAcdModusErmitteln() {
     return { modus: config.modus, quelle: "Standard (ausserhalb Oeffnungszeiten)" };
 }
 
+function initBranchenAuswahl() {
+    var container = document.getElementById("branche-auswahl");
+    if (!container) return;
+
+    // Select bauen
+    var select = document.getElementById("branche-select");
+    var nameInput = document.getElementById("branche-firmenname");
+    if (!select) return;
+
+    // Optionen einfuegen
+    var keys = Object.keys(BRANCHEN);
+    select.innerHTML = "";
+    for (var i = 0; i < keys.length; i++) {
+        var opt = document.createElement("option");
+        opt.value = keys[i];
+        opt.textContent = BRANCHEN[keys[i]].label;
+        if (keys[i] === MED_BRANCHE_KEY) opt.selected = true;
+        select.appendChild(opt);
+    }
+    if (nameInput) nameInput.value = MED_FIRMEN_NAME;
+
+    // Vorschau
+    brancheVorschauRendern(MED_BRANCHE_KEY);
+    select.addEventListener("change", function () { brancheVorschauRendern(select.value); });
+
+    // Speichern
+    var btnSpeichern = document.getElementById("btn-branche-speichern");
+    if (btnSpeichern) btnSpeichern.addEventListener("click", function () {
+        var key = select.value;
+        var firmenName = nameInput ? nameInput.value.trim() : "";
+        brancheSpeichern(key, firmenName);
+        var erfolg = document.getElementById("branche-erfolg");
+        if (erfolg) {
+            erfolg.textContent = "Branche gespeichert: " + BRANCHEN[key].label + (firmenName ? " (" + firmenName + ")" : "") + ". Seite wird neu geladen...";
+            erfolg.hidden = false;
+            setTimeout(function () { location.reload(); }, 1500);
+        }
+    });
+}
+
+function brancheVorschauRendern(key) {
+    var vorschau = document.getElementById("branche-vorschau");
+    if (!vorschau) return;
+    var b = BRANCHEN[key] || BRANCHEN.allgemein;
+    vorschau.innerHTML =
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;font-size:0.85rem">' +
+        '<div><strong>Buero-Typ:</strong> ' + escapeHtmlSafe(b.buero_name) + '</div>' +
+        '<div><strong>Verwaltung:</strong> ' + escapeHtmlSafe(b.verwaltung) + '</div>' +
+        '<div><strong>Assistent:</strong> ' + escapeHtmlSafe(b.assistent) + '</div>' +
+        '<div><strong>Kunden:</strong> ' + escapeHtmlSafe(b.kunden) + '</div>' +
+        '<div><strong>Mitarbeiter:</strong> ' + escapeHtmlSafe(b.mitarbeiter) + '</div>' +
+        '<div><strong>Dienste:</strong> ' + escapeHtmlSafe(b.dienste.join(", ")) + '</div>' +
+        (b.notfall ? '<div style="grid-column:1/-1;color:#dc2626"><strong>Notfall:</strong> ' + escapeHtmlSafe(b.notfall) + '</div>' : '') +
+        '</div>';
+}
+
 function initStandortSeite() {
     var acdAuswahl = document.getElementById("acd-modus-auswahl");
     if (!acdAuswahl) return;
     demoStandortdatenLaden();
+    initBranchenAuswahl();
 
     // Standort-Info
     var infoForm = document.getElementById("standort-info-form");
@@ -2688,6 +2818,8 @@ if (typeof document !== "undefined") {
             guardInfoAnzeigen();
         }
 
+        brancheLaden();
+        brancheAnwenden();
         modusPruefen();
         demoDatenLaden();
         initDashboard();
