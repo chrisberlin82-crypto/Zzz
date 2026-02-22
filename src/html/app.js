@@ -1384,7 +1384,7 @@ async function agentenBoardAktualisieren() {
         var badge = document.getElementById("agenten-online-badge");
         if (!container) return;
 
-        var onlineCount = agenten.filter(function (a) { return a.status === "online"; }).length;
+        var onlineCount = agenten.filter(function (a) { return a.status === "online" || a.status === "im_gespraech"; }).length;
         if (badge) badge.textContent = onlineCount + " online";
 
         container.innerHTML = "";
@@ -1393,30 +1393,37 @@ async function agentenBoardAktualisieren() {
             return;
         }
 
+        var STATUS_LABELS = { online: "Verfuegbar", im_gespraech: "Im Gespraech", pause: "Pause", azu: "AZU", meeting: "Meeting", at_chris: "@Chris", offline: "Offline" };
+        var STATUS_ICONS = { online: "fa-circle", im_gespraech: "fa-phone", pause: "fa-pause", azu: "fa-graduation-cap", meeting: "fa-users", at_chris: "fa-at", offline: "fa-circle-xmark" };
+
         agenten.forEach(function (a) {
+            var statusLabel = STATUS_LABELS[a.status] || a.status;
             var karte = document.createElement("div");
             karte.className = "agent-karte";
             karte.innerHTML =
                 '<h3><span class="agent-status-punkt ' + escapeHtml(a.status) + '"></span>' + escapeHtml(a.name) + '</h3>' +
                 '<p>Nebenstelle: ' + escapeHtml(a.nebenstelle) + '</p>' +
                 '<p>Rolle: ' + escapeHtml(a.rolle) + ' | Queue: ' + escapeHtml(a.warteschlange || '-') + '</p>' +
-                '<p>Status: <strong>' + escapeHtml(a.status) + '</strong></p>' +
+                '<p>Status: <strong><i class="fa-solid ' + (STATUS_ICONS[a.status] || 'fa-circle') + '"></i> ' + escapeHtml(statusLabel) + '</strong></p>' +
                 '<div class="agent-aktionen">' +
-                    '<button class="btn-online">Online</button>' +
-                    '<button class="btn-pause">Pause</button>' +
-                    '<button class="btn-offline">Offline</button>' +
-                    '<button class="btn-bearbeiten">Bearbeiten</button>' +
-                    '<button class="btn-loeschen">Loeschen</button>' +
+                    '<button class="btn-online" title="Verfuegbar"><i class="fa-solid fa-circle"></i> Frei</button>' +
+                    '<button class="btn-im_gespraech" title="Im Gespraech"><i class="fa-solid fa-phone"></i> Gespraech</button>' +
+                    '<button class="btn-pause" title="Pause"><i class="fa-solid fa-pause"></i> Pause</button>' +
+                    '<button class="btn-azu" title="AZU"><i class="fa-solid fa-graduation-cap"></i> AZU</button>' +
+                    '<button class="btn-meeting" title="Meeting"><i class="fa-solid fa-users"></i> Meeting</button>' +
+                    '<button class="btn-at_chris" title="@Chris"><i class="fa-solid fa-at"></i> @Chris</button>' +
+                    '<button class="btn-offline" title="Offline"><i class="fa-solid fa-circle-xmark"></i> Offline</button>' +
+                '</div>' +
+                '<div style="display:flex;gap:0.25rem;margin-top:0.25rem">' +
+                    '<button class="btn-bearbeiten" style="font-size:0.75rem;padding:0.2rem 0.5rem"><i class="fa-solid fa-pen"></i> Bearbeiten</button>' +
+                    '<button class="btn-loeschen" style="font-size:0.75rem;padding:0.2rem 0.5rem;background:var(--danger)"><i class="fa-solid fa-trash"></i> Loeschen</button>' +
                 '</div>';
 
-            karte.querySelector(".btn-online").addEventListener("click", async function () {
-                try { await agentStatusSetzenApi(a.id, "online"); agentenBoardAktualisieren(); } catch (_) {}
-            });
-            karte.querySelector(".btn-pause").addEventListener("click", async function () {
-                try { await agentStatusSetzenApi(a.id, "pause"); agentenBoardAktualisieren(); } catch (_) {}
-            });
-            karte.querySelector(".btn-offline").addEventListener("click", async function () {
-                try { await agentStatusSetzenApi(a.id, "offline"); agentenBoardAktualisieren(); } catch (_) {}
+            ["online", "im_gespraech", "pause", "azu", "meeting", "at_chris", "offline"].forEach(function (s) {
+                var btn = karte.querySelector(".btn-" + s);
+                if (btn) btn.addEventListener("click", async function () {
+                    try { await agentStatusSetzenApi(a.id, s); agentenBoardAktualisieren(); } catch (_) {}
+                });
             });
             karte.querySelector(".btn-bearbeiten").addEventListener("click", function () { agentBearbeiten(a); });
             karte.querySelector(".btn-loeschen").addEventListener("click", async function () {
@@ -1628,8 +1635,10 @@ function initDashboard() {
     html += '<h3 style="margin:1rem 0 0.75rem"><i class="fa-solid fa-users"></i> Agenten-Status</h3>';
     html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:0.75rem">';
     agenten.forEach(function (a) {
-        var farbe = a.status === "online" ? "#22c55e" : a.status === "pause" ? "#f59e0b" : "#94a3b8";
-        var statusText = a.status === "online" ? "Verfuegbar" : a.status === "pause" ? "Pause" : "Offline";
+        var statusFarben = { online: "#22c55e", im_gespraech: "#06b6d4", pause: "#f59e0b", azu: "#dc2626", meeting: "#7c3aed", at_chris: "#0369a1", offline: "#94a3b8" };
+        var statusLabels = { online: "Verfuegbar", im_gespraech: "Im Gespraech", pause: "Pause", azu: "AZU", meeting: "Meeting", at_chris: "@Chris", offline: "Offline" };
+        var farbe = statusFarben[a.status] || "#94a3b8";
+        var statusText = statusLabels[a.status] || a.status;
         html += '<div style="border:1px solid var(--border);border-radius:var(--radius);padding:0.75rem;background:var(--card);display:flex;align-items:center;gap:0.75rem">' +
             '<div style="width:36px;height:36px;border-radius:8px;background:' + farbe + ';display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:0.8rem">' + escapeHtml((a.name || "?").substring(0, 2).toUpperCase()) + '</div>' +
             '<div><div style="font-weight:600;font-size:0.85rem">' + escapeHtml(a.name) + '</div>' +
@@ -1739,9 +1748,13 @@ function initDashboard() {
     // Status-Buttons
     html += '<div class="card"><div style="padding:1rem"><h3><i class="fa-solid fa-circle-dot"></i> Mein Status</h3>' +
         '<div style="display:flex;gap:0.75rem;margin-top:0.75rem">' +
-        '<button type="button" style="flex:1;padding:0.75rem;border-radius:var(--radius);border:2px solid #22c55e;background:#f0fdf4;color:#15803d;font-weight:700;cursor:pointer"><i class="fa-solid fa-circle" style="color:#22c55e"></i> Verfuegbar</button>' +
-        '<button type="button" style="flex:1;padding:0.75rem;border-radius:var(--radius);border:2px solid #f59e0b;background:#fffbeb;color:#92400e;font-weight:700;cursor:pointer"><i class="fa-solid fa-pause"></i> Pause</button>' +
-        '<button type="button" style="flex:1;padding:0.75rem;border-radius:var(--radius);border:2px solid #ef4444;background:#fef2f2;color:#dc2626;font-weight:700;cursor:pointer"><i class="fa-solid fa-circle-xmark"></i> Offline</button>' +
+        '<button type="button" style="flex:1;padding:0.6rem 0.4rem;border-radius:var(--radius);border:2px solid #22c55e;background:#f0fdf4;color:#15803d;font-weight:700;cursor:pointer;font-size:0.8rem"><i class="fa-solid fa-circle"></i> Frei</button>' +
+        '<button type="button" style="flex:1;padding:0.6rem 0.4rem;border-radius:var(--radius);border:2px solid #06b6d4;background:#ecfeff;color:#0891b2;font-weight:700;cursor:pointer;font-size:0.8rem"><i class="fa-solid fa-phone"></i> Gespraech</button>' +
+        '<button type="button" style="flex:1;padding:0.6rem 0.4rem;border-radius:var(--radius);border:2px solid #f59e0b;background:#fffbeb;color:#92400e;font-weight:700;cursor:pointer;font-size:0.8rem"><i class="fa-solid fa-pause"></i> Pause</button>' +
+        '<button type="button" style="flex:1;padding:0.6rem 0.4rem;border-radius:var(--radius);border:2px solid #dc2626;background:#fef2f2;color:#dc2626;font-weight:700;cursor:pointer;font-size:0.8rem"><i class="fa-solid fa-graduation-cap"></i> AZU</button>' +
+        '<button type="button" style="flex:1;padding:0.6rem 0.4rem;border-radius:var(--radius);border:2px solid #7c3aed;background:#f5f3ff;color:#6d28d9;font-weight:700;cursor:pointer;font-size:0.8rem"><i class="fa-solid fa-users"></i> Meeting</button>' +
+        '<button type="button" style="flex:1;padding:0.6rem 0.4rem;border-radius:var(--radius);border:2px solid #0369a1;background:#e0f2fe;color:#0369a1;font-weight:700;cursor:pointer;font-size:0.8rem"><i class="fa-solid fa-at"></i> @Chris</button>' +
+        '<button type="button" style="flex:1;padding:0.6rem 0.4rem;border-radius:var(--radius);border:2px solid #94a3b8;background:#f8fafc;color:#64748b;font-weight:700;cursor:pointer;font-size:0.8rem"><i class="fa-solid fa-circle-xmark"></i> Offline</button>' +
         '</div></div></div>';
     html += '</div>'; // end dash-agent
 
@@ -2993,13 +3006,34 @@ function standortleitungBoardRendern() {
     var liste = standortleitungLaden();
     container.innerHTML = "";
     if (liste.length === 0) { container.innerHTML = '<p style="color:#666;text-align:center;padding:2rem">Keine Standortleitung/Teamleiter angelegt.</p>'; return; }
+    var SL_STATUS_LABELS = { online: "Verfuegbar", im_gespraech: "Im Gespraech", pause: "Pause", azu: "AZU", meeting: "Meeting", at_chris: "@Chris", offline: "Offline" };
+    var SL_STATUS_ICONS = { online: "fa-circle", im_gespraech: "fa-phone", pause: "fa-pause", azu: "fa-graduation-cap", meeting: "fa-users", at_chris: "fa-at", offline: "fa-circle-xmark" };
     liste.forEach(function (sl) {
         var rl = sl.rolle === "standortleitung" ? "Standortleitung" : "Teamleiter";
+        var slLabel = SL_STATUS_LABELS[sl.status] || sl.status;
         var k = document.createElement("div"); k.className = "agent-karte";
-        k.innerHTML = '<h3><span class="agent-status-punkt ' + escapeHtml(sl.status) + '"></span>' + escapeHtml(sl.name) + '</h3><p><i class="fa-solid fa-user-tie"></i> ' + escapeHtml(rl) + '</p><p>NSt: ' + escapeHtml(sl.nebenstelle) + ' | Queue: ' + escapeHtml(sl.warteschlange || '-') + '</p><p>Status: <strong>' + escapeHtml(sl.status) + '</strong></p>' + (sl.telefon ? '<p><i class="fa-solid fa-mobile"></i> ' + escapeHtml(sl.telefon) + '</p>' : '') + '<div class="agent-aktionen"><button class="btn-online">Online</button><button class="btn-pause">Pause</button><button class="btn-offline">Offline</button><button class="btn-bearbeiten">Bearbeiten</button><button class="btn-loeschen">Loeschen</button></div>';
-        k.querySelector(".btn-online").addEventListener("click", function () { standortleitungStatusSetzen(sl.id, "online"); standortleitungBoardRendern(); acdLiveStatusRendern(); });
-        k.querySelector(".btn-pause").addEventListener("click", function () { standortleitungStatusSetzen(sl.id, "pause"); standortleitungBoardRendern(); acdLiveStatusRendern(); });
-        k.querySelector(".btn-offline").addEventListener("click", function () { standortleitungStatusSetzen(sl.id, "offline"); standortleitungBoardRendern(); acdLiveStatusRendern(); });
+        k.innerHTML = '<h3><span class="agent-status-punkt ' + escapeHtml(sl.status) + '"></span>' + escapeHtml(sl.name) + '</h3>' +
+            '<p><i class="fa-solid fa-user-tie"></i> ' + escapeHtml(rl) + '</p>' +
+            '<p>NSt: ' + escapeHtml(sl.nebenstelle) + ' | Queue: ' + escapeHtml(sl.warteschlange || '-') + '</p>' +
+            '<p>Status: <strong><i class="fa-solid ' + (SL_STATUS_ICONS[sl.status] || 'fa-circle') + '"></i> ' + escapeHtml(slLabel) + '</strong></p>' +
+            (sl.telefon ? '<p><i class="fa-solid fa-mobile"></i> ' + escapeHtml(sl.telefon) + '</p>' : '') +
+            '<div class="agent-aktionen">' +
+                '<button class="btn-online" title="Verfuegbar"><i class="fa-solid fa-circle"></i> Frei</button>' +
+                '<button class="btn-im_gespraech" title="Im Gespraech"><i class="fa-solid fa-phone"></i> Gespraech</button>' +
+                '<button class="btn-pause" title="Pause"><i class="fa-solid fa-pause"></i> Pause</button>' +
+                '<button class="btn-azu" title="AZU"><i class="fa-solid fa-graduation-cap"></i> AZU</button>' +
+                '<button class="btn-meeting" title="Meeting"><i class="fa-solid fa-users"></i> Meeting</button>' +
+                '<button class="btn-at_chris" title="@Chris"><i class="fa-solid fa-at"></i> @Chris</button>' +
+                '<button class="btn-offline" title="Offline"><i class="fa-solid fa-circle-xmark"></i> Offline</button>' +
+            '</div>' +
+            '<div style="display:flex;gap:0.25rem;margin-top:0.25rem">' +
+                '<button class="btn-bearbeiten" style="font-size:0.75rem;padding:0.2rem 0.5rem"><i class="fa-solid fa-pen"></i> Bearbeiten</button>' +
+                '<button class="btn-loeschen" style="font-size:0.75rem;padding:0.2rem 0.5rem;background:var(--danger)"><i class="fa-solid fa-trash"></i> Loeschen</button>' +
+            '</div>';
+        ["online", "im_gespraech", "pause", "azu", "meeting", "at_chris", "offline"].forEach(function (s) {
+            var btn = k.querySelector(".btn-" + s);
+            if (btn) btn.addEventListener("click", function () { standortleitungStatusSetzen(sl.id, s); standortleitungBoardRendern(); acdLiveStatusRendern(); });
+        });
         k.querySelector(".btn-bearbeiten").addEventListener("click", function () { slBearbeiten(sl); });
         k.querySelector(".btn-loeschen").addEventListener("click", function () { if (!confirm(rl + " loeschen?")) return; standortleitungLoeschenApi(sl.id); standortleitungBoardRendern(); acdLiveStatusRendern(); });
         container.appendChild(k);
