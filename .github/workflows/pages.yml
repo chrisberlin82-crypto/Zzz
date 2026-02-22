@@ -1,17 +1,21 @@
-name: Deploy to GitHub Pages
+name: Deploy MED Rezeption Demo to GitHub Pages
 
 on:
   push:
     branches: [main, 'claude/**']
+    paths:
+      - 'docs/**'
+      - '.github/workflows/pages.yml'
   workflow_dispatch:
 
 permissions:
   contents: write
   pages: write
+  id-token: write
 
 concurrency:
   group: "pages"
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   deploy:
@@ -19,23 +23,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Configure GitHub Pages source
+      - name: Configure GitHub Pages
         run: |
-          # Switch Pages source to gh-pages branch
           curl -s -X PUT \
             -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
             -H "Accept: application/vnd.github+json" \
             "https://api.github.com/repos/${{ github.repository }}/pages" \
-            -d '{"source":{"branch":"gh-pages","path":"/"}}' || \
+            -d '{"source":{"branch":"gh-pages","path":"/"}}' 2>/dev/null || \
           curl -s -X POST \
             -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
             -H "Accept: application/vnd.github+json" \
             "https://api.github.com/repos/${{ github.repository }}/pages" \
-            -d '{"source":{"branch":"gh-pages","path":"/"}}'
+            -d '{"source":{"branch":"gh-pages","path":"/"}}' 2>/dev/null || true
 
-      - name: Deploy to gh-pages branch
+      - name: Deploy docs to gh-pages branch
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./src/html
-          cname: ''
+          publish_dir: ./docs
+          force_orphan: true
