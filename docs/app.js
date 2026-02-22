@@ -131,11 +131,12 @@ function guardAbmelden() {
 }
 
 // Rollen-Konfiguration: Wer darf was sehen
+var ALLE_SEITEN = ["index.html","patienten.html","aerzte.html","termine.html","wartezimmer.html","agenten.html","softphone.html","voicebot.html","callflow.html","uebersetzung.html","standort.html","benutzer.html"];
 var ROLLEN = {
-    admin:           { label: "Admin",           icon: "fa-user-gear",   farbe: "#dc2626", seiten: ["index.html","patienten.html","aerzte.html","termine.html","wartezimmer.html","agenten.html","softphone.html","voicebot.html","callflow.html","uebersetzung.html","standort.html","benutzer.html"] },
-    standortleitung: { label: "Standortleitung", icon: "fa-building",    farbe: "#7c3aed", seiten: ["index.html","patienten.html","aerzte.html","termine.html","wartezimmer.html","agenten.html","softphone.html","voicebot.html","callflow.html","uebersetzung.html","standort.html"] },
-    teamleitung:     { label: "Teamleitung",     icon: "fa-users-gear",  farbe: "#0891b2", seiten: ["index.html","patienten.html","aerzte.html","termine.html","wartezimmer.html","agenten.html","softphone.html","voicebot.html","uebersetzung.html"] },
-    agent:           { label: "Agent",            icon: "fa-headset",     farbe: "#059669", seiten: ["index.html","patienten.html","termine.html","wartezimmer.html","softphone.html","uebersetzung.html"] }
+    admin:           { label: "Admin",           icon: "fa-user-gear",   farbe: "#dc2626", seiten: ALLE_SEITEN },
+    standortleitung: { label: "Standortleitung", icon: "fa-building",    farbe: "#7c3aed", seiten: ALLE_SEITEN },
+    teamleitung:     { label: "Teamleitung",     icon: "fa-users-gear",  farbe: "#0891b2", seiten: ALLE_SEITEN },
+    agent:           { label: "Agent",            icon: "fa-headset",     farbe: "#059669", seiten: ALLE_SEITEN }
 };
 
 function guardInfoAnzeigen() {
@@ -527,7 +528,7 @@ function initBenutzerFormular() {
         var daten = {
             name: document.getElementById("name").value,
             email: document.getElementById("email").value,
-            alter: parseInt(document.getElementById("alter").value, 10),
+            alter: parseInt(document.getElementById("alter").value, 10) || 0,
             strasse: document.getElementById("strasse").value,
             plz: document.getElementById("plz").value,
             stadt: document.getElementById("stadt").value,
@@ -1862,6 +1863,7 @@ function initSprachChat() {
     });
 
     recognition.onresult = function (e) {
+        if (!e.results || !e.results[0] || !e.results[0][0]) return;
         var text = e.results[0][0].transcript;
         var input = document.getElementById("chat-input");
         if (input) input.value = text;
@@ -2102,8 +2104,8 @@ function initVoicebotSeite() {
             begruessung: document.getElementById("vb-begruessung").value,
             sprache: document.getElementById("vb-sprache").value,
             stimme: document.getElementById("vb-stimme").value,
-            maxVersuche: parseInt(document.getElementById("vb-max-versuche").value),
-            timeout: parseInt(document.getElementById("vb-timeout").value),
+            maxVersuche: parseInt(document.getElementById("vb-max-versuche").value, 10) || 3,
+            timeout: parseInt(document.getElementById("vb-timeout").value, 10) || 5,
             tasten: {
                 "1": document.getElementById("vb-taste1").value,
                 "2": document.getElementById("vb-taste2").value,
