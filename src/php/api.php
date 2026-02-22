@@ -425,7 +425,7 @@ try {
         }
 
         $neuerStatus = $daten['status'] ?? '';
-        if (!in_array($neuerStatus, ['wartend', 'aufgerufen', 'fertig'], true)) {
+        if (!in_array($neuerStatus, ['wartend', 'aufgerufen', 'in_behandlung', 'fertig'], true)) {
             http_response_code(400);
             echo json_encode(['fehler' => 'Ungueltiger Status']);
             exit;
