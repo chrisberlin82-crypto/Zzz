@@ -1,0 +1,25 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    sqlite3 \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY pyproject.toml ./
+RUN pip install --no-cache-dir flask jsonschema httpx gunicorn
+
+COPY src/ src/
+
+# Daten-Verzeichnis
+RUN mkdir -p /app/daten
+
+EXPOSE 5000
+
+# Gunicorn fuer Production (4 Worker)
+CMD ["gunicorn", \
+     "--bind", "0.0.0.0:5000", \
+     "--workers", "4", \
+     "--timeout", "60", \
+     "--access-logfile", "-", \
+     "src.python.app:app"]

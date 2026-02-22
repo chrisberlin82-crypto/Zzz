@@ -1,0 +1,130 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500">
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#64748b"/>
+    </marker>
+    <filter id="shadow" x="-2%" y="-2%" width="104%" height="104%">
+      <feDropShadow dx="1" dy="1" stdDeviation="2" flood-opacity="0.15"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="500" fill="#f8fafc" rx="0"/>
+
+  <!-- Title -->
+  <text x="400" y="32" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#1e293b">Python Backend (Flask)</text>
+  <line x1="200" y1="42" x2="600" y2="42" stroke="#cbd5e1" stroke-width="1"/>
+
+  <!-- ==================== -->
+  <!-- app.py - Center Blue Box -->
+  <!-- ==================== -->
+  <rect x="215" y="58" width="370" height="185" rx="10" fill="#2563eb" filter="url(#shadow)"/>
+  <rect x="215" y="58" width="370" height="30" rx="10" fill="#1d4ed8"/>
+  <rect x="215" y="73" width="370" height="15" fill="#1d4ed8"/>
+  <text x="400" y="78" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#ffffff">app.py (Flask Web-App)</text>
+
+  <!-- Route list inside app.py -->
+  <text x="235" y="105" font-family="Consolas, monospace" font-size="11" fill="#dbeafe">/</text>
+  <text x="235" y="121" font-family="Consolas, monospace" font-size="11" fill="#dbeafe">/api/berechnen</text>
+  <text x="235" y="137" font-family="Consolas, monospace" font-size="11" fill="#dbeafe">/api/benutzer</text>
+  <text x="235" y="153" font-family="Consolas, monospace" font-size="11" fill="#dbeafe">/api/patienten</text>
+  <text x="235" y="169" font-family="Consolas, monospace" font-size="11" fill="#dbeafe">/api/aerzte</text>
+
+  <text x="420" y="105" font-family="Consolas, monospace" font-size="11" fill="#dbeafe">/api/termine</text>
+  <text x="420" y="121" font-family="Consolas, monospace" font-size="11" fill="#dbeafe">/api/wartezimmer</text>
+  <text x="420" y="137" font-family="Consolas, monospace" font-size="11" fill="#dbeafe">/api/agenten</text>
+  <text x="420" y="153" font-family="Consolas, monospace" font-size="11" fill="#dbeafe">/api/anrufe</text>
+
+  <!-- Port info -->
+  <text x="400" y="232" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#93c5fd">Port 5000 | DEBUG</text>
+
+  <!-- ==================== -->
+  <!-- rechner.py - Green Box (bottom left) -->
+  <!-- ==================== -->
+  <rect x="20" y="300" width="220" height="180" rx="10" fill="#22c55e" filter="url(#shadow)"/>
+  <rect x="20" y="300" width="220" height="28" rx="10" fill="#16a34a"/>
+  <rect x="20" y="315" width="220" height="13" fill="#16a34a"/>
+  <text x="130" y="320" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#ffffff">rechner.py (Rechner)</text>
+
+  <text x="40" y="350" font-family="Consolas, monospace" font-size="11" fill="#f0fdf4">addieren(a, b)</text>
+  <text x="40" y="368" font-family="Consolas, monospace" font-size="11" fill="#f0fdf4">subtrahieren(a, b)</text>
+  <text x="40" y="386" font-family="Consolas, monospace" font-size="11" fill="#f0fdf4">multiplizieren(a, b)</text>
+  <text x="40" y="404" font-family="Consolas, monospace" font-size="11" fill="#f0fdf4">dividieren(a, b)</text>
+  <line x1="40" y1="415" x2="220" y2="415" stroke="#86efac" stroke-width="0.5"/>
+  <text x="40" y="434" font-family="Consolas, monospace" font-size="11" fill="#f0fdf4">json_laden(pfad)</text>
+  <text x="40" y="452" font-family="Consolas, monospace" font-size="11" fill="#f0fdf4">json_speichern(pfad)</text>
+
+  <!-- ==================== -->
+  <!-- validator.py - Orange Box (bottom center) -->
+  <!-- ==================== -->
+  <rect x="270" y="300" width="220" height="180" rx="10" fill="#f59e0b" filter="url(#shadow)"/>
+  <rect x="270" y="300" width="220" height="28" rx="10" fill="#d97706"/>
+  <rect x="270" y="315" width="220" height="13" fill="#d97706"/>
+  <text x="380" y="320" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#ffffff">validator.py (Validator)</text>
+
+  <text x="290" y="350" font-family="Consolas, monospace" font-size="11" fill="#fffbeb">schema_laden(pfad)</text>
+  <text x="290" y="368" font-family="Consolas, monospace" font-size="11" fill="#fffbeb">validieren(daten, schema)</text>
+  <text x="290" y="386" font-family="Consolas, monospace" font-size="11" fill="#fffbeb">ist_gueltig(daten)</text>
+
+  <!-- ==================== -->
+  <!-- datenbank.py - Purple Box (bottom right) -->
+  <!-- ==================== -->
+  <rect x="520" y="300" width="260" height="180" rx="10" fill="#7c3aed" filter="url(#shadow)"/>
+  <rect x="520" y="300" width="260" height="28" rx="10" fill="#6d28d9"/>
+  <rect x="520" y="315" width="260" height="13" fill="#6d28d9"/>
+  <text x="650" y="320" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#ffffff">datenbank.py (SQLite)</text>
+
+  <!-- DB icon -->
+  <ellipse cx="545" cy="350" rx="10" ry="5" fill="none" stroke="#e9d5ff" stroke-width="1.2"/>
+  <line x1="535" y1="350" x2="535" y2="360" stroke="#e9d5ff" stroke-width="1.2"/>
+  <line x1="555" y1="350" x2="555" y2="360" stroke="#e9d5ff" stroke-width="1.2"/>
+  <ellipse cx="545" cy="360" rx="10" ry="5" fill="none" stroke="#e9d5ff" stroke-width="1.2"/>
+
+  <text x="565" y="354" font-family="Consolas, monospace" font-size="10.5" fill="#ede9fe">benutzer</text>
+  <text x="640" y="354" font-family="Consolas, monospace" font-size="10.5" fill="#ede9fe">patienten</text>
+  <text x="720" y="354" font-family="Consolas, monospace" font-size="10.5" fill="#ede9fe">aerzte</text>
+  <text x="565" y="374" font-family="Consolas, monospace" font-size="10.5" fill="#ede9fe">termine</text>
+  <text x="640" y="374" font-family="Consolas, monospace" font-size="10.5" fill="#ede9fe">wartezimmer</text>
+  <text x="565" y="394" font-family="Consolas, monospace" font-size="10.5" fill="#ede9fe">agenten</text>
+  <text x="640" y="394" font-family="Consolas, monospace" font-size="10.5" fill="#ede9fe">anrufe</text>
+  <text x="720" y="394" font-family="Consolas, monospace" font-size="10.5" fill="#ede9fe">verlauf</text>
+
+  <!-- Separator -->
+  <line x1="540" y1="408" x2="760" y2="408" stroke="#a78bfa" stroke-width="0.5"/>
+  <text x="540" y="428" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#c4b5fd">CRUD-Operationen fuer alle Tabellen</text>
+  <text x="540" y="444" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#c4b5fd">Automatische Schema-Migration</text>
+  <text x="540" y="460" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#c4b5fd">Verlauf-Tracking</text>
+
+  <!-- ==================== -->
+  <!-- Arrows from app.py to modules -->
+  <!-- ==================== -->
+
+  <!-- app.py -> rechner.py -->
+  <path d="M300,243 L300,260 Q300,270 290,270 L150,270 Q140,270 140,280 L140,300" fill="none" stroke="#64748b" stroke-width="1.8" marker-end="url(#arrowhead)"/>
+  <rect x="155" y="262" width="95" height="16" rx="3" fill="#f8fafc" stroke="#cbd5e1" stroke-width="0.5"/>
+  <text x="202" y="273" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="9" fill="#64748b">import rechner</text>
+
+  <!-- app.py -> validator.py -->
+  <path d="M400,243 L400,270 Q400,280 400,280 L380,280 Q380,290 380,290 L380,300" fill="none" stroke="#64748b" stroke-width="1.8" marker-end="url(#arrowhead)"/>
+  <rect x="340" y="262" width="105" height="16" rx="3" fill="#f8fafc" stroke="#cbd5e1" stroke-width="0.5"/>
+  <text x="392" y="273" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="9" fill="#64748b">import validator</text>
+
+  <!-- app.py -> datenbank.py -->
+  <path d="M500,243 L500,260 Q500,270 510,270 L640,270 Q650,270 650,280 L650,300" fill="none" stroke="#64748b" stroke-width="1.8" marker-end="url(#arrowhead)"/>
+  <rect x="530" y="262" width="110" height="16" rx="3" fill="#f8fafc" stroke="#cbd5e1" stroke-width="0.5"/>
+  <text x="585" y="273" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="9" fill="#64748b">import datenbank</text>
+
+  <!-- rechner.py -> validator.py (dotted) -->
+  <line x1="240" y1="380" x2="270" y2="380" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="4,3" marker-end="url(#arrowhead)"/>
+
+  <!-- validator.py -> datenbank.py (dotted) -->
+  <line x1="490" y1="380" x2="520" y2="380" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="4,3" marker-end="url(#arrowhead)"/>
+
+  <!-- Legend -->
+  <rect x="15" y="58" width="170" height="65" rx="6" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="25" y="75" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="600" fill="#475569">Legende</text>
+  <line x1="25" y1="87" x2="55" y2="87" stroke="#64748b" stroke-width="1.8" marker-end="url(#arrowhead)"/>
+  <text x="65" y="91" font-family="Segoe UI, Arial, sans-serif" font-size="9" fill="#64748b">Direkte Abhaengigkeit</text>
+  <line x1="25" y1="107" x2="55" y2="107" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="4,3" marker-end="url(#arrowhead)"/>
+  <text x="65" y="111" font-family="Segoe UI, Arial, sans-serif" font-size="9" fill="#94a3b8">Optionale Nutzung</text>
+</svg>

@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zugang</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: #0a0a0a;
+            color: #e2e8f0;
+            position: relative;
+            overflow: hidden;
+        }
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background:
+                radial-gradient(circle at 20% 80%, rgba(220,38,38,0.04) 0%, transparent 40%),
+                radial-gradient(circle at 80% 20%, rgba(8,145,178,0.04) 0%, transparent 40%);
+        }
+        .portal {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            max-width: 380px;
+            width: 100%;
+            padding: 0 1.5rem;
+        }
+        .portal-schild {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 2px solid #dc2626;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            font-size: 2rem;
+            color: #dc2626;
+            background: rgba(220,38,38,0.06);
+        }
+        .portal h1 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            margin-bottom: 0.5rem;
+        }
+        .portal-warnung {
+            font-size: 0.75rem;
+            color: #64748b;
+            margin-bottom: 2.5rem;
+            line-height: 1.6;
+        }
+        .portal-eingabe-gruppe {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            margin-bottom: 1rem;
+        }
+        .portal-pin {
+            width: 48px;
+            height: 56px;
+            text-align: center;
+            font-size: 1.3rem;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+            background: #111;
+            border: 1.5px solid #333;
+            border-radius: 8px;
+            color: #e2e8f0;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .portal-pin:focus {
+            border-color: #0891b2;
+            box-shadow: 0 0 0 2px rgba(8,145,178,0.25);
+        }
+        .portal-pin.fehler {
+            border-color: #dc2626;
+            animation: shake 0.4s ease;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-6px); }
+            75% { transform: translateX(6px); }
+        }
+        .portal-pin.ok {
+            border-color: #16a34a;
+            color: #16a34a;
+        }
+        .portal-status {
+            font-size: 0.8rem;
+            height: 1.2rem;
+            margin-bottom: 1.5rem;
+            transition: color 0.3s;
+        }
+        .portal-status.fehler { color: #dc2626; }
+        .portal-status.ok { color: #16a34a; }
+        .portal-footer {
+            font-size: 0.7rem;
+            color: #334155;
+            margin-top: 3rem;
+            line-height: 1.5;
+        }
+        .portal-footer i { margin-right: 0.3rem; }
+        .portal-versuche {
+            display: inline-block;
+            background: rgba(220,38,38,0.1);
+            color: #dc2626;
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            margin-top: 0.5rem;
+        }
+        .portal-versuche.hidden { display: none; }
+        .gesperrt .portal-schild { border-color: #991b1b; }
+        .gesperrt .portal-pin { pointer-events: none; opacity: 0.3; }
+        @media (max-width: 400px) {
+            .portal-pin { width: 42px; height: 50px; font-size: 1.1rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="portal" id="portal">
+        <div class="portal-schild"><i class="fa-solid fa-shield-halved"></i></div>
+        <h1>Geschuetzter Bereich</h1>
+        <p class="portal-warnung">
+            Zugang nur fuer autorisiertes Personal.<br>
+            Unbefugte Zugriffe werden protokolliert.
+        </p>
+        <div class="portal-eingabe-gruppe" id="pin-gruppe">
+            <input type="password" class="portal-pin" maxlength="1" inputmode="numeric" pattern="[0-9]" autocomplete="off" data-pos="0">
+            <input type="password" class="portal-pin" maxlength="1" inputmode="numeric" pattern="[0-9]" autocomplete="off" data-pos="1">
+            <input type="password" class="portal-pin" maxlength="1" inputmode="numeric" pattern="[0-9]" autocomplete="off" data-pos="2">
+            <input type="password" class="portal-pin" maxlength="1" inputmode="numeric" pattern="[0-9]" autocomplete="off" data-pos="3">
+            <input type="password" class="portal-pin" maxlength="1" inputmode="numeric" pattern="[0-9]" autocomplete="off" data-pos="4">
+            <input type="password" class="portal-pin" maxlength="1" inputmode="numeric" pattern="[0-9]" autocomplete="off" data-pos="5">
+        </div>
+        <div class="portal-status" id="portal-status"></div>
+        <div class="portal-versuche hidden" id="portal-versuche"></div>
+        <div class="portal-footer">
+            <i class="fa-solid fa-lock"></i> Verschluesselter Zugang &nbsp;&bull;&nbsp; <i class="fa-solid fa-clock"></i> Sitzung zeitbegrenzt
+        </div>
+    </div>
+
+    <script>
+    (function() {
+        // --- Zutrittscode (6-stellig) ---
+        // Aendern Sie diesen Code fuer Ihre Installation:
+        var ZUTRITTS_CODE = "483926";
+
+        // Bereits freigeschaltet?
+        if (sessionStorage.getItem("med_portal_ok")) {
+            window.location.href = "guard.html";
+            return;
+        }
+
+        var felder = document.querySelectorAll(".portal-pin");
+        var statusEl = document.getElementById("portal-status");
+        var versucheEl = document.getElementById("portal-versuche");
+        var portalEl = document.getElementById("portal");
+        var versuche = 0;
+        var maxVersuche = 5;
+        var gesperrt = false;
+
+        // Sperre pruefen
+        try {
+            var sperreData = localStorage.getItem("med_portal_sperre");
+            if (sperreData) {
+                var sperre = JSON.parse(sperreData);
+                var verbleibend = sperre.bis - Date.now();
+                if (verbleibend > 0) {
+                    sperreAktivieren(Math.ceil(verbleibend / 1000));
+                } else {
+                    localStorage.removeItem("med_portal_sperre");
+                }
+            }
+        } catch (e) {}
+
+        // Fokus auf erstes Feld
+        felder[0].focus();
+
+        // Eingabe-Logik
+        for (var i = 0; i < felder.length; i++) {
+            felder[i].addEventListener("input", function() {
+                if (gesperrt) return;
+                var pos = parseInt(this.getAttribute("data-pos"));
+                // Nur Ziffern
+                this.value = this.value.replace(/[^0-9]/g, "");
+                if (this.value && pos < felder.length - 1) {
+                    felder[pos + 1].focus();
+                }
+                // Alle Felder gefuellt?
+                if (pos === felder.length - 1 && this.value) {
+                    pruefenCode();
+                }
+            });
+
+            felder[i].addEventListener("keydown", function(e) {
+                if (gesperrt) return;
+                var pos = parseInt(this.getAttribute("data-pos"));
+                // Backspace -> vorheriges Feld
+                if (e.key === "Backspace" && !this.value && pos > 0) {
+                    felder[pos - 1].focus();
+                    felder[pos - 1].value = "";
+                }
+                // Enter -> pruefen
+                if (e.key === "Enter") pruefenCode();
+            });
+
+            // Paste-Support
+            felder[i].addEventListener("paste", function(e) {
+                if (gesperrt) return;
+                e.preventDefault();
+                var text = (e.clipboardData || window.clipboardData).getData("text").replace(/[^0-9]/g, "");
+                for (var j = 0; j < felder.length && j < text.length; j++) {
+                    felder[j].value = text[j];
+                }
+                if (text.length >= felder.length) pruefenCode();
+                else if (text.length > 0) felder[Math.min(text.length, felder.length - 1)].focus();
+            });
+        }
+
+        function pruefenCode() {
+            var eingabe = "";
+            for (var j = 0; j < felder.length; j++) eingabe += felder[j].value;
+
+            if (eingabe.length < felder.length) return;
+
+            if (eingabe === ZUTRITTS_CODE) {
+                // Richtig
+                for (var k = 0; k < felder.length; k++) felder[k].classList.add("ok");
+                statusEl.textContent = "Zugang gewaehrt";
+                statusEl.className = "portal-status ok";
+                sessionStorage.setItem("med_portal_ok", "1");
+                localStorage.removeItem("med_portal_sperre");
+                setTimeout(function() { window.location.href = "guard.html"; }, 600);
+            } else {
+                // Falsch
+                versuche++;
+                for (var m = 0; m < felder.length; m++) {
+                    felder[m].classList.add("fehler");
+                    felder[m].value = "";
+                }
+                statusEl.textContent = "Zugang verweigert";
+                statusEl.className = "portal-status fehler";
+
+                var rest = maxVersuche - versuche;
+                if (rest > 0) {
+                    versucheEl.textContent = rest + " Versuch" + (rest > 1 ? "e" : "") + " verbleibend";
+                    versucheEl.className = "portal-versuche";
+                } else {
+                    // Sperre: 5 Minuten
+                    var sperrZeit = 300;
+                    localStorage.setItem("med_portal_sperre", JSON.stringify({ bis: Date.now() + sperrZeit * 1000 }));
+                    sperreAktivieren(sperrZeit);
+                    return;
+                }
+
+                setTimeout(function() {
+                    for (var n = 0; n < felder.length; n++) felder[n].classList.remove("fehler");
+                    statusEl.textContent = "";
+                    felder[0].focus();
+                }, 1200);
+            }
+        }
+
+        function sperreAktivieren(sekunden) {
+            gesperrt = true;
+            portalEl.classList.add("gesperrt");
+            versucheEl.className = "portal-versuche";
+
+            function countdown() {
+                if (sekunden <= 0) {
+                    gesperrt = false;
+                    versuche = 0;
+                    portalEl.classList.remove("gesperrt");
+                    statusEl.textContent = "";
+                    versucheEl.className = "portal-versuche hidden";
+                    localStorage.removeItem("med_portal_sperre");
+                    felder[0].focus();
+                    return;
+                }
+                var min = Math.floor(sekunden / 60);
+                var sek = sekunden % 60;
+                statusEl.textContent = "Zugang gesperrt";
+                statusEl.className = "portal-status fehler";
+                versucheEl.textContent = "Wartezeit: " + min + ":" + (sek < 10 ? "0" : "") + sek;
+                sekunden--;
+                setTimeout(countdown, 1000);
+            }
+            countdown();
+        }
+    })();
+    </script>
+</body>
+</html>

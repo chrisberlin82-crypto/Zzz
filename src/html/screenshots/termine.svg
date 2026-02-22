@@ -1,0 +1,131 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500">
+  <defs>
+    <style>
+      text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    </style>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="500" fill="#f1f5f9"/>
+
+  <!-- Sidebar -->
+  <rect x="0" y="0" width="180" height="500" fill="#1e293b"/>
+
+  <!-- Logo -->
+  <rect x="16" y="14" width="148" height="32" rx="6" fill="#2563eb" opacity="0.15"/>
+  <text x="90" y="35" fill="#ffffff" font-size="14" font-weight="700" text-anchor="middle">MED Rezeption</text>
+
+  <!-- Nav Items -->
+  <rect x="20" y="70" width="14" height="14" rx="3" fill="#475569"/>
+  <text x="42" y="82" fill="#94a3b8" font-size="12">Dashboard</text>
+
+  <rect x="20" y="100" width="14" height="14" rx="3" fill="#475569"/>
+  <text x="42" y="112" fill="#94a3b8" font-size="12">Patienten</text>
+
+  <rect x="20" y="130" width="14" height="14" rx="3" fill="#475569"/>
+  <text x="42" y="142" fill="#94a3b8" font-size="12">Aerzte</text>
+
+  <!-- Termine - active -->
+  <rect x="10" y="156" width="160" height="34" rx="6" fill="#2563eb" opacity="0.25"/>
+  <rect x="20" y="166" width="14" height="14" rx="3" fill="#2563eb"/>
+  <text x="42" y="178" fill="#ffffff" font-size="12" font-weight="600">Termine</text>
+
+  <rect x="20" y="202" width="14" height="14" rx="3" fill="#475569"/>
+  <text x="42" y="214" fill="#94a3b8" font-size="12">Wartezimmer</text>
+
+  <rect x="20" y="232" width="14" height="14" rx="3" fill="#475569"/>
+  <text x="42" y="244" fill="#94a3b8" font-size="12">Callflow Editor</text>
+
+  <!-- Topbar -->
+  <rect x="180" y="0" width="620" height="48" fill="#ffffff"/>
+  <line x1="180" y1="48" x2="800" y2="48" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="200" y="30" fill="#1e293b" font-size="16" font-weight="700">Terminverwaltung</text>
+
+  <!-- Termin anlegen Card -->
+  <rect x="192" y="60" width="594" height="140" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="208" y="84" fill="#1e293b" font-size="13" font-weight="700">Termin anlegen</text>
+
+  <!-- Form Row 1 -->
+  <text x="208" y="108" fill="#64748b" font-size="10">Patient</text>
+  <rect x="208" y="112" width="180" height="28" rx="4" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="218" y="130" fill="#94a3b8" font-size="10">Patient waehlen...</text>
+  <!-- Dropdown arrow -->
+  <polygon points="376,124 382,124 379,130" fill="#94a3b8"/>
+
+  <text x="400" y="108" fill="#64748b" font-size="10">Arzt</text>
+  <rect x="400" y="112" width="180" height="28" rx="4" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="410" y="130" fill="#94a3b8" font-size="10">Arzt waehlen...</text>
+  <polygon points="568,124 574,124 571,130" fill="#94a3b8"/>
+
+  <text x="592" y="108" fill="#64748b" font-size="10">Datum</text>
+  <rect x="592" y="112" width="100" height="28" rx="4" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="602" y="130" fill="#94a3b8" font-size="10">TT.MM.JJJJ</text>
+
+  <text x="704" y="108" fill="#64748b" font-size="10">Uhrzeit</text>
+  <rect x="704" y="112" width="70" height="28" rx="4" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="714" y="130" fill="#94a3b8" font-size="10">HH:MM</text>
+
+  <!-- Form Row 2 -->
+  <text x="208" y="156" fill="#64748b" font-size="10">Dauer (Min.)</text>
+  <rect x="208" y="160" width="80" height="28" rx="4" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="218" y="178" fill="#94a3b8" font-size="10">30</text>
+
+  <text x="300" y="156" fill="#64748b" font-size="10">Grund</text>
+  <rect x="300" y="160" width="370" height="28" rx="4" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+
+  <!-- Save Button -->
+  <rect x="700" y="162" width="74" height="24" rx="4" fill="#2563eb"/>
+  <text x="737" y="178" fill="#ffffff" font-size="10" font-weight="600" text-anchor="middle">Speichern</text>
+
+  <!-- Terminliste Card -->
+  <rect x="192" y="212" width="594" height="276" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="208" y="236" fill="#1e293b" font-size="13" font-weight="700">Terminliste</text>
+
+  <!-- Date filter -->
+  <rect x="600" y="222" width="100" height="22" rx="4" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="612" y="237" fill="#94a3b8" font-size="9">Datum filtern</text>
+
+  <rect x="710" y="222" width="64" height="22" rx="4" fill="#2563eb" opacity="0.1"/>
+  <text x="742" y="237" fill="#2563eb" font-size="9" font-weight="600" text-anchor="middle">Heute</text>
+
+  <!-- Table Header -->
+  <rect x="192" y="250" width="594" height="28" fill="#f8fafc"/>
+  <text x="208" y="268" fill="#64748b" font-size="10" font-weight="600">Datum</text>
+  <text x="280" y="268" fill="#64748b" font-size="10" font-weight="600">Uhrzeit</text>
+  <text x="340" y="268" fill="#64748b" font-size="10" font-weight="600">Patient</text>
+  <text x="440" y="268" fill="#64748b" font-size="10" font-weight="600">Arzt</text>
+  <text x="540" y="268" fill="#64748b" font-size="10" font-weight="600">Grund</text>
+  <text x="640" y="268" fill="#64748b" font-size="10" font-weight="600">Status</text>
+  <text x="724" y="268" fill="#64748b" font-size="10" font-weight="600">Aktionen</text>
+  <line x1="192" y1="278" x2="786" y2="278" stroke="#e2e8f0" stroke-width="1"/>
+
+  <!-- Sample rows -->
+  <rect x="208" y="292" width="60" height="6" rx="3" fill="#e2e8f0"/>
+  <rect x="280" y="292" width="40" height="6" rx="3" fill="#e2e8f0"/>
+  <rect x="340" y="292" width="80" height="6" rx="3" fill="#e2e8f0"/>
+  <rect x="440" y="292" width="80" height="6" rx="3" fill="#e2e8f0"/>
+  <rect x="540" y="292" width="70" height="6" rx="3" fill="#e2e8f0"/>
+  <rect x="640" y="288" width="50" height="16" rx="8" fill="#22c55e" opacity="0.15"/>
+  <text x="665" y="300" fill="#22c55e" font-size="8" font-weight="600" text-anchor="middle">geplant</text>
+  <line x1="208" y1="310" x2="774" y2="310" stroke="#f1f5f9" stroke-width="1"/>
+
+  <rect x="208" y="324" width="60" height="6" rx="3" fill="#e2e8f0"/>
+  <rect x="280" y="324" width="40" height="6" rx="3" fill="#e2e8f0"/>
+  <rect x="340" y="324" width="70" height="6" rx="3" fill="#e2e8f0"/>
+  <rect x="440" y="324" width="90" height="6" rx="3" fill="#e2e8f0"/>
+  <rect x="540" y="324" width="60" height="6" rx="3" fill="#e2e8f0"/>
+  <rect x="640" y="320" width="50" height="16" rx="8" fill="#06b6d4" opacity="0.15"/>
+  <text x="665" y="332" fill="#06b6d4" font-size="8" font-weight="600" text-anchor="middle">bestaetigt</text>
+  <line x1="208" y1="342" x2="774" y2="342" stroke="#f1f5f9" stroke-width="1"/>
+
+  <rect x="208" y="356" width="60" height="6" rx="3" fill="#e2e8f0"/>
+  <rect x="280" y="356" width="40" height="6" rx="3" fill="#e2e8f0"/>
+  <rect x="340" y="356" width="90" height="6" rx="3" fill="#e2e8f0"/>
+  <rect x="440" y="356" width="70" height="6" rx="3" fill="#e2e8f0"/>
+  <rect x="540" y="356" width="80" height="6" rx="3" fill="#e2e8f0"/>
+  <rect x="640" y="352" width="50" height="16" rx="8" fill="#f59e0b" opacity="0.15"/>
+  <text x="665" y="364" fill="#f59e0b" font-size="8" font-weight="600" text-anchor="middle">wartend</text>
+
+  <!-- Empty state -->
+  <text x="489" y="430" fill="#94a3b8" font-size="11" text-anchor="middle">Keine weiteren Termine</text>
+</svg>
