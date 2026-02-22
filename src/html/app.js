@@ -2,6 +2,50 @@
 
 var API_BASE = "/api";
 
+// ===== Guard / Auth Check =====
+
+function guardPruefen() {
+    var auth = sessionStorage.getItem("med_guard_auth") || localStorage.getItem("med_guard_auth");
+    if (!auth) {
+        window.location.href = "guard.html";
+        return null;
+    }
+    try {
+        return JSON.parse(auth);
+    } catch (e) {
+        window.location.href = "guard.html";
+        return null;
+    }
+}
+
+function guardAbmelden() {
+    sessionStorage.removeItem("med_guard_auth");
+    localStorage.removeItem("med_guard_auth");
+    window.location.href = "guard.html";
+}
+
+function guardInfoAnzeigen() {
+    var auth = sessionStorage.getItem("med_guard_auth") || localStorage.getItem("med_guard_auth");
+    if (!auth) return;
+    try {
+        var daten = JSON.parse(auth);
+        var topbar = document.querySelector(".topbar-right");
+        if (topbar) {
+            topbar.innerHTML = '<span style="margin-right:0.5rem"><i class="fa-solid fa-user-circle"></i> ' +
+                escapeHtmlSafe(daten.name) + ' <small>(' + escapeHtmlSafe(daten.rolle) + ')</small></span>' +
+                '<button type="button" id="btn-abmelden" style="padding:0.3rem 0.7rem;font-size:0.8rem;background:#64748b;border-radius:6px">' +
+                '<i class="fa-solid fa-right-from-bracket"></i> Abmelden</button>';
+            var btn = document.getElementById("btn-abmelden");
+            if (btn) btn.addEventListener("click", guardAbmelden);
+        }
+    } catch (e) {}
+}
+
+function escapeHtmlSafe(text) {
+    if (!text) return "";
+    return String(text).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
 // ===== localStorage Helfer =====
 
 function dbLaden(schluessel) {
@@ -2241,6 +2285,14 @@ if (typeof window !== "undefined") {
 /** Init (nur im Browser) */
 if (typeof document !== "undefined") {
     document.addEventListener("DOMContentLoaded", function () {
+        // Guard: Auth-Check auf allen Seiten ausser guard.html
+        var istGuardSeite = window.location.pathname.indexOf("guard.html") !== -1;
+        if (!istGuardSeite) {
+            var auth = guardPruefen();
+            if (!auth) return; // Redirect zur Guard-Seite
+            guardInfoAnzeigen();
+        }
+
         demoDatenLaden();
         initDashboard();
         initRechner();
