@@ -1614,6 +1614,10 @@ function initDemoReset() {
     btn.addEventListener("click", function () {
         if (!confirm("Demo-Daten zuruecksetzen? Alle Aenderungen gehen verloren.")) return;
         localStorage.removeItem("med_demo_geladen");
+        localStorage.removeItem("med_standort_geladen");
+        localStorage.removeItem("med_acd_config");
+        localStorage.removeItem("med_zeitplan");
+        localStorage.removeItem("med_standort_info");
         demoDatenLaden();
         location.reload();
     });
@@ -2237,6 +2241,226 @@ function phraseUebernehmen(text) {
     if (eingabe) { eingabe.value = text; uebersetzen(); }
 }
 
+// ===== Standort & ACD =====
+
+var WOCHENTAGE = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"];
+var ACD_MODUS_LABEL = { alle_annehmen: "Alle Anrufe annehmen", klingeln_dann_bot: "Klingeln, dann Bot", bot_direkt: "Bot direkt" };
+
+function standardZeitplan() {
+    return WOCHENTAGE.map(function (tag, i) {
+        return { tag: tag, aktiv: i < 5, von: "08:00", bis: "18:00", modus: "klingeln_dann_bot", pause_von: "12:00", pause_bis: "13:00", pause_modus: "bot_direkt" };
+    });
+}
+
+function acdConfigLaden() { try { var d = localStorage.getItem("med_acd_config"); return d ? JSON.parse(d) : null; } catch (e) { return null; } }
+function acdConfigSpeichern(c) { localStorage.setItem("med_acd_config", JSON.stringify(c)); }
+function zeitplanLaden() { try { var d = localStorage.getItem("med_zeitplan"); return d ? JSON.parse(d) : standardZeitplan(); } catch (e) { return standardZeitplan(); } }
+function zeitplanSpeichern(p) { localStorage.setItem("med_zeitplan", JSON.stringify(p)); }
+
+function standortleitungLaden() { return dbLaden("standortleitung"); }
+function standortleitungSpeichernApi(daten) { var l = dbLaden("standortleitung"); daten.id = dbNaechsteId("standortleitung"); daten.status = daten.status || "offline"; l.push(daten); dbSpeichern("standortleitung", l); return daten; }
+function standortleitungAktualisierenApi(id, daten) { dbAktualisieren("standortleitung", parseInt(id), daten); return daten; }
+function standortleitungLoeschenApi(id) { dbLoeschen("standortleitung", parseInt(id)); return { erfolg: true }; }
+function standortleitungStatusSetzen(id, status) { dbAktualisieren("standortleitung", parseInt(id), { status: status }); return { erfolg: true }; }
+
+function demoStandortdatenLaden() {
+    if (localStorage.getItem("med_standort_geladen")) return;
+    dbSpeichern("standortleitung", [
+        { id: 1, name: "Dr. Sabine Gross", rolle: "standortleitung", nebenstelle: "300", sip_passwort: "sl300", warteschlange: "alle", telefon: "0170-9876543", email: "s.gross@praxis.de", status: "online" },
+        { id: 2, name: "Frank Weber", rolle: "teamleiter", nebenstelle: "301", sip_passwort: "tl301", warteschlange: "rezeption", telefon: "0171-1234567", email: "f.weber@praxis.de", status: "online" }
+    ]);
+    if (!acdConfigLaden()) acdConfigSpeichern({ modus: "klingeln_dann_bot", klingelanzahl: 3, klingel_timeout: 15, verteilung: "alle_gleichzeitig" });
+    localStorage.setItem("med_standort_geladen", "1");
+}
+
+function aktuellenAcdModusErmitteln() {
+    var config = acdConfigLaden() || { modus: "klingeln_dann_bot" };
+    var plan = zeitplanLaden();
+    var jetzt = new Date();
+    var jsTag = jetzt.getDay();
+    var tagIdx = jsTag === 0 ? 6 : jsTag - 1;
+    var tag = plan[tagIdx];
+    if (!tag || !tag.aktiv) return { modus: config.modus, quelle: "Standard (Tag inaktiv)" };
+    var zeit = ("0" + jetzt.getHours()).slice(-2) + ":" + ("0" + jetzt.getMinutes()).slice(-2);
+    if (tag.pause_von && tag.pause_bis && zeit >= tag.pause_von && zeit < tag.pause_bis) return { modus: tag.pause_modus, quelle: tag.tag + " Pause (" + tag.pause_von + "-" + tag.pause_bis + ")" };
+    if (zeit >= tag.von && zeit < tag.bis) return { modus: tag.modus, quelle: tag.tag + " (" + tag.von + "-" + tag.bis + ")" };
+    return { modus: config.modus, quelle: "Standard (ausserhalb Oeffnungszeiten)" };
+}
+
+function initStandortSeite() {
+    var acdAuswahl = document.getElementById("acd-modus-auswahl");
+    if (!acdAuswahl) return;
+    demoStandortdatenLaden();
+
+    // Standort-Info
+    var infoForm = document.getElementById("standort-info-form");
+    if (infoForm) {
+        try { var info = JSON.parse(localStorage.getItem("med_standort_info") || "{}");
+            if (info.name) document.getElementById("standort-name").value = info.name;
+            if (info.telefon) document.getElementById("standort-telefon").value = info.telefon;
+            if (info.strasse) document.getElementById("standort-strasse").value = info.strasse;
+            if (info.notfall) document.getElementById("standort-notfall").value = info.notfall;
+        } catch (e) {}
+        infoForm.addEventListener("submit", function (e) {
+            e.preventDefault();
+            localStorage.setItem("med_standort_info", JSON.stringify({ name: document.getElementById("standort-name").value, telefon: document.getElementById("standort-telefon").value, strasse: document.getElementById("standort-strasse").value, notfall: document.getElementById("standort-notfall").value }));
+            var erfolg = document.getElementById("standort-info-erfolg");
+            if (erfolg) { erfolg.textContent = "Standort gespeichert!"; erfolg.hidden = false; setTimeout(function () { erfolg.hidden = true; }, 3000); }
+        });
+    }
+
+    // ACD-Modus
+    var config = acdConfigLaden() || { modus: "klingeln_dann_bot", klingelanzahl: 3, klingel_timeout: 15, verteilung: "alle_gleichzeitig" };
+    var karten = acdAuswahl.querySelectorAll(".acd-modus-karte");
+    karten.forEach(function (k) {
+        if (k.getAttribute("data-modus") === config.modus) k.classList.add("selected"); else k.classList.remove("selected");
+        k.addEventListener("click", function () { karten.forEach(function (x) { x.classList.remove("selected"); }); k.classList.add("selected"); });
+    });
+    var kaEl = document.getElementById("acd-klingelanzahl"), ktEl = document.getElementById("acd-klingel-timeout"), vEl = document.getElementById("acd-verteilung");
+    if (kaEl) kaEl.value = config.klingelanzahl || 3;
+    if (ktEl) ktEl.value = config.klingel_timeout || 15;
+    if (vEl) vEl.value = config.verteilung || "alle_gleichzeitig";
+
+    var btnAcd = document.getElementById("btn-acd-speichern");
+    if (btnAcd) btnAcd.addEventListener("click", function () {
+        var sel = acdAuswahl.querySelector(".acd-modus-karte.selected");
+        var modus = sel ? sel.getAttribute("data-modus") : "klingeln_dann_bot";
+        acdConfigSpeichern({ modus: modus, klingelanzahl: parseInt(kaEl.value) || 3, klingel_timeout: parseInt(ktEl.value) || 15, verteilung: vEl.value });
+        var erfolg = document.getElementById("acd-modus-erfolg");
+        if (erfolg) { erfolg.textContent = "ACD-Modus gespeichert: " + ACD_MODUS_LABEL[modus]; erfolg.hidden = false; setTimeout(function () { erfolg.hidden = true; }, 3000); }
+        acdLiveStatusRendern();
+    });
+
+    initZeitplan();
+    initStandortleitungBoard();
+    acdLiveStatusRendern();
+    acdStatistikenDemo();
+}
+
+function initZeitplan() {
+    var tbody = document.getElementById("zeitplan-body");
+    if (!tbody) return;
+    var plan = zeitplanLaden();
+    tbody.innerHTML = "";
+    plan.forEach(function (tag, idx) {
+        var tr = document.createElement("tr");
+        if (!tag.aktiv) tr.className = "zeitplan-tag-inaktiv";
+        tr.innerHTML =
+            '<td><strong>' + escapeHtml(tag.tag) + '</strong></td>' +
+            '<td><input type="checkbox" class="zp-aktiv" ' + (tag.aktiv ? "checked" : "") + '></td>' +
+            '<td><input type="time" class="zp-von" value="' + (tag.von || "08:00") + '"' + (tag.aktiv ? "" : " disabled") + '></td>' +
+            '<td><input type="time" class="zp-bis" value="' + (tag.bis || "18:00") + '"' + (tag.aktiv ? "" : " disabled") + '></td>' +
+            '<td><select class="zp-modus"' + (tag.aktiv ? "" : " disabled") + '><option value="alle_annehmen"' + (tag.modus === "alle_annehmen" ? " selected" : "") + '>Alle annehmen</option><option value="klingeln_dann_bot"' + (tag.modus === "klingeln_dann_bot" ? " selected" : "") + '>Klingeln+Bot</option><option value="bot_direkt"' + (tag.modus === "bot_direkt" ? " selected" : "") + '>Bot direkt</option></select></td>' +
+            '<td><input type="time" class="zp-pause-von" value="' + (tag.pause_von || "12:00") + '"' + (tag.aktiv ? "" : " disabled") + '></td>' +
+            '<td><input type="time" class="zp-pause-bis" value="' + (tag.pause_bis || "13:00") + '"' + (tag.aktiv ? "" : " disabled") + '></td>' +
+            '<td><select class="zp-pause-modus"' + (tag.aktiv ? "" : " disabled") + '><option value="alle_annehmen"' + (tag.pause_modus === "alle_annehmen" ? " selected" : "") + '>Alle annehmen</option><option value="klingeln_dann_bot"' + (tag.pause_modus === "klingeln_dann_bot" ? " selected" : "") + '>Klingeln+Bot</option><option value="bot_direkt"' + (tag.pause_modus === "bot_direkt" ? " selected" : "") + '>Bot direkt</option></select></td>';
+        var cb = tr.querySelector(".zp-aktiv");
+        cb.addEventListener("change", function () {
+            tr.querySelectorAll("input:not(.zp-aktiv), select").forEach(function (f) { f.disabled = !cb.checked; });
+            tr.className = cb.checked ? "" : "zeitplan-tag-inaktiv";
+        });
+        tbody.appendChild(tr);
+    });
+
+    var btnSpeichern = document.getElementById("btn-zeitplan-speichern");
+    if (btnSpeichern) btnSpeichern.addEventListener("click", function () {
+        var neuerPlan = [];
+        tbody.querySelectorAll("tr").forEach(function (tr, idx) {
+            neuerPlan.push({ tag: WOCHENTAGE[idx], aktiv: tr.querySelector(".zp-aktiv").checked, von: tr.querySelector(".zp-von").value, bis: tr.querySelector(".zp-bis").value, modus: tr.querySelector(".zp-modus").value, pause_von: tr.querySelector(".zp-pause-von").value, pause_bis: tr.querySelector(".zp-pause-bis").value, pause_modus: tr.querySelector(".zp-pause-modus").value });
+        });
+        zeitplanSpeichern(neuerPlan);
+        var erfolg = document.getElementById("zeitplan-erfolg");
+        if (erfolg) { erfolg.textContent = "Zeitplan gespeichert!"; erfolg.hidden = false; setTimeout(function () { erfolg.hidden = true; }, 3000); }
+        acdLiveStatusRendern();
+    });
+
+    var btnReset = document.getElementById("btn-zeitplan-reset");
+    if (btnReset) btnReset.addEventListener("click", function () {
+        if (!confirm("Zeitplan auf Standard zuruecksetzen?")) return;
+        zeitplanSpeichern(standardZeitplan());
+        initZeitplan();
+        acdLiveStatusRendern();
+    });
+}
+
+function acdLiveStatusRendern() {
+    var container = document.getElementById("acd-live-status");
+    if (!container) return;
+    var aktuell = aktuellenAcdModusErmitteln();
+    var config = acdConfigLaden() || {};
+    var onAg = dbLaden("agenten").filter(function (a) { return a.status === "online"; }).length;
+    var onSl = standortleitungLaden().filter(function (s) { return s.status === "online"; }).length;
+    var mc = aktuell.modus === "alle_annehmen" ? "modus-alle" : aktuell.modus === "klingeln_dann_bot" ? "modus-klingeln" : "modus-bot";
+    container.innerHTML =
+        '<div class="acd-live-box"><h3><i class="fa-solid fa-signal"></i> Aktiver Modus</h3><span class="acd-live-modus ' + mc + '"><i class="fa-solid fa-circle" style="font-size:0.5rem"></i> ' + escapeHtml(ACD_MODUS_LABEL[aktuell.modus] || aktuell.modus) + '</span><p style="margin-top:0.5rem;font-size:0.8rem;color:#64748b">Quelle: ' + escapeHtml(aktuell.quelle) + '</p></div>' +
+        '<div class="acd-live-box"><h3><i class="fa-solid fa-users"></i> Verfuegbare Teilnehmer</h3><p style="font-size:0.9rem"><strong>' + onAg + '</strong> Agenten online</p><p style="font-size:0.9rem"><strong>' + onSl + '</strong> Leitung/Teamleiter online</p><p style="font-size:0.8rem;color:#64748b;margin-top:0.5rem">Verteilung: ' + escapeHtml(config.verteilung || "alle_gleichzeitig") + '</p></div>';
+}
+
+function initStandortleitungBoard() {
+    var form = document.getElementById("standortleitung-form");
+    if (!form) return;
+    standortleitungBoardRendern();
+    var btnAbbr = document.getElementById("btn-sl-abbrechen");
+    if (btnAbbr) btnAbbr.addEventListener("click", function () { slFormReset(); });
+
+    form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        var editId = document.getElementById("sl-id").value;
+        var daten = { name: document.getElementById("sl-name").value, rolle: document.getElementById("sl-rolle").value, nebenstelle: document.getElementById("sl-nebenstelle").value, sip_passwort: document.getElementById("sl-sip-passwort").value, warteschlange: document.getElementById("sl-warteschlange").value, telefon: document.getElementById("sl-telefon").value, email: document.getElementById("sl-email").value };
+        var erfolgDiv = document.getElementById("sl-erfolg"), fehlerDiv = document.getElementById("sl-fehler");
+        if (!daten.name || !daten.nebenstelle || !daten.sip_passwort) { fehlerDiv.textContent = "Name, Nebenstelle und SIP-Passwort sind Pflicht."; fehlerDiv.hidden = false; erfolgDiv.hidden = true; return; }
+        if (editId) { standortleitungAktualisierenApi(editId, daten); erfolgDiv.textContent = "Aktualisiert!"; }
+        else { standortleitungSpeichernApi(daten); erfolgDiv.textContent = "Gespeichert!"; }
+        erfolgDiv.hidden = false; fehlerDiv.hidden = true;
+        slFormReset(); standortleitungBoardRendern(); acdLiveStatusRendern();
+    });
+}
+
+function slFormReset() {
+    var f = document.getElementById("standortleitung-form"); if (f) f.reset();
+    document.getElementById("sl-id").value = "";
+    var b = document.getElementById("btn-sl-abbrechen"); if (b) b.hidden = true;
+    var s = document.getElementById("btn-sl-speichern"); if (s) s.textContent = "Speichern";
+}
+
+function slBearbeiten(sl) {
+    document.getElementById("sl-id").value = sl.id;
+    document.getElementById("sl-name").value = sl.name;
+    document.getElementById("sl-rolle").value = sl.rolle;
+    document.getElementById("sl-nebenstelle").value = sl.nebenstelle;
+    document.getElementById("sl-sip-passwort").value = sl.sip_passwort;
+    document.getElementById("sl-warteschlange").value = sl.warteschlange || "alle";
+    document.getElementById("sl-telefon").value = sl.telefon || "";
+    document.getElementById("sl-email").value = sl.email || "";
+    var b = document.getElementById("btn-sl-abbrechen"); if (b) b.hidden = false;
+    var s = document.getElementById("btn-sl-speichern"); if (s) s.textContent = "Aktualisieren";
+    document.getElementById("standortleitung-form").scrollIntoView({ behavior: "smooth" });
+}
+
+function standortleitungBoardRendern() {
+    var container = document.getElementById("standortleitung-karten");
+    if (!container) return;
+    var liste = standortleitungLaden();
+    container.innerHTML = "";
+    if (liste.length === 0) { container.innerHTML = '<p style="color:#666;text-align:center;padding:2rem">Keine Standortleitung/Teamleiter angelegt.</p>'; return; }
+    liste.forEach(function (sl) {
+        var rl = sl.rolle === "standortleitung" ? "Standortleitung" : "Teamleiter";
+        var k = document.createElement("div"); k.className = "agent-karte";
+        k.innerHTML = '<h3><span class="agent-status-punkt ' + escapeHtml(sl.status) + '"></span>' + escapeHtml(sl.name) + '</h3><p><i class="fa-solid fa-user-tie"></i> ' + escapeHtml(rl) + '</p><p>NSt: ' + escapeHtml(sl.nebenstelle) + ' | Queue: ' + escapeHtml(sl.warteschlange || '-') + '</p><p>Status: <strong>' + escapeHtml(sl.status) + '</strong></p>' + (sl.telefon ? '<p><i class="fa-solid fa-mobile"></i> ' + escapeHtml(sl.telefon) + '</p>' : '') + '<div class="agent-aktionen"><button class="btn-online">Online</button><button class="btn-pause">Pause</button><button class="btn-offline">Offline</button><button class="btn-bearbeiten">Bearbeiten</button><button class="btn-loeschen">Loeschen</button></div>';
+        k.querySelector(".btn-online").addEventListener("click", function () { standortleitungStatusSetzen(sl.id, "online"); standortleitungBoardRendern(); acdLiveStatusRendern(); });
+        k.querySelector(".btn-pause").addEventListener("click", function () { standortleitungStatusSetzen(sl.id, "pause"); standortleitungBoardRendern(); acdLiveStatusRendern(); });
+        k.querySelector(".btn-offline").addEventListener("click", function () { standortleitungStatusSetzen(sl.id, "offline"); standortleitungBoardRendern(); acdLiveStatusRendern(); });
+        k.querySelector(".btn-bearbeiten").addEventListener("click", function () { slBearbeiten(sl); });
+        k.querySelector(".btn-loeschen").addEventListener("click", function () { if (!confirm(rl + " loeschen?")) return; standortleitungLoeschenApi(sl.id); standortleitungBoardRendern(); acdLiveStatusRendern(); });
+        container.appendChild(k);
+    });
+}
+
+function acdStatistikenDemo() {
+    var el = function (id, v) { var e = document.getElementById(id); if (e) e.textContent = v; };
+    el("acd-stat-anrufe", "47"); el("acd-stat-angenommen", "32"); el("acd-stat-bot", "12"); el("acd-stat-verpasst", "3"); el("acd-stat-wartezeit", "8s");
+}
+
 /** Exportieren fuer Tests (Node.js) */
 if (typeof module !== "undefined" && module.exports) {
     module.exports = {
@@ -2308,6 +2532,7 @@ if (typeof document !== "undefined") {
         initCallflowEditor();
         initVoicebotSeite();
         initUebersetzer();
+        initStandortSeite();
         initDemoReset();
 
         // Mobile Sidebar Toggle
