@@ -1,6 +1,44 @@
-/** MED Rezeption Frontend-Logik - Demo-Version mit localStorage */
+/** MED Rezeption Frontend-Logik - Demo & Live-Version */
 
 var API_BASE = "/api";
+
+// ===== Modus-Erkennung (Demo / Live) =====
+
+var MED_MODUS = "demo"; // "demo" = localStorage, "live" = Backend + LLM
+var MED_LLM_VERFUEGBAR = false;
+
+function modusPruefen() {
+    // Pruefe ob Backend + LLM erreichbar ist
+    try {
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", API_BASE + "/llm/status", true);
+        xhr.timeout = 3000;
+        xhr.onload = function () {
+            if (xhr.status === 200) {
+                try {
+                    var daten = JSON.parse(xhr.responseText);
+                    if (daten.verfuegbar) {
+                        MED_MODUS = "live";
+                        MED_LLM_VERFUEGBAR = true;
+                        modusAnzeigeAktualisieren();
+                    }
+                } catch (e) {}
+            }
+        };
+        xhr.send();
+    } catch (e) {}
+}
+
+function modusAnzeigeAktualisieren() {
+    var badges = document.querySelectorAll(".topbar-right");
+    for (var i = 0; i < badges.length; i++) {
+        var badge = badges[i];
+        // Nur ersetzen wenn noch "Demo-Modus" steht
+        if (badge.textContent.trim() === "Demo-Modus") {
+            badge.innerHTML = '<span class="badge badge-gruen"><i class="fa-solid fa-circle" style="font-size:0.5rem"></i> Live-Modus (KI aktiv)</span>';
+        }
+    }
+}
 
 // ===== Guard / Auth Check =====
 
@@ -1505,18 +1543,67 @@ function initChatWidget() {
     if (input) input.addEventListener("keydown", function (e) { if (e.key === "Enter") chatSenden(); });
 }
 
+var chatVerlauf = [];
+
 function chatSenden() {
     var input = document.getElementById("chat-input");
     if (!input || !input.value.trim()) return;
     var text = input.value.trim();
     input.value = "";
     chatNachrichtHinzufuegen("user", text);
+    chatVerlauf.push({ role: "user", content: text });
 
-    setTimeout(function () {
+    if (MED_LLM_VERFUEGBAR) {
+        // Live-Modus: LLM-API aufrufen
+        chatNachrichtHinzufuegen("bot-loading", "...");
+        chatLlmAnfrage(text);
+    } else {
+        // Demo-Modus: lokale Antwort
+        setTimeout(function () {
+            var antwort = chatAntwortGenerieren(text);
+            chatNachrichtHinzufuegen("bot", antwort);
+            chatVerlauf.push({ role: "assistant", content: antwort });
+            sprachAusgabe(antwort);
+        }, 500);
+    }
+}
+
+function chatLlmAnfrage(text) {
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", API_BASE + "/chat", true);
+    xhr.setRequestHeader("Content-Type", "application/json");
+    xhr.timeout = 30000;
+    xhr.onload = function () {
+        // Lade-Nachricht entfernen
+        var loading = document.querySelector(".chat-msg-bot-loading");
+        if (loading) loading.remove();
+        if (xhr.status === 200) {
+            try {
+                var daten = JSON.parse(xhr.responseText);
+                var antwort = daten.antwort || "Keine Antwort erhalten.";
+                chatNachrichtHinzufuegen("bot", antwort);
+                chatVerlauf.push({ role: "assistant", content: antwort });
+                sprachAusgabe(antwort);
+            } catch (e) {
+                chatNachrichtHinzufuegen("bot", "Fehler bei der Verarbeitung.");
+            }
+        } else {
+            // Fallback auf Demo-Modus
+            var antwort = chatAntwortGenerieren(text);
+            chatNachrichtHinzufuegen("bot", antwort);
+            chatVerlauf.push({ role: "assistant", content: antwort });
+            sprachAusgabe(antwort);
+        }
+    };
+    xhr.onerror = function () {
+        var loading = document.querySelector(".chat-msg-bot-loading");
+        if (loading) loading.remove();
         var antwort = chatAntwortGenerieren(text);
         chatNachrichtHinzufuegen("bot", antwort);
+        chatVerlauf.push({ role: "assistant", content: antwort });
         sprachAusgabe(antwort);
-    }, 500);
+    };
+    xhr.send(JSON.stringify({ text: text, verlauf: chatVerlauf.slice(-10) }));
 }
 
 function chatNachrichtHinzufuegen(typ, text) {
@@ -1925,6 +2012,7 @@ function initVoicebotSeite() {
 }
 
 var vbTestSchritt = 0;
+var vbDialogTyp = "allgemein";
 
 function voicebotTestStarten() {
     var bereich = document.getElementById("voicebot-test-bereich");
@@ -1933,10 +2021,17 @@ function voicebotTestStarten() {
     bereich.hidden = false;
     chat.innerHTML = "";
     vbTestSchritt = 0;
-    vbTestNachricht("bot", "Willkommen bei der Arztpraxis MED Rezeption.");
-    vbTestNachricht("bot", "Druecken Sie 1 fuer Terminvergabe, 2 fuer Rezeptbestellung, 3 fuer die Rezeption, oder 0 fuer die Warteschlange.");
-    vbTestNachricht("system", "Warte auf DTMF-Eingabe...");
-    sprachAusgabe("Willkommen bei der Arztpraxis. Druecken Sie 1 fuer Terminvergabe, 2 fuer Rezeptbestellung, 3 fuer die Rezeption.");
+    vbDialogTyp = "allgemein";
+
+    if (MED_LLM_VERFUEGBAR) {
+        vbTestNachricht("system", "[Live-Modus: KI-Voicebot aktiv]");
+        voicebotLlmAnfrage("start", 0, "allgemein");
+    } else {
+        vbTestNachricht("bot", "Willkommen bei der Arztpraxis MED Rezeption.");
+        vbTestNachricht("bot", "Druecken Sie 1 fuer Terminvergabe, 2 fuer Rezeptbestellung, 3 fuer die Rezeption, oder 0 fuer die Warteschlange.");
+        vbTestNachricht("system", "Warte auf DTMF-Eingabe...");
+        sprachAusgabe("Willkommen bei der Arztpraxis. Druecken Sie 1 fuer Terminvergabe, 2 fuer Rezeptbestellung, 3 fuer die Rezeption.");
+    }
 }
 
 function voicebotTestDtmf(taste) {
@@ -1944,6 +2039,12 @@ function voicebotTestDtmf(taste) {
     if (!chat) return;
     vbTestNachricht("anrufer", "DTMF: " + taste);
 
+    if (MED_LLM_VERFUEGBAR) {
+        voicebotLlmAnfrage(taste, vbTestSchritt, vbDialogTyp);
+        return;
+    }
+
+    // Demo-Modus (unveraendert)
     if (vbTestSchritt === 0) {
         if (taste === "1") {
             vbTestSchritt = 1;
@@ -1992,6 +2093,36 @@ function voicebotTestDtmf(taste) {
         sprachAusgabe("Ihre Rezeptanfrage wird an die Rezeption weitergeleitet.");
         vbTestSchritt = 99;
     }
+}
+
+function voicebotLlmAnfrage(eingabe, schritt, dialogTyp) {
+    vbTestNachricht("system", "KI verarbeitet...");
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", API_BASE + "/voicebot/dialog", true);
+    xhr.setRequestHeader("Content-Type", "application/json");
+    xhr.timeout = 30000;
+    xhr.onload = function () {
+        if (xhr.status === 200) {
+            try {
+                var daten = JSON.parse(xhr.responseText);
+                vbTestSchritt = daten.schritt || vbTestSchritt + 1;
+                if (daten.aktion) vbDialogTyp = daten.aktion === "termin_buchen" ? "termin" : daten.aktion === "rezept" ? "rezept" : vbDialogTyp;
+                vbTestNachricht("bot", daten.antwort || "...");
+                if (daten.aktion && daten.aktion !== "weiter") {
+                    vbTestNachricht("system", "AKTION: " + daten.aktion.toUpperCase());
+                }
+                sprachAusgabe(daten.antwort || "");
+            } catch (e) {
+                vbTestNachricht("system", "Fehler bei KI-Antwort.");
+            }
+        } else {
+            vbTestNachricht("system", "KI nicht erreichbar - Demo-Modus.");
+        }
+    };
+    xhr.onerror = function () {
+        vbTestNachricht("system", "KI nicht erreichbar.");
+    };
+    xhr.send(JSON.stringify({ eingabe: eingabe, schritt: schritt, dialog_typ: dialogTyp }));
 }
 
 function vbTestNachricht(typ, text) {
@@ -2134,6 +2265,44 @@ function uebersetzen() {
     var ausgabe = document.getElementById("ue-ausgabe");
     if (!eingabe || !ausgabe) return;
 
+    // Im Live-Modus: LLM-Uebersetzung nutzen
+    if (MED_LLM_VERFUEGBAR) {
+        ausgabe.textContent = "Uebersetze...";
+        uebersetzenLlm(eingabe, von, nach, ausgabe);
+        return;
+    }
+
+    // Demo-Modus: Phrasen-Suche + Fallback
+    uebersetzenDemo(eingabe, von, nach, ausgabe);
+}
+
+function uebersetzenLlm(eingabe, von, nach, ausgabe) {
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", API_BASE + "/uebersetzen", true);
+    xhr.setRequestHeader("Content-Type", "application/json");
+    xhr.timeout = 30000;
+    xhr.onload = function () {
+        if (xhr.status === 200) {
+            try {
+                var daten = JSON.parse(xhr.responseText);
+                ausgabe.textContent = daten.uebersetzung || eingabe;
+            } catch (e) {
+                // Fallback auf Demo
+                uebersetzenDemo(eingabe, von, nach, ausgabe);
+            }
+        } else {
+            uebersetzenDemo(eingabe, von, nach, ausgabe);
+        }
+        ueVerlaufSpeichern(eingabe, ausgabe.textContent, von, nach);
+    };
+    xhr.onerror = function () {
+        uebersetzenDemo(eingabe, von, nach, ausgabe);
+        ueVerlaufSpeichern(eingabe, ausgabe.textContent, von, nach);
+    };
+    xhr.send(JSON.stringify({ text: eingabe, von: von, nach: nach }));
+}
+
+function uebersetzenDemo(eingabe, von, nach, ausgabe) {
     // Suche in den medizinischen Phrasen
     var gefunden = null;
     var kategorien = Object.keys(medPhrases);
@@ -2151,7 +2320,6 @@ function uebersetzen() {
     if (gefunden) {
         ausgabe.textContent = gefunden;
     } else {
-        // Demo-Fallback: einfache Wort-fuer-Wort Marker
         var demoUe = {
             "de-en": { "hallo": "hello", "ja": "yes", "nein": "no", "danke": "thank you", "bitte": "please", "schmerzen": "pain", "kopf": "head", "bauch": "stomach", "termin": "appointment", "arzt": "doctor", "medikament": "medication", "rezept": "prescription" },
             "de-tr": { "hallo": "merhaba", "ja": "evet", "nein": "hayir", "danke": "tesekkurler", "bitte": "lutfen", "schmerzen": "agri", "termin": "randevu", "arzt": "doktor" }
@@ -2169,9 +2337,12 @@ function uebersetzen() {
         }
     }
 
-    // Verlauf speichern
+    ueVerlaufSpeichern(eingabe, ausgabe.textContent, von, nach);
+}
+
+function ueVerlaufSpeichern(eingabe, uebersetzung, von, nach) {
     var verlauf = dbLaden("ue_verlauf");
-    verlauf.unshift({ original: eingabe, uebersetzung: ausgabe.textContent, von: von, nach: nach, zeit: new Date().toLocaleTimeString("de-DE") });
+    verlauf.unshift({ original: eingabe, uebersetzung: uebersetzung, von: von, nach: nach, zeit: new Date().toLocaleTimeString("de-DE") });
     if (verlauf.length > 20) verlauf = verlauf.slice(0, 20);
     dbSpeichern("ue_verlauf", verlauf);
     ueVerlaufAktualisieren();
@@ -2517,6 +2688,7 @@ if (typeof document !== "undefined") {
             guardInfoAnzeigen();
         }
 
+        modusPruefen();
         demoDatenLaden();
         initDashboard();
         initRechner();

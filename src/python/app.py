@@ -6,6 +6,10 @@ from pathlib import Path
 
 from src.python.rechner import addieren, subtrahieren, multiplizieren, dividieren
 from src.python.validator import schema_laden, validieren
+from src.python.llm_service import (
+    chat_antwort, voicebot_dialog, uebersetzen as llm_uebersetzen,
+    llm_verfuegbar,
+)
 from src.python.datenbank import (
     verbindung_herstellen, tabellen_erstellen,
     benutzer_erstellen, benutzer_alle, benutzer_nach_id,
@@ -552,6 +556,77 @@ def api_anruf_loeschen_route(anruf_id):
     if anruf_loeschen(db(), anruf_id):
         return jsonify({"nachricht": "Anruf geloescht"})
     return jsonify({"fehler": "Anruf nicht gefunden"}), 404
+
+
+# --- LLM API (Eingesperrtes KI-System) ---
+
+@app.route("/api/llm/status", methods=["GET"])
+def api_llm_status():
+    """Prueft ob das LLM verfuegbar ist."""
+    return jsonify({"verfuegbar": llm_verfuegbar(), "modus": "live" if llm_verfuegbar() else "demo"})
+
+
+@app.route("/api/chat", methods=["POST"])
+def api_chat():
+    """Chat mit dem eingesperrten Praxis-Assistenten."""
+    daten = request.get_json()
+    if not daten or not daten.get("text"):
+        return jsonify({"fehler": "Kein Text erhalten"}), 400
+
+    if not llm_verfuegbar():
+        return jsonify({"fehler": "LLM nicht konfiguriert", "modus": "demo"}), 503
+
+    verlauf = daten.get("verlauf", [])
+    ergebnis = chat_antwort(daten["text"], db, verlauf)
+
+    if "fehler" in ergebnis:
+        return jsonify(ergebnis), 500
+
+    return jsonify({"antwort": ergebnis["antwort"], "modus": "live"})
+
+
+@app.route("/api/voicebot/dialog", methods=["POST"])
+def api_voicebot_dialog():
+    """Voicebot-Dialog-Schritt mit LLM."""
+    daten = request.get_json()
+    if not daten:
+        return jsonify({"fehler": "Keine Daten erhalten"}), 400
+
+    if not llm_verfuegbar():
+        return jsonify({"fehler": "LLM nicht konfiguriert", "modus": "demo"}), 503
+
+    eingabe = daten.get("eingabe", "")
+    schritt = daten.get("schritt", 0)
+    dialog_typ = daten.get("dialog_typ", "allgemein")
+
+    ergebnis = voicebot_dialog(eingabe, schritt, dialog_typ, db)
+
+    if "fehler" in ergebnis:
+        return jsonify(ergebnis), 500
+
+    return jsonify(ergebnis)
+
+
+@app.route("/api/uebersetzen", methods=["POST"])
+def api_uebersetzen():
+    """Medizinische Uebersetzung mit LLM."""
+    daten = request.get_json()
+    if not daten or not daten.get("text"):
+        return jsonify({"fehler": "Kein Text erhalten"}), 400
+
+    von = daten.get("von", "de")
+    nach = daten.get("nach", "en")
+    text = daten["text"]
+
+    if not llm_verfuegbar():
+        return jsonify({"fehler": "LLM nicht konfiguriert", "modus": "demo"}), 503
+
+    ergebnis = llm_uebersetzen(text, von, nach)
+
+    if "fehler" in ergebnis:
+        return jsonify(ergebnis), 500
+
+    return jsonify({"uebersetzung": ergebnis["uebersetzung"], "modus": "live"})
 
 
 if __name__ == "__main__":
