@@ -477,6 +477,8 @@ section + section, .card + .card {
 }
 
 .badge-rot { background: var(--danger); }
+.badge-gruen { background: #16a34a; }
+.badge-gelb { background: #d97706; }
 
 /* ===== Wartezimmer Karten ===== */
 

@@ -1,0 +1,210 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500">
+  <defs>
+    <style>
+      text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    </style>
+    <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#94a3b8"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="500" fill="#f1f5f9"/>
+
+  <!-- Sidebar -->
+  <rect x="0" y="0" width="180" height="500" fill="#1e293b"/>
+
+  <!-- Logo -->
+  <rect x="16" y="14" width="148" height="32" rx="6" fill="#2563eb" opacity="0.15"/>
+  <text x="90" y="35" fill="#ffffff" font-size="14" font-weight="700" text-anchor="middle">MED Rezeption</text>
+
+  <!-- Nav Items -->
+  <rect x="20" y="70" width="14" height="14" rx="3" fill="#475569"/>
+  <text x="42" y="82" fill="#94a3b8" font-size="12">Dashboard</text>
+
+  <rect x="20" y="100" width="14" height="14" rx="3" fill="#475569"/>
+  <text x="42" y="112" fill="#94a3b8" font-size="12">Patienten</text>
+
+  <rect x="20" y="130" width="14" height="14" rx="3" fill="#475569"/>
+  <text x="42" y="142" fill="#94a3b8" font-size="12">Aerzte</text>
+
+  <rect x="20" y="160" width="14" height="14" rx="3" fill="#475569"/>
+  <text x="42" y="172" fill="#94a3b8" font-size="12">Termine</text>
+
+  <rect x="20" y="190" width="14" height="14" rx="3" fill="#475569"/>
+  <text x="42" y="202" fill="#94a3b8" font-size="12">Wartezimmer</text>
+
+  <!-- Callflow Editor - active -->
+  <rect x="10" y="216" width="160" height="34" rx="6" fill="#2563eb" opacity="0.25"/>
+  <rect x="20" y="226" width="14" height="14" rx="3" fill="#2563eb"/>
+  <text x="42" y="238" fill="#ffffff" font-size="12" font-weight="600">Callflow Editor</text>
+
+  <!-- Topbar -->
+  <rect x="180" y="0" width="620" height="48" fill="#ffffff"/>
+  <line x1="180" y1="48" x2="800" y2="48" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="200" y="30" fill="#1e293b" font-size="16" font-weight="700">Callflow Editor</text>
+
+  <!-- Topbar buttons -->
+  <rect x="660" y="12" width="66" height="26" rx="4" fill="#2563eb"/>
+  <text x="693" y="29" fill="#ffffff" font-size="10" font-weight="600" text-anchor="middle">Speichern</text>
+  <rect x="734" y="12" width="54" height="26" rx="4" fill="#ffffff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="761" y="29" fill="#2563eb" font-size="10" font-weight="600" text-anchor="middle">Simulieren</text>
+
+  <!-- Left Panel: Bausteine -->
+  <rect x="186" y="54" width="120" height="440" rx="0" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="200" y="74" fill="#1e293b" font-size="11" font-weight="700">Bausteine</text>
+
+  <!-- Baustein items -->
+  <rect x="194" y="84" width="104" height="30" rx="5" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+  <circle cx="210" cy="99" r="6" fill="#2563eb" opacity="0.2"/>
+  <text x="222" y="103" fill="#475569" font-size="9">Ansage</text>
+
+  <rect x="194" y="120" width="104" height="30" rx="5" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+  <circle cx="210" cy="135" r="6" fill="#f59e0b" opacity="0.2"/>
+  <text x="222" y="139" fill="#475569" font-size="9">DTMF-Menue</text>
+
+  <rect x="194" y="156" width="104" height="30" rx="5" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+  <circle cx="210" cy="171" r="6" fill="#06b6d4" opacity="0.2"/>
+  <text x="222" y="175" fill="#475569" font-size="9">Voicebot</text>
+
+  <rect x="194" y="192" width="104" height="30" rx="5" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+  <circle cx="210" cy="207" r="6" fill="#22c55e" opacity="0.2"/>
+  <text x="222" y="211" fill="#475569" font-size="9">Warteschlange</text>
+
+  <rect x="194" y="228" width="104" height="30" rx="5" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+  <circle cx="210" cy="243" r="6" fill="#8b5cf6" opacity="0.2"/>
+  <text x="222" y="247" fill="#475569" font-size="9">Transfer</text>
+
+  <rect x="194" y="264" width="104" height="30" rx="5" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+  <circle cx="210" cy="279" r="6" fill="#ec4899" opacity="0.2"/>
+  <text x="222" y="283" fill="#475569" font-size="9">Bedingung</text>
+
+  <rect x="194" y="300" width="104" height="30" rx="5" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+  <circle cx="210" cy="315" r="6" fill="#ef4444" opacity="0.2"/>
+  <text x="222" y="319" fill="#475569" font-size="9">Aufnahme</text>
+
+  <rect x="194" y="336" width="104" height="30" rx="5" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+  <circle cx="210" cy="351" r="6" fill="#64748b" opacity="0.2"/>
+  <text x="222" y="355" fill="#475569" font-size="9">Auflegen</text>
+
+  <!-- Center: Canvas area -->
+  <rect x="312" y="54" width="310" height="440" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+  <!-- Grid dots pattern -->
+  <circle cx="330" cy="70" r="1" fill="#cbd5e1" opacity="0.5"/>
+  <circle cx="350" cy="70" r="1" fill="#cbd5e1" opacity="0.5"/>
+  <circle cx="370" cy="70" r="1" fill="#cbd5e1" opacity="0.5"/>
+  <circle cx="390" cy="70" r="1" fill="#cbd5e1" opacity="0.5"/>
+  <circle cx="410" cy="70" r="1" fill="#cbd5e1" opacity="0.5"/>
+  <circle cx="330" cy="90" r="1" fill="#cbd5e1" opacity="0.5"/>
+  <circle cx="350" cy="90" r="1" fill="#cbd5e1" opacity="0.5"/>
+  <circle cx="370" cy="90" r="1" fill="#cbd5e1" opacity="0.5"/>
+  <circle cx="390" cy="90" r="1" fill="#cbd5e1" opacity="0.5"/>
+  <circle cx="410" cy="90" r="1" fill="#cbd5e1" opacity="0.5"/>
+
+  <!-- Flow Node: Start -->
+  <rect x="428" y="76" width="80" height="36" rx="18" fill="#22c55e" opacity="0.15" stroke="#22c55e" stroke-width="1.5"/>
+  <text x="468" y="99" fill="#22c55e" font-size="11" font-weight="700" text-anchor="middle">Start</text>
+
+  <!-- Arrow: Start -> Ansage -->
+  <line x1="468" y1="112" x2="468" y2="146" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+
+  <!-- Flow Node: Ansage -->
+  <rect x="418" y="148" width="100" height="42" rx="6" fill="#ffffff" stroke="#2563eb" stroke-width="1.5"/>
+  <rect x="418" y="148" width="100" height="16" rx="6" fill="#2563eb" opacity="0.1"/>
+  <text x="468" y="161" fill="#2563eb" font-size="8" font-weight="700" text-anchor="middle">ANSAGE</text>
+  <text x="468" y="180" fill="#475569" font-size="9" text-anchor="middle">Willkommen...</text>
+
+  <!-- Arrow: Ansage -> DTMF -->
+  <line x1="468" y1="190" x2="468" y2="224" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+
+  <!-- Flow Node: DTMF-Menue -->
+  <rect x="408" y="226" width="120" height="50" rx="6" fill="#ffffff" stroke="#f59e0b" stroke-width="1.5"/>
+  <rect x="408" y="226" width="120" height="16" rx="6" fill="#f59e0b" opacity="0.1"/>
+  <text x="468" y="239" fill="#f59e0b" font-size="8" font-weight="700" text-anchor="middle">DTMF-MENUE</text>
+  <text x="468" y="256" fill="#475569" font-size="8" text-anchor="middle">1: Termin, 2: Rezept</text>
+  <text x="468" y="268" fill="#475569" font-size="8" text-anchor="middle">3: Sonstiges</text>
+
+  <!-- Branch arrows from DTMF -->
+  <!-- Branch 1 (left) -->
+  <line x1="430" y1="276" x2="370" y2="316" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+  <!-- Branch 2 (center) -->
+  <line x1="468" y1="276" x2="468" y2="316" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+  <!-- Branch 3 (right) -->
+  <line x1="506" y1="276" x2="566" y2="316" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+
+  <!-- Branch labels -->
+  <text x="388" y="296" fill="#94a3b8" font-size="8">Taste 1</text>
+  <text x="456" y="296" fill="#94a3b8" font-size="8">Taste 2</text>
+  <text x="524" y="296" fill="#94a3b8" font-size="8">Taste 3</text>
+
+  <!-- Flow Node: Voicebot (left branch) -->
+  <rect x="330" y="318" width="86" height="42" rx="6" fill="#ffffff" stroke="#06b6d4" stroke-width="1.5"/>
+  <rect x="330" y="318" width="86" height="16" rx="6" fill="#06b6d4" opacity="0.1"/>
+  <text x="373" y="331" fill="#06b6d4" font-size="8" font-weight="700" text-anchor="middle">VOICEBOT</text>
+  <text x="373" y="350" fill="#475569" font-size="8" text-anchor="middle">Terminbuchung</text>
+
+  <!-- Flow Node: Warteschlange (center branch) -->
+  <rect x="425" y="318" width="86" height="42" rx="6" fill="#ffffff" stroke="#22c55e" stroke-width="1.5"/>
+  <rect x="425" y="318" width="86" height="16" rx="6" fill="#22c55e" opacity="0.1"/>
+  <text x="468" y="331" fill="#22c55e" font-size="8" font-weight="700" text-anchor="middle">WARTESCHL.</text>
+  <text x="468" y="350" fill="#475569" font-size="8" text-anchor="middle">Rezept-Team</text>
+
+  <!-- Flow Node: Transfer (right branch) -->
+  <rect x="525" y="318" width="86" height="42" rx="6" fill="#ffffff" stroke="#8b5cf6" stroke-width="1.5"/>
+  <rect x="525" y="318" width="86" height="16" rx="6" fill="#8b5cf6" opacity="0.1"/>
+  <text x="568" y="331" fill="#8b5cf6" font-size="8" font-weight="700" text-anchor="middle">TRANSFER</text>
+  <text x="568" y="350" fill="#475569" font-size="8" text-anchor="middle">Rezeption</text>
+
+  <!-- Arrow down from Voicebot -->
+  <line x1="373" y1="360" x2="373" y2="390" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+
+  <!-- Auflegen node below voicebot -->
+  <rect x="345" y="392" width="56" height="30" rx="15" fill="#64748b" opacity="0.1" stroke="#64748b" stroke-width="1.5"/>
+  <text x="373" y="411" fill="#64748b" font-size="8" font-weight="600" text-anchor="middle">Auflegen</text>
+
+  <!-- Arrow down from Warteschlange -->
+  <line x1="468" y1="360" x2="468" y2="390" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+
+  <!-- Transfer node below warteschlange -->
+  <rect x="440" y="392" width="56" height="30" rx="15" fill="#64748b" opacity="0.1" stroke="#64748b" stroke-width="1.5"/>
+  <text x="468" y="411" fill="#64748b" font-size="8" font-weight="600" text-anchor="middle">Auflegen</text>
+
+  <!-- Right Panel: Eigenschaften -->
+  <rect x="628" y="54" width="166" height="440" rx="0" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="644" y="74" fill="#1e293b" font-size="11" font-weight="700">Eigenschaften</text>
+  <line x1="628" y1="82" x2="794" y2="82" stroke="#e2e8f0" stroke-width="1"/>
+
+  <!-- Properties for selected node -->
+  <text x="644" y="100" fill="#64748b" font-size="9" font-weight="600">Ausgewaehlter Knoten</text>
+  <rect x="644" y="106" width="134" height="22" rx="4" fill="#f59e0b" opacity="0.1"/>
+  <text x="711" y="121" fill="#f59e0b" font-size="10" font-weight="600" text-anchor="middle">DTMF-Menue</text>
+
+  <text x="644" y="148" fill="#64748b" font-size="9">Name</text>
+  <rect x="644" y="152" width="134" height="24" rx="4" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="654" y="168" fill="#1e293b" font-size="9">Hauptmenue</text>
+
+  <text x="644" y="192" fill="#64748b" font-size="9">Ansagetext</text>
+  <rect x="644" y="196" width="134" height="40" rx="4" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="654" y="212" fill="#1e293b" font-size="8">Druecken Sie 1 fuer</text>
+  <text x="654" y="224" fill="#1e293b" font-size="8">Termine, 2 fuer...</text>
+
+  <text x="644" y="254" fill="#64748b" font-size="9">Timeout (Sek.)</text>
+  <rect x="644" y="258" width="60" height="24" rx="4" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="654" y="274" fill="#1e293b" font-size="9">5</text>
+
+  <text x="644" y="300" fill="#64748b" font-size="9">Max. Wiederholungen</text>
+  <rect x="644" y="304" width="60" height="24" rx="4" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="654" y="320" fill="#1e293b" font-size="9">3</text>
+
+  <text x="644" y="350" fill="#64748b" font-size="9" font-weight="600">Optionen</text>
+  <rect x="644" y="356" width="134" height="20" rx="3" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="654" y="370" fill="#475569" font-size="8">1 - Terminbuchung</text>
+  <rect x="644" y="380" width="134" height="20" rx="3" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="654" y="394" fill="#475569" font-size="8">2 - Rezept-Anfrage</text>
+  <rect x="644" y="404" width="134" height="20" rx="3" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="654" y="418" fill="#475569" font-size="8">3 - Sonstiges</text>
+
+  <!-- Add option button -->
+  <rect x="644" y="432" width="134" height="22" rx="4" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="711" y="447" fill="#94a3b8" font-size="9" text-anchor="middle">+ Option hinzufuegen</text>
+</svg>

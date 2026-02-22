@@ -70,6 +70,8 @@ function brancheAnwenden() {
 var MED_MODUS = "demo"; // "demo" = localStorage, "live" = Backend + LLM
 var MED_LLM_VERFUEGBAR = false;
 
+var MED_LLM_PRUEF_INTERVALL = null;
+
 function modusPruefen() {
     // Pruefe ob Backend + LLM erreichbar ist
     try {
@@ -83,23 +85,98 @@ function modusPruefen() {
                     if (daten.verfuegbar) {
                         MED_MODUS = "live";
                         MED_LLM_VERFUEGBAR = true;
-                        modusAnzeigeAktualisieren();
+                    } else {
+                        MED_MODUS = "demo";
+                        MED_LLM_VERFUEGBAR = false;
                     }
-                } catch (e) {}
+                } catch (e) {
+                    MED_MODUS = "demo";
+                    MED_LLM_VERFUEGBAR = false;
+                }
+            } else {
+                MED_MODUS = "demo";
+                MED_LLM_VERFUEGBAR = false;
             }
+            modusAnzeigeAktualisieren();
+        };
+        xhr.onerror = function () {
+            MED_MODUS = "demo";
+            MED_LLM_VERFUEGBAR = false;
+            modusAnzeigeAktualisieren();
+        };
+        xhr.ontimeout = function () {
+            MED_MODUS = "demo";
+            MED_LLM_VERFUEGBAR = false;
+            modusAnzeigeAktualisieren();
         };
         xhr.send();
     } catch (e) {}
+
+    // Periodische Pruefung alle 60 Sekunden
+    if (!MED_LLM_PRUEF_INTERVALL) {
+        MED_LLM_PRUEF_INTERVALL = setInterval(function () {
+            modusPruefen();
+        }, 60000);
+    }
 }
 
 function modusAnzeigeAktualisieren() {
     var badges = document.querySelectorAll(".topbar-right");
     for (var i = 0; i < badges.length; i++) {
         var badge = badges[i];
-        if (badge.textContent.trim() === "Demo-Modus") {
-            badge.innerHTML = '<span class="badge badge-gruen"><i class="fa-solid fa-circle" style="font-size:0.5rem"></i> Live-Modus (KI aktiv)</span>';
+        var aktuellerText = badge.textContent.trim();
+        if (MED_LLM_VERFUEGBAR) {
+            if (aktuellerText === "Demo-Modus" || aktuellerText.indexOf("Live-Modus") !== -1) {
+                badge.innerHTML = '<span class="badge badge-gruen"><i class="fa-solid fa-circle" style="font-size:0.5rem"></i> Live-Modus (KI aktiv)</span>';
+            }
+        } else {
+            if (aktuellerText.indexOf("Live-Modus") !== -1) {
+                badge.innerHTML = '<span class="badge badge-gelb"><i class="fa-solid fa-circle" style="font-size:0.5rem"></i> Demo-Modus</span>';
+            }
         }
     }
+}
+
+// LLM-Anfrage mit Retry-Logik (max 2 Versuche)
+function llmAnfrageMitRetry(method, url, body, onSuccess, onError) {
+    var versuche = 0;
+    var maxVersuche = 2;
+
+    function versuch() {
+        var xhr = new XMLHttpRequest();
+        xhr.open(method, url, true);
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.timeout = 30000;
+        xhr.onload = function () {
+            if (xhr.status === 200) {
+                onSuccess(xhr);
+            } else if (versuche < maxVersuche) {
+                versuche++;
+                setTimeout(versuch, 1000 * versuche);
+            } else {
+                onError(xhr);
+            }
+        };
+        xhr.onerror = function () {
+            if (versuche < maxVersuche) {
+                versuche++;
+                setTimeout(versuch, 1000 * versuche);
+            } else {
+                onError(xhr);
+            }
+        };
+        xhr.ontimeout = function () {
+            if (versuche < maxVersuche) {
+                versuche++;
+                setTimeout(versuch, 1000 * versuche);
+            } else {
+                onError(xhr);
+            }
+        };
+        xhr.send(body ? JSON.stringify(body) : null);
+    }
+
+    versuch();
 }
 
 // ===== Guard / Auth Check =====
@@ -200,6 +277,48 @@ function rollenSeitePruefen(rolleKey) {
 function escapeHtmlSafe(text) {
     if (!text) return "";
     return String(text).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+// ===== Funktions-basierte Rollenkontrolle =====
+
+// Welche Rollen duerfen welche Aktionen ausfuehren
+var ROLLEN_AKTIONEN = {
+    benutzer_verwalten:    ["admin"],
+    patienten_loeschen:    ["admin", "standortleitung"],
+    aerzte_verwalten:      ["admin", "standortleitung", "teamleitung"],
+    termine_loeschen:      ["admin", "standortleitung", "teamleitung"],
+    agenten_verwalten:     ["admin", "standortleitung", "teamleitung"],
+    callflow_bearbeiten:   ["admin", "standortleitung"],
+    standort_konfigurieren:["admin", "standortleitung"],
+    acd_konfigurieren:     ["admin", "standortleitung"],
+    voicebot_konfigurieren:["admin", "standortleitung", "teamleitung"],
+    demo_reset:            ["admin"]
+};
+
+function aktuelleRolleHolen() {
+    var auth = sessionStorage.getItem("med_guard_auth") || localStorage.getItem("med_guard_auth");
+    if (!auth) return null;
+    try {
+        var daten = JSON.parse(auth);
+        return daten.rolle || null;
+    } catch (e) { return null; }
+}
+
+function darfAktion(aktionKey) {
+    var rolle = aktuelleRolleHolen();
+    if (!rolle) return false;
+    var erlaubt = ROLLEN_AKTIONEN[aktionKey];
+    if (!erlaubt) return true; // Wenn Aktion nicht definiert: erlaubt
+    return erlaubt.indexOf(rolle) !== -1;
+}
+
+function aktionPruefen(aktionKey, fehlerMeldung) {
+    if (!darfAktion(aktionKey)) {
+        var msg = fehlerMeldung || "Keine Berechtigung fuer diese Aktion.";
+        alert(msg);
+        return false;
+    }
+    return true;
 }
 
 // ===== localStorage Helfer =====
@@ -590,6 +709,7 @@ function benutzerBearbeiten(benutzer) {
 }
 
 async function benutzerEntfernen(id) {
+    if (!aktionPruefen("benutzer_verwalten", "Nur Admins duerfen Benutzer loeschen.")) return;
     if (!confirm("Benutzer wirklich loeschen?")) return;
     try { await benutzerLoeschenApi(id); benutzerListeAktualisieren(); } catch (err) { alert("Fehler: " + err.message); }
 }
@@ -772,6 +892,7 @@ async function patientenListeAktualisieren(suche) {
                 "</td>";
             tr.querySelector(".btn-bearbeiten").addEventListener("click", function () { patientBearbeiten(p); });
             tr.querySelector(".btn-loeschen").addEventListener("click", async function () {
+                if (!aktionPruefen("patienten_loeschen", "Keine Berechtigung zum Loeschen von Patienten.")) return;
                 if (!confirm("Patient wirklich loeschen?")) return;
                 try { await patientLoeschenApi(p.id); patientenListeAktualisieren(); } catch (err) { alert(err.message); }
             });
@@ -902,6 +1023,7 @@ async function aerzteListeAktualisieren() {
                 "</td>";
             tr.querySelector(".btn-bearbeiten").addEventListener("click", function () { arztBearbeiten(a); });
             tr.querySelector(".btn-loeschen").addEventListener("click", async function () {
+                if (!aktionPruefen("aerzte_verwalten", "Keine Berechtigung zum Loeschen von Aerzten.")) return;
                 if (!confirm("Arzt wirklich loeschen?")) return;
                 try { await arztLoeschenApi(a.id); aerzteListeAktualisieren(); } catch (err) { alert(err.message); }
             });
@@ -1087,6 +1209,7 @@ async function termineListeAktualisieren(datum) {
                 "</td>";
             tr.querySelector(".btn-bearbeiten").addEventListener("click", function () { terminBearbeiten(t); });
             tr.querySelector(".btn-loeschen").addEventListener("click", async function () {
+                if (!aktionPruefen("termine_loeschen", "Keine Berechtigung zum Loeschen von Terminen.")) return;
                 if (!confirm("Termin wirklich loeschen?")) return;
                 try { await terminLoeschenApi(t.id); termineListeAktualisieren(datum); } catch (err) { alert(err.message); }
             });
@@ -1419,6 +1542,7 @@ async function agentenBoardAktualisieren() {
             });
             karte.querySelector(".btn-bearbeiten").addEventListener("click", function () { agentBearbeiten(a); });
             karte.querySelector(".btn-loeschen").addEventListener("click", async function () {
+                if (!aktionPruefen("agenten_verwalten", "Keine Berechtigung zum Loeschen von Agenten.")) return;
                 if (!confirm("Agent wirklich loeschen?")) return;
                 try { await agentLoeschenApi(a.id); agentenBoardAktualisieren(); } catch (err) { alert(err.message); }
             });
@@ -1823,6 +1947,7 @@ function initDemoReset() {
     var btn = document.getElementById("btn-demo-reset");
     if (!btn) return;
     btn.addEventListener("click", function () {
+        if (!aktionPruefen("demo_reset", "Nur Admins duerfen Demo-Daten zuruecksetzen.")) return;
         if (!confirm("Demo-Daten zuruecksetzen? Alle Aenderungen gehen verloren.")) return;
         localStorage.removeItem("med_demo_geladen");
         localStorage.removeItem("med_standort_geladen");
@@ -2450,8 +2575,20 @@ function uebersetzenDemo(eingabe, von, nach, ausgabe) {
         ausgabe.textContent = gefunden;
     } else {
         var demoUe = {
-            "de-en": { "hallo": "hello", "ja": "yes", "nein": "no", "danke": "thank you", "bitte": "please", "schmerzen": "pain", "kopf": "head", "bauch": "stomach", "termin": "appointment", "arzt": "doctor", "medikament": "medication", "rezept": "prescription" },
-            "de-tr": { "hallo": "merhaba", "ja": "evet", "nein": "hayir", "danke": "tesekkurler", "bitte": "lutfen", "schmerzen": "agri", "termin": "randevu", "arzt": "doktor" }
+            "de-en": { "hallo": "hello", "ja": "yes", "nein": "no", "danke": "thank you", "bitte": "please", "schmerzen": "pain", "kopf": "head", "bauch": "stomach", "termin": "appointment", "arzt": "doctor", "medikament": "medication", "rezept": "prescription", "fieber": "fever", "husten": "cough", "krankenhaus": "hospital", "notfall": "emergency", "blutdruck": "blood pressure", "allergie": "allergy" },
+            "de-tr": { "hallo": "merhaba", "ja": "evet", "nein": "hayir", "danke": "tesekkurler", "bitte": "lutfen", "schmerzen": "agri", "termin": "randevu", "arzt": "doktor", "fieber": "ates", "husten": "oksuruk", "krankenhaus": "hastane", "notfall": "acil", "medikament": "ilac", "rezept": "recete" },
+            "de-ar": { "hallo": "مرحبا", "ja": "نعم", "nein": "لا", "danke": "شكرا", "bitte": "من فضلك", "schmerzen": "ألم", "termin": "موعد", "arzt": "طبيب", "fieber": "حمى", "medikament": "دواء", "rezept": "وصفة", "notfall": "طوارئ", "krankenhaus": "مستشفى" },
+            "de-ru": { "hallo": "привет", "ja": "да", "nein": "нет", "danke": "спасибо", "bitte": "пожалуйста", "schmerzen": "боль", "termin": "запись", "arzt": "врач", "fieber": "температура", "medikament": "лекарство", "rezept": "рецепт", "notfall": "экстренный случай", "krankenhaus": "больница" },
+            "de-pl": { "hallo": "czesc", "ja": "tak", "nein": "nie", "danke": "dziekuje", "bitte": "prosze", "schmerzen": "bol", "termin": "wizyta", "arzt": "lekarz", "fieber": "goraczka", "medikament": "lek", "rezept": "recepta", "notfall": "naglowy wypadek", "krankenhaus": "szpital" },
+            "en-de": { "hello": "hallo", "yes": "ja", "no": "nein", "thank you": "danke", "please": "bitte", "pain": "schmerzen", "appointment": "termin", "doctor": "arzt", "fever": "fieber", "medication": "medikament", "prescription": "rezept", "emergency": "notfall", "hospital": "krankenhaus" },
+            "en-tr": { "hello": "merhaba", "yes": "evet", "no": "hayir", "thank you": "tesekkurler", "please": "lutfen", "pain": "agri", "appointment": "randevu", "doctor": "doktor", "fever": "ates", "medication": "ilac", "emergency": "acil" },
+            "en-ar": { "hello": "مرحبا", "yes": "نعم", "no": "لا", "thank you": "شكرا", "please": "من فضلك", "pain": "ألم", "appointment": "موعد", "doctor": "طبيب", "fever": "حمى", "medication": "دواء" },
+            "en-ru": { "hello": "привет", "yes": "да", "no": "нет", "thank you": "спасибо", "please": "пожалуйста", "pain": "боль", "appointment": "запись", "doctor": "врач", "fever": "температура", "medication": "лекарство" },
+            "en-pl": { "hello": "czesc", "yes": "tak", "no": "nie", "thank you": "dziekuje", "please": "prosze", "pain": "bol", "appointment": "wizyta", "doctor": "lekarz", "fever": "goraczka", "medication": "lek" },
+            "tr-de": { "merhaba": "hallo", "evet": "ja", "hayir": "nein", "tesekkurler": "danke", "lutfen": "bitte", "agri": "schmerzen", "randevu": "termin", "doktor": "arzt", "ates": "fieber", "ilac": "medikament", "recete": "rezept" },
+            "ar-de": { "مرحبا": "hallo", "نعم": "ja", "لا": "nein", "شكرا": "danke", "ألم": "schmerzen", "موعد": "termin", "طبيب": "arzt", "حمى": "fieber", "دواء": "medikament", "وصفة": "rezept" },
+            "ru-de": { "привет": "hallo", "да": "ja", "нет": "nein", "спасибо": "danke", "боль": "schmerzen", "запись": "termin", "врач": "arzt", "температура": "fieber", "лекарство": "medikament", "рецепт": "rezept" },
+            "pl-de": { "czesc": "hallo", "tak": "ja", "nie": "nein", "dziekuje": "danke", "bol": "schmerzen", "wizyta": "termin", "lekarz": "arzt", "goraczka": "fieber", "lek": "medikament", "recepta": "rezept" }
         };
         var key = von + "-" + nach;
         var woerter = eingabe.toLowerCase().split(" ");
@@ -2808,7 +2945,7 @@ function standortleitungBoardRendern() {
         k.querySelector(".btn-pause").addEventListener("click", function () { standortleitungStatusSetzen(sl.id, "pause"); standortleitungBoardRendern(); acdLiveStatusRendern(); });
         k.querySelector(".btn-offline").addEventListener("click", function () { standortleitungStatusSetzen(sl.id, "offline"); standortleitungBoardRendern(); acdLiveStatusRendern(); });
         k.querySelector(".btn-bearbeiten").addEventListener("click", function () { slBearbeiten(sl); });
-        k.querySelector(".btn-loeschen").addEventListener("click", function () { if (!confirm(rl + " loeschen?")) return; standortleitungLoeschenApi(sl.id); standortleitungBoardRendern(); acdLiveStatusRendern(); });
+        k.querySelector(".btn-loeschen").addEventListener("click", function () { if (!aktionPruefen("standort_konfigurieren", "Keine Berechtigung zum Loeschen.")) return; if (!confirm(rl + " loeschen?")) return; standortleitungLoeschenApi(sl.id); standortleitungBoardRendern(); acdLiveStatusRendern(); });
         container.appendChild(k);
     });
 }
@@ -2852,6 +2989,12 @@ if (typeof module !== "undefined" && module.exports) {
         aktiveAnrufeAktualisieren, anrufprotokollAktualisieren,
         sprachAusgabe, callflowDaten: callflowDaten,
         medPhrases: medPhrases, uebersetzen: typeof uebersetzen !== "undefined" ? uebersetzen : function () {},
+        // Rollenkontrolle
+        ROLLEN_AKTIONEN: ROLLEN_AKTIONEN,
+        aktuelleRolleHolen: aktuelleRolleHolen,
+        darfAktion: darfAktion,
+        aktionPruefen: aktionPruefen,
+        llmAnfrageMitRetry: llmAnfrageMitRetry,
     };
 }
 
@@ -2866,9 +3009,10 @@ if (typeof window !== "undefined") {
 /** Init (nur im Browser) */
 if (typeof document !== "undefined") {
     document.addEventListener("DOMContentLoaded", function () {
-        // Guard: Auth-Check auf allen Seiten ausser guard.html
+        // Guard: Auth-Check auf allen Seiten ausser guard.html und portal.html
         var istGuardSeite = window.location.pathname.indexOf("guard.html") !== -1;
-        if (!istGuardSeite) {
+        var istPortalSeite = window.location.pathname.indexOf("portal.html") !== -1;
+        if (!istGuardSeite && !istPortalSeite) {
             var auth = guardPruefen();
             if (!auth) return; // Redirect zur Guard-Seite
             guardInfoAnzeigen();

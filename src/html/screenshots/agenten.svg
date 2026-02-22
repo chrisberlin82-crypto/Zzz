@@ -1,0 +1,200 @@
+<svg width="800" height="500" viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    </style>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="500" fill="#f1f5f9"/>
+
+  <!-- Sidebar -->
+  <rect x="0" y="0" width="180" height="500" fill="#1e293b"/>
+  <text x="20" y="32" fill="#ffffff" font-size="16" font-weight="bold">MED Rezeption</text>
+  <line x1="10" y1="44" x2="170" y2="44" stroke="#334155" stroke-width="1"/>
+
+  <rect x="8" y="52" width="164" height="32" rx="6" fill="#334155"/>
+  <text x="38" y="73" fill="#94a3b8" font-size="12">Dashboard</text>
+  <circle cx="24" cy="68" r="3" fill="#94a3b8"/>
+
+  <rect x="8" y="90" width="164" height="32" rx="6" fill="transparent"/>
+  <text x="38" y="111" fill="#94a3b8" font-size="12">Voicebot</text>
+  <circle cx="24" cy="106" r="3" fill="#94a3b8"/>
+
+  <rect x="8" y="128" width="164" height="32" rx="6" fill="#2563eb"/>
+  <text x="38" y="149" fill="#ffffff" font-size="12" font-weight="600">Agenten</text>
+  <circle cx="24" cy="144" r="3" fill="#ffffff"/>
+
+  <rect x="8" y="166" width="164" height="32" rx="6" fill="transparent"/>
+  <text x="38" y="187" fill="#94a3b8" font-size="12">Softphone</text>
+  <circle cx="24" cy="182" r="3" fill="#94a3b8"/>
+
+  <rect x="8" y="204" width="164" height="32" rx="6" fill="transparent"/>
+  <text x="38" y="225" fill="#94a3b8" font-size="12">Uebersetzer</text>
+  <circle cx="24" cy="220" r="3" fill="#94a3b8"/>
+
+  <rect x="8" y="242" width="164" height="32" rx="6" fill="transparent"/>
+  <text x="38" y="263" fill="#94a3b8" font-size="12">Benutzer</text>
+  <circle cx="24" cy="258" r="3" fill="#94a3b8"/>
+
+  <!-- Topbar -->
+  <rect x="180" y="0" width="620" height="48" fill="#ffffff"/>
+  <line x1="180" y1="48" x2="800" y2="48" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="196" y="30" fill="#1e293b" font-size="16" font-weight="bold">Agenten &amp; Telefonie</text>
+  <rect x="360" y="16" width="64" height="22" rx="11" fill="#fef2f2" stroke="#fecaca" stroke-width="1"/>
+  <text x="392" y="31" fill="#ef4444" font-size="10" font-weight="600" text-anchor="middle">0 online</text>
+
+  <!-- Card: Agent anlegen -->
+  <rect x="192" y="60" width="290" height="200" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="204" y="84" fill="#1e293b" font-size="13" font-weight="bold">Agent anlegen</text>
+  <line x1="192" y1="94" x2="482" y2="94" stroke="#e2e8f0" stroke-width="1"/>
+
+  <!-- Name -->
+  <text x="204" y="114" fill="#64748b" font-size="10" font-weight="600">Name</text>
+  <rect x="204" y="118" width="266" height="26" rx="4" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="212" y="135" fill="#94a3b8" font-size="10">Agent Name eingeben...</text>
+
+  <!-- Nebenstelle -->
+  <text x="204" y="158" fill="#64748b" font-size="10" font-weight="600">Nebenstelle</text>
+  <rect x="204" y="162" width="126" height="26" rx="4" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="212" y="179" fill="#94a3b8" font-size="10">z.B. 101</text>
+
+  <!-- SIP-Passwort -->
+  <text x="344" y="158" fill="#64748b" font-size="10" font-weight="600">SIP-Passwort</text>
+  <rect x="344" y="162" width="126" height="26" rx="4" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="352" y="179" fill="#94a3b8" font-size="10">********</text>
+
+  <!-- Rolle -->
+  <text x="204" y="202" fill="#64748b" font-size="10" font-weight="600">Rolle</text>
+  <rect x="204" y="206" width="126" height="26" rx="4" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="212" y="223" fill="#1e293b" font-size="10">Empfang</text>
+  <text x="314" y="223" fill="#94a3b8" font-size="9">v</text>
+
+  <!-- Warteschlange -->
+  <text x="344" y="202" fill="#64748b" font-size="10" font-weight="600">Warteschlange</text>
+  <rect x="344" y="206" width="126" height="26" rx="4" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="352" y="223" fill="#1e293b" font-size="10">Allgemein</text>
+  <text x="454" y="223" fill="#94a3b8" font-size="9">v</text>
+
+  <!-- Speichern Button -->
+  <rect x="380" y="240" width="90" height="28" rx="6" fill="#2563eb"/>
+  <text x="425" y="258" fill="#ffffff" font-size="11" font-weight="600" text-anchor="middle">Speichern</text>
+
+  <!-- Card: Agenten-Board -->
+  <rect x="490" y="60" width="298" height="200" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="502" y="84" fill="#1e293b" font-size="13" font-weight="bold">Agenten-Board</text>
+  <line x1="490" y1="94" x2="788" y2="94" stroke="#e2e8f0" stroke-width="1"/>
+
+  <!-- Agent cards grid -->
+  <!-- Agent 1 -->
+  <rect x="502" y="104" width="130" height="42" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+  <circle cx="518" cy="121" r="5" fill="#ef4444"/>
+  <text x="530" y="118" fill="#1e293b" font-size="10" font-weight="600">Dr. Mueller</text>
+  <text x="530" y="132" fill="#94a3b8" font-size="9">Ext. 101 - offline</text>
+
+  <!-- Agent 2 -->
+  <rect x="644" y="104" width="130" height="42" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+  <circle cx="660" cy="121" r="5" fill="#ef4444"/>
+  <text x="672" y="118" fill="#1e293b" font-size="10" font-weight="600">Fr. Schmidt</text>
+  <text x="672" y="132" fill="#94a3b8" font-size="9">Ext. 102 - offline</text>
+
+  <!-- Agent 3 -->
+  <rect x="502" y="154" width="130" height="42" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+  <circle cx="518" cy="171" r="5" fill="#f59e0b"/>
+  <text x="530" y="168" fill="#1e293b" font-size="10" font-weight="600">Hr. Weber</text>
+  <text x="530" y="182" fill="#94a3b8" font-size="9">Ext. 103 - Pause</text>
+
+  <!-- Agent 4 -->
+  <rect x="644" y="154" width="130" height="42" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+  <circle cx="660" cy="171" r="5" fill="#ef4444"/>
+  <text x="672" y="168" fill="#1e293b" font-size="10" font-weight="600">Fr. Fischer</text>
+  <text x="672" y="182" fill="#94a3b8" font-size="9">Ext. 104 - offline</text>
+
+  <!-- Agent 5 -->
+  <rect x="502" y="204" width="130" height="42" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+  <circle cx="518" cy="221" r="5" fill="#ef4444"/>
+  <text x="530" y="218" fill="#1e293b" font-size="10" font-weight="600">Hr. Braun</text>
+  <text x="530" y="232" fill="#94a3b8" font-size="9">Ext. 105 - offline</text>
+
+  <!-- Agent 6 -->
+  <rect x="644" y="204" width="130" height="42" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+  <circle cx="660" cy="221" r="5" fill="#22c55e"/>
+  <text x="672" y="218" fill="#1e293b" font-size="10" font-weight="600">Fr. Klein</text>
+  <text x="672" y="232" fill="#94a3b8" font-size="9">Ext. 106 - online</text>
+
+  <!-- Card: Aktive Anrufe -->
+  <rect x="192" y="272" width="200" height="216" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="204" y="296" fill="#1e293b" font-size="13" font-weight="bold">Aktive Anrufe</text>
+  <line x1="192" y1="306" x2="392" y2="306" stroke="#e2e8f0" stroke-width="1"/>
+
+  <rect x="204" y="316" width="176" height="36" rx="6" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
+  <circle cx="216" cy="330" r="4" fill="#22c55e"/>
+  <text x="226" y="328" fill="#1e293b" font-size="10" font-weight="600">Ext. 101 -> Extern</text>
+  <text x="226" y="342" fill="#64748b" font-size="9">02:34 - Aktiv</text>
+
+  <rect x="204" y="360" width="176" height="36" rx="6" fill="#fefce8" stroke="#fef08a" stroke-width="1"/>
+  <circle cx="216" cy="374" r="4" fill="#f59e0b"/>
+  <text x="226" y="372" fill="#1e293b" font-size="10" font-weight="600">Voicebot -> Warteschl.</text>
+  <text x="226" y="386" fill="#64748b" font-size="9">01:12 - Warten</text>
+
+  <text x="260" y="420" fill="#94a3b8" font-size="10" text-anchor="middle">Keine weiteren Anrufe</text>
+
+  <!-- Card: Anrufprotokoll -->
+  <rect x="400" y="272" width="388" height="216" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="412" y="296" fill="#1e293b" font-size="13" font-weight="bold">Anrufprotokoll</text>
+  <line x1="400" y1="306" x2="788" y2="306" stroke="#e2e8f0" stroke-width="1"/>
+
+  <!-- Table header -->
+  <rect x="400" y="306" width="388" height="24" fill="#f8fafc"/>
+  <text x="412" y="322" fill="#64748b" font-size="9" font-weight="600">Zeit</text>
+  <text x="470" y="322" fill="#64748b" font-size="9" font-weight="600">Von</text>
+  <text x="564" y="322" fill="#64748b" font-size="9" font-weight="600">An</text>
+  <text x="640" y="322" fill="#64748b" font-size="9" font-weight="600">Dauer</text>
+  <text x="700" y="322" fill="#64748b" font-size="9" font-weight="600">Status</text>
+
+  <!-- Row 1 -->
+  <text x="412" y="348" fill="#1e293b" font-size="10">09:14</text>
+  <text x="470" y="348" fill="#1e293b" font-size="10">+49 176 123...</text>
+  <text x="564" y="348" fill="#1e293b" font-size="10">Ext. 101</text>
+  <text x="640" y="348" fill="#1e293b" font-size="10">3:24</text>
+  <rect x="700" y="338" width="56" height="16" rx="8" fill="#dcfce7"/>
+  <text x="728" y="349" fill="#22c55e" font-size="9" text-anchor="middle">Beendet</text>
+  <line x1="412" y1="356" x2="776" y2="356" stroke="#f1f5f9" stroke-width="1"/>
+
+  <!-- Row 2 -->
+  <text x="412" y="372" fill="#1e293b" font-size="10">09:08</text>
+  <text x="470" y="372" fill="#1e293b" font-size="10">+49 151 987...</text>
+  <text x="564" y="372" fill="#1e293b" font-size="10">Voicebot</text>
+  <text x="640" y="372" fill="#1e293b" font-size="10">1:47</text>
+  <rect x="700" y="362" width="56" height="16" rx="8" fill="#dcfce7"/>
+  <text x="728" y="373" fill="#22c55e" font-size="9" text-anchor="middle">Beendet</text>
+  <line x1="412" y1="380" x2="776" y2="380" stroke="#f1f5f9" stroke-width="1"/>
+
+  <!-- Row 3 -->
+  <text x="412" y="396" fill="#1e293b" font-size="10">08:55</text>
+  <text x="470" y="396" fill="#1e293b" font-size="10">+49 170 555...</text>
+  <text x="564" y="396" fill="#1e293b" font-size="10">Ext. 102</text>
+  <text x="640" y="396" fill="#1e293b" font-size="10">0:52</text>
+  <rect x="700" y="386" width="56" height="16" rx="8" fill="#fef3c7"/>
+  <text x="728" y="397" fill="#f59e0b" font-size="9" text-anchor="middle">Verpasst</text>
+  <line x1="412" y1="404" x2="776" y2="404" stroke="#f1f5f9" stroke-width="1"/>
+
+  <!-- Row 4 -->
+  <text x="412" y="420" fill="#1e293b" font-size="10">08:41</text>
+  <text x="470" y="420" fill="#1e293b" font-size="10">+49 162 444...</text>
+  <text x="564" y="420" fill="#1e293b" font-size="10">Ext. 103</text>
+  <text x="640" y="420" fill="#1e293b" font-size="10">2:11</text>
+  <rect x="700" y="410" width="56" height="16" rx="8" fill="#dcfce7"/>
+  <text x="728" y="421" fill="#22c55e" font-size="9" text-anchor="middle">Beendet</text>
+  <line x1="412" y1="428" x2="776" y2="428" stroke="#f1f5f9" stroke-width="1"/>
+
+  <!-- Row 5 -->
+  <text x="412" y="444" fill="#1e293b" font-size="10">08:30</text>
+  <text x="470" y="444" fill="#1e293b" font-size="10">+49 155 333...</text>
+  <text x="564" y="444" fill="#1e293b" font-size="10">Voicebot</text>
+  <text x="640" y="444" fill="#1e293b" font-size="10">0:18</text>
+  <rect x="700" y="434" width="56" height="16" rx="8" fill="#fef2f2"/>
+  <text x="728" y="445" fill="#ef4444" font-size="9" text-anchor="middle">Abbruch</text>
+
+  <text x="594" y="476" fill="#2563eb" font-size="10" text-anchor="middle" font-weight="600">Vollstaendiges Protokoll anzeigen</text>
+</svg>
