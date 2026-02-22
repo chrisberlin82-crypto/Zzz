@@ -1659,3 +1659,44 @@ section + section, .card + .card {
         font-size: 0.75rem;
     }
 }
+
+/* ===== Dashboard Rollen-Buttons ===== */
+.dashboard-rolle-btn {
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius);
+    border: 2px solid var(--border);
+    background: var(--card);
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.dashboard-rolle-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+.dashboard-rolle-btn.aktiv {
+    border-color: var(--primary);
+    background: var(--primary);
+    color: #fff;
+}
+
+/* ===== Wissensdatenbank + Ansagen Styles ===== */
+.kb-artikel-card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    background: var(--card);
+}
+.ans-liste-item {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    background: var(--card);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}

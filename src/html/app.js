@@ -131,7 +131,7 @@ function guardAbmelden() {
 }
 
 // Rollen-Konfiguration: Wer darf was sehen
-var ALLE_SEITEN = ["index.html","patienten.html","aerzte.html","termine.html","wartezimmer.html","agenten.html","softphone.html","voicebot.html","callflow.html","uebersetzung.html","standort.html","benutzer.html"];
+var ALLE_SEITEN = ["index.html","patienten.html","aerzte.html","termine.html","wartezimmer.html","wissensdatenbank.html","ansagen.html","agenten.html","softphone.html","voicebot.html","callflow.html","uebersetzung.html","standort.html","benutzer.html"];
 var ROLLEN = {
     admin:           { label: "Admin",           icon: "fa-user-gear",   farbe: "#dc2626", seiten: ALLE_SEITEN },
     standortleitung: { label: "Standortleitung", icon: "fa-building",    farbe: "#7c3aed", seiten: ALLE_SEITEN },
@@ -1572,11 +1572,14 @@ function stopAnrufTimer() {
     if (timerDiv) timerDiv.textContent = "00:00";
 }
 
-// ===== Dashboard =====
+// ===== Dashboard (rollenbasiert) =====
 
 function initDashboard() {
     var container = document.getElementById("dashboard");
     if (!container) return;
+
+    var auth = JSON.parse(sessionStorage.getItem("med_guard_auth") || localStorage.getItem("med_guard_auth") || "{}");
+    var rolle = (auth.rolle || "admin").toLowerCase();
 
     var patienten = dbLaden("patienten");
     var aerzte = dbLaden("aerzte");
@@ -1586,15 +1589,172 @@ function initDashboard() {
     var agenten = dbLaden("agenten");
     var onlineAgenten = agenten.filter(function (a) { return a.status === "online"; });
 
-    // Stat Cards
-    var el = function (id, val) { var e = document.getElementById(id); if (e) e.textContent = val; };
-    el("stat-patienten", patienten.length);
-    el("stat-aerzte", aerzte.length);
-    el("stat-termine-heute", termine.length);
-    el("stat-wartezimmer", wartezimmer.length);
-    el("stat-agenten-online", onlineAgenten.length);
+    // Rollenbasiertes HTML generieren
+    var html = "";
 
-    // Heutige Termine
+    // Rollen-Tabs (nur wenn Admin)
+    if (rolle === "admin" || rolle === "administrator") {
+        html += '<div style="display:flex;gap:0.5rem;margin-bottom:1.5rem;flex-wrap:wrap">' +
+            '<button type="button" class="dashboard-rolle-btn aktiv" onclick="dashboardRolleWechseln(\'admin\',this)"><i class="fa-solid fa-user-gear"></i> Admin</button>' +
+            '<button type="button" class="dashboard-rolle-btn" onclick="dashboardRolleWechseln(\'teamleitung\',this)"><i class="fa-solid fa-users-gear"></i> Teamleiter</button>' +
+            '<button type="button" class="dashboard-rolle-btn" onclick="dashboardRolleWechseln(\'standortleitung\',this)"><i class="fa-solid fa-building"></i> Standortleitung</button>' +
+            '<button type="button" class="dashboard-rolle-btn" onclick="dashboardRolleWechseln(\'agent\',this)"><i class="fa-solid fa-headset"></i> Agent</button>' +
+            '</div>';
+    }
+
+    // ===== ADMIN Dashboard =====
+    html += '<div id="dash-admin" class="dash-view">';
+    html += '<h2 style="margin-bottom:1rem"><i class="fa-solid fa-chart-pie"></i> Admin Dashboard</h2>';
+
+    // KPI-Zeile
+    html += '<div class="stat-grid" style="margin-bottom:1.5rem">' +
+        statCard("fa-users", "bg-primary", patienten.length, "Patienten") +
+        statCard("fa-user-doctor", "bg-success", aerzte.length, "Aerzte") +
+        statCard("fa-calendar-check", "bg-warning", termine.length, "Termine heute") +
+        statCard("fa-couch", "bg-info", wartezimmer.length, "Wartezimmer") +
+        statCard("fa-headset", "bg-primary", onlineAgenten.length + "/" + agenten.length, "Agenten online") +
+        '</div>';
+
+    // Callcenter Live
+    html += '<div class="card" style="margin-bottom:1.5rem"><div style="padding:1rem"><h3 style="margin-bottom:1rem"><i class="fa-solid fa-signal"></i> Callcenter Live</h3>';
+    html += '<div class="stat-grid">' +
+        statCard("fa-phone-volume", "bg-success", "2", "Aktive Gespraeche") +
+        statCard("fa-clock", "bg-warning", "1", "In Warteschleife") +
+        statCard("fa-headset", "bg-primary", onlineAgenten.length, "Agenten frei") +
+        statCard("fa-robot", "bg-info", "3", "Via Voicebot") +
+        '</div>';
+
+    // Agenten-Status
+    html += '<h3 style="margin:1rem 0 0.75rem"><i class="fa-solid fa-users"></i> Agenten-Status</h3>';
+    html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:0.75rem">';
+    agenten.forEach(function (a) {
+        var farbe = a.status === "online" ? "#22c55e" : a.status === "pause" ? "#f59e0b" : "#94a3b8";
+        var statusText = a.status === "online" ? "Verfuegbar" : a.status === "pause" ? "Pause" : "Offline";
+        html += '<div style="border:1px solid var(--border);border-radius:var(--radius);padding:0.75rem;background:var(--card);display:flex;align-items:center;gap:0.75rem">' +
+            '<div style="width:36px;height:36px;border-radius:8px;background:' + farbe + ';display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:0.8rem">' + escapeHtml((a.name || "?").substring(0, 2).toUpperCase()) + '</div>' +
+            '<div><div style="font-weight:600;font-size:0.85rem">' + escapeHtml(a.name) + '</div>' +
+            '<div style="font-size:0.75rem;color:' + farbe + '">' + statusText + '</div></div>' +
+            '</div>';
+    });
+    html += '</div></div></div>';
+
+    // Termine + Wartezimmer nebeneinander
+    html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem">';
+    html += '<div class="card"><div style="padding:1rem"><h3><i class="fa-solid fa-calendar-days"></i> Heutige Termine</h3>' +
+        '<table style="width:100%;margin-top:0.75rem;font-size:0.85rem"><thead><tr><th>Uhrzeit</th><th>Patient</th><th>Arzt</th><th>Status</th></tr></thead><tbody id="dashboard-termine"></tbody></table></div></div>';
+    html += '<div class="card"><div style="padding:1rem"><h3><i class="fa-solid fa-couch"></i> Wartezimmer</h3><div id="dashboard-wartezimmer" style="margin-top:0.75rem"></div></div></div>';
+    html += '</div>';
+    html += '</div>'; // end dash-admin
+
+    // ===== TEAMLEITER Dashboard =====
+    html += '<div id="dash-teamleitung" class="dash-view" style="display:none">';
+    html += '<h2 style="margin-bottom:1rem"><i class="fa-solid fa-users-gear"></i> Teamleiter Dashboard</h2>';
+    html += '<div class="stat-grid" style="margin-bottom:1.5rem">' +
+        statCard("fa-phone", "bg-primary", "47", "Anrufe heute") +
+        statCard("fa-check", "bg-success", "42", "Angenommen") +
+        statCard("fa-phone-slash", "bg-danger", "5", "Verpasst") +
+        statCard("fa-clock", "bg-warning", "12s", "Avg. Wartezeit") +
+        statCard("fa-headset", "bg-info", onlineAgenten.length + "/" + agenten.length, "Agenten") +
+        '</div>';
+
+    // Agenten-Tabelle
+    html += '<div class="card" style="margin-bottom:1.5rem"><div style="padding:1rem"><h3><i class="fa-solid fa-headset"></i> Agenten Uebersicht</h3>' +
+        '<table style="width:100%;margin-top:0.75rem;font-size:0.85rem"><thead><tr><th>Agent</th><th>Status</th><th>Queue</th><th>Anrufe</th><th>Avg. Dauer</th></tr></thead><tbody>';
+    agenten.forEach(function (a) {
+        var statusKlasse = a.status === "online" ? "status-bestaetigt" : a.status === "pause" ? "status-geplant" : "status-abgesagt";
+        html += '<tr><td>' + escapeHtml(a.name) + '</td>' +
+            '<td><span class="status-badge ' + statusKlasse + '">' + escapeHtml(a.status) + '</span></td>' +
+            '<td>' + escapeHtml(a.warteschlange || "Alle") + '</td>' +
+            '<td>' + Math.floor(Math.random() * 15 + 3) + '</td>' +
+            '<td>' + Math.floor(Math.random() * 200 + 60) + 's</td></tr>';
+    });
+    html += '</tbody></table></div></div>';
+
+    // Hotlines
+    html += '<div class="card"><div style="padding:1rem"><h3><i class="fa-solid fa-tower-broadcast"></i> Hotline Live</h3>' +
+        '<div style="margin-top:0.75rem">';
+    [{ name: "Allgemein", auslastung: 65 }, { name: "Notfall", auslastung: 20 }, { name: "Rezept", auslastung: 45 }].forEach(function (h) {
+        var farbe = h.auslastung > 80 ? "var(--danger)" : h.auslastung > 50 ? "var(--warning)" : "var(--success)";
+        html += '<div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.5rem">' +
+            '<span style="min-width:80px;font-size:0.85rem;font-weight:600">' + h.name + '</span>' +
+            '<div style="flex:1;background:var(--bg);border-radius:4px;height:8px;overflow:hidden"><div style="width:' + h.auslastung + '%;height:100%;background:' + farbe + ';border-radius:4px"></div></div>' +
+            '<span style="font-size:0.8rem;font-weight:700;min-width:35px;text-align:right">' + h.auslastung + '%</span></div>';
+    });
+    html += '</div></div></div>';
+    html += '</div>'; // end dash-teamleitung
+
+    // ===== STANDORTLEITUNG Dashboard =====
+    html += '<div id="dash-standortleitung" class="dash-view" style="display:none">';
+    html += '<h2 style="margin-bottom:1rem"><i class="fa-solid fa-building"></i> Standortleitung Dashboard</h2>';
+    html += '<div style="background:#fffbeb;border:1px solid #fbbf24;border-radius:var(--radius);padding:0.75rem;margin-bottom:1rem;font-size:0.85rem;color:#92400e"><i class="fa-solid fa-location-dot"></i> Ansicht: <strong>Praxis Dr. Schmidt</strong> &mdash; Nur Daten dieses Standorts</div>';
+    html += '<div class="stat-grid" style="margin-bottom:1.5rem">' +
+        statCard("fa-phone", "bg-primary", "28", "Anrufe heute") +
+        statCard("fa-calendar-check", "bg-success", termine.length, "Termine heute") +
+        statCard("fa-envelope", "bg-warning", "7", "Nachrichten offen") +
+        statCard("fa-headset", "bg-info", onlineAgenten.length, "Agenten online") +
+        '</div>';
+
+    // Postfach
+    html += '<div class="card" style="margin-bottom:1.5rem"><div style="padding:1rem"><h3><i class="fa-solid fa-inbox"></i> Postfach</h3>' +
+        '<div style="margin-top:0.75rem">';
+    [{ von: "Lisa M.", anliegen: "Terminanfrage Hr. Weber", status: "offen", zeit: "14:23" },
+     { von: "Tom R.", anliegen: "Rezeptbestellung Ibuprofen", status: "erledigt", zeit: "13:45" },
+     { von: "Voicebot", anliegen: "Rueckrufwunsch Fr. Klein", status: "offen", zeit: "12:10" }
+    ].forEach(function (n) {
+        var badge = n.status === "erledigt" ? 'background:#dcfce7;color:#15803d' : 'background:#fef3c7;color:#92400e';
+        html += '<div style="display:flex;align-items:center;gap:0.75rem;padding:0.5rem 0;border-bottom:1px solid var(--border)">' +
+            '<div style="flex:1"><strong style="font-size:0.85rem">' + escapeHtml(n.anliegen) + '</strong>' +
+            '<div style="font-size:0.75rem;color:var(--text-muted)">Von: ' + escapeHtml(n.von) + ' · ' + n.zeit + '</div></div>' +
+            '<span style="padding:0.2rem 0.5rem;border-radius:4px;font-size:0.7rem;font-weight:600;' + badge + '">' + escapeHtml(n.status) + '</span></div>';
+    });
+    html += '</div></div></div>';
+    html += '</div>'; // end dash-standortleitung
+
+    // ===== AGENT Dashboard =====
+    html += '<div id="dash-agent" class="dash-view" style="display:none">';
+    html += '<h2 style="margin-bottom:1rem"><i class="fa-solid fa-headset"></i> Agent Dashboard</h2>';
+    html += '<div class="stat-grid" style="margin-bottom:1.5rem">' +
+        statCard("fa-phone", "bg-primary", "12", "Meine Anrufe heute") +
+        statCard("fa-check", "bg-success", "11", "Angenommen") +
+        statCard("fa-clock", "bg-warning", "8s", "Avg. Wartezeit") +
+        statCard("fa-stopwatch", "bg-info", "3:42", "Avg. Gespraechsdauer") +
+        '</div>';
+
+    // Meine Tickets
+    html += '<div class="card" style="margin-bottom:1.5rem"><div style="padding:1rem"><h3><i class="fa-solid fa-ticket"></i> Meine offenen Tickets</h3>' +
+        '<div style="margin-top:0.75rem">';
+    [{ patient: "Hr. Weber", anliegen: "Terminverschiebung", prio: "mittel" },
+     { patient: "Fr. Klein", anliegen: "Rueckruf gewuenscht", prio: "hoch" },
+     { patient: "Hr. Braun", anliegen: "Rezeptanfrage", prio: "niedrig" }
+    ].forEach(function (t) {
+        var prioFarbe = t.prio === "hoch" ? "var(--danger)" : t.prio === "mittel" ? "var(--warning)" : "var(--success)";
+        html += '<div style="display:flex;align-items:center;gap:0.75rem;padding:0.5rem 0;border-bottom:1px solid var(--border)">' +
+            '<div style="width:8px;height:8px;border-radius:50%;background:' + prioFarbe + '"></div>' +
+            '<div style="flex:1"><strong style="font-size:0.85rem">' + escapeHtml(t.patient) + '</strong>' +
+            '<div style="font-size:0.75rem;color:var(--text-muted)">' + escapeHtml(t.anliegen) + '</div></div>' +
+            '<span style="font-size:0.75rem;color:var(--text-muted)">' + escapeHtml(t.prio) + '</span></div>';
+    });
+    html += '</div></div></div>';
+
+    // Status-Buttons
+    html += '<div class="card"><div style="padding:1rem"><h3><i class="fa-solid fa-circle-dot"></i> Mein Status</h3>' +
+        '<div style="display:flex;gap:0.75rem;margin-top:0.75rem">' +
+        '<button type="button" style="flex:1;padding:0.75rem;border-radius:var(--radius);border:2px solid #22c55e;background:#f0fdf4;color:#15803d;font-weight:700;cursor:pointer"><i class="fa-solid fa-circle" style="color:#22c55e"></i> Verfuegbar</button>' +
+        '<button type="button" style="flex:1;padding:0.75rem;border-radius:var(--radius);border:2px solid #f59e0b;background:#fffbeb;color:#92400e;font-weight:700;cursor:pointer"><i class="fa-solid fa-pause"></i> Pause</button>' +
+        '<button type="button" style="flex:1;padding:0.75rem;border-radius:var(--radius);border:2px solid #ef4444;background:#fef2f2;color:#dc2626;font-weight:700;cursor:pointer"><i class="fa-solid fa-circle-xmark"></i> Offline</button>' +
+        '</div></div></div>';
+    html += '</div>'; // end dash-agent
+
+    container.innerHTML = html;
+
+    // Titel setzen
+    var titel = document.getElementById("dashboard-titel");
+    if (titel) {
+        var rollenTitel = { admin: "Admin Dashboard", administrator: "Admin Dashboard", teamleitung: "Teamleiter Dashboard", standortleitung: "Standortleitung", agent: "Agent Dashboard" };
+        titel.textContent = rollenTitel[rolle] || "Dashboard";
+    }
+
+    // Tabellen fuellen (Admin)
     var termineListe = document.getElementById("dashboard-termine");
     if (termineListe) {
         termineListe.innerHTML = "";
@@ -1614,7 +1774,6 @@ function initDashboard() {
         }
     }
 
-    // Wartezimmer Quick View
     var warteListe = document.getElementById("dashboard-wartezimmer");
     if (warteListe) {
         warteListe.innerHTML = "";
@@ -1631,6 +1790,38 @@ function initDashboard() {
             });
         }
     }
+
+    // Richtige View basierend auf Rolle zeigen
+    if (rolle !== "admin" && rolle !== "administrator") {
+        var map = { teamleitung: "dash-teamleitung", standortleitung: "dash-standortleitung", agent: "dash-agent" };
+        var target = map[rolle];
+        if (target) {
+            document.querySelectorAll(".dash-view").forEach(function (v) { v.style.display = "none"; });
+            var el = document.getElementById(target);
+            if (el) el.style.display = "block";
+        }
+    }
+}
+
+function statCard(icon, bg, wert, label) {
+    return '<div class="stat-card"><div class="stat-icon ' + bg + '"><i class="fa-solid ' + icon + '"></i></div>' +
+        '<div class="stat-content"><div class="stat-value">' + wert + '</div><div class="stat-label">' + escapeHtml(label) + '</div></div></div>';
+}
+
+// Dashboard-Rolle wechseln (nur Admin kann das)
+if (typeof window !== "undefined") {
+    window.dashboardRolleWechseln = function (rolle, btn) {
+        document.querySelectorAll(".dashboard-rolle-btn").forEach(function (b) { b.classList.remove("aktiv"); });
+        if (btn) btn.classList.add("aktiv");
+        document.querySelectorAll(".dash-view").forEach(function (v) { v.style.display = "none"; });
+        var map = { admin: "dash-admin", teamleitung: "dash-teamleitung", standortleitung: "dash-standortleitung", agent: "dash-agent" };
+        var target = map[rolle] || "dash-admin";
+        var el = document.getElementById(target);
+        if (el) el.style.display = "block";
+        var titel = document.getElementById("dashboard-titel");
+        var rollenTitel = { admin: "Admin Dashboard", teamleitung: "Teamleiter Dashboard", standortleitung: "Standortleitung", agent: "Agent Dashboard" };
+        if (titel) titel.textContent = rollenTitel[rolle] || "Dashboard";
+    };
 }
 
 // ===== Chat-Widget =====
@@ -2867,6 +3058,377 @@ if (typeof module !== "undefined" && module.exports) {
     };
 }
 
+// ===== Wissensdatenbank =====
+
+function initWissensdatenbank() {
+    var btnNeu = document.getElementById("btn-kb-neu");
+    var formBereich = document.getElementById("kb-formular-bereich");
+    var formular = document.getElementById("kb-formular");
+    var btnAbbrechen = document.getElementById("btn-kb-abbrechen");
+    var suchfeld = document.getElementById("kb-suche");
+    var katFilter = document.getElementById("kb-kategorie-filter");
+    if (!btnNeu) return;
+
+    var editId = null;
+
+    function kbLaden() { return dbLaden("kb_artikel"); }
+    function kbSpeichern(d) { dbSpeichern("kb_artikel", d); }
+
+    function kbDemoLaden() {
+        var artikel = kbLaden();
+        if (artikel.length > 0) return;
+        var demo = [
+            { id: "kb1", titel: "Wie funktioniert die Terminbuchung?", kategorie: "termine", tags: "termin, buchung, online", inhalt: "Patienten koennen ueber das Web-Widget oder telefonisch Termine buchen. Der Voicebot erkennt Terminwuensche automatisch und schlaegt freie Slots vor.", botAntwort: "Sie koennen Termine online ueber unsere Webseite oder telefonisch vereinbaren. Moechten Sie einen Termin buchen?", aufrufe: 142, botNutzungen: 89, erstellt: new Date().toISOString() },
+            { id: "kb2", titel: "Rezept bestellen - Ablauf", kategorie: "patienten", tags: "rezept, bestellung, wiederholung", inhalt: "Patienten koennen Folgerezepte telefonisch oder per Widget bestellen. Der Agent prueft die Patientenakte und leitet die Bestellung an den Arzt weiter.", botAntwort: "Fuer ein Folgerezept benoetigen wir Ihren Namen und die Versichertennummer. Welches Medikament benoetigen Sie?", aufrufe: 98, botNutzungen: 45, erstellt: new Date().toISOString() },
+            { id: "kb3", titel: "Notfallnummern und Bereitschaft", kategorie: "notfall", tags: "notfall, bereitschaft, notruf", inhalt: "Bei lebensbedrohlichen Notfaellen: 112 anrufen. Aerztlicher Bereitschaftsdienst: 116117. Unsere Praxis ist Mo-Fr 8-18 Uhr erreichbar.", botAntwort: "Bei einem Notfall rufen Sie bitte sofort die 112 an. Den aerztlichen Bereitschaftsdienst erreichen Sie unter 116117.", aufrufe: 67, botNutzungen: 34, erstellt: new Date().toISOString() },
+            { id: "kb4", titel: "ACD-Modi erklaert", kategorie: "telefonie", tags: "acd, telefonie, modus, bot", inhalt: "Es gibt 3 ACD-Modi: 1) Alle annehmen - Telefon klingelt bei allen Agenten. 2) Klingeln dann Bot - Nach X Klingeln uebernimmt der Voicebot. 3) Bot direkt - Voicebot nimmt sofort entgegen.", botAntwort: "Unsere Telefonanlage verteilt Anrufe automatisch an freie Mitarbeiter. Bei Wartezeiten uebernimmt unser KI-Assistent.", aufrufe: 23, botNutzungen: 5, erstellt: new Date().toISOString() },
+            { id: "kb5", titel: "Oeffnungszeiten und Sprechstunden", kategorie: "praxisablauf", tags: "oeffnungszeiten, sprechstunde, zeiten", inhalt: "Mo-Fr: 8:00-12:00 und 14:00-18:00 Uhr. Mittwochnachmittag geschlossen. Samstag nach Vereinbarung.", botAntwort: "Unsere Sprechzeiten sind Montag bis Freitag von 8 bis 12 und 14 bis 18 Uhr. Mittwochnachmittag ist geschlossen.", aufrufe: 234, botNutzungen: 178, erstellt: new Date().toISOString() },
+            { id: "kb6", titel: "Abrechnung und Privatpatienten", kategorie: "abrechnung", tags: "abrechnung, privat, kasse, igel", inhalt: "Kassenpatienten: Chipkarte mitbringen. Privatpatienten: Rechnung nach GOAe. IGeL-Leistungen werden vor Behandlung besprochen und schriftlich vereinbart.", botAntwort: "Bitte bringen Sie Ihre Versichertenkarte mit. Fuer Fragen zur Abrechnung verbinde ich Sie gerne mit der Rezeption.", aufrufe: 56, botNutzungen: 12, erstellt: new Date().toISOString() }
+        ];
+        kbSpeichern(demo);
+    }
+
+    var KAT_LABELS = { telefonie: "Telefonie & ACD", patienten: "Patienten", termine: "Termine", abrechnung: "Abrechnung", praxisablauf: "Praxisablauf", notfall: "Notfall", technik: "Technik" };
+    var KAT_FARBEN = { telefonie: "#0891b2", patienten: "#7c3aed", termine: "#2563eb", abrechnung: "#059669", praxisablauf: "#d97706", notfall: "#dc2626", technik: "#64748b" };
+
+    function statsAktualisieren() {
+        var artikel = kbLaden();
+        var el = function (id, val) { var e = document.getElementById(id); if (e) e.textContent = val; };
+        el("kb-stat-artikel", artikel.length);
+        var kats = {};
+        var aufrufe = 0;
+        var bot = 0;
+        artikel.forEach(function (a) {
+            kats[a.kategorie] = true;
+            aufrufe += (a.aufrufe || 0);
+            bot += (a.botNutzungen || 0);
+        });
+        el("kb-stat-kategorien", Object.keys(kats).length);
+        el("kb-stat-aufrufe", aufrufe);
+        el("kb-stat-bot", bot);
+    }
+
+    function artikelAnzeigen() {
+        var liste = document.getElementById("kb-artikel-liste");
+        if (!liste) return;
+        var artikel = kbLaden();
+        var suche = (suchfeld ? suchfeld.value.toLowerCase() : "");
+        var kat = (katFilter ? katFilter.value : "");
+
+        var gefiltert = artikel.filter(function (a) {
+            if (kat && a.kategorie !== kat) return false;
+            if (suche) {
+                var text = (a.titel + " " + a.tags + " " + a.inhalt).toLowerCase();
+                if (text.indexOf(suche) === -1) return false;
+            }
+            return true;
+        });
+
+        if (gefiltert.length === 0) {
+            liste.innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:2rem">Keine Artikel gefunden.</p>';
+            return;
+        }
+
+        liste.innerHTML = "";
+        gefiltert.forEach(function (a) {
+            var farbe = KAT_FARBEN[a.kategorie] || "#64748b";
+            var katLabel = KAT_LABELS[a.kategorie] || a.kategorie;
+            var div = document.createElement("div");
+            div.style.cssText = "border:1px solid var(--border);border-radius:var(--radius);padding:1rem;margin-bottom:0.75rem;background:var(--card);";
+            div.innerHTML =
+                '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.5rem">' +
+                    '<div><strong style="font-size:0.95rem">' + escapeHtml(a.titel) + '</strong>' +
+                    '<div style="margin-top:0.3rem"><span style="display:inline-block;padding:0.15rem 0.5rem;border-radius:4px;font-size:0.75rem;color:#fff;background:' + farbe + '">' + escapeHtml(katLabel) + '</span>' +
+                    (a.tags ? ' <span style="font-size:0.75rem;color:var(--text-muted)">' + escapeHtml(a.tags) + '</span>' : '') +
+                    '</div></div>' +
+                    '<div style="display:flex;gap:0.3rem">' +
+                        '<button type="button" onclick="kbBearbeiten(\'' + a.id + '\')" style="padding:0.3rem 0.6rem;border-radius:4px;background:var(--primary);color:#fff;border:none;font-size:0.75rem;cursor:pointer"><i class="fa-solid fa-pen"></i></button>' +
+                        '<button type="button" onclick="kbLoeschen(\'' + a.id + '\')" style="padding:0.3rem 0.6rem;border-radius:4px;background:var(--danger);color:#fff;border:none;font-size:0.75rem;cursor:pointer"><i class="fa-solid fa-trash"></i></button>' +
+                    '</div>' +
+                '</div>' +
+                '<p style="font-size:0.85rem;color:var(--text-muted);line-height:1.5;margin-bottom:0.5rem">' + escapeHtml(a.inhalt).substring(0, 200) + (a.inhalt.length > 200 ? '...' : '') + '</p>' +
+                (a.botAntwort ? '<div style="background:var(--bg);padding:0.5rem 0.75rem;border-radius:6px;font-size:0.8rem;border-left:3px solid var(--primary)"><i class="fa-solid fa-robot" style="color:var(--primary)"></i> <strong>Bot:</strong> ' + escapeHtml(a.botAntwort).substring(0, 120) + '</div>' : '') +
+                '<div style="display:flex;gap:1rem;margin-top:0.5rem;font-size:0.75rem;color:var(--text-muted)">' +
+                    '<span><i class="fa-solid fa-eye"></i> ' + (a.aufrufe || 0) + ' Aufrufe</span>' +
+                    '<span><i class="fa-solid fa-robot"></i> ' + (a.botNutzungen || 0) + ' Bot-Antworten</span>' +
+                '</div>';
+            liste.appendChild(div);
+        });
+        statsAktualisieren();
+    }
+
+    btnNeu.addEventListener("click", function () {
+        editId = null;
+        document.getElementById("kb-formular-titel").innerHTML = '<i class="fa-solid fa-pen"></i> Neuen Artikel erstellen';
+        formular.reset();
+        formBereich.hidden = false;
+    });
+
+    btnAbbrechen.addEventListener("click", function () {
+        formBereich.hidden = true;
+        editId = null;
+    });
+
+    formular.addEventListener("submit", function (e) {
+        e.preventDefault();
+        var artikel = kbLaden();
+        var obj = {
+            id: editId || "kb" + Date.now(),
+            titel: document.getElementById("kb-titel").value.trim(),
+            kategorie: document.getElementById("kb-kat").value,
+            tags: document.getElementById("kb-tags").value.trim(),
+            inhalt: document.getElementById("kb-inhalt").value.trim(),
+            botAntwort: document.getElementById("kb-bot-antwort").value.trim(),
+            aufrufe: 0,
+            botNutzungen: 0,
+            erstellt: new Date().toISOString()
+        };
+        if (editId) {
+            for (var i = 0; i < artikel.length; i++) {
+                if (artikel[i].id === editId) {
+                    obj.aufrufe = artikel[i].aufrufe;
+                    obj.botNutzungen = artikel[i].botNutzungen;
+                    artikel[i] = obj;
+                    break;
+                }
+            }
+        } else {
+            artikel.push(obj);
+        }
+        kbSpeichern(artikel);
+        formBereich.hidden = true;
+        editId = null;
+        artikelAnzeigen();
+        var erfolg = document.getElementById("kb-erfolg");
+        if (erfolg) {
+            erfolg.textContent = "Artikel gespeichert!";
+            erfolg.hidden = false;
+            setTimeout(function () { erfolg.hidden = true; }, 2000);
+        }
+    });
+
+    if (suchfeld) suchfeld.addEventListener("input", artikelAnzeigen);
+    if (katFilter) katFilter.addEventListener("change", artikelAnzeigen);
+
+    window.kbBearbeiten = function (id) {
+        var artikel = kbLaden();
+        var a = artikel.find(function (x) { return x.id === id; });
+        if (!a) return;
+        editId = id;
+        document.getElementById("kb-formular-titel").innerHTML = '<i class="fa-solid fa-pen"></i> Artikel bearbeiten';
+        document.getElementById("kb-titel").value = a.titel;
+        document.getElementById("kb-kat").value = a.kategorie;
+        document.getElementById("kb-tags").value = a.tags || "";
+        document.getElementById("kb-inhalt").value = a.inhalt;
+        document.getElementById("kb-bot-antwort").value = a.botAntwort || "";
+        formBereich.hidden = false;
+    };
+
+    window.kbLoeschen = function (id) {
+        if (!confirm("Artikel wirklich loeschen?")) return;
+        var artikel = kbLaden().filter(function (a) { return a.id !== id; });
+        kbSpeichern(artikel);
+        artikelAnzeigen();
+    };
+
+    kbDemoLaden();
+    artikelAnzeigen();
+}
+
+// ===== Ansagen Generator =====
+
+function initAnsagenGenerator() {
+    var formular = document.getElementById("ans-formular");
+    var vorlagenContainer = document.getElementById("ans-vorlagen");
+    var vorschauBereich = document.getElementById("ans-vorschau-bereich");
+    var filterTyp = document.getElementById("ans-filter-typ");
+    if (!formular) return;
+
+    function ansLaden() { return dbLaden("ansagen"); }
+    function ansSpeichern(d) { dbSpeichern("ansagen", d); }
+
+    var VORLAGEN = {
+        begruessung_standard: "Willkommen in der Praxis {praxis_name}. Wie koennen wir Ihnen helfen?",
+        warteschleife_standard: "Bitte haben Sie einen Moment Geduld. Ihr Anruf ist uns wichtig und wird in Kuerze entgegengenommen.",
+        ab_standard: "Sie haben die Praxis {praxis_name} erreicht. Leider koennen wir Ihren Anruf gerade nicht entgegennehmen. Bitte hinterlassen Sie eine Nachricht nach dem Signalton.",
+        oeffnungszeiten_standard: "Unsere Sprechzeiten sind {oeffnungszeiten}. Ausserhalb der Sprechzeiten wenden Sie sich bitte an den aerztlichen Bereitschaftsdienst unter 116117.",
+        notfall_standard: "Bei einem medizinischen Notfall rufen Sie bitte umgehend die 112 an. Den aerztlichen Bereitschaftsdienst erreichen Sie unter 116117.",
+        ivr_menue: "Willkommen bei {praxis_name}. Fuer einen Termin sagen Sie bitte Termin. Fuer ein Rezept sagen Sie Rezept. Fuer alle anderen Anliegen bleiben Sie bitte in der Leitung.",
+        feiertag_standard: "Frohe Feiertage! Unsere Praxis ist am {datum} geschlossen. In dringenden Faellen wenden Sie sich an den aerztlichen Bereitschaftsdienst unter 116117."
+    };
+
+    var TYP_LABELS = { begruessung: "Begruessung", warteschleife: "Warteschleife", abwesenheit: "Abwesenheit", oeffnungszeiten: "Oeffnungszeiten", notfall: "Notfall", feiertag: "Feiertag", weiterleitung: "Weiterleitung", ivr_menue: "IVR-Menue" };
+    var TYP_ICONS = { begruessung: "fa-hand-wave", warteschleife: "fa-clock", abwesenheit: "fa-voicemail", oeffnungszeiten: "fa-clock", notfall: "fa-triangle-exclamation", feiertag: "fa-tree", weiterleitung: "fa-arrow-right", ivr_menue: "fa-list-ol" };
+
+    function demoDatenLaden() {
+        var ansagen = ansLaden();
+        if (ansagen.length > 0) return;
+        var demo = [
+            { id: "ans1", name: "Hauptbegruessung", typ: "begruessung", sprache: "de", stimme: "anna", tempo: "normal", text: "Willkommen in der Praxis Dr. Schmidt. Wie koennen wir Ihnen helfen?", aktiv: true, dauer: 4, erstellt: new Date().toISOString() },
+            { id: "ans2", name: "Warteschleife Standard", typ: "warteschleife", sprache: "de", stimme: "sophie", tempo: "langsam", text: "Bitte haben Sie einen Moment Geduld. Ihr Anruf wird in Kuerze entgegengenommen. Sie koennen auch gerne eine Nachricht hinterlassen.", aktiv: true, dauer: 7, erstellt: new Date().toISOString() },
+            { id: "ans3", name: "Notfall-Ansage", typ: "notfall", sprache: "de", stimme: "thomas", tempo: "normal", text: "Bei einem Notfall rufen Sie bitte sofort die 112 an. Den aerztlichen Bereitschaftsdienst erreichen Sie unter 116117.", aktiv: true, dauer: 6, erstellt: new Date().toISOString() },
+            { id: "ans4", name: "Oeffnungszeiten", typ: "oeffnungszeiten", sprache: "de", stimme: "anna", tempo: "normal", text: "Unsere Sprechzeiten sind Montag bis Freitag 8 bis 12 Uhr und 14 bis 18 Uhr. Mittwochnachmittag geschlossen.", aktiv: true, dauer: 5, erstellt: new Date().toISOString() },
+            { id: "ans5", name: "Welcome English", typ: "begruessung", sprache: "en", stimme: "anna", tempo: "normal", text: "Welcome to Dr. Schmidt's practice. How can we help you?", aktiv: false, dauer: 3, erstellt: new Date().toISOString() }
+        ];
+        ansSpeichern(demo);
+    }
+
+    function statsAktualisieren() {
+        var ansagen = ansLaden();
+        var el = function (id, val) { var e = document.getElementById(id); if (e) e.textContent = val; };
+        el("ans-stat-gesamt", ansagen.length);
+        el("ans-stat-aktiv", ansagen.filter(function (a) { return a.aktiv; }).length);
+    }
+
+    function listeAnzeigen() {
+        var container = document.getElementById("ans-liste");
+        if (!container) return;
+        var ansagen = ansLaden();
+        var filter = filterTyp ? filterTyp.value : "";
+        if (filter) {
+            ansagen = ansagen.filter(function (a) { return a.typ === filter; });
+        }
+
+        if (ansagen.length === 0) {
+            container.innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:2rem">Keine Ansagen vorhanden.</p>';
+            return;
+        }
+
+        container.innerHTML = "";
+        ansagen.forEach(function (a) {
+            var icon = TYP_ICONS[a.typ] || "fa-volume-high";
+            var typLabel = TYP_LABELS[a.typ] || a.typ;
+            var spracheLabel = { de: "Deutsch", en: "English", tr: "Tuerkisch", ar: "Arabisch", ru: "Russisch", fr: "Franzoesisch" }[a.sprache] || a.sprache;
+            var div = document.createElement("div");
+            div.style.cssText = "border:1px solid var(--border);border-radius:var(--radius);padding:1rem;margin-bottom:0.75rem;background:var(--card);display:flex;align-items:center;gap:1rem;";
+            div.innerHTML =
+                '<div style="width:40px;height:40px;border-radius:8px;background:' + (a.aktiv ? 'var(--primary)' : 'var(--text-muted)') + ';display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="fa-solid ' + icon + '" style="color:#fff"></i></div>' +
+                '<div style="flex:1;min-width:0">' +
+                    '<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.25rem">' +
+                        '<strong style="font-size:0.9rem">' + escapeHtml(a.name) + '</strong>' +
+                        '<span style="padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;background:' + (a.aktiv ? '#dcfce7;color:#15803d' : '#f1f5f9;color:#94a3b8') + '">' + (a.aktiv ? 'Aktiv' : 'Inaktiv') + '</span>' +
+                    '</div>' +
+                    '<div style="font-size:0.8rem;color:var(--text-muted)">' + escapeHtml(typLabel) + ' · ' + escapeHtml(spracheLabel) + ' · ' + escapeHtml(a.stimme) + ' · ~' + (a.dauer || 0) + 's</div>' +
+                    '<div style="font-size:0.8rem;color:var(--text-muted);margin-top:0.2rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escapeHtml(a.text).substring(0, 80) + '...</div>' +
+                '</div>' +
+                '<div style="display:flex;gap:0.3rem;flex-shrink:0">' +
+                    '<button type="button" onclick="ansVorhoeren(\'' + a.id + '\')" style="padding:0.4rem 0.6rem;border-radius:6px;background:var(--info);color:#fff;border:none;font-size:0.75rem;cursor:pointer" title="Vorhoeren"><i class="fa-solid fa-play"></i></button>' +
+                    '<button type="button" onclick="ansAktivToggle(\'' + a.id + '\')" style="padding:0.4rem 0.6rem;border-radius:6px;background:' + (a.aktiv ? 'var(--warning)' : 'var(--success)') + ';color:#fff;border:none;font-size:0.75rem;cursor:pointer" title="' + (a.aktiv ? 'Deaktivieren' : 'Aktivieren') + '"><i class="fa-solid ' + (a.aktiv ? 'fa-pause' : 'fa-check') + '"></i></button>' +
+                    '<button type="button" onclick="ansLoeschen(\'' + a.id + '\')" style="padding:0.4rem 0.6rem;border-radius:6px;background:var(--danger);color:#fff;border:none;font-size:0.75rem;cursor:pointer" title="Loeschen"><i class="fa-solid fa-trash"></i></button>' +
+                '</div>';
+            container.appendChild(div);
+        });
+        statsAktualisieren();
+    }
+
+    // Vorlagen-Buttons
+    if (vorlagenContainer) {
+        vorlagenContainer.addEventListener("click", function (e) {
+            var btn = e.target.closest("[data-vorlage]");
+            if (!btn) return;
+            var key = btn.dataset.vorlage;
+            if (VORLAGEN[key]) {
+                document.getElementById("ans-text").value = VORLAGEN[key];
+            }
+        });
+    }
+
+    // KI-Text generieren (Demo)
+    var btnGen = document.getElementById("btn-ans-generieren");
+    if (btnGen) {
+        btnGen.addEventListener("click", function () {
+            var typ = document.getElementById("ans-typ").value;
+            var text = VORLAGEN[typ + "_standard"] || VORLAGEN.begruessung_standard;
+            document.getElementById("ans-text").value = text;
+        });
+    }
+
+    // Vorhoeren (Web Speech API)
+    var btnVorhoeren = document.getElementById("btn-ans-vorhoeren");
+    if (btnVorhoeren) {
+        btnVorhoeren.addEventListener("click", function () {
+            var text = document.getElementById("ans-text").value;
+            if (!text) return;
+            if (typeof speechSynthesis !== "undefined") {
+                speechSynthesis.cancel();
+                var utt = new SpeechSynthesisUtterance(text);
+                utt.lang = document.getElementById("ans-sprache").value === "de" ? "de-DE" : document.getElementById("ans-sprache").value;
+                var tempo = document.getElementById("ans-tempo").value;
+                utt.rate = tempo === "langsam" ? 0.8 : tempo === "schnell" ? 1.3 : 1.0;
+                speechSynthesis.speak(utt);
+                vorschauBereich.hidden = false;
+                var stimme = document.getElementById("ans-stimme");
+                document.getElementById("ans-stimme-label").textContent = stimme.options[stimme.selectedIndex].text;
+            }
+        });
+    }
+
+    // Formular speichern
+    formular.addEventListener("submit", function (e) {
+        e.preventDefault();
+        var ansagen = ansLaden();
+        var text = document.getElementById("ans-text").value.trim();
+        if (!text) return;
+        var obj = {
+            id: "ans" + Date.now(),
+            name: document.getElementById("ans-name").value.trim() || "Neue Ansage",
+            typ: document.getElementById("ans-typ").value,
+            sprache: document.getElementById("ans-sprache").value,
+            stimme: document.getElementById("ans-stimme").value,
+            tempo: document.getElementById("ans-tempo").value,
+            text: text,
+            aktiv: true,
+            dauer: Math.ceil(text.split(/\s+/).length / 2.5),
+            erstellt: new Date().toISOString()
+        };
+        ansagen.push(obj);
+        ansSpeichern(ansagen);
+        formular.reset();
+        vorschauBereich.hidden = true;
+        listeAnzeigen();
+        var erfolg = document.getElementById("ans-erfolg");
+        if (erfolg) {
+            erfolg.textContent = "Ansage gespeichert!";
+            erfolg.hidden = false;
+            setTimeout(function () { erfolg.hidden = true; }, 2000);
+        }
+    });
+
+    if (filterTyp) filterTyp.addEventListener("change", listeAnzeigen);
+
+    window.ansVorhoeren = function (id) {
+        var a = ansLaden().find(function (x) { return x.id === id; });
+        if (!a || typeof speechSynthesis === "undefined") return;
+        speechSynthesis.cancel();
+        var utt = new SpeechSynthesisUtterance(a.text);
+        utt.lang = a.sprache === "de" ? "de-DE" : a.sprache;
+        utt.rate = a.tempo === "langsam" ? 0.8 : a.tempo === "schnell" ? 1.3 : 1.0;
+        speechSynthesis.speak(utt);
+    };
+
+    window.ansAktivToggle = function (id) {
+        var ansagen = ansLaden();
+        for (var i = 0; i < ansagen.length; i++) {
+            if (ansagen[i].id === id) {
+                ansagen[i].aktiv = !ansagen[i].aktiv;
+                break;
+            }
+        }
+        ansSpeichern(ansagen);
+        listeAnzeigen();
+    };
+
+    window.ansLoeschen = function (id) {
+        if (!confirm("Ansage wirklich loeschen?")) return;
+        var ansagen = ansLaden().filter(function (a) { return a.id !== id; });
+        ansSpeichern(ansagen);
+        listeAnzeigen();
+    };
+
+    demoDatenLaden();
+    listeAnzeigen();
+}
+
 // Globale Funktionen fuer onclick-Handler im HTML
 if (typeof window !== "undefined") {
     window.callflowPropsSpeichern = callflowPropsSpeichern;
@@ -2905,6 +3467,8 @@ if (typeof document !== "undefined") {
         initVoicebotSeite();
         initUebersetzer();
         initStandortSeite();
+        initWissensdatenbank();
+        initAnsagenGenerator();
         initDemoReset();
 
         // Mobile Sidebar Toggle

@@ -16,6 +16,8 @@
             <a href="aerzte.html"><i class="fa-solid fa-user-doctor nav-icon"></i> Aerzte</a>
             <a href="termine.html"><i class="fa-solid fa-calendar-days nav-icon"></i> Termine</a>
             <a href="wartezimmer.html"><i class="fa-solid fa-couch nav-icon"></i> Wartezimmer</a>
+            <a href="wissensdatenbank.html"><i class="fa-solid fa-book nav-icon"></i> Wissensdatenbank</a>
+            <a href="ansagen.html"><i class="fa-solid fa-tower-broadcast nav-icon"></i> Ansagen Generator</a>
             <a href="standort.html"><i class="fa-solid fa-building nav-icon"></i> Standort &amp; ACD</a>
             <a href="callflow.html"><i class="fa-solid fa-diagram-project nav-icon"></i> Callflow Editor</a>
             <a href="voicebot.html"><i class="fa-solid fa-robot nav-icon"></i> Voicebot</a>
@@ -29,62 +31,11 @@
     <div class="main-wrapper">
         <header class="topbar">
             <button id="menu-toggle" type="button"><i class="fa-solid fa-bars"></i></button>
-            <h1>Dashboard</h1>
+            <h1 id="dashboard-titel">Dashboard</h1>
             <div class="topbar-right">Demo-Modus</div>
         </header>
         <main id="dashboard">
-            <div class="stat-grid">
-                <div class="stat-card">
-                    <div class="stat-icon bg-primary"><i class="fa-solid fa-users"></i></div>
-                    <div class="stat-content">
-                        <div class="stat-value" id="stat-patienten">0</div>
-                        <div class="stat-label">Patienten</div>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon bg-success"><i class="fa-solid fa-user-doctor"></i></div>
-                    <div class="stat-content">
-                        <div class="stat-value" id="stat-aerzte">0</div>
-                        <div class="stat-label">Aerzte</div>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon bg-warning"><i class="fa-solid fa-calendar-days"></i></div>
-                    <div class="stat-content">
-                        <div class="stat-value" id="stat-termine-heute">0</div>
-                        <div class="stat-label">Termine heute</div>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon bg-danger"><i class="fa-solid fa-couch"></i></div>
-                    <div class="stat-content">
-                        <div class="stat-value" id="stat-wartezimmer">0</div>
-                        <div class="stat-label">Wartezimmer</div>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon bg-info"><i class="fa-solid fa-headset"></i></div>
-                    <div class="stat-content">
-                        <div class="stat-value" id="stat-agenten-online">0</div>
-                        <div class="stat-label">Agenten online</div>
-                    </div>
-                </div>
-            </div>
-            <div class="dashboard-grid">
-                <div class="card">
-                    <h2>Heutige Termine</h2>
-                    <div class="table-container">
-                        <table>
-                            <thead><tr><th>Uhrzeit</th><th>Patient</th><th>Arzt</th><th>Status</th></tr></thead>
-                            <tbody id="dashboard-termine"></tbody>
-                        </table>
-                    </div>
-                </div>
-                <div class="card">
-                    <h2>Wartezimmer</h2>
-                    <div id="dashboard-wartezimmer"></div>
-                </div>
-            </div>
+            <!-- Wird rollenbasiert von app.js befuellt -->
         </main>
     </div>
     <button id="chat-toggle" type="button"><i class="fa-solid fa-comment-dots"></i></button>
