@@ -1,6 +1,9 @@
 # MED Rezeption - Demo auf Comnivox Webspace (Root)
 # Deployed direkt in public_html/ -> erreichbar unter comnivox.com
 
+# Startseite: Portal (PIN-Eingabe) statt index.html
+DirectoryIndex portal.html index.html
+
 # PHP als API-Backend
 RewriteEngine On
 RewriteBase /
