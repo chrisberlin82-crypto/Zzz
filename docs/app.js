@@ -2852,6 +2852,16 @@ if (typeof module !== "undefined" && module.exports) {
         aktiveAnrufeAktualisieren, anrufprotokollAktualisieren,
         sprachAusgabe, callflowDaten: callflowDaten,
         medPhrases: medPhrases, uebersetzen: typeof uebersetzen !== "undefined" ? uebersetzen : function () {},
+        WOCHENTAGE: WOCHENTAGE, ACD_MODUS_LABEL: ACD_MODUS_LABEL,
+        standardZeitplan: standardZeitplan,
+        acdConfigLaden: acdConfigLaden, acdConfigSpeichern: acdConfigSpeichern,
+        zeitplanLaden: zeitplanLaden, zeitplanSpeichern: zeitplanSpeichern,
+        standortleitungLaden: standortleitungLaden,
+        standortleitungSpeichernApi: standortleitungSpeichernApi,
+        standortleitungAktualisierenApi: standortleitungAktualisierenApi,
+        standortleitungLoeschenApi: standortleitungLoeschenApi,
+        standortleitungStatusSetzen: standortleitungStatusSetzen,
+        aktuellenAcdModusErmitteln: aktuellenAcdModusErmitteln,
     };
 }
 
