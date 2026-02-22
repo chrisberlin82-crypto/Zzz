@@ -2,17 +2,17 @@
 # ============================================================
 # Deploy Demo auf Comnivox Webspace (Unterverzeichnis)
 # ============================================================
-# WICHTIG: Die bestehende Homepage auf comnivox.de bleibt
+# WICHTIG: Die bestehende Homepage auf comnivox.com bleibt
 # unangetastet! Die Demo wird in ein Unterverzeichnis deployed.
 #
 # Verwendung:
 #   ./deploy-comnivox.sh user@comnivox-server
 #
 # Beispiel:
-#   ./deploy-comnivox.sh chris@comnivox.de
+#   ./deploy-comnivox.sh chris@comnivox.com
 #
 # Die Demo ist dann erreichbar unter:
-#   https://comnivox.de/app/
+#   https://comnivox.com/app/
 #
 # Voraussetzungen:
 #   - SSH-Zugang zum Webspace
@@ -22,7 +22,7 @@
 
 set -e
 
-SSH_HOST="${1:?Fehler: SSH-Host angeben (z.B. chris@comnivox.de)}"
+SSH_HOST="${1:?Fehler: SSH-Host angeben (z.B. chris@comnivox.com)}"
 
 # Unterverzeichnis auf dem Webspace (aendern falls gewuenscht)
 APP_SUBDIR="app"
@@ -36,7 +36,7 @@ REMOTE_DIR="public_html/${APP_SUBDIR}"
 echo "=== MED Rezeption Demo-Deployment auf Comnivox ==="
 echo "Host:   $SSH_HOST"
 echo "Pfad:   $REMOTE_DIR"
-echo "URL:    https://comnivox.de/${APP_SUBDIR}/"
+echo "URL:    https://comnivox.com/${APP_SUBDIR}/"
 echo ""
 echo "SICHERHEIT: Die bestehende Homepage wird NICHT veraendert."
 echo "             Nur das Unterverzeichnis /${APP_SUBDIR}/ wird aktualisiert."
@@ -80,8 +80,8 @@ rsync -avz --delete \
 echo ""
 echo "=== Demo erfolgreich deployed ==="
 echo ""
-echo "URL:  https://comnivox.de/${APP_SUBDIR}/"
+echo "URL:  https://comnivox.com/${APP_SUBDIR}/"
 echo ""
 echo "Hinweis: Die Demo laeuft komplett im Browser (localStorage)."
 echo "         Das PHP-Backend ist optional fuer Server-seitige Daten."
-echo "         Die Homepage auf comnivox.de wurde NICHT veraendert."
+echo "         Die Homepage auf comnivox.com wurde NICHT veraendert."
