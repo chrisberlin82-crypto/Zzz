@@ -182,29 +182,13 @@ function llmAnfrageMitRetry(method, url, body, onSuccess, onError) {
 // ===== Guard / Auth Check =====
 
 function guardPruefen() {
-    // Portal-Check: Zutrittscode muss eingegeben sein
-    if (!sessionStorage.getItem("med_portal_ok")) {
-        window.location.href = "portal.html";
-        return null;
-    }
-    var auth = sessionStorage.getItem("med_guard_auth") || localStorage.getItem("med_guard_auth");
-    if (!auth) {
-        window.location.href = "guard.html";
-        return null;
-    }
-    try {
-        return JSON.parse(auth);
-    } catch (e) {
-        window.location.href = "guard.html";
-        return null;
-    }
+    // Auth deaktiviert - direkter Zugang als Admin
+    return { benutzer: "admin", name: "Administrator", rolle: "admin", zeitpunkt: new Date().toISOString() };
 }
 
 function guardAbmelden() {
-    sessionStorage.removeItem("med_guard_auth");
-    localStorage.removeItem("med_guard_auth");
-    sessionStorage.removeItem("med_portal_ok");
-    window.location.href = "portal.html";
+    // Auth deaktiviert - Abmelden laedt Seite einfach neu
+    window.location.reload();
 }
 
 // Rollen-Konfiguration: Wer darf was sehen
@@ -216,10 +200,8 @@ var ROLLEN = {
 };
 
 function guardInfoAnzeigen() {
-    var auth = sessionStorage.getItem("med_guard_auth") || localStorage.getItem("med_guard_auth");
-    if (!auth) return;
     try {
-        var daten = JSON.parse(auth);
+        var daten = guardPruefen();
         var rolle = ROLLEN[daten.rolle] || ROLLEN.agent;
 
         // Topbar: Name + Rolle + Abmelden
@@ -296,12 +278,7 @@ var ROLLEN_AKTIONEN = {
 };
 
 function aktuelleRolleHolen() {
-    var auth = sessionStorage.getItem("med_guard_auth") || localStorage.getItem("med_guard_auth");
-    if (!auth) return null;
-    try {
-        var daten = JSON.parse(auth);
-        return daten.rolle || null;
-    } catch (e) { return null; }
+    return "admin";
 }
 
 function darfAktion(aktionKey) {

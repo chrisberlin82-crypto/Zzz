@@ -159,11 +159,9 @@
         // Aendern Sie diesen Code fuer Ihre Installation:
         var ZUTRITTS_CODE = "483926";
 
-        // Bereits freigeschaltet?
-        if (sessionStorage.getItem("med_portal_ok")) {
-            window.location.href = "guard.html";
-            return;
-        }
+        // Auth deaktiviert - direkt zum Dashboard
+        window.location.href = "index.html";
+        return;
 
         var felder = document.querySelectorAll(".portal-pin");
         var statusEl = document.getElementById("portal-status");
