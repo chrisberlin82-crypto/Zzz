@@ -214,11 +214,11 @@
                     </div>
                     <div class="form-group">
                         <label for="guard-benutzer"><i class="fa-solid fa-user"></i> Benutzername</label>
-                        <input type="text" id="guard-benutzer" value="admin" autocomplete="username" required>
+                        <input type="text" id="guard-benutzer" autocomplete="username" required>
                     </div>
                     <div class="form-group">
                         <label for="guard-passwort"><i class="fa-solid fa-lock"></i> Passwort</label>
-                        <input type="password" id="guard-passwort" value="demo" autocomplete="current-password" required>
+                        <input type="password" id="guard-passwort" autocomplete="current-password" required>
                     </div>
                     <div class="form-row-inline">
                         <label><input type="checkbox" id="guard-merken" checked> Angemeldet bleiben</label>
@@ -226,16 +226,10 @@
                     <button type="submit" class="btn-guard"><i class="fa-solid fa-right-to-bracket"></i> Anmelden</button>
                 </form>
             </div>
-            <div class="guard-footer">
-                <div class="guard-demo-info">
-                    <strong><i class="fa-solid fa-info-circle"></i> Demo-Zugangsdaten</strong>
-                    <code>admin</code> / <code>teamleitung</code> / <code>standortleitung</code> / <code>agent</code><br>
-                    Passwort: <code>demo</code>
-                </div>
-            </div>
+            <div class="guard-footer"></div>
         </div>
     </div>
-    <div class="guard-easter" style="position:fixed;bottom:3rem;left:0;right:0;text-align:center;color:#67e8f9;font-size:0.75rem;font-style:italic;opacity:0.7;z-index:1;letter-spacing:0.03em;">niemand hat die absicht einen ai agent zu entwickeln</div>
+    <div style="position:fixed;bottom:2.5rem;left:0;right:0;text-align:center;color:#67e8f9;font-size:1.05rem;font-style:italic;font-weight:600;letter-spacing:0.06em;z-index:1;text-shadow:0 0 20px rgba(103,232,249,0.4)">&bdquo;niemand hat die absicht einen ai agent zu entwickeln&ldquo;</div>
     <div class="guard-version">MED Rezeption v1.0 MVP</div>
     <script>
     (function() {
@@ -246,9 +240,17 @@
             "agent":           { passwort: "demo", name: "Lisa Meier",       rolle: "agent" }
         };
 
-        // Auth deaktiviert - direkt zum Dashboard
-        window.location.href = "index.html";
-        return;
+        // Check ob Portal-Zutrittscode eingegeben wurde
+        if (!sessionStorage.getItem("med_portal_ok")) {
+            window.location.href = "portal.html";
+            return;
+        }
+
+        // Check ob bereits eingeloggt
+        if (sessionStorage.getItem("med_guard_auth") || localStorage.getItem("med_guard_auth")) {
+            window.location.href = "index.html";
+            return;
+        }
 
         var form = document.getElementById("guard-form");
         form.addEventListener("submit", function(e) {
