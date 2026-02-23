@@ -1,7 +1,9 @@
 """Tests fuer die Flask Web-App (inkl. CRUD)."""
 
 import pytest
+from unittest.mock import patch
 from src.python.app import app
+from src.python import llm_service
 
 
 @pytest.fixture
@@ -238,3 +240,120 @@ class TestStatischeDateien:
         resp = client.get("/benutzer.html")
         assert resp.status_code == 200
         assert b"Benutzer anlegen" in resp.data
+
+
+class TestApiLlmStatus:
+    def test_status_ohne_key(self, client):
+        with patch.object(llm_service, "LLM_API_KEY", ""):
+            resp = client.get("/api/llm/status")
+            assert resp.status_code == 200
+            daten = resp.get_json()
+            assert daten["verfuegbar"] is False
+            assert daten["modus"] == "demo"
+            assert "branchen" in daten
+
+    def test_status_mit_key(self, client):
+        with patch.object(llm_service, "LLM_API_KEY", "test-key"):
+            resp = client.get("/api/llm/status")
+            daten = resp.get_json()
+            assert daten["verfuegbar"] is True
+            assert daten["modus"] == "live"
+
+
+class TestApiBranchen:
+    def test_branchen_liste(self, client):
+        resp = client.get("/api/branchen")
+        assert resp.status_code == 200
+        daten = resp.get_json()
+        assert "arztpraxis" in daten
+        assert "anwalt" in daten
+
+
+class TestApiChat:
+    def test_chat_ohne_text(self, client):
+        resp = client.post("/api/chat", json={})
+        assert resp.status_code == 400
+
+    def test_chat_ohne_llm(self, client):
+        with patch.object(llm_service, "LLM_API_KEY", ""):
+            resp = client.post("/api/chat", json={"text": "Hallo"})
+            assert resp.status_code == 503
+
+    def test_chat_erfolgreich(self, client):
+        with patch.object(llm_service, "LLM_API_KEY", "test-key"), \
+             patch("src.python.llm_service._llm_anfrage", return_value={"antwort": "Guten Tag!"}):
+            resp = client.post("/api/chat", json={"text": "Hallo"})
+            assert resp.status_code == 200
+            assert resp.get_json()["antwort"] == "Guten Tag!"
+
+    def test_chat_mit_verlauf(self, client):
+        with patch.object(llm_service, "LLM_API_KEY", "test-key"), \
+             patch("src.python.llm_service._llm_anfrage", return_value={"antwort": "OK"}):
+            resp = client.post("/api/chat", json={
+                "text": "Weiter",
+                "verlauf": [{"role": "user", "content": "Hallo"}],
+                "branche": "zahnarzt",
+                "firmen_name": "TestPraxis",
+            })
+            assert resp.status_code == 200
+
+    def test_chat_llm_fehler(self, client):
+        with patch.object(llm_service, "LLM_API_KEY", "test-key"), \
+             patch("src.python.llm_service._llm_anfrage", return_value={"fehler": "Timeout"}):
+            resp = client.post("/api/chat", json={"text": "Hallo"})
+            assert resp.status_code == 500
+
+
+class TestApiVoicebotDialog:
+    def test_dialog_ohne_daten(self, client):
+        resp = client.post("/api/voicebot/dialog", content_type="application/json")
+        assert resp.status_code == 400
+
+    def test_dialog_ohne_llm(self, client):
+        with patch.object(llm_service, "LLM_API_KEY", ""):
+            resp = client.post("/api/voicebot/dialog", json={"eingabe": "1"})
+            assert resp.status_code == 503
+
+    def test_dialog_erfolgreich(self, client):
+        with patch.object(llm_service, "LLM_API_KEY", "test-key"), \
+             patch("src.python.llm_service._llm_anfrage", return_value={"antwort": '{"text":"OK","aktion":"weiter","daten":{}}'}):
+            resp = client.post("/api/voicebot/dialog", json={
+                "eingabe": "1",
+                "schritt": 0,
+                "dialog_typ": "termin",
+            })
+            assert resp.status_code == 200
+
+    def test_dialog_fehler(self, client):
+        with patch.object(llm_service, "LLM_API_KEY", "test-key"), \
+             patch("src.python.llm_service._llm_anfrage", return_value={"fehler": "Fehler"}):
+            resp = client.post("/api/voicebot/dialog", json={"eingabe": "1"})
+            assert resp.status_code == 500
+
+
+class TestApiUebersetzen:
+    def test_ohne_text(self, client):
+        resp = client.post("/api/uebersetzen", json={})
+        assert resp.status_code == 400
+
+    def test_ohne_llm(self, client):
+        with patch.object(llm_service, "LLM_API_KEY", ""):
+            resp = client.post("/api/uebersetzen", json={"text": "Hallo"})
+            assert resp.status_code == 503
+
+    def test_uebersetzen_erfolgreich(self, client):
+        with patch.object(llm_service, "LLM_API_KEY", "test-key"), \
+             patch("src.python.llm_service._llm_anfrage", return_value={"antwort": "Hello"}):
+            resp = client.post("/api/uebersetzen", json={
+                "text": "Hallo",
+                "von": "de",
+                "nach": "en",
+            })
+            assert resp.status_code == 200
+            assert resp.get_json()["uebersetzung"] == "Hello"
+
+    def test_uebersetzen_fehler(self, client):
+        with patch.object(llm_service, "LLM_API_KEY", "test-key"), \
+             patch("src.python.llm_service._llm_anfrage", return_value={"fehler": "Timeout"}):
+            resp = client.post("/api/uebersetzen", json={"text": "Hallo"})
+            assert resp.status_code == 500
