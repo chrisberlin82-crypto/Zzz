@@ -33,6 +33,14 @@ PROJECT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 # Standard-Pfad fuer Webspace (public_html ist typisch fuer Plesk/cPanel)
 REMOTE_DIR="public_html/${APP_SUBDIR}"
 
+# SSH-Verbindung pruefen bevor Deployment startet
+source "$PROJECT_DIR/deploy/ssh-check.sh"
+if ! ssh_pruefen "$SSH_HOST"; then
+    echo "Deployment abgebrochen. Bitte SSH-Verbindung pruefen."
+    echo "Diagnose:  $PROJECT_DIR/deploy/ssh-check.sh $SSH_HOST"
+    exit 1
+fi
+
 echo "=== MED Rezeption Demo-Deployment auf Comnivox ==="
 echo "Host:   $SSH_HOST"
 echo "Pfad:   $REMOTE_DIR"

@@ -22,6 +22,14 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 REMOTE_DIR="/opt/medrezeption"
 
+# SSH-Verbindung pruefen bevor Deployment startet
+source "$PROJECT_DIR/deploy/ssh-check.sh"
+if ! ssh_pruefen "$SSH_HOST"; then
+    echo "Deployment abgebrochen. Bitte SSH-Verbindung pruefen."
+    echo "Diagnose:  $PROJECT_DIR/deploy/ssh-check.sh $SSH_HOST"
+    exit 1
+fi
+
 echo "=== MED Rezeption LIVE-Deployment auf Hetzner CPX ==="
 echo "Host:   $SSH_HOST"
 echo "Domain: $DOMAIN"
