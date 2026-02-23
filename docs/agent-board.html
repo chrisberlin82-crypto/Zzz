@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agent Board – MedReception</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: #f1f5f9; display: flex; height: 100vh; overflow: hidden; }
+  /* ── Linke Spalte ── */
+  .left { width: 260px; background: white; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; flex-shrink: 0; padding: 14px; overflow-y: auto; }
+  .caller-info { margin-bottom: 12px; }
+  .project-name { font-size: 14px; font-weight: 700; color: #1e293b; }
+  .caller-number { font-size: 13px; color: #2563eb; font-weight: 600; margin-top: 3px; }
+  .project-id { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+  .section-label { font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 7px; margin-top: 12px; }
+  .status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 4px; }
+  .status-btn { padding: 7px 6px; border-radius: 8px; font-size: 11px; font-weight: 600; border: 1.5px solid transparent; cursor: pointer; text-align: center; }
+  .status-btn.active  { background: #dcfce7; border-color: #86efac; color: #15803d; }
+  .status-btn.pause   { background: #fef3c7; border-color: #fcd34d; color: #92400e; }
+  .status-btn.azu     { background: #fee2e2; border-color: #fca5a5; color: #dc2626; }
+  .status-btn.meeting { background: #ede9fe; border-color: #c4b5fd; color: #6d28d9; }
+  .status-btn.chris   { background: #e0f2fe; border-color: #7dd3fc; color: #0369a1; }
+  .call-actions { display: flex; gap: 8px; margin-top: 12px; margin-bottom: 12px; }
+  .btn-accept  { flex: 1; padding: 9px; background: #dcfce7; color: #15803d; border: none; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; }
+  .btn-decline { flex: 1; padding: 9px; background: #fef2f2; color: #dc2626; border: none; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; }
+  .dialpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 12px; }
+  .key { padding: 10px 6px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 15px; font-weight: 700; color: #1e293b; cursor: pointer; text-align: center; user-select: none; }
+  .key sub { display: block; font-size: 8px; font-weight: 400; color: #94a3b8; letter-spacing: 1px; }
+  .key:hover { background: #eff6ff; border-color: #93c5fd; color: #1d4ed8; }
+  .key.special { font-size: 18px; color: #64748b; }
+  .btn-transfer { width: 100%; padding: 9px; background: #eff6ff; border: 1.5px solid #bfdbfe; border-radius: 10px; font-size: 13px; font-weight: 600; color: #1d4ed8; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 12px; }
+  .stats { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 12px; }
+  .stat-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px solid #f1f5f9; }
+  .stat-row:last-child { border-bottom: none; }
+  .stat-label { font-size: 11px; color: #64748b; }
+  .stat-value { font-size: 12px; font-weight: 700; color: #1e293b; }
+  .stat-value.green { color: #15803d; }
+  .stat-value.red   { color: #dc2626; }
+  .stat-value.blue  { color: #2563eb; }
+  /* ── Rechte Spalte ── */
+  .right { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .action-bar { background: white; border-bottom: 1px solid #e2e8f0; padding: 10px 20px; display: flex; gap: 8px; flex-shrink: 0; flex-wrap: wrap; }
+  .action-btn { padding: 7px 18px; border-radius: 9px; font-size: 13px; font-weight: 600; border: none; cursor: pointer; }
+  .action-btn.termin    { background: #dbeafe; color: #1d4ed8; }
+  .action-btn.rezept    { background: #dcfce7; color: #15803d; }
+  .action-btn.sonstig   { background: #f3f4f6; color: #475569; }
+  .action-btn.ueberweis { background: #fef3c7; color: #92400e; }
+  .action-btn:hover { opacity: .8; }
+  .mail-notice { background: #f0fdf4; border-bottom: 1px solid #bbf7d0; padding: 7px 20px; font-size: 11px; color: #15803d; font-weight: 500; display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  /* Chat */
+  .chat { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; background: #f8fafc; }
+  .msg { display: flex; }
+  .msg.agent   { justify-content: flex-end; }
+  .msg.patient { justify-content: flex-start; }
+  .msg.system  { justify-content: center; }
+  .bubble { max-width: 400px; padding: 9px 14px; border-radius: 16px; font-size: 13px; line-height: 1.5; }
+  .bubble.agent   { background: #2563eb; color: white; border-radius: 16px 16px 4px 16px; }
+  .bubble.patient { background: white; border: 1px solid #e2e8f0; color: #1e293b; border-radius: 16px 16px 16px 4px; }
+  .bubble.system  { background: #e2e8f0; color: #64748b; font-size: 11px; padding: 3px 12px; border-radius: 999px; }
+  .bubble-time { font-size: 10px; margin-top: 4px; opacity: .5; }
+  /* ── Kalender-Karte im Chat ── */
+  .cal-card {
+    background: white; border: 1.5px solid #bfdbfe; border-radius: 16px;
+    overflow: hidden; width: 100%; max-width: 480px; box-shadow: 0 2px 12px rgba(37,99,235,.08);
+  }
+  .cal-header {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    padding: 12px 16px; display: flex; align-items: center; justify-content: space-between;
+  }
+  .cal-header h3 { color: white; font-size: 14px; font-weight: 700; }
+  .cal-header p  { color: rgba(255,255,255,.7); font-size: 11px; margin-top: 2px; }
+  .cal-nav { display: flex; align-items: center; gap: 8px; }
+  .cal-nav button { background: rgba(255,255,255,.2); border: none; color: white; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+  .cal-nav span   { color: white; font-size: 13px; font-weight: 600; }
+  /* Kalender-Grid */
+  .cal-grid { padding: 12px 16px; }
+  .cal-days-header { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; margin-bottom: 6px; }
+  .cal-day-name { text-align: center; font-size: 10px; font-weight: 600; color: #94a3b8; padding: 4px 0; }
+  .cal-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+  .cal-day {
+    aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+    border-radius: 8px; font-size: 12px; font-weight: 500; cursor: pointer; color: #374151;
+    transition: all .12s;
+  }
+  .cal-day:hover { background: #eff6ff; color: #1d4ed8; }
+  .cal-day.empty { cursor: default; }
+  .cal-day.today { background: #dbeafe; color: #1d4ed8; font-weight: 700; }
+  .cal-day.selected { background: #2563eb; color: white; font-weight: 700; }
+  .cal-day.has-slots { position: relative; }
+  .cal-day.has-slots::after { content: ''; position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%); width: 4px; height: 4px; background: #22c55e; border-radius: 50%; }
+  .cal-day.has-slots.selected::after { background: rgba(255,255,255,.7); }
+  .cal-day.no-slots { color: #d1d5db; cursor: not-allowed; }
+  /* Zeitslots */
+  .cal-slots { padding: 0 16px 12px; }
+  .slots-label { font-size: 11px; font-weight: 600; color: #64748b; margin-bottom: 8px; }
+  .slots-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .slot {
+    padding: 8px 4px; text-align: center; background: #f0fdf4; border: 1.5px solid #86efac;
+    border-radius: 9px; font-size: 12px; font-weight: 600; color: #15803d; cursor: pointer; transition: all .12s;
+  }
+  .slot:hover { background: #dcfce7; }
+  .slot.selected { background: #15803d; color: white; border-color: #15803d; }
+  .slot.busy { background: #f9fafb; border-color: #e5e7eb; color: #9ca3af; cursor: not-allowed; text-decoration: line-through; }
+  /* Buchungs-Bestätigung */
+  .cal-confirm { padding: 12px 16px; border-top: 1px solid #f1f5f9; display: flex; gap: 8px; align-items: center; }
+  .confirm-info { flex: 1; font-size: 12px; color: #374151; }
+  .confirm-info strong { color: #1e293b; font-size: 13px; }
+  .btn-book { padding: 9px 20px; background: #2563eb; color: white; border: none; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+  .btn-book:hover { background: #1d4ed8; }
+  .btn-cancel-cal { padding: 9px 14px; background: #f1f5f9; color: #64748b; border: none; border-radius: 10px; font-size: 13px; cursor: pointer; }
+  /* Gebuchte Bestätigung */
+  .booked-confirm {
+    background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 14px;
+    padding: 14px 18px; display: flex; align-items: center; gap: 12px; max-width: 480px;
+  }
+  .booked-icon { font-size: 28px; }
+  .booked-text h4 { font-size: 14px; font-weight: 700; color: #15803d; }
+  .booked-text p  { font-size: 12px; color: #16a34a; margin-top: 3px; }
+  /* Antwort-Bereich */
+  .answer-area { background: white; border-top: 1px solid #e2e8f0; flex-shrink: 0; }
+  .answer-tabs { display: flex; border-bottom: 1px solid #f1f5f9; }
+  .answer-tab { flex: 1; padding: 10px; font-size: 12px; font-weight: 600; text-align: center; cursor: pointer; color: #94a3b8; border-bottom: 2px solid transparent; }
+  .answer-tab.active { color: #2563eb; border-bottom-color: #2563eb; }
+  .click-panel { padding: 12px 20px; display: flex; flex-direction: column; gap: 8px; }
+  .click-question { font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px; }
+  .click-options { display: flex; flex-wrap: wrap; gap: 7px; }
+  .click-opt { padding: 8px 16px; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 10px; font-size: 13px; font-weight: 500; color: #334155; cursor: pointer; transition: all .12s; }
+  .click-opt:hover { background: #eff6ff; border-color: #93c5fd; color: #1d4ed8; }
+  .click-opt.selected { background: #dbeafe; border-color: #2563eb; color: #1d4ed8; }
+  .text-panel { padding: 12px 20px; display: flex; gap: 8px; }
+  .text-panel input { flex: 1; padding: 10px 14px; border: 1.5px solid #cbd5e1; border-radius: 10px; font-size: 13px; font-family: 'Inter', sans-serif; outline: none; }
+  .text-panel input:focus { border-color: #2563eb; }
+  .send-btn { padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; }
+</style>
+</head>
+<body>
+<!-- Linke Spalte -->
+<div class="left">
+  <div style="margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #e2e8f0">
+    <button onclick="history.back()" style="width:100%;padding:7px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;font-size:12px;font-weight:600;color:#475569;cursor:pointer;font-family:'Inter',sans-serif">← Zurück zum Dashboard</button>
+  </div>
+  <div class="caller-info">
+    <div class="project-name">Praxis Dr. Schmidt</div>
+    <div class="caller-number">📞 +49 89 123 456 789</div>
+    <div class="project-id">Max Mustermann · PRX-2024 · #1042</div>
+  </div>
+  <div class="section-label">Status</div>
+  <div class="status-grid">
+    <button class="status-btn active">🟢 Im Gespräch</button>
+    <button class="status-btn pause">⏸ Pause</button>
+    <button class="status-btn azu">🔴 AZU</button>
+    <button class="status-btn meeting">📅 Meeting</button>
+  </div>
+  <div style="margin-bottom:4px">
+    <button class="status-btn chris" style="width:100%;padding:7px">👤 @Chris</button>
+  </div>
+  <div class="call-actions">
+    <button class="btn-accept">📞 Annehmen</button>
+    <button class="btn-decline">✕ Ablehnen</button>
+  </div>
+  <div class="section-label">Tastenfeld</div>
+  <div class="dialpad">
+    <div class="key">1<sub></sub></div>
+    <div class="key">2<sub>ABC</sub></div>
+    <div class="key">3<sub>DEF</sub></div>
+    <div class="key">4<sub>GHI</sub></div>
+    <div class="key">5<sub>JKL</sub></div>
+    <div class="key">6<sub>MNO</sub></div>
+    <div class="key">7<sub>PQRS</sub></div>
+    <div class="key">8<sub>TUV</sub></div>
+    <div class="key">9<sub>WXYZ</sub></div>
+    <div class="key special">*</div>
+    <div class="key">0<sub>+</sub></div>
+    <div class="key special">#</div>
+  </div>
+  <button class="btn-transfer">↗ Durchstellen</button>
+  <div class="section-label">Agenten-Statistik</div>
+  <div class="stats">
+    <div class="stat-row"><span class="stat-label">Eingegangen</span><span class="stat-value blue">24</span></div>
+    <div class="stat-row"><span class="stat-label">Angenommen</span><span class="stat-value green">21</span></div>
+    <div class="stat-row"><span class="stat-label">Verpasst</span><span class="stat-value red">3</span></div>
+    <div class="stat-row"><span class="stat-label">Ø Gesprächsdauer</span><span class="stat-value">3:42 min</span></div>
+    <div class="stat-row"><span class="stat-label">Heute online</span><span class="stat-value">6h 12min</span></div>
+  </div>
+</div>
+<!-- Rechte Spalte -->
+<div class="right">
+  <div class="action-bar">
+    <button class="action-btn termin" onclick="openCalendar()">📅 Termin</button>
+    <button class="action-btn rezept">💊 Rezept</button>
+    <button class="action-btn sonstig">❓ Sonstig</button>
+    <button class="action-btn ueberweis">📋 Überweisung</button>
+  </div>
+  <div class="mail-notice">
+    ✉️ Nach dem Anruf wird eine Zusammenfassung an <strong style="margin-left:4px">praxis@dr-schmidt.de</strong> gesendet
+  </div>
+  <div class="chat" id="chat">
+    <div class="msg system"><div class="bubble system">Anruf eingegangen · 08:32</div></div>
+    <div class="msg agent">
+      <div class="bubble agent">
+        Guten Morgen! Praxis Dr. Schmidt, wie kann ich Ihnen helfen?
+        <div class="bubble-time">08:32</div>
+      </div>
+    </div>
+    <div class="msg patient">
+      <div class="bubble patient">
+        Ich bräuchte gerne einen Termin, möglichst heute noch.
+        <div class="bubble-time">08:33</div>
+      </div>
+    </div>
+    <div class="msg agent">
+      <div class="bubble agent">
+        Ich schaue kurz nach einem freien Termin für Sie!
+        <div class="bubble-time">08:33</div>
+      </div>
+    </div>
+    <!-- Kalender-Karte im Chat -->
+    <div class="msg" style="justify-content:flex-start" id="calendarCard">
+      <div class="cal-card">
+        <div class="cal-header">
+          <div>
+            <h3>📅 Terminbuchung</h3>
+            <p>Wählen Sie Datum und Uhrzeit</p>
+          </div>
+          <div class="cal-nav">
+            <button>‹</button>
+            <span>Feb 2026</span>
+            <button>›</button>
+          </div>
+        </div>
+        <div class="cal-grid">
+          <div class="cal-days-header">
+            <div class="cal-day-name">Mo</div>
+            <div class="cal-day-name">Di</div>
+            <div class="cal-day-name">Mi</div>
+            <div class="cal-day-name">Do</div>
+            <div class="cal-day-name">Fr</div>
+            <div class="cal-day-name">Sa</div>
+            <div class="cal-day-name">So</div>
+          </div>
+          <div class="cal-days">
+            <!-- Feb 2026: 1.=So, 6 leere Zellen vor Tag 1 -->
+            <div class="cal-day empty"></div>
+            <div class="cal-day empty"></div>
+            <div class="cal-day empty"></div>
+            <div class="cal-day empty"></div>
+            <div class="cal-day empty"></div>
+            <div class="cal-day empty"></div>
+            <div class="cal-day no-slots">1</div>
+            <!-- Woche 2: Mo2-So8 -->
+            <div class="cal-day no-slots">2</div>
+            <div class="cal-day no-slots">3</div>
+            <div class="cal-day no-slots">4</div>
+            <div class="cal-day no-slots">5</div>
+            <div class="cal-day no-slots">6</div>
+            <div class="cal-day no-slots">7</div>
+            <div class="cal-day no-slots">8</div>
+            <!-- Woche 3: Mo9-So15 -->
+            <div class="cal-day no-slots">9</div>
+            <div class="cal-day no-slots">10</div>
+            <div class="cal-day no-slots">11</div>
+            <div class="cal-day no-slots">12</div>
+            <div class="cal-day no-slots">13</div>
+            <div class="cal-day no-slots">14</div>
+            <div class="cal-day no-slots">15</div>
+            <!-- Woche 4: Mo16-So22 -->
+            <div class="cal-day no-slots">16</div>
+            <div class="cal-day no-slots">17</div>
+            <div class="cal-day no-slots">18</div>
+            <div class="cal-day no-slots">19</div>
+            <div class="cal-day no-slots">20</div>
+            <div class="cal-day no-slots">21</div>
+            <div class="cal-day no-slots">22</div>
+            <!-- Woche 5: Mo23=heute, Di24-Sa28 -->
+            <div class="cal-day today selected" onclick="selectDay(this)">23</div>
+            <div class="cal-day has-slots" onclick="selectDay(this)">24</div>
+            <div class="cal-day has-slots" onclick="selectDay(this)">25</div>
+            <div class="cal-day has-slots" onclick="selectDay(this)">26</div>
+            <div class="cal-day has-slots" onclick="selectDay(this)">27</div>
+            <div class="cal-day no-slots">28</div>
+          </div>
+        </div>
+        <div class="cal-slots" id="slotsArea">
+          <div class="slots-label">Freie Zeiten am 23. Februar:</div>
+          <div class="slots-grid">
+            <div class="slot" onclick="selectSlot(this)">08:30</div>
+            <div class="slot" onclick="selectSlot(this)">09:00</div>
+            <div class="slot busy">09:30</div>
+            <div class="slot" onclick="selectSlot(this)">10:00</div>
+            <div class="slot busy">10:30</div>
+            <div class="slot" onclick="selectSlot(this)">11:00</div>
+            <div class="slot" onclick="selectSlot(this)">14:00</div>
+            <div class="slot selected" onclick="selectSlot(this)">14:30</div>
+          </div>
+        </div>
+        <div class="cal-confirm">
+          <div class="confirm-info">
+            <strong>23. Feb · 14:30 Uhr</strong><br>
+            Dr. Schmidt · 20 Min · Max Mustermann
+          </div>
+          <button class="btn-cancel-cal" onclick="closeCalendar()">Abbrechen</button>
+          <button class="btn-book" onclick="bookAppointment()">✓ Jetzt buchen</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Antwort-Bereich -->
+  <div class="answer-area">
+    <div class="answer-tabs">
+      <div class="answer-tab active" onclick="showTab('click', this)">🖱 Klickvorgabe</div>
+      <div class="answer-tab" onclick="showTab('text', this)">⌨️ Freitext</div>
+    </div>
+    <div class="click-panel" id="tab-click">
+      <div class="click-question">Wie dringend ist der Termin?</div>
+      <div class="click-options">
+        <div class="click-opt" onclick="selectOpt(this)">Heute noch</div>
+        <div class="click-opt" onclick="selectOpt(this)">Morgen früh</div>
+        <div class="click-opt" onclick="selectOpt(this)">Diese Woche</div>
+        <div class="click-opt" onclick="selectOpt(this)">Flexibel</div>
+        <div class="click-opt" onclick="selectOpt(this)">Notfall</div>
+      </div>
+    </div>
+    <div class="text-panel" id="tab-text" style="display:none">
+      <input placeholder="Antwort eingeben…">
+      <button class="send-btn">Senden</button>
+    </div>
+  </div>
+</div>
+<script>
+  function showTab(tab, el) {
+    document.querySelectorAll('.answer-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('tab-click').style.display = tab === 'click' ? 'flex' : 'none';
+    document.getElementById('tab-text').style.display  = tab === 'text'  ? 'flex' : 'none';
+  }
+  function selectOpt(el) {
+    document.querySelectorAll('.click-opt').forEach(o => o.classList.remove('selected'));
+    el.classList.add('selected');
+  }
+  function openCalendar() {
+    document.getElementById('calendarCard').style.display = 'flex';
+    const chat = document.getElementById('chat');
+    chat.scrollTop = chat.scrollHeight;
+  }
+  function closeCalendar() {
+    document.getElementById('calendarCard').style.display = 'none';
+  }
+  function selectDay(el) {
+    document.querySelectorAll('.cal-day').forEach(d => d.classList.remove('selected'));
+    el.classList.add('selected');
+  }
+  function selectSlot(el) {
+    if (el.classList.contains('busy')) return;
+    document.querySelectorAll('.slot').forEach(s => s.classList.remove('selected'));
+    el.classList.add('selected');
+  }
+  function bookAppointment() {
+    const card = document.getElementById('calendarCard');
+    card.innerHTML = `
+      <div class="booked-confirm">
+        <div class="booked-icon">✅</div>
+        <div class="booked-text">
+          <h4>Termin gebucht!</h4>
+          <p>23. Februar 2026 · 14:30 Uhr · Dr. Schmidt<br>Bestätigung wird an praxis@dr-schmidt.de gesendet</p>
+        </div>
+      </div>`;
+    const chat = document.getElementById('chat');
+    chat.scrollTop = chat.scrollHeight;
+  }
+</script>
+</body>
+</html>

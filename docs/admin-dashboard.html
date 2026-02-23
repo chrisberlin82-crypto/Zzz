@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Dashboard – MedReception</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: #f8fafc; display: flex; }
+  /* Sidebar */
+  .sidebar { width: 220px; background: white; border-right: 1px solid #e5e7eb; padding: 20px 12px; flex-shrink: 0; min-height: 100vh; }
+  .sidebar-logo { display: flex; align-items: center; gap: 10px; padding: 8px 10px; margin-bottom: 24px; }
+  .sidebar-logo .icon { width: 34px; height: 34px; background: #2563eb; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 16px; }
+  .sidebar-logo span { font-weight: 700; font-size: 15px; color: #111827; }
+  .nav-group { font-size: 10px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; padding: 0 12px; margin: 14px 0 6px; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 10px; font-size: 13px; font-weight: 500; color: #6b7280; cursor: pointer; margin-bottom: 2px; }
+  .nav-item.active { background: #eff6ff; color: #2563eb; }
+  .nav-item:hover:not(.active) { background: #f9fafb; color: #374151; }
+  /* Main */
+  .main { flex: 1; padding: 28px; overflow: auto; }
+  .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+  h1 { font-size: 22px; font-weight: 700; color: #111827; }
+  .live-badge { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #15803d; font-weight: 600; background: #dcfce7; padding: 4px 10px; border-radius: 999px; }
+  .live-dot { width: 7px; height: 7px; background: #22c55e; border-radius: 50%; animation: blink 1.2s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+  .date { font-size: 13px; color: #6b7280; margin-bottom: 20px; }
+  /* Tabs im Dashboard */
+  .dash-tabs { display: flex; gap: 4px; margin-bottom: 20px; background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 5px; width: fit-content; }
+  .dash-tab { padding: 8px 18px; border-radius: 9px; font-size: 13px; font-weight: 600; cursor: pointer; color: #6b7280; border: none; background: transparent; }
+  .dash-tab.active { background: #2563eb; color: white; }
+  .dash-tab:hover:not(.active) { background: #f1f5f9; color: #374151; }
+  /* Tages-KPI */
+  .kpi-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 12px; margin-bottom: 20px; }
+  .kpi { background: white; border-radius: 14px; border: 1px solid #e5e7eb; padding: 16px 18px; }
+  .kpi-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .kpi-label { font-size: 11px; color: #6b7280; font-weight: 500; }
+  .kpi-icon { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+  .kpi-icon.blue{background:#eff6ff} .kpi-icon.red{background:#fef2f2} .kpi-icon.green{background:#f0fdf4} .kpi-icon.orange{background:#fff7ed} .kpi-icon.purple{background:#f5f3ff}
+  .kpi-value { font-size: 26px; font-weight: 700; color: #111827; }
+  .kpi-sub { font-size: 10px; color: #9ca3af; margin-top: 2px; }
+  .kpi-trend { font-size: 10px; font-weight: 600; margin-top: 4px; }
+  .kpi-trend.up{color:#15803d} .kpi-trend.down{color:#dc2626}
+  /* Live CC */
+  .section-title { font-size: 13px; font-weight: 700; color: #374151; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .cc-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 20px; }
+  .cc-card { background: white; border-radius: 12px; border: 1px solid #e5e7eb; padding: 14px 16px; text-align: center; }
+  .cc-val { font-size: 28px; font-weight: 800; margin-bottom: 3px; }
+  .cc-label { font-size: 11px; color: #6b7280; font-weight: 500; }
+  .cc-sub { font-size: 10px; margin-top: 3px; }
+  /* Agenten */
+  .agents-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 20px; }
+  .agent-card { background: white; border-radius: 12px; border: 1px solid #e5e7eb; padding: 12px 14px; display: flex; align-items: center; gap: 10px; }
+  .agent-avatar { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; color: white; flex-shrink: 0; }
+  .agent-name { font-size: 13px; font-weight: 600; color: #1e293b; }
+  .agent-status { font-size: 11px; margin-top: 2px; font-weight: 500; }
+  .agent-status.busy{color:#ea580c} .agent-status.idle{color:#15803d} .agent-status.pause{color:#d97706} .agent-status.offline{color:#9ca3af}
+  .agent-meta { font-size: 10px; color: #9ca3af; margin-top: 2px; }
+  .agent-kpis { margin-left: auto; text-align: right; flex-shrink: 0; }
+  .agent-kpi-val { font-size: 14px; font-weight: 700; color: #1e293b; }
+  .agent-kpi-label { font-size: 9px; color: #9ca3af; }
+  /* Card generisch */
+  .card { background: white; border-radius: 14px; border: 1px solid #e5e7eb; margin-bottom: 20px; }
+  .card-header { padding: 14px 20px; border-bottom: 1px solid #f3f4f6; display: flex; justify-content: space-between; align-items: center; }
+  .card-header h2 { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .card-body { padding: 16px 20px; }
+  /* ACD */
+  .acd-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  .acd-block { background: white; border-radius: 14px; border: 1px solid #e5e7eb; padding: 18px 20px; }
+  .acd-block-title { font-size: 13px; font-weight: 700; color: #1e293b; margin-bottom: 14px; display: flex; align-items: center; gap: 6px; }
+  .form-row { margin-bottom: 12px; }
+  .form-label { font-size: 11px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 5px; }
+  .form-select, .form-input {
+    width: 100%; padding: 8px 12px; border: 1.5px solid #e2e8f0; border-radius: 9px;
+    font-size: 13px; font-family: 'Inter', sans-serif; color: #1e293b; outline: none; background: white;
+  }
+  .form-select:focus, .form-input:focus { border-color: #2563eb; }
+  .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+  /* Queue Liste */
+  .queue-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f9fafb; }
+  .queue-row:last-child { border-bottom: none; }
+  .queue-name { font-size: 13px; font-weight: 600; color: #1e293b; flex: 1; }
+  .queue-meta { font-size: 11px; color: #9ca3af; }
+  .queue-badge { padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+  .queue-badge.active { background: #dcfce7; color: #15803d; }
+  .queue-badge.pause  { background: #fef3c7; color: #92400e; }
+  .queue-agents { display: flex; gap: 4px; }
+  .qa { width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: white; }
+  /* IVR */
+  .ivr-step { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: #f8fafc; border-radius: 9px; margin-bottom: 6px; border: 1px solid #e2e8f0; }
+  .ivr-key { width: 28px; height: 28px; background: #2563eb; color: white; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+  .ivr-action { font-size: 12px; font-weight: 500; color: #374151; flex: 1; }
+  .ivr-dest { font-size: 11px; color: #9ca3af; }
+  /* Toggle */
+  .toggle-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f9fafb; }
+  .toggle-row:last-child { border-bottom: none; }
+  .toggle-label { font-size: 13px; color: #374151; }
+  .toggle { width: 38px; height: 21px; background: #e2e8f0; border-radius: 999px; position: relative; cursor: pointer; transition: background .2s; }
+  .toggle.on { background: #2563eb; }
+  .toggle::after { content: ''; position: absolute; width: 17px; height: 17px; background: white; border-radius: 50%; top: 2px; left: 2px; transition: left .2s; }
+  .toggle.on::after { left: 19px; }
+  /* Buttons */
+  .btn { padding: 7px 16px; border-radius: 9px; font-size: 12px; font-weight: 600; border: none; cursor: pointer; }
+  .btn.primary { background: #2563eb; color: white; }
+  .btn.secondary { background: #f1f5f9; color: #475569; border: 1.5px solid #e2e8f0; }
+  .btn:hover { opacity: .85; }
+  .btn-row { display: flex; gap: 8px; margin-top: 14px; }
+  /* Asterisk */
+  .asterisk-section { background: white; border-radius: 14px; border: 1px solid #e5e7eb; margin-bottom: 20px; }
+  .asterisk-header { padding: 14px 20px; border-bottom: 1px solid #f3f4f6; display: flex; justify-content: space-between; align-items: center; }
+  .asterisk-header h2 { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .status-dot { width: 9px; height: 9px; border-radius: 50%; background: #22c55e; display: inline-block; box-shadow: 0 0 0 3px rgba(34,197,94,.15); }
+  .ast-grid { display: grid; grid-template-columns: repeat(3,1fr); }
+  .ast-block { padding: 14px 20px; border-right: 1px solid #f3f4f6; }
+  .ast-block:last-child { border-right: none; }
+  .ast-label { font-size: 10px; color: #9ca3af; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 10px; }
+  .sip-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid #f9fafb; }
+  .sip-row:last-child { border-bottom: none; }
+  .sip-name { font-size: 12px; font-weight: 500; color: #1e293b; }
+  .sip-detail { font-size: 10px; color: #9ca3af; }
+  .sip-badge { padding: 2px 7px; border-radius: 999px; font-size: 10px; font-weight: 600; }
+  .sip-badge.ok{background:#dcfce7;color:#15803d} .sip-badge.err{background:#fef2f2;color:#dc2626}
+  .ext-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; }
+  .ext-num { font-size: 12px; font-weight: 700; color: #1d4ed8; min-width: 36px; }
+  .ext-name { font-size: 12px; color: #374151; flex: 1; }
+  .ext-dot { width: 7px; height: 7px; border-radius: 50%; }
+  .ext-dot.idle{background:#22c55e} .ext-dot.busy{background:#f97316} .ext-dot.off{background:#d1d5db}
+  .call-stat { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #f9fafb; }
+  .call-stat:last-child { border-bottom: none; }
+  .call-stat-label { font-size: 12px; color: #6b7280; }
+  .call-stat-val { font-size: 12px; font-weight: 700; color: #1e293b; }
+  .ast-footer { padding: 10px 20px; border-top: 1px solid #f3f4f6; display: flex; gap: 8px; }
+  .ast-btn { padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; border: 1.5px solid #e5e7eb; background: #f9fafb; color: #374151; cursor: pointer; }
+  .ast-btn.primary { background: #2563eb; color: white; border-color: #2563eb; }
+  /* ── Auswertung ── */
+  .atab { padding:10px 16px;font-size:12px;font-weight:600;cursor:pointer;color:#6b7280;border-bottom:3px solid transparent;white-space:nowrap; }
+  .atab.active { color:#2563eb;border-bottom-color:#2563eb; }
+  .atab:hover:not(.active) { color:#374151; }
+  .period-btn { padding:5px 12px;border-radius:7px;font-size:11px;font-weight:600;border:1.5px solid #e2e8f0;background:#f9fafb;color:#475569;cursor:pointer;font-family:Inter,sans-serif; }
+  .period-btn.active { background:#2563eb;color:white;border-color:#2563eb; }
+  .period-btn:hover:not(.active) { background:#eff6ff;border-color:#93c5fd; }
+  .kpi-card { background:white;border:1.5px solid #e5e7eb;border-radius:11px;padding:13px 14px; }
+  .kc-label { font-size:9px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px; }
+  .kc-val   { font-size:20px;font-weight:800;color:#1e293b; }
+  .kc-trend { font-size:10px;font-weight:600;margin-top:3px;color:#6b7280; }
+  .kc-trend.up   { color:#15803d; }
+  .kc-trend.down { color:#dc2626; }
+  .aw-card { background:white;border:1.5px solid #e5e7eb;border-radius:12px;margin-bottom:14px;overflow:hidden; }
+  .aw-card-head { padding:12px 16px;border-bottom:1px solid #f3f4f6;font-size:13px;font-weight:700;color:#1e293b;background:#f9fafb; }
+  .aw-card-body { padding:14px 16px; }
+  .cost-row { display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:12px; }
+  .cost-sub { padding-left:14px;border-left:2px solid #f1f5f9;margin-left:8px; }
+  .cost-label { color:#475569; }
+  .cost-val { font-weight:700;white-space:nowrap; }
+  .cost-val.red   { color:#dc2626; }
+  .cost-val.green { color:#15803d; }
+  .divider-row { height:1px;background:#f3f4f6;margin:6px 0; }
+  .ath { padding:8px 10px;text-align:left;font-size:9px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;background:#f9fafb;white-space:nowrap; }
+  .atd { padding:9px 10px;border-bottom:1px solid #f3f4f6;font-size:11px;color:#374151;vertical-align:middle; }
+  .atd.fw   { font-weight:600;color:#1e293b; }
+  .atd.red  { color:#dc2626;font-weight:600; }
+  .atd.green{ color:#15803d;font-weight:600; }
+  .atd.purple{ color:#7c3aed;font-weight:600; }
+  .atd.r    { text-align:right; }
+  .atr:last-child .atd { border-bottom:none; }
+  .atr:hover .atd { background:#fafafa; }
+  .sl-tag { padding:5px 11px;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;background:#f1f5f9;color:#9ca3af;border:1px dashed #d1d5db; }
+  .sl-tag.on { background:#dbeafe;color:#1d4ed8;border:1px solid #93c5fd; }
+</style>
+</head>
+<body>
+<!-- Sidebar -->
+<div class="sidebar">
+  <div class="sidebar-logo"><div class="icon">M</div><span>MedReception</span></div>
+  <div class="nav-group">Übersicht</div>
+  <div class="nav-item active">📊 Admin Dashboard</div>
+  <div class="nav-group">Kommunikation</div>
+  <div class="nav-item" onclick="location.href='agent-board.html'" style="cursor:pointer">🤖 Agent Board</div>
+  <div class="nav-item" onclick="location.href='flow-editor.html'" style="cursor:pointer">🧠 Flow Editor</div>
+  <div class="nav-group">Dashboards</div>
+  <div class="nav-item" onclick="location.href='teamleiter.html'" style="cursor:pointer">👥 Teamleiter</div>
+  <div class="nav-item" onclick="location.href='standortleitung.html'" style="cursor:pointer">📍 Standortleitung</div>
+  <div class="nav-group">System</div>
+  <div class="nav-item" onclick="sessionStorage.removeItem('mr_guard_session');location.href='index.html'" style="cursor:pointer">🔓 Abmelden</div>
+</div>
+<!-- Main -->
+<div class="main">
+  <div class="top-bar">
+    <h1>Admin Dashboard</h1>
+    <div class="live-badge"><span class="live-dot"></span> Live · 08:34 Uhr</div>
+  </div>
+  <p class="date">Sonntag, 22. Februar 2026</p>
+  <!-- Dashboard Tabs -->
+  <div class="dash-tabs">
+    <button class="dash-tab active" onclick="showTab('overview')">📊 Übersicht</button>
+    <button class="dash-tab" onclick="showTab('acd')">📞 ACD Einstellungen</button>
+    <button class="dash-tab" onclick="showTab('asterisk')">🔧 Asterisk / SIP</button>
+    <button class="dash-tab" onclick="showTab('auswertung')">📈 Auswertung & Kosten</button>
+  </div>
+  <!-- TAB: Übersicht -->
+  <div id="tab-overview">
+    <!-- Tages-KPIs -->
+    <div class="kpi-grid">
+      <div class="kpi">
+        <div class="kpi-header"><span class="kpi-label">Anrufe heute</span><div class="kpi-icon blue">📞</div></div>
+        <div class="kpi-value">24</div><div class="kpi-sub">seit 08:00 Uhr</div>
+        <div class="kpi-trend up">↑ +3 letzte Stunde</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-header"><span class="kpi-label">Angenommen</span><div class="kpi-icon green">✅</div></div>
+        <div class="kpi-value">21</div><div class="kpi-sub">87.5% Quote</div>
+        <div class="kpi-trend up">↑ gut</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-header"><span class="kpi-label">Verpasst</span><div class="kpi-icon red">❌</div></div>
+        <div class="kpi-value">3</div><div class="kpi-sub">12.5% Missrate</div>
+        <div class="kpi-trend down">↑ 1 mehr als gestern</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-header"><span class="kpi-label">Ø Wartezeit</span><div class="kpi-icon orange">⏱</div></div>
+        <div class="kpi-value">0:42</div><div class="kpi-sub">Minuten</div>
+        <div class="kpi-trend up">↓ besser als gestern</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-header"><span class="kpi-label">Termine heute</span><div class="kpi-icon purple">📅</div></div>
+        <div class="kpi-value">8</div><div class="kpi-sub">6 bestätigt</div>
+        <div class="kpi-trend up">↑ +2 neu gebucht</div>
+      </div>
+    </div>
+    <!-- Live Callcenter -->
+    <div class="section-title">📡 Callcenter Live <span class="live-badge" style="font-size:10px"><span class="live-dot"></span> Echtzeit</span></div>
+    <div class="cc-grid">
+      <div class="cc-card"><div class="cc-val" style="color:#2563eb">2</div><div class="cc-label">Aktive Gespräche</div><div class="cc-sub" style="color:#2563eb">gerade jetzt</div></div>
+      <div class="cc-card"><div class="cc-val" style="color:#ea580c">1</div><div class="cc-label">In Warteschleife</div><div class="cc-sub" style="color:#ea580c">wartet 0:23 min</div></div>
+      <div class="cc-card"><div class="cc-val" style="color:#15803d">3</div><div class="cc-label">Agenten frei</div><div class="cc-sub" style="color:#15803d">verfügbar</div></div>
+      <div class="cc-card"><div class="cc-val" style="color:#6d28d9">14</div><div class="cc-label">Via Voicebot</div><div class="cc-sub" style="color:#6d28d9">heute automatisiert</div></div>
+    </div>
+    <!-- Agenten -->
+    <div class="section-title">👤 Agenten-Status</div>
+    <div class="agents-grid">
+      <div class="agent-card"><div class="agent-avatar" style="background:#2563eb">DS</div><div><div class="agent-name">Dr. Schmidt</div><div class="agent-status busy">🔴 Im Gespräch</div><div class="agent-meta">seit 08:31 · Ext. 101</div></div><div class="agent-kpis"><div class="agent-kpi-val">8</div><div class="agent-kpi-label">Anrufe heute</div></div></div>
+      <div class="agent-card"><div class="agent-avatar" style="background:#16a34a">AW</div><div><div class="agent-name">Anna Weber</div><div class="agent-status idle">🟢 Verfügbar</div><div class="agent-meta">online seit 07:58 · Ext. 102</div></div><div class="agent-kpis"><div class="agent-kpi-val">6</div><div class="agent-kpi-label">Anrufe heute</div></div></div>
+      <div class="agent-card"><div class="agent-avatar" style="background:#7c3aed">CM</div><div><div class="agent-name">Chris Müller</div><div class="agent-status pause">⏸ Pause</div><div class="agent-meta">seit 08:20 · Ext. 103</div></div><div class="agent-kpis"><div class="agent-kpi-val">4</div><div class="agent-kpi-label">Anrufe heute</div></div></div>
+      <div class="agent-card"><div class="agent-avatar" style="background:#ea580c">LK</div><div><div class="agent-name">Laura Klein</div><div class="agent-status busy">🔴 Im Gespräch</div><div class="agent-meta">seit 08:29 · Ext. 104</div></div><div class="agent-kpis"><div class="agent-kpi-val">3</div><div class="agent-kpi-label">Anrufe heute</div></div></div>
+      <div class="agent-card"><div class="agent-avatar" style="background:#0369a1">TH</div><div><div class="agent-name">Tom Huber</div><div class="agent-status idle">🟢 Verfügbar</div><div class="agent-meta">online seit 08:00 · Ext. 105</div></div><div class="agent-kpis"><div class="agent-kpi-val">0</div><div class="agent-kpi-label">Anrufe heute</div></div></div>
+      <div class="agent-card"><div class="agent-avatar" style="background:#6366f1">🤖</div><div><div class="agent-name">Voicebot</div><div class="agent-status idle">🟢 Aktiv</div><div class="agent-meta">14 Anrufe bearbeitet</div></div><div class="agent-kpis"><div class="agent-kpi-val">14</div><div class="agent-kpi-label">Anrufe heute</div></div></div>
+    </div>
+  </div>
+  <!-- TAB: ACD Einstellungen -->
+  <div id="tab-acd" style="display:none">
+    <div class="section-title">📞 ACD — Automatic Call Distribution</div>
+    <!-- Warteschlangen -->
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-header">
+        <h2>🗂 Warteschlangen (Queues)</h2>
+        <button class="btn primary">+ Neue Queue</button>
+      </div>
+      <div class="card-body">
+        <div class="queue-row">
+          <div>
+            <div class="queue-name">Allgemein</div>
+            <div class="queue-meta">Ext. 200 · Ring-Strategie: Round Robin · Max. Wartezeit: 3 min</div>
+          </div>
+          <div class="queue-agents">
+            <div class="qa" style="background:#2563eb">DS</div>
+            <div class="qa" style="background:#16a34a">AW</div>
+            <div class="qa" style="background:#ea580c">LK</div>
+          </div>
+          <span class="queue-badge active">Aktiv</span>
+          <button class="btn secondary" style="margin-left:8px">Bearbeiten</button>
+        </div>
+        <div class="queue-row">
+          <div>
+            <div class="queue-name">Notfall</div>
+            <div class="queue-meta">Ext. 201 · Ring-Strategie: Alle gleichzeitig · Max. Wartezeit: 1 min</div>
+          </div>
+          <div class="queue-agents">
+            <div class="qa" style="background:#2563eb">DS</div>
+            <div class="qa" style="background:#7c3aed">CM</div>
+          </div>
+          <span class="queue-badge active">Aktiv</span>
+          <button class="btn secondary" style="margin-left:8px">Bearbeiten</button>
+        </div>
+        <div class="queue-row">
+          <div>
+            <div class="queue-name">Rezept & Überweisung</div>
+            <div class="queue-meta">Ext. 202 · Ring-Strategie: Least Recent · Max. Wartezeit: 5 min</div>
+          </div>
+          <div class="queue-agents">
+            <div class="qa" style="background:#16a34a">AW</div>
+            <div class="qa" style="background:#0369a1">TH</div>
+          </div>
+          <span class="queue-badge pause">Pausiert</span>
+          <button class="btn secondary" style="margin-left:8px">Bearbeiten</button>
+        </div>
+      </div>
+    </div>
+    <!-- ANSAGEN VERWALTUNG -->
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-header">
+        <h2>🔊 Ansagen-Verwaltung</h2>
+        <div style="display:flex;gap:8px">
+          <button class="btn primary" onclick="showAnsagenTab('tts')">✨ TTS Erstellen</button>
+          <button class="btn secondary" onclick="showAnsagenTab('upload')">⬆ Datei hochladen</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <!-- Sub-Tabs -->
+        <div style="display:flex;gap:0;border-bottom:1px solid #f1f5f9;margin-bottom:16px">
+          <div id="atab-lib"    onclick="showAnsagenTab('lib')"    style="padding:9px 16px;font-size:12px;font-weight:600;cursor:pointer;color:#2563eb;border-bottom:2px solid #2563eb">📂 Bibliothek</div>
+          <div id="atab-tts"   onclick="showAnsagenTab('tts')"    style="padding:9px 16px;font-size:12px;font-weight:600;cursor:pointer;color:#9ca3af;border-bottom:2px solid transparent">✨ TTS Generator</div>
+          <div id="atab-upload" onclick="showAnsagenTab('upload')" style="padding:9px 16px;font-size:12px;font-weight:600;cursor:pointer;color:#9ca3af;border-bottom:2px solid transparent">⬆ Upload</div>
+        </div>
+        <!-- BIBLIOTHEK -->
+        <div id="apanel-lib">
+          <table style="width:100%;border-collapse:collapse;font-size:12px">
+            <thead>
+              <tr>
+                <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;background:#f9fafb">Name</th>
+                <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;background:#f9fafb">Typ</th>
+                <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;background:#f9fafb">Format</th>
+                <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;background:#f9fafb">Dauer</th>
+                <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;background:#f9fafb">Erstellt</th>
+                <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;background:#f9fafb">Eingesetzt in</th>
+                <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;background:#f9fafb">Aktion</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="padding:10px 12px;border-bottom:1px solid #f3f4f6;font-weight:600;color:#1e293b">Willkommen Allgemein</td>
+                <td style="padding:10px 12px;border-bottom:1px solid #f3f4f6"><span style="background:#dbeafe;color:#1d4ed8;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:600">TTS</span></td>
+                <td style="padding:10px 12px;border-bottom:1px solid #f3f4f6;color:#475569">WAV · 16kHz</td>
+                <td style="padding:10px 12px;border-bottom:1px solid #f3f4f6;color:#475569">0:08</td>
+                <td style="padding:10px 12px;border-bottom:1px solid #f3f4f6;color:#6b7280">22.02.2026</td>
+                <td style="padding:10px 12px;border-bottom:1px solid #f3f4f6"><span style="background:#dcfce7;color:#15803d;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:600">IVR Eingang</span></td>
+                <td style="padding:10px 12px;border-bottom:1px solid #f3f4f6">
+                  <div style="display:flex;gap:5px">
+                    <button onclick="playAnsage(this,'Willkommen, Praxis Dr. Schmidt. Drücken Sie 1 für Termin.')" style="padding:4px 10px;border-radius:7px;font-size:11px;font-weight:600;border:1.5px solid #e2e8f0;background:#f8fafc;color:#374151;cursor:pointer">▶ Play</button>
+                    <button style="padding:4px 10px;border-radius:7px;font-size:11px;font-weight:600;border:1.5px solid #e2e8f0;background:#f8fafc;color:#374151;cursor:pointer">✏ Edit</button>
+                    <button style="padding:4px 10px;border-radius:7px;font-size:11px;font-weight:600;border:1.5px solid #fca5a5;background:#fef2f2;color:#dc2626;cursor:pointer">🗑</button>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:10px 12px;border-bottom:1px solid #f3f4f6;font-weight:600;color:#1e293b">Außerhalb Öffnungszeiten</td>
+                <td style="padding:10px 12px;border-bottom:1px solid #f3f4f6"><span style="background:#dbeafe;color:#1d4ed8;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:600">TTS</span></td>
+                <td style="padding:10px 12px;border-bottom:1px solid #f3f4f6;color:#475569">WAV · 16kHz</td>
+                <td style="padding:10px 12px;border-bottom:1px solid #f3f4f6;color:#475569">0:14</td>
+                <td style="padding:10px 12px;border-bottom:1px solid #f3f4f6;color:#6b7280">20.02.2026</td>
+                <td style="padding:10px 12px;border-bottom:1px solid #f3f4f6"><span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:600">Öffnungszeiten</span></td>
+                <td style="padding:10px 12px;border-bottom:1px solid #f3f4f6">
+                  <div style="display:flex;gap:5px">
+                    <button onclick="playAnsage(this,'Unsere Praxis ist derzeit geschlossen. Öffnungszeiten: Montag bis Freitag, 8 bis 18 Uhr.')" style="padding:4px 10px;border-radius:7px;font-size:11px;font-weight:600;border:1.5px solid #e2e8f0;background:#f8fafc;color:#374151;cursor:pointer">▶ Play</button>
+                    <button style="padding:4px 10px;border-radius:7px;font-size:11px;font-weight:600;border:1.5px solid #e2e8f0;background:#f8fafc;color:#374151;cursor:pointer">✏ Edit</button>
+                    <button style="padding:4px 10px;border-radius:7px;font-size:11px;font-weight:600;border:1.5px solid #fca5a5;background:#fef2f2;color:#dc2626;cursor:pointer">🗑</button>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:10px 12px;border-bottom:1px solid #f3f4f6;font-weight:600;color:#1e293b">Warteschleife Notfall</td>
+                <td style="padding:10px 12px;border-bottom:1px solid #f3f4f6"><span style="background:#dcfce7;color:#15803d;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:600">Upload</span></td>
+                <td style="padding:10px 12px;border-bottom:1px solid #f3f4f6;color:#475569">MP3 · 128kbps</td>
+                <td style="padding:10px 12px;border-bottom:1px solid #f3f4f6;color:#475569">1:30</td>
+                <td style="padding:10px 12px;border-bottom:1px solid #f3f4f6;color:#6b7280">18.02.2026</td>
+                <td style="padding:10px 12px;border-bottom:1px solid #f3f4f6"><span style="background:#ffedd5;color:#c2410c;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:600">Queue Notfall</span></td>
+                <td style="padding:10px 12px;border-bottom:1px solid #f3f4f6">
+                  <div style="display:flex;gap:5px">
+                    <button style="padding:4px 10px;border-radius:7px;font-size:11px;font-weight:600;border:1.5px solid #e2e8f0;background:#f8fafc;color:#374151;cursor:pointer">▶ Play</button>
+                    <button style="padding:4px 10px;border-radius:7px;font-size:11px;font-weight:600;border:1.5px solid #e2e8f0;background:#f8fafc;color:#374151;cursor:pointer">⬇ Download</button>
+                    <button style="padding:4px 10px;border-radius:7px;font-size:11px;font-weight:600;border:1.5px solid #fca5a5;background:#fef2f2;color:#dc2626;cursor:pointer">🗑</button>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:10px 12px;font-weight:600;color:#1e293b">Überlauf-Hinweis Rezept</td>
+                <td style="padding:10px 12px"><span style="background:#dbeafe;color:#1d4ed8;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:600">TTS</span></td>
+                <td style="padding:10px 12px;color:#475569">WAV · 16kHz</td>
+                <td style="padding:10px 12px;color:#475569">0:11</td>
+                <td style="padding:10px 12px;color:#6b7280">15.02.2026</td>
+                <td style="padding:10px 12px"><span style="background:#ede9fe;color:#6d28d9;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:600">Overflow Rezept</span></td>
+                <td style="padding:10px 12px">
+                  <div style="display:flex;gap:5px">
+                    <button onclick="playAnsage(this,'Alle Leitungen sind derzeit belegt. Wir rufen Sie so schnell wie möglich zurück.')" style="padding:4px 10px;border-radius:7px;font-size:11px;font-weight:600;border:1.5px solid #e2e8f0;background:#f8fafc;color:#374151;cursor:pointer">▶ Play</button>
+                    <button style="padding:4px 10px;border-radius:7px;font-size:11px;font-weight:600;border:1.5px solid #e2e8f0;background:#f8fafc;color:#374151;cursor:pointer">✏ Edit</button>
+                    <button style="padding:4px 10px;border-radius:7px;font-size:11px;font-weight:600;border:1.5px solid #fca5a5;background:#fef2f2;color:#dc2626;cursor:pointer">🗑</button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <!-- TTS GENERATOR -->
+        <div id="apanel-tts" style="display:none">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+            <div>
+              <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Ansage-Name</div>
+              <input style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;font-family:Inter,sans-serif;outline:none" placeholder="z.B. Willkommen Allgemein">
+            </div>
+            <div>
+              <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Einsetzen in</div>
+              <select style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;font-family:Inter,sans-serif;outline:none;background:white">
+                <option>IVR Eingangsansage</option>
+                <option>Öffnungszeiten — Geschlossen</option>
+                <option>Overflow — Allgemein</option>
+                <option>Overflow — Rezept</option>
+                <option>Warteschleife — Allgemein</option>
+                <option>Nur Bibliothek (noch nicht zugewiesen)</option>
+              </select>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px">
+            <div>
+              <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Stimme / TTS Engine</div>
+              <select style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;font-family:Inter,sans-serif;outline:none;background:white">
+                <option>🌟 Azure Neural — de-DE-KatjaNeural (empfohlen)</option>
+                <option>🌟 Azure Neural — de-DE-ConradNeural (männlich)</option>
+                <option>🌟 Azure Neural — de-DE-AmalaNeural</option>
+                <option>🌟 ElevenLabs — Rachel (sehr natürlich)</option>
+                <option>🌟 ElevenLabs — Domi (Deutsch)</option>
+                <option>🌟 OpenAI TTS — Nova (Deutsch)</option>
+                <option>🌟 OpenAI TTS — Alloy (neutral)</option>
+                <option>🇩🇪 Google WaveNet — de-DE-Wavenet-A</option>
+                <option>🇩🇪 Google WaveNet — de-DE-Wavenet-C (männlich)</option>
+                <option>⚙️ Piper TTS — de_DE (lokal, kostenfrei)</option>
+              </select>
+            </div>
+            <div>
+              <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Ausgabeformat</div>
+              <select style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;font-family:Inter,sans-serif;outline:none;background:white">
+                <option>WAV · 16kHz · Mono (Asterisk)</option>
+                <option>WAV · 8kHz · Mono (G.711)</option>
+                <option>MP3 · 128kbps</option>
+              </select>
+            </div>
+            <div>
+              <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Sprechgeschwindigkeit</div>
+              <select style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;font-family:Inter,sans-serif;outline:none;background:white">
+                <option>Normal (1.0x)</option>
+                <option>Langsam (0.85x)</option>
+                <option>Schnell (1.15x)</option>
+              </select>
+            </div>
+          </div>
+          <div style="margin-bottom:14px">
+            <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Ansage-Text</div>
+            <textarea id="tts-text" style="width:100%;padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;font-family:Inter,sans-serif;outline:none;min-height:100px;resize:vertical;line-height:1.6" placeholder="Willkommen bei Praxis Dr. Schmidt. Bitte drücken Sie die 1 für Terminvereinbarungen, die 2 für Rezeptanfragen oder die 3 für Notfälle."></textarea>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:5px">
+              <span id="tts-charcount" style="font-size:11px;color:#9ca3af">0 Zeichen</span>
+              <span style="font-size:11px;color:#9ca3af">Empfohlen: max. 200 Zeichen für IVR-Ansagen</span>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center">
+            <button onclick="generateTTS()" style="padding:10px 22px;background:#2563eb;color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">✨ Ansage generieren</button>
+            <button onclick="previewTTS()" style="padding:10px 18px;background:#f1f5f9;color:#475569;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">▶ Vorschau</button>
+            <div id="tts-status" style="font-size:12px;color:#9ca3af"></div>
+          </div>
+          <!-- Preview Player -->
+          <div id="tts-player" style="display:none;margin-top:14px;background:#f0f9ff;border:1.5px solid #bae6fd;border-radius:12px;padding:14px 16px">
+            <div style="display:flex;align-items:center;gap:12px">
+              <button onclick="this.textContent = this.textContent==='▶'?'⏸':'▶'" style="width:36px;height:36px;background:#2563eb;color:white;border:none;border-radius:50%;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center">▶</button>
+              <div style="flex:1">
+                <div style="height:4px;background:#bae6fd;border-radius:999px;overflow:hidden"><div id="tts-progress" style="height:100%;background:#2563eb;width:0%;border-radius:999px;transition:width .1s"></div></div>
+                <div style="display:flex;justify-content:space-between;font-size:10px;color:#0369a1;margin-top:3px"><span>0:00</span><span id="tts-dur">0:08</span></div>
+              </div>
+              <button style="padding:6px 14px;background:#2563eb;color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">⬇ Speichern</button>
+              <button onclick="ttsConfirmSave()" style="padding:6px 14px;background:#16a34a;color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">✓ In Bibliothek übernehmen</button>
+            </div>
+          </div>
+        </div>
+        <!-- UPLOAD -->
+        <div id="apanel-upload" style="display:none">
+          <div id="drop-zone" ondragover="event.preventDefault();this.style.borderColor='#2563eb';this.style.background='#eff6ff'" ondragleave="this.style.borderColor='#cbd5e1';this.style.background='#f8fafc'" ondrop="handleDrop(event)" style="border:2.5px dashed #cbd5e1;border-radius:14px;background:#f8fafc;padding:32px;text-align:center;margin-bottom:18px;transition:all .15s;cursor:pointer" onclick="document.getElementById('file-input').click()">
+            <div style="font-size:36px;margin-bottom:8px">🎵</div>
+            <div style="font-size:15px;font-weight:700;color:#1e293b;margin-bottom:4px">Datei hierher ziehen oder klicken</div>
+            <div style="font-size:12px;color:#6b7280">Unterstützte Formate: <strong>WAV</strong>, <strong>MP3</strong> · Max. 20 MB</div>
+            <div style="font-size:11px;color:#9ca3af;margin-top:4px">Empfehlung: WAV 16kHz Mono für optimale Asterisk-Kompatibilität</div>
+            <input id="file-input" type="file" accept=".wav,.mp3" style="display:none" onchange="handleFileSelect(this)">
+          </div>
+          <div id="upload-preview" style="display:none;background:#f0f9ff;border:1.5px solid #bae6fd;border-radius:12px;padding:14px 16px;margin-bottom:14px">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+              <span style="font-size:22px">🎵</span>
+              <div>
+                <div id="upload-filename" style="font-size:13px;font-weight:700;color:#1e293b">ansage.wav</div>
+                <div id="upload-fileinfo" style="font-size:11px;color:#0369a1;margin-top:2px">WAV · 16kHz · 245 KB</div>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div>
+                <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Ansage-Name</div>
+                <input style="width:100%;padding:8px 12px;border:1.5px solid #bae6fd;border-radius:9px;font-size:13px;font-family:Inter,sans-serif;outline:none" placeholder="Bezeichnung…" id="upload-name">
+              </div>
+              <div>
+                <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Einsetzen in</div>
+                <select style="width:100%;padding:8px 12px;border:1.5px solid #bae6fd;border-radius:9px;font-size:13px;font-family:Inter,sans-serif;outline:none;background:white">
+                  <option>Nur Bibliothek</option>
+                  <option>IVR Eingangsansage</option>
+                  <option>Öffnungszeiten — Geschlossen</option>
+                  <option>Warteschleife — Allgemein</option>
+                  <option>Overflow — Allgemein</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div id="upload-btn-row" style="display:none;gap:8px">
+            <button onclick="confirmUpload()" style="padding:10px 22px;background:#2563eb;color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">⬆ Hochladen & speichern</button>
+            <button onclick="document.getElementById('upload-preview').style.display='none';document.getElementById('upload-btn-row').style.display='none'" style="padding:10px 16px;background:#f1f5f9;color:#475569;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">Abbrechen</button>
+          </div>
+          <div id="upload-success" style="display:none;background:#f0fdf4;border:1.5px solid #86efac;border-radius:10px;padding:12px 16px;font-size:13px;font-weight:600;color:#15803d">✅ Datei erfolgreich hochgeladen und in Bibliothek gespeichert!</div>
+        </div>
+      </div>
+    </div>
+    <div class="acd-grid">
+      <!-- Ring-Strategie & Timeout -->
+      <div class="acd-block">
+        <div class="acd-block-title">⚙️ Queue-Einstellungen</div>
+        <div class="form-row">
+          <div class="form-label">Queue auswählen</div>
+          <select class="form-select"><option>Allgemein (Ext. 200)</option><option>Notfall (Ext. 201)</option><option>Rezept (Ext. 202)</option></select>
+        </div>
+        <div class="form-row">
+          <div class="form-label">Ring-Strategie</div>
+          <select class="form-select"><option>Round Robin</option><option>Alle gleichzeitig</option><option>Least Recent</option><option>Fewest Calls</option><option>Linear</option></select>
+        </div>
+        <div class="form-row-2">
+          <div>
+            <div class="form-label">Ring-Timeout (Sek)</div>
+            <input class="form-input" type="number" value="20">
+          </div>
+          <div>
+            <div class="form-label">Max. Wartezeit (Min)</div>
+            <input class="form-input" type="number" value="3">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-label">Max. Anrufer in Queue</div>
+          <input class="form-input" type="number" value="10">
+        </div>
+        <div class="form-row">
+          <div class="form-label">Warteschleifenmusik</div>
+          <select class="form-select"><option>Standard (Praxis)</option><option>Klassik</option><option>Keine Musik</option><option>Warteschleife Notfall (Bibliothek)</option><option>⬆ Datei hochladen…</option><option>✨ TTS erstellen…</option></select>
+        </div>
+        <div class="btn-row">
+          <button class="btn primary">Speichern</button>
+          <button class="btn secondary">Zurücksetzen</button>
+        </div>
+      </div>
+      <!-- Overflow & Weiterleitung -->
+      <div class="acd-block">
+        <div class="acd-block-title">↗️ Overflow & Weiterleitung</div>
+        <div class="form-row">
+          <div class="form-label">Bei Überlauf weiterleiten an</div>
+          <select class="form-select"><option>Voicemail</option><option>Andere Queue</option><option>Externe Nummer</option><option>Voicebot</option></select>
+        </div>
+        <div class="form-row">
+          <div class="form-label">Externe Weiterleitungsnummer</div>
+          <input class="form-input" type="text" placeholder="+49 89 123456">
+        </div>
+        <div class="form-row">
+          <div class="form-label">Ansage bei Überlauf</div>
+          <select class="form-select"><option>Überlauf-Hinweis Rezept (Bibliothek)</option><option>Willkommen Allgemein (Bibliothek)</option><option>Außerhalb Öffnungszeiten (Bibliothek)</option><option>+ Aus Bibliothek wählen…</option><option>✨ Neue Ansage erstellen…</option></select>
+        </div>
+        <div class="form-label" style="margin-bottom:10px;margin-top:14px">Optionen</div>
+        <div class="toggle-row"><span class="toggle-label">Rückruf anbieten</span><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+        <div class="toggle-row"><span class="toggle-label">Wartezeit ansagen</span><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+        <div class="toggle-row"><span class="toggle-label">Position ansagen</span><div class="toggle" onclick="this.classList.toggle('on')"></div></div>
+        <div class="toggle-row"><span class="toggle-label">Voicebot bei Überlauf</span><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+        <div class="btn-row">
+          <button class="btn primary">Speichern</button>
+        </div>
+      </div>
+      <!-- IVR Menü -->
+      <div class="acd-block">
+        <div class="acd-block-title">🎙 Spracherkennung IVR</div>
+        <div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:9px;padding:8px 12px;margin-bottom:12px;font-size:11px;color:#15803d;font-weight:500">
+          ✅ Anrufer sprechen — keine Tasteneingabe. KI erkennt Szenario-Name, Anliegen oder freie Aussage.
+        </div>
+        <div class="form-row">
+          <div class="form-label">Eingangsansage</div>
+          <select class="form-select"><option>Willkommen Praxis Dr. Schmidt…</option><option>Aus Bibliothek wählen…</option></select>
+        </div>
+        <div style="margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">
+          <div class="form-label" style="margin:0">Sprachbefehle & Szenarien</div>
+          <button class="btn secondary" style="font-size:11px;padding:4px 10px">+ Szenario</button>
+        </div>
+        <div style="margin-bottom:10px">
+          <div class="ivr-step" style="align-items:flex-start">
+            <div style="min-width:80px">
+              <div style="background:#dbeafe;color:#1d4ed8;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;text-align:center;margin-bottom:3px">🎙 „Termin"</div>
+              <div style="background:#e0f2fe;color:#0369a1;padding:2px 7px;border-radius:5px;font-size:9px;font-weight:600;text-align:center">+„Termin buchen"</div>
+            </div>
+            <div style="flex:1">
+              <div class="ivr-action">Terminbuchung</div>
+              <div class="ivr-dest">→ Queue: Allgemein · Klickbot: Termin-Flow</div>
+              <div style="margin-top:4px;display:flex;gap:4px;flex-wrap:wrap">
+                <span style="background:#f1f5f9;color:#475569;padding:1px 7px;border-radius:5px;font-size:10px">Termin</span>
+                <span style="background:#f1f5f9;color:#475569;padding:1px 7px;border-radius:5px;font-size:10px">Terminbuchung</span>
+                <span style="background:#f1f5f9;color:#475569;padding:1px 7px;border-radius:5px;font-size:10px">Arzt Termin</span>
+                <span style="background:#f1f5f9;color:#475569;padding:1px 7px;border-radius:5px;font-size:10px">ich brauche einen Termin</span>
+              </div>
+            </div>
+            <button class="btn secondary" style="font-size:10px;padding:3px 8px;align-self:flex-start">✏</button>
+          </div>
+          <div class="ivr-step" style="align-items:flex-start">
+            <div style="min-width:80px">
+              <div style="background:#dcfce7;color:#15803d;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;text-align:center;margin-bottom:3px">🎙 „Rezept"</div>
+              <div style="background:#dcfce7;color:#15803d;padding:2px 7px;border-radius:5px;font-size:9px;font-weight:600;text-align:center">+„Medikament"</div>
+            </div>
+            <div style="flex:1">
+              <div class="ivr-action">Rezeptanfrage</div>
+              <div class="ivr-dest">→ Queue: Rezept · Klickbot: Rezept-Flow</div>
+              <div style="margin-top:4px;display:flex;gap:4px;flex-wrap:wrap">
+                <span style="background:#f1f5f9;color:#475569;padding:1px 7px;border-radius:5px;font-size:10px">Rezept</span>
+                <span style="background:#f1f5f9;color:#475569;padding:1px 7px;border-radius:5px;font-size:10px">Medikament</span>
+                <span style="background:#f1f5f9;color:#475569;padding:1px 7px;border-radius:5px;font-size:10px">Tabletten</span>
+                <span style="background:#f1f5f9;color:#475569;padding:1px 7px;border-radius:5px;font-size:10px">Folgerezept</span>
+              </div>
+            </div>
+            <button class="btn secondary" style="font-size:10px;padding:3px 8px;align-self:flex-start">✏</button>
+          </div>
+          <div class="ivr-step" style="align-items:flex-start">
+            <div style="min-width:80px">
+              <div style="background:#fef2f2;color:#dc2626;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;text-align:center;margin-bottom:3px">🎙 „Notfall"</div>
+              <div style="background:#fef2f2;color:#dc2626;padding:2px 7px;border-radius:5px;font-size:9px;font-weight:600;text-align:center">+„dringend"</div>
+            </div>
+            <div style="flex:1">
+              <div class="ivr-action">Notfall</div>
+              <div class="ivr-dest">→ Queue: Notfall · Priorität: Hoch</div>
+              <div style="margin-top:4px;display:flex;gap:4px;flex-wrap:wrap">
+                <span style="background:#f1f5f9;color:#475569;padding:1px 7px;border-radius:5px;font-size:10px">Notfall</span>
+                <span style="background:#f1f5f9;color:#475569;padding:1px 7px;border-radius:5px;font-size:10px">dringend</span>
+                <span style="background:#f1f5f9;color:#475569;padding:1px 7px;border-radius:5px;font-size:10px">Schmerzen</span>
+                <span style="background:#f1f5f9;color:#475569;padding:1px 7px;border-radius:5px;font-size:10px">schlimm</span>
+              </div>
+            </div>
+            <button class="btn secondary" style="font-size:10px;padding:3px 8px;align-self:flex-start">✏</button>
+          </div>
+          <div class="ivr-step" style="align-items:flex-start">
+            <div style="min-width:80px">
+              <div style="background:#f5f3ff;color:#6d28d9;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;text-align:center;margin-bottom:3px">🎙 „Überweisung"</div>
+            </div>
+            <div style="flex:1">
+              <div class="ivr-action">Überweisung</div>
+              <div class="ivr-dest">→ Queue: Allgemein · Klickbot: Überweisung-Flow</div>
+              <div style="margin-top:4px;display:flex;gap:4px;flex-wrap:wrap">
+                <span style="background:#f1f5f9;color:#475569;padding:1px 7px;border-radius:5px;font-size:10px">Überweisung</span>
+                <span style="background:#f1f5f9;color:#475569;padding:1px 7px;border-radius:5px;font-size:10px">Facharzt</span>
+                <span style="background:#f1f5f9;color:#475569;padding:1px 7px;border-radius:5px;font-size:10px">Einweisung</span>
+              </div>
+            </div>
+            <button class="btn secondary" style="font-size:10px;padding:3px 8px;align-self:flex-start">✏</button>
+          </div>
+        </div>
+        <div style="background:#fafafa;border:1px solid #f1f5f9;border-radius:9px;padding:10px 12px;margin-bottom:12px">
+          <div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:7px">🤖 Fallback — Wenn Anliegen unklar</div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <select style="flex:1;padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;font-family:Inter,sans-serif;outline:none;background:white">
+              <option>KI fragt nochmals nach: „Ich habe Sie leider nicht verstanden…"</option>
+              <option>Direkt zur Warteschleife Allgemein</option>
+              <option>Voicebot übernimmt</option>
+              <option>Weiterleitung an Rezeption (Ext. 100)</option>
+            </select>
+            <span style="font-size:11px;color:#9ca3af">nach</span>
+            <select style="width:80px;padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;font-family:Inter,sans-serif;outline:none;background:white">
+              <option>2x</option><option>1x</option><option>3x</option>
+            </select>
+            <span style="font-size:11px;color:#9ca3af">Versuchen</span>
+          </div>
+        </div>
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:9px;padding:10px 12px;margin-bottom:12px">
+          <div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:7px">🔊 Sprach-Engine (STT)</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <select style="padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;font-family:Inter,sans-serif;outline:none;background:white">
+              <option>🌟 Azure Speech — de-DE (empfohlen)</option>
+              <option>🌟 Whisper OpenAI — large-v3</option>
+              <option>🌟 Google STT — de-DE</option>
+              <option>⚙️ Whisper lokal (self-hosted)</option>
+            </select>
+            <select style="padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;font-family:Inter,sans-serif;outline:none;background:white">
+              <option>Modus: Keyword-Erkennung</option>
+              <option>Modus: Freie Sprache (NLU)</option>
+              <option>Modus: Hybrid</option>
+            </select>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn primary">Speichern</button>
+          <button class="btn secondary">+ Szenario hinzufügen</button>
+        </div>
+      </div>
+      <!-- Öffnungszeiten & Ansagen -->
+      <div class="acd-block">
+        <div class="acd-block-title">🕐 Öffnungszeiten & Ansagen</div>
+        <div class="form-row-2">
+          <div><div class="form-label">Von</div><input class="form-input" type="time" value="08:00"></div>
+          <div><div class="form-label">Bis</div><input class="form-input" type="time" value="18:00"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-label">Geschlossen-Ansage</div>
+          <select class="form-select"><option>Standard Außerhalb…</option><option>Eigene Aufnahme…</option></select>
+        </div>
+        <div class="form-label" style="margin-bottom:8px">Geschäftstage</div>
+        <div style="display:flex;gap:5px;margin-bottom:14px">
+          <div style="padding:5px 9px;background:#dbeafe;color:#1d4ed8;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer">Mo</div>
+          <div style="padding:5px 9px;background:#dbeafe;color:#1d4ed8;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer">Di</div>
+          <div style="padding:5px 9px;background:#dbeafe;color:#1d4ed8;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer">Mi</div>
+          <div style="padding:5px 9px;background:#dbeafe;color:#1d4ed8;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer">Do</div>
+          <div style="padding:5px 9px;background:#dbeafe;color:#1d4ed8;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer">Fr</div>
+          <div style="padding:5px 9px;background:#f1f5f9;color:#9ca3af;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer">Sa</div>
+          <div style="padding:5px 9px;background:#f1f5f9;color:#9ca3af;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer">So</div>
+        </div>
+        <div class="toggle-row"><span class="toggle-label">Feiertage automatisch erkennen</span><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+        <div class="toggle-row"><span class="toggle-label">Voicebot außerhalb der Zeiten</span><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+        <div class="btn-row">
+          <button class="btn primary">Speichern</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- TAB: Asterisk / SIP -->
+  <div id="tab-asterisk" style="display:none">
+    <div class="asterisk-section">
+      <div class="asterisk-header">
+        <h2>🔧 Asterisk / SIP-Verwaltung &nbsp;<span class="status-dot"></span> <span style="font-size:12px;color:#15803d;font-weight:500">Online</span></h2>
+        <span style="font-size:11px;color:#9ca3af">Asterisk 20.5 · Docker</span>
+      </div>
+      <div class="ast-grid">
+        <div class="ast-block">
+          <div class="ast-label">SIP Trunks</div>
+          <div class="sip-row"><div><div class="sip-name">Telekom SIP</div><div class="sip-detail">sip.telekom.de · 5060</div></div><span class="sip-badge ok">OK</span></div>
+          <div class="sip-row"><div><div class="sip-name">Backup Trunk</div><div class="sip-detail">sip2.provider.de · 5060</div></div><span class="sip-badge err">Offline</span></div>
+          <div class="sip-row"><div><div class="sip-name">Mobil Trunk</div><div class="sip-detail">mobile.sip.de · 5061</div></div><span class="sip-badge ok">OK</span></div>
+        </div>
+        <div class="ast-block">
+          <div class="ast-label">Extensions</div>
+          <div class="ext-row"><span class="ext-num">101</span><span class="ext-name">Dr. Schmidt</span><span class="ext-dot busy"></span></div>
+          <div class="ext-row"><span class="ext-num">102</span><span class="ext-name">Anna Weber</span><span class="ext-dot idle"></span></div>
+          <div class="ext-row"><span class="ext-num">103</span><span class="ext-name">Chris Müller</span><span class="ext-dot idle"></span></div>
+          <div class="ext-row"><span class="ext-num">104</span><span class="ext-name">Laura Klein</span><span class="ext-dot busy"></span></div>
+          <div class="ext-row"><span class="ext-num">105</span><span class="ext-name">Tom Huber</span><span class="ext-dot idle"></span></div>
+        </div>
+        <div class="ast-block">
+          <div class="ast-label">Heute</div>
+          <div class="call-stat"><span class="call-stat-label">Gesamt</span><span class="call-stat-val">24</span></div>
+          <div class="call-stat"><span class="call-stat-label">Angenommen</span><span class="call-stat-val" style="color:#15803d">21</span></div>
+          <div class="call-stat"><span class="call-stat-label">Verpasst</span><span class="call-stat-val" style="color:#dc2626">3</span></div>
+          <div class="call-stat"><span class="call-stat-label">Voicebot</span><span class="call-stat-val">14</span></div>
+          <div class="call-stat"><span class="call-stat-label">Ø Wartezeit</span><span class="call-stat-val">0:42</span></div>
+        </div>
+      </div>
+      <div class="ast-footer">
+        <button class="ast-btn primary">+ SIP Trunk</button>
+        <button class="ast-btn">+ Extension</button>
+        <button class="ast-btn">📋 Anrufprotokoll</button>
+        <button class="ast-btn">⚙️ Konsole</button>
+        <span style="margin-left:auto;font-size:11px;color:#9ca3af">Letztes Reload: 06:00</span>
+      </div>
+    </div>
+  </div>
+  <!-- TAB: Auswertung & Kosten -->
+  <div id="tab-auswertung" style="display:none">
+    <!-- Sub-Navigation -->
+    <div style="display:flex;gap:0;border-bottom:2px solid #e5e7eb;margin-bottom:18px;overflow-x:auto">
+      <div class="atab active" onclick="showAuswTab('kpi')">📊 KPI Übersicht</div>
+      <div class="atab" onclick="showAuswTab('kosten')">💰 Kosten & Erlöse</div>
+      <div class="atab" onclick="showAuswTab('agenten')">👤 Agenten & Lohn</div>
+      <div class="atab" onclick="showAuswTab('hotlines')">📞 Hotlines</div>
+      <div class="atab" onclick="showAuswTab('stammdaten')">⚙️ Stammdaten / Tarife</div>
+    </div>
+    <!-- ── KPI ÜBERSICHT ── -->
+    <div id="apanel-kpi">
+      <!-- Filter-Leiste -->
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px;background:white;border:1.5px solid #e5e7eb;border-radius:12px;padding:12px 16px">
+        <div style="font-size:12px;font-weight:700;color:#374151">Zeitraum:</div>
+        <div style="display:flex;gap:4px">
+          <button class="period-btn active" onclick="setPeriod(this,'today')">Heute</button>
+          <button class="period-btn" onclick="setPeriod(this,'week')">Woche</button>
+          <button class="period-btn" onclick="setPeriod(this,'month')">Monat</button>
+          <button class="period-btn" onclick="setPeriod(this,'quarter')">Quartal</button>
+          <button class="period-btn" onclick="setPeriod(this,'year')">Jahr</button>
+          <button class="period-btn" onclick="setPeriod(this,'all')">Gesamt</button>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;margin-left:8px">
+          <input type="date" value="2026-01-01" style="padding:5px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;font-family:Inter,sans-serif;outline:none">
+          <span style="color:#9ca3af;font-size:12px">–</span>
+          <input type="date" value="2026-02-22" style="padding:5px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;font-family:Inter,sans-serif;outline:none">
+        </div>
+        <select style="margin-left:auto;padding:6px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;font-family:Inter,sans-serif;outline:none;background:white">
+          <option>Alle Standorte</option>
+          <option>Praxis Dr. Schmidt</option>
+          <option>Praxis Müller GmbH</option>
+        </select>
+        <select style="padding:6px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;font-family:Inter,sans-serif;outline:none;background:white">
+          <option>Alle Hotlines</option>
+          <option>Allgemein</option>
+          <option>Notfall</option>
+          <option>Rezept</option>
+        </select>
+        <button style="padding:6px 14px;background:#2563eb;color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">⬇ Export CSV</button>
+      </div>
+      <!-- KPI Cards Reihe 1 – Anruf-Mengen -->
+      <div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">📞 Anruf-Mengen</div>
+      <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:16px">
+        <div class="kpi-card"><div class="kc-label">Anrufe gesamt</div><div class="kc-val">1.284</div><div class="kc-trend up">↑ +8% vs. Vormonat</div></div>
+        <div class="kpi-card"><div class="kc-label">Angenommen</div><div class="kc-val" style="color:#15803d">1.147</div><div class="kc-trend up">89.3%</div></div>
+        <div class="kpi-card"><div class="kc-label">Verpasst</div><div class="kc-val" style="color:#dc2626">137</div><div class="kc-trend down">10.7%</div></div>
+        <div class="kpi-card"><div class="kc-label">Via Voicebot</div><div class="kc-val" style="color:#7c3aed">412</div><div class="kc-trend up">32.1%</div></div>
+        <div class="kpi-card"><div class="kc-label">Rückrufe</div><div class="kc-val">58</div><div class="kc-trend">4.5%</div></div>
+        <div class="kpi-card"><div class="kc-label">Weiterleitungen</div><div class="kc-val">94</div><div class="kc-trend">7.3%</div></div>
+      </div>
+      <!-- KPI Cards Reihe 2 – Zeiten -->
+      <div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">⏱ Zeiten</div>
+      <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:16px">
+        <div class="kpi-card"><div class="kc-label">Ø Wartezeit (ASA)</div><div class="kc-val">0:42</div><div class="kc-trend up">↓ besser</div></div>
+        <div class="kpi-card"><div class="kc-label">Ø Gesprächsdauer</div><div class="kc-val">3:48</div><div class="kc-trend">AHT</div></div>
+        <div class="kpi-card"><div class="kc-label">Max. Wartezeit</div><div class="kc-val">4:12</div><div class="kc-trend down">↑ Ausreißer</div></div>
+        <div class="kpi-card"><div class="kc-label">Ø Nachbearbeit.</div><div class="kc-val">0:55</div><div class="kc-trend">ACW</div></div>
+        <div class="kpi-card"><div class="kc-label">Gesamtgesprächszeit</div><div class="kc-val">81h 24m</div><div class="kc-trend up">Monat</div></div>
+        <div class="kpi-card"><div class="kc-label">Service Level</div><div class="kc-val" style="color:#15803d">87.5%</div><div class="kc-trend up">↑ Ziel 80%</div></div>
+      </div>
+      <!-- KPI Cards Reihe 3 – Qualität -->
+      <div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">🎯 Qualität</div>
+      <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:16px">
+        <div class="kpi-card"><div class="kc-label">Abandon Rate</div><div class="kc-val" style="color:#ea580c">10.7%</div><div class="kc-trend down">↑ Ziel &lt;5%</div></div>
+        <div class="kpi-card"><div class="kc-label">First Call Resolution</div><div class="kc-val" style="color:#15803d">78%</div><div class="kc-trend up">FCR</div></div>
+        <div class="kpi-card"><div class="kc-label">Tickets erstellt</div><div class="kc-val">923</div><div class="kc-trend">72%</div></div>
+        <div class="kpi-card"><div class="kc-label">Termine gebucht</div><div class="kc-val">384</div><div class="kc-trend up">↑ +12%</div></div>
+        <div class="kpi-card"><div class="kc-label">Voicebot-Erfolgsrate</div><div class="kc-val" style="color:#7c3aed">91%</div><div class="kc-trend up">↑ sehr gut</div></div>
+        <div class="kpi-card"><div class="kc-label">Ø Agenten-Auslastung</div><div class="kc-val">68%</div><div class="kc-trend">Occupancy</div></div>
+      </div>
+      <!-- KPI Cards Reihe 4 – Kosten/Erlöse Kurzüberblick -->
+      <div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">💰 Kosten & Erlöse (Kurzüberblick)</div>
+      <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:20px">
+        <div class="kpi-card" style="border-color:#fca5a5"><div class="kc-label">Personalkosten</div><div class="kc-val" style="color:#dc2626">€ 6.840</div><div class="kc-trend">Monat</div></div>
+        <div class="kpi-card" style="border-color:#fca5a5"><div class="kc-label">Telefoniekosten</div><div class="kc-val" style="color:#ea580c">€ 312</div><div class="kc-trend">Trunks + Minuten</div></div>
+        <div class="kpi-card" style="border-color:#fca5a5"><div class="kc-label">Lizenzkosten</div><div class="kc-val" style="color:#ea580c">€ 490</div><div class="kc-trend">Queues + Software</div></div>
+        <div class="kpi-card" style="border-color:#fca5a5"><div class="kc-label">Kosten / Minute</div><div class="kc-val" style="color:#dc2626">€ 1.47</div><div class="kc-trend">Ø alle Kanäle</div></div>
+        <div class="kpi-card" style="border-color:#86efac"><div class="kc-label">Erlöse (Abrechnung)</div><div class="kc-val" style="color:#15803d">€ 9.600</div><div class="kc-trend">Monat</div></div>
+        <div class="kpi-card" style="border-color:#86efac"><div class="kc-label">Erlös / Minute</div><div class="kc-val" style="color:#15803d">€ 1.97</div><div class="kc-trend up">↑ Marge +0.50</div></div>
+      </div>
+    </div>
+    <!-- ── KOSTEN & ERLÖSE ── -->
+    <div id="apanel-kosten" style="display:none">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+        <!-- Kostenaufschlüsselung -->
+        <div class="aw-card">
+          <div class="aw-card-head">💰 Kostenaufschlüsselung — Monat</div>
+          <div class="aw-card-body">
+            <div class="cost-row"><span class="cost-label">👤 Personalkosten gesamt</span><span class="cost-val red">€ 6.840,00</span></div>
+            <div class="cost-sub"><div class="cost-row"><span class="cost-label">Dr. Schmidt (101h · Grundlohn)</span><span class="cost-val">€ 2.200,00</span></div></div>
+            <div class="cost-sub"><div class="cost-row"><span class="cost-label">Anna Weber (88h · inkl. Nachtzulage)</span><span class="cost-val">€ 1.540,00</span></div></div>
+            <div class="cost-sub"><div class="cost-row"><span class="cost-label">Chris Müller (92h · Wochend-Zuschlag)</span><span class="cost-val">€ 1.610,00</span></div></div>
+            <div class="cost-sub"><div class="cost-row"><span class="cost-label">Laura Klein (76h)</span><span class="cost-val">€ 1.490,00</span></div></div>
+            <div class="divider-row"></div>
+            <div class="cost-row"><span class="cost-label">📞 Telefoniekosten gesamt</span><span class="cost-val red">€ 312,00</span></div>
+            <div class="cost-sub"><div class="cost-row"><span class="cost-label">Telekom SIP Trunk (Grundgebühr)</span><span class="cost-val">€ 89,00</span></div></div>
+            <div class="cost-sub"><div class="cost-row"><span class="cost-label">Gesprächsminuten (1.284 Anrufe · Ø 3:48)</span><span class="cost-val">€ 187,00</span></div></div>
+            <div class="cost-sub"><div class="cost-row"><span class="cost-label">Backup Trunk (Grundgebühr)</span><span class="cost-val">€ 36,00</span></div></div>
+            <div class="divider-row"></div>
+            <div class="cost-row"><span class="cost-label">🗂 Queue-Lizenzen</span><span class="cost-val red">€ 490,00</span></div>
+            <div class="cost-sub"><div class="cost-row"><span class="cost-label">Allgemein (monatl. Grundgebühr)</span><span class="cost-val">€ 190,00</span></div></div>
+            <div class="cost-sub"><div class="cost-row"><span class="cost-label">Notfall (monatl. Grundgebühr)</span><span class="cost-val">€ 150,00</span></div></div>
+            <div class="cost-sub"><div class="cost-row"><span class="cost-label">Rezept (monatl. Grundgebühr)</span><span class="cost-val">€ 150,00</span></div></div>
+            <div class="divider-row"></div>
+            <div class="cost-row" style="font-weight:800"><span class="cost-label" style="color:#1e293b">Gesamtkosten Monat</span><span class="cost-val red">€ 7.642,00</span></div>
+          </div>
+        </div>
+        <!-- Erlöse & Marge -->
+        <div class="aw-card">
+          <div class="aw-card-head">📈 Erlöse & Marge — Monat</div>
+          <div class="aw-card-body">
+            <div class="cost-row"><span class="cost-label">💶 Erlöse gesamt</span><span class="cost-val green">€ 9.600,00</span></div>
+            <div class="cost-sub"><div class="cost-row"><span class="cost-label">Praxis Dr. Schmidt (Flatrate)</span><span class="cost-val">€ 3.800,00</span></div></div>
+            <div class="cost-sub"><div class="cost-row"><span class="cost-label">Praxis Müller (per Anruf · 412 × €8)</span><span class="cost-val">€ 3.296,00</span></div></div>
+            <div class="cost-sub"><div class="cost-row"><span class="cost-label">Praxis Huber (per Minute · 81h × €1.97)</span><span class="cost-val">€ 2.504,00</span></div></div>
+            <div class="divider-row"></div>
+            <div class="cost-row"><span class="cost-label">📊 Kennzahlen</span></div>
+            <div class="cost-sub"><div class="cost-row"><span class="cost-label">Gesprächsminuten gesamt</span><span class="cost-val">4.882 min</span></div></div>
+            <div class="cost-sub"><div class="cost-row"><span class="cost-label">Kosten pro Minute (Ø)</span><span class="cost-val red">€ 1,47</span></div></div>
+            <div class="cost-sub"><div class="cost-row"><span class="cost-label">Kosten pro Anruf (Ø)</span><span class="cost-val red">€ 5,95</span></div></div>
+            <div class="cost-sub"><div class="cost-row"><span class="cost-label">Erlös pro Minute (Ø)</span><span class="cost-val green">€ 1,97</span></div></div>
+            <div class="cost-sub"><div class="cost-row"><span class="cost-label">Erlös pro Anruf (Ø)</span><span class="cost-val green">€ 7,48</span></div></div>
+            <div class="divider-row"></div>
+            <div class="cost-row" style="font-weight:800"><span class="cost-label" style="color:#15803d">Rohertrag / Marge</span><span class="cost-val green">€ 1.958,00</span></div>
+            <div class="cost-sub"><div class="cost-row"><span class="cost-label">Marge %</span><span class="cost-val green" style="font-weight:700">20.4%</span></div></div>
+          </div>
+        </div>
+      </div>
+      <!-- Hotline Kosten-Vergleich -->
+      <div class="aw-card">
+        <div class="aw-card-head">📞 Kosten & Erlöse je Hotline</div>
+        <div class="aw-card-body" style="padding:0">
+          <table style="width:100%;border-collapse:collapse;font-size:12px">
+            <thead><tr>
+              <th class="ath">Hotline</th>
+              <th class="ath">Anrufe</th>
+              <th class="ath">Gesprächsmin.</th>
+              <th class="ath">Personalkosten</th>
+              <th class="ath">Telefoniekosten</th>
+              <th class="ath">Queue-Lizenz</th>
+              <th class="ath">Gesamt Kosten</th>
+              <th class="ath">Erlöse</th>
+              <th class="ath">Kosten/Min</th>
+              <th class="ath">Erlös/Min</th>
+              <th class="ath">Marge</th>
+            </tr></thead>
+            <tbody>
+              <tr class="atr"><td class="atd fw">Allgemein</td><td class="atd">714</td><td class="atd">2.714</td><td class="atd r">€ 3.820</td><td class="atd r">€ 174</td><td class="atd r">€ 190</td><td class="atd r red">€ 4.184</td><td class="atd r green">€ 5.320</td><td class="atd r red">€ 1,54</td><td class="atd r green">€ 1,96</td><td class="atd r" style="color:#15803d;font-weight:700">+27%</td></tr>
+              <tr class="atr"><td class="atd fw">Notfall</td><td class="atd">167</td><td class="atd">1.044</td><td class="atd r">€ 1.480</td><td class="atd r">€ 67</td><td class="atd r">€ 150</td><td class="atd r red">€ 1.697</td><td class="atd r green">€ 2.080</td><td class="atd r red">€ 1,63</td><td class="atd r green">€ 1,99</td><td class="atd r" style="color:#15803d;font-weight:700">+23%</td></tr>
+              <tr class="atr"><td class="atd fw">Rezept</td><td class="atd">403</td><td class="atd">1.124</td><td class="atd r">€ 1.540</td><td class="atd r">€ 71</td><td class="atd r">€ 150</td><td class="atd r red">€ 1.761</td><td class="atd r green">€ 2.200</td><td class="atd r red">€ 1,57</td><td class="atd r green">€ 1,96</td><td class="atd r" style="color:#15803d;font-weight:700">+25%</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <!-- ── AGENTEN & LOHN ── -->
+    <div id="apanel-agenten" style="display:none">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+        <!-- Agenten Lohnübersicht -->
+        <div class="aw-card">
+          <div class="aw-card-head">👤 Agenten Lohnübersicht — Monat</div>
+          <div class="aw-card-body" style="padding:0">
+            <table style="width:100%;border-collapse:collapse;font-size:12px">
+              <thead><tr>
+                <th class="ath">Agent</th>
+                <th class="ath">Std.</th>
+                <th class="ath">Grundlohn/h</th>
+                <th class="ath">Zulagen</th>
+                <th class="ath">Brutto gesamt</th>
+                <th class="ath">Kosten/Anruf</th>
+              </tr></thead>
+              <tbody>
+                <tr class="atr"><td class="atd"><div style="display:flex;align-items:center;gap:6px"><div style="width:22px;height:22px;background:#2563eb;border-radius:6px;display:flex;align-items:center;justify-content:center;color:white;font-size:9px;font-weight:700">DS</div>Dr. Schmidt</div></td><td class="atd">101</td><td class="atd">€ 18,50</td><td class="atd green">€ 148</td><td class="atd red fw">€ 2.018</td><td class="atd red">€ 8,12</td></tr>
+                <tr class="atr"><td class="atd"><div style="display:flex;align-items:center;gap:6px"><div style="width:22px;height:22px;background:#16a34a;border-radius:6px;display:flex;align-items:center;justify-content:center;color:white;font-size:9px;font-weight:700">AW</div>Anna Weber</div></td><td class="atd">88</td><td class="atd">€ 16,00</td><td class="atd green">€ 224</td><td class="atd red fw">€ 1.632</td><td class="atd red">€ 7,41</td></tr>
+                <tr class="atr"><td class="atd"><div style="display:flex;align-items:center;gap:6px"><div style="width:22px;height:22px;background:#7c3aed;border-radius:6px;display:flex;align-items:center;justify-content:center;color:white;font-size:9px;font-weight:700">CM</div>Chris Müller</div></td><td class="atd">92</td><td class="atd">€ 15,50</td><td class="atd green">€ 286</td><td class="atd red fw">€ 1.712</td><td class="atd red">€ 8,44</td></tr>
+                <tr class="atr"><td class="atd"><div style="display:flex;align-items:center;gap:6px"><div style="width:22px;height:22px;background:#ea580c;border-radius:6px;display:flex;align-items:center;justify-content:center;color:white;font-size:9px;font-weight:700">LK</div>Laura Klein</div></td><td class="atd">76</td><td class="atd">€ 16,50</td><td class="atd green">€ 99</td><td class="atd red fw">€ 1.353</td><td class="atd red">€ 9,11</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <!-- Zulagen-Konfiguration -->
+        <div class="aw-card">
+          <div class="aw-card-head" style="display:flex;justify-content:space-between">⚙️ Zulagen-Konfiguration <button class="btn secondary" style="font-size:11px;padding:4px 10px">+ Zulage</button></div>
+          <div class="aw-card-body" style="padding:0">
+            <table style="width:100%;border-collapse:collapse;font-size:12px">
+              <thead><tr><th class="ath">Zulage</th><th class="ath">Tage</th><th class="ath">Uhrzeit</th><th class="ath">Aufschlag</th></tr></thead>
+              <tbody>
+                <tr class="atr"><td class="atd fw">Nachtschicht</td><td class="atd">Mo–So</td><td class="atd">22:00–06:00</td><td class="atd green">+25%</td></tr>
+                <tr class="atr"><td class="atd fw">Frühschicht</td><td class="atd">Mo–Fr</td><td class="atd">06:00–08:00</td><td class="atd green">+10%</td></tr>
+                <tr class="atr"><td class="atd fw">Samstag</td><td class="atd">Sa</td><td class="atd">00:00–24:00</td><td class="atd green">+20%</td></tr>
+                <tr class="atr"><td class="atd fw">Sonntag</td><td class="atd">So</td><td class="atd">00:00–24:00</td><td class="atd green">+50%</td></tr>
+                <tr class="atr"><td class="atd fw">Feiertag</td><td class="atd">Feiertage</td><td class="atd">00:00–24:00</td><td class="atd green">+100%</td></tr>
+                <tr class="atr"><td class="atd fw">Spätschicht</td><td class="atd">Mo–Fr</td><td class="atd">18:00–22:00</td><td class="atd green">+15%</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <!-- Agent-Detail Zulagen-Monatsauswertung -->
+      <div class="aw-card">
+        <div class="aw-card-head">📋 Agent-Detail — Monatliche Stundenauswertung mit Zulagen</div>
+        <div class="aw-card-body">
+          <div style="display:flex;gap:10px;margin-bottom:14px">
+            <select style="padding:7px 12px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;font-family:Inter,sans-serif;outline:none;background:white">
+              <option>Chris Müller</option><option>Dr. Schmidt</option><option>Anna Weber</option><option>Laura Klein</option>
+            </select>
+            <select style="padding:7px 12px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;font-family:Inter,sans-serif;outline:none;background:white">
+              <option>Februar 2026</option><option>Januar 2026</option><option>Dezember 2025</option>
+            </select>
+          </div>
+          <table style="width:100%;border-collapse:collapse;font-size:12px">
+            <thead><tr>
+              <th class="ath">Datum</th><th class="ath">Schicht</th><th class="ath">Von</th><th class="ath">Bis</th><th class="ath">Std.</th><th class="ath">Grundlohn</th><th class="ath">Zulage</th><th class="ath">Aufschlag</th><th class="ath">Gesamt brutto</th>
+            </tr></thead>
+            <tbody>
+              <tr class="atr"><td class="atd">Mo 03.02</td><td class="atd">Frühschicht</td><td class="atd">06:00</td><td class="atd">14:00</td><td class="atd">8h</td><td class="atd">€ 124,00</td><td class="atd green">+ Früh 10%</td><td class="atd green">+ € 12,40</td><td class="atd fw">€ 136,40</td></tr>
+              <tr class="atr"><td class="atd">Sa 08.02</td><td class="atd">Tagschicht</td><td class="atd">08:00</td><td class="atd">16:00</td><td class="atd">8h</td><td class="atd">€ 124,00</td><td class="atd green">+ Samstag 20%</td><td class="atd green">+ € 24,80</td><td class="atd fw">€ 148,80</td></tr>
+              <tr class="atr"><td class="atd">So 09.02</td><td class="atd">Spätschicht</td><td class="atd">14:00</td><td class="atd">22:00</td><td class="atd">8h</td><td class="atd">€ 124,00</td><td class="atd green">+ Sonntag 50%</td><td class="atd green">+ € 62,00</td><td class="atd fw">€ 186,00</td></tr>
+              <tr class="atr"><td class="atd">Fr 14.02</td><td class="atd">Nachtschicht</td><td class="atd">22:00</td><td class="atd">06:00</td><td class="atd">8h</td><td class="atd">€ 124,00</td><td class="atd green">+ Nacht 25%</td><td class="atd green">+ € 31,00</td><td class="atd fw">€ 155,00</td></tr>
+              <tr style="background:#f9fafb;font-weight:700"><td class="atd" colspan="4">Summe Februar</td><td class="atd">92h</td><td class="atd">€ 1.426</td><td class="atd green">Zulagen gesamt</td><td class="atd green">€ 286</td><td class="atd red">€ 1.712</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <!-- ── HOTLINES ── -->
+    <div id="apanel-hotlines" style="display:none">
+      <div class="aw-card">
+        <div class="aw-card-head">📞 Hotline KPIs — Detailauswertung</div>
+        <div class="aw-card-body" style="padding:0">
+          <table style="width:100%;border-collapse:collapse;font-size:12px">
+            <thead><tr>
+              <th class="ath">Hotline</th><th class="ath">Anrufe</th><th class="ath">Angenommen</th><th class="ath">Verpasst</th><th class="ath">Abandon%</th><th class="ath">Voicebot</th><th class="ath">Ø Warte</th><th class="ath">Ø Dauer</th><th class="ath">Service Level</th><th class="ath">Kosten/Anruf</th><th class="ath">Erlös/Anruf</th>
+            </tr></thead>
+            <tbody>
+              <tr class="atr"><td class="atd fw">Allgemein</td><td class="atd">714</td><td class="atd green">638</td><td class="atd red">76</td><td class="atd red">10.6%</td><td class="atd purple">228</td><td class="atd">0:52</td><td class="atd">4:12</td><td class="atd green">86%</td><td class="atd red">€ 5,86</td><td class="atd green">€ 7,45</td></tr>
+              <tr class="atr"><td class="atd fw">Notfall</td><td class="atd">167</td><td class="atd green">160</td><td class="atd red">7</td><td class="atd green">4.2%</td><td class="atd purple">0</td><td class="atd">0:18</td><td class="atd">6:15</td><td class="atd green">95%</td><td class="atd red">€ 10,16</td><td class="atd green">€ 12,46</td></tr>
+              <tr class="atr"><td class="atd fw">Rezept</td><td class="atd">403</td><td class="atd green">349</td><td class="atd red">54</td><td class="atd red">13.4%</td><td class="atd purple">184</td><td class="atd">0:38</td><td class="atd">2:47</td><td class="atd">82%</td><td class="atd red">€ 4,37</td><td class="atd green">€ 5,46</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <!-- ── STAMMDATEN / TARIFE ── -->
+    <div id="apanel-stammdaten" style="display:none">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <!-- Skillgruppen / Queue Tarife -->
+        <div class="aw-card">
+          <div class="aw-card-head" style="display:flex;justify-content:space-between">🗂 Skillgruppen-Tarife <button class="btn primary" style="font-size:11px;padding:4px 12px">+ Skillgruppe</button></div>
+          <div class="aw-card-body" style="padding:0">
+            <table style="width:100%;border-collapse:collapse;font-size:12px">
+              <thead><tr><th class="ath">Name</th><th class="ath">Grundgebühr/Mon</th><th class="ath">Kosten/Anruf</th><th class="ath">Kosten/Min</th><th class="ath">Erlös/Min</th></tr></thead>
+              <tbody>
+                <tr class="atr"><td class="atd fw">Allgemein</td><td class="atd">€ 190,00</td><td class="atd">€ 0,85</td><td class="atd">€ 0,12</td><td class="atd green">€ 1,45</td></tr>
+                <tr class="atr"><td class="atd fw">Notfall</td><td class="atd">€ 150,00</td><td class="atd">€ 1,20</td><td class="atd">€ 0,18</td><td class="atd green">€ 2,10</td></tr>
+                <tr class="atr"><td class="atd fw">Rezept</td><td class="atd">€ 150,00</td><td class="atd">€ 0,65</td><td class="atd">€ 0,09</td><td class="atd green">€ 1,20</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <!-- Neue Skillgruppe -->
+          <div style="padding:14px 16px;border-top:1px solid #f1f5f9;background:#f9fafb">
+            <div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:10px">+ Neue Skillgruppe anlegen</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+              <div><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Name</div><input style="width:100%;padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;font-family:Inter,sans-serif;outline:none" placeholder="z.B. VIP-Kunden"></div>
+              <div><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Monatl. Grundgebühr (€)</div><input type="number" style="width:100%;padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;font-family:Inter,sans-serif;outline:none" placeholder="190,00"></div>
+              <div><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Kosten pro Anruf (€)</div><input type="number" step="0.01" style="width:100%;padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;font-family:Inter,sans-serif;outline:none" placeholder="0,85"></div>
+              <div><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Kosten pro Minute (€)</div><input type="number" step="0.01" style="width:100%;padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;font-family:Inter,sans-serif;outline:none" placeholder="0,12"></div>
+              <div><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Erlös pro Minute (€)</div><input type="number" step="0.01" style="width:100%;padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;font-family:Inter,sans-serif;outline:none" placeholder="1,45"></div>
+              <div><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Erlös pro Anruf (€)</div><input type="number" step="0.01" style="width:100%;padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;font-family:Inter,sans-serif;outline:none" placeholder="7,00"></div>
+            </div>
+            <button style="padding:8px 18px;background:#2563eb;color:white;border:none;border-radius:9px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">Skillgruppe anlegen</button>
+          </div>
+        </div>
+        <!-- Agenten Lohn-Stammdaten -->
+        <div class="aw-card">
+          <div class="aw-card-head" style="display:flex;justify-content:space-between">👤 Agenten Lohn-Stammdaten <button class="btn primary" style="font-size:11px;padding:4px 12px">+ Agent anlegen</button></div>
+          <div class="aw-card-body" style="padding:0">
+            <table style="width:100%;border-collapse:collapse;font-size:12px">
+              <thead><tr><th class="ath">Agent</th><th class="ath">Grundlohn/h</th><th class="ath">Vertragsart</th><th class="ath">Stunden/Mon</th></tr></thead>
+              <tbody>
+                <tr class="atr"><td class="atd fw">Dr. Schmidt</td><td class="atd green">€ 18,50</td><td class="atd">Festanstellung</td><td class="atd">100h</td></tr>
+                <tr class="atr"><td class="atd fw">Anna Weber</td><td class="atd green">€ 16,00</td><td class="atd">Teilzeit</td><td class="atd">88h</td></tr>
+                <tr class="atr"><td class="atd fw">Chris Müller</td><td class="atd green">€ 15,50</td><td class="atd">Vollzeit</td><td class="atd">92h</td></tr>
+                <tr class="atr"><td class="atd fw">Laura Klein</td><td class="atd green">€ 16,50</td><td class="atd">Teilzeit</td><td class="atd">76h</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <!-- Neuer Agent -->
+          <div style="padding:14px 16px;border-top:1px solid #f1f5f9;background:#f9fafb">
+            <div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:10px">+ Neuen Agenten anlegen</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+              <div><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Name</div><input style="width:100%;padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;font-family:Inter,sans-serif;outline:none" placeholder="Vor- und Nachname"></div>
+              <div><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Monatl. Brutto-Stundenlohn (€)</div><input type="number" step="0.01" style="width:100%;padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;font-family:Inter,sans-serif;outline:none" placeholder="16,00"></div>
+              <div><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Vertragsart</div><select style="width:100%;padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;font-family:Inter,sans-serif;outline:none;background:white"><option>Festanstellung</option><option>Teilzeit</option><option>Minijob</option><option>Freelancer</option></select></div>
+              <div><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Soll-Stunden / Monat</div><input type="number" style="width:100%;padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;font-family:Inter,sans-serif;outline:none" placeholder="80"></div>
+            </div>
+            <div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:7px">Schichten & Zulagen (aktiv für diesen Agent)</div>
+            <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px">
+              <span onclick="this.classList.toggle('on')" class="sl-tag on">🌙 Nachtschicht +25%</span>
+              <span onclick="this.classList.toggle('on')" class="sl-tag on">☀️ Frühschicht +10%</span>
+              <span onclick="this.classList.toggle('on')" class="sl-tag">📅 Samstag +20%</span>
+              <span onclick="this.classList.toggle('on')" class="sl-tag">🔴 Sonntag +50%</span>
+              <span onclick="this.classList.toggle('on')" class="sl-tag">🎉 Feiertag +100%</span>
+              <span onclick="this.classList.toggle('on')" class="sl-tag">🌆 Spätschicht +15%</span>
+            </div>
+            <button style="padding:8px 18px;background:#2563eb;color:white;border:none;border-radius:9px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">Agent anlegen</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  function showTab(tab) {
+    ['overview','acd','asterisk','auswertung'].forEach(t => {
+      document.getElementById('tab-'+t).style.display = t === tab ? 'block' : 'none';
+    });
+    document.querySelectorAll('.dash-tab').forEach((el, i) => {
+      el.classList.toggle('active', ['overview','acd','asterisk','auswertung'][i] === tab);
+    });
+  }
+  // Live update
+  setInterval(() => {
+    const now = new Date();
+    document.querySelectorAll('.live-badge').forEach(el => {
+      const span = el.querySelector('span:last-child');
+      if(span && span.textContent.includes('Live')) span.textContent = ` Live · ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')} Uhr`;
+    });
+  }, 30000);
+  function showAnsagenTab(tab) {
+    ['lib','tts','upload'].forEach(t => {
+      document.getElementById('apanel-' + t).style.display = t === tab ? 'block' : 'none';
+      const el = document.getElementById('atab-' + t);
+      if (el) {
+        el.style.color = t === tab ? '#2563eb' : '#9ca3af';
+        el.style.borderBottomColor = t === tab ? '#2563eb' : 'transparent';
+      }
+    });
+    if (tab === 'tts') document.getElementById('apanel-tts').style.display = 'block';
+    if (tab === 'upload') document.getElementById('apanel-upload').style.display = 'block';
+  }
+  function generateTTS() {
+    const st = document.getElementById('tts-status');
+    const btn = event.target;
+    btn.textContent = '⏳ Generiere…';
+    btn.style.opacity = '.6';
+    st.textContent = 'Piper TTS wird ausgeführt…';
+    setTimeout(() => {
+      btn.textContent = '✨ Ansage generieren';
+      btn.style.opacity = '1';
+      st.textContent = '✅ Erfolgreich generiert!';
+      document.getElementById('tts-player').style.display = 'block';
+      let p = 0;
+      const bar = document.getElementById('tts-progress');
+      const iv = setInterval(() => { p += 2; bar.style.width = p + '%'; if (p >= 100) clearInterval(iv); }, 100);
+    }, 1800);
+  }
+  function previewTTS() {
+    const txt = document.getElementById('tts-text').value;
+    if (!txt) return;
+    if ('speechSynthesis' in window) {
+      const u = new SpeechSynthesisUtterance(txt);
+      u.lang = 'de-DE'; u.rate = 0.9;
+      window.speechSynthesis.speak(u);
+    }
+  }
+  function ttsConfirmSave() {
+    const p = document.getElementById('tts-player');
+    p.innerHTML = '<div style="color:#15803d;font-size:13px;font-weight:700">✅ Ansage in Bibliothek gespeichert und zugewiesen!</div>';
+  }
+  function playAnsage(btn, text) {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = 'de-DE'; u.rate = 0.9;
+      btn.textContent = '⏹ Stop';
+      u.onend = () => { btn.textContent = '▶ Play'; };
+      window.speechSynthesis.speak(u);
+      btn.onclick = () => { window.speechSynthesis.cancel(); btn.textContent = '▶ Play'; btn.onclick = () => playAnsage(btn, text); };
+    }
+  }
+  function handleDrop(e) {
+    e.preventDefault();
+    const dz = document.getElementById('drop-zone');
+    dz.style.borderColor = '#cbd5e1'; dz.style.background = '#f8fafc';
+    const file = e.dataTransfer.files[0];
+    if (file) showUploadPreview(file);
+  }
+  function handleFileSelect(input) {
+    if (input.files[0]) showUploadPreview(input.files[0]);
+  }
+  function showUploadPreview(file) {
+    document.getElementById('upload-filename').textContent = file.name;
+    const kb = Math.round(file.size / 1024);
+    const ext = file.name.split('.').pop().toUpperCase();
+    document.getElementById('upload-fileinfo').textContent = ext + ' · ' + (kb > 1024 ? (kb/1024).toFixed(1)+' MB' : kb+' KB');
+    document.getElementById('upload-name').value = file.name.replace(/\.[^.]+$/, '');
+    document.getElementById('upload-preview').style.display = 'block';
+    document.getElementById('upload-btn-row').style.display = 'flex';
+  }
+  function confirmUpload() {
+    document.getElementById('upload-preview').style.display = 'none';
+    document.getElementById('upload-btn-row').style.display = 'none';
+    document.getElementById('upload-success').style.display = 'block';
+    setTimeout(() => document.getElementById('upload-success').style.display = 'none', 3000);
+  }
+  // Char counter
+  setTimeout(() => {
+    const ta = document.getElementById('tts-text');
+    if (ta) ta.oninput = () => { document.getElementById('tts-charcount').textContent = ta.value.length + ' Zeichen'; };
+  }, 500);
+  function showAuswTab(tab) {
+    ['kpi','kosten','agenten','hotlines','stammdaten'].forEach(t => {
+      const el = document.getElementById('apanel-' + t);
+      if (el) el.style.display = t === tab ? 'block' : 'none';
+    });
+    document.querySelectorAll('#tab-auswertung .atab').forEach((el, i) => {
+      const tabs = ['kpi','kosten','agenten','hotlines','stammdaten'];
+      el.classList.toggle('active', tabs[i] === tab);
+    });
+  }
+  function setPeriod(btn, period) {
+    document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+</script>
+</body>
+</html>
