@@ -8,7 +8,7 @@
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Inter', sans-serif; background: #f8fafc; display: flex; height: 100vh; overflow: hidden; }
-  .sidebar { width: 220px; background: white; border-right: 1px solid #e5e7eb; padding: 16px 12px; flex-shrink: 0; overflow-y: auto; }
+  .sidebar { width: 260px; background: white; border-right: 1px solid #e5e7eb; padding: 12px 8px; flex-shrink: 0; overflow-y: auto; }
   .sidebar-logo { display: flex; align-items: center; gap: 10px; padding: 8px 10px; margin-bottom: 8px; }
   .sidebar-logo .icon { width: 32px; height: 32px; background: #0369a1; border-radius: 9px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 14px; }
   .sidebar-logo span { font-weight: 700; font-size: 14px; color: #111827; }
@@ -137,31 +137,78 @@
 </head>
 <body>
 <!-- Sidebar -->
+<style>
+  .tree-overview{display:block;padding:7px 10px;font-size:12px;font-weight:600;color:#374151;text-decoration:none;border-radius:8px}.tree-overview:hover{background:#f1f5f9}
+  .tree-divider{height:1px;background:#e5e7eb;margin:6px 8px}
+  .tree-sec{padding:7px 10px;border-radius:8px;font-size:11px;font-weight:700;color:white;margin:6px 0 3px;letter-spacing:.3px}
+  .tree-sec.blue{background:linear-gradient(135deg,#1e40af,#2563eb)}.tree-sec.purple{background:linear-gradient(135deg,#5b21b6,#7c3aed)}.tree-sec.green{background:linear-gradient(135deg,#15803d,#16a34a)}.tree-sec.indigo{background:linear-gradient(135deg,#3730a3,#4f46e5)}
+  .tree-grp{padding:4px 10px 4px 14px;font-size:11px;font-weight:700;color:#374151;display:flex;align-items:center}
+  .tree-item{display:flex;align-items:center;padding:4px 10px 4px 14px;font-size:11px;font-weight:500;color:#6b7280;text-decoration:none;border-radius:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.tree-item:hover{background:#f1f5f9;color:#374151}
+  .tree-leaf{display:block;padding:3px 10px 3px 28px;font-size:10px;color:#9ca3af;text-decoration:none;border-radius:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.tree-leaf:hover{background:#f1f5f9;color:#6b7280}
+  .tree-leaf.sub{padding-left:32px}
+  .tree-subsec{padding:5px 10px;border-radius:7px;font-size:10px;font-weight:700;color:white;margin:5px 0 2px 8px;background:linear-gradient(135deg,#0f766e,#0d9488)}
+  .tree-badge{padding:1px 5px;border-radius:999px;font-size:8px;font-weight:700;margin-left:auto;flex-shrink:0}
+  .nb-blue{background:#dbeafe;color:#1d4ed8}.nb-purple{background:#ede9fe;color:#6d28d9}.nb-teal{background:#ccfbf1;color:#0f766e}.nb-green{background:#dcfce7;color:#15803d}.nb-orange{background:#ffedd5;color:#c2410c}.nb-indigo{background:#e0e7ff;color:#3730a3}
+</style>
 <div class="sidebar">
   <div class="sidebar-logo" onclick="location.href='uebersicht.html'" style="cursor:pointer"><div class="icon">SL</div><span>MedReception</span></div>
-  <div class="role-badge">🏢 Standort-/Projektleitung</div>
-  <div class="scope-badge">📍 <strong>Praxis Dr. Schmidt</strong><br>München · Nur Ihr Standort</div>
-  <div class="nav-group">Mein Board</div>
-  <div class="nav-item" onclick="location.href='uebersicht.html'" style="cursor:pointer">🗺 Projektübersicht</div>
-  <div class="nav-item active" onclick="showTab('live')">📊 SL Dashboard</div>
-  <div class="nav-item" onclick="location.href='agent-board.html'" style="cursor:pointer">📞 Agent Board</div>
-  <div class="nav-group">Postfach</div>
-  <div class="nav-item" onclick="showTab('postfach')">📬 Postfach <span class="badge-count">5</span></div>
-  <div class="nav-group">Team</div>
-  <div class="nav-item" onclick="showTab('agents')">👥 Agenten</div>
-  <div class="nav-item" onclick="showTab('agents')">🗂 Queues & Skills</div>
-  <div class="nav-group">Konfiguration</div>
-  <div class="nav-item" onclick="showTab('clickbot')">🤖 Clickbot Builder</div>
-  <div class="nav-item" onclick="showTab('standort')">📍 Standort & KB</div>
-  <div class="nav-item" onclick="location.href='flow-editor.html'" style="cursor:pointer">🧠 Flow Editor</div>
-  <div class="nav-group">Auswertung</div>
-  <div class="nav-item" onclick="showTab('live')">📡 Live-Auslastung</div>
-  <div class="nav-item" onclick="showTab('kpi')">📈 KPI Berichte</div>
-  <div class="nav-item" onclick="showTab('search')">🔍 Anruf-Suche</div>
-  <div class="nav-group">Navigation</div>
-  <div class="nav-item" onclick="location.href='admin-dashboard.html'" style="cursor:pointer">📊 Admin Dashboard</div>
-  <div class="nav-item" onclick="location.href='teamleiter.html'" style="cursor:pointer">👥 Teamleiter</div>
-  <div class="nav-item" onclick="sessionStorage.removeItem('mr_guard_session');location.href='index.html'" style="cursor:pointer">🔓 Abmelden</div>
+  <a href="uebersicht.html" class="tree-overview">📋 Projektübersicht</a>
+  <div class="tree-divider"></div>
+  <div class="tree-sec blue">🛡️ Admin Dashboard</div>
+  <div class="tree-grp">📊 Übersicht <span class="tree-badge nb-blue">Tab 1</span></div>
+  <a href="admin-dashboard.html" class="tree-leaf">📞 Tages-KPIs</a>
+  <a href="admin-dashboard.html" class="tree-leaf">📡 Callcenter Live</a>
+  <a href="admin-dashboard.html" class="tree-leaf">👤 Agenten-Status</a>
+  <div class="tree-grp">📞 ACD Einstellungen <span class="tree-badge nb-orange">Tab 2</span></div>
+  <a href="admin-dashboard.html" class="tree-leaf">🗂 Warteschlangen (Queues)</a>
+  <a href="admin-dashboard.html" class="tree-leaf">⚙️ Queue-Einstellungen</a>
+  <a href="admin-dashboard.html" class="tree-leaf">↗️ Overflow &amp; Weiterleitung</a>
+  <a href="admin-dashboard.html" class="tree-leaf">🎛 IVR-Menü</a>
+  <a href="admin-dashboard.html" class="tree-leaf">🕐 Öffnungszeiten &amp; Ansagen</a>
+  <div class="tree-grp">🔧 Asterisk / SIP <span class="tree-badge nb-blue">Tab 3</span></div>
+  <a href="admin-dashboard.html" class="tree-leaf">📡 SIP Trunks</a>
+  <a href="admin-dashboard.html" class="tree-leaf">☎️ Extensions</a>
+  <a href="admin-dashboard.html" class="tree-leaf">📋 Anrufprotokoll &amp; Konsole</a>
+  <div class="tree-grp">📈 Auswertung &amp; Kosten <span class="tree-badge nb-blue">Tab 4</span></div>
+  <a href="admin-dashboard.html" class="tree-leaf">📊 KPI Übersicht</a>
+  <a href="admin-dashboard.html" class="tree-leaf">💰 Kosten &amp; Erlöse</a>
+  <a href="admin-dashboard.html" class="tree-leaf">👤 Agenten &amp; Lohn</a>
+  <a href="admin-dashboard.html" class="tree-leaf">📞 Hotlines</a>
+  <a href="admin-dashboard.html" class="tree-leaf">⚙️ Stammdaten / Tarife</a>
+  <div class="tree-divider"></div>
+  <div class="tree-sec purple">👤 Teamleiter Dashboard</div>
+  <a href="teamleiter.html" class="tree-item">📡 Live-Auslastung <span class="tree-badge nb-purple">Tab 1</span></a>
+  <a href="teamleiter.html" class="tree-item">📈 KPI &amp; Berichte <span class="tree-badge nb-purple">Tab 2</span></a>
+  <a href="teamleiter.html" class="tree-item">👥 Agenten verwalten <span class="tree-badge nb-purple">Tab 3</span></a>
+  <a href="teamleiter.html" class="tree-item">🤖 Clickbot Builder <span class="tree-badge nb-purple">Tab 4</span></a>
+  <a href="teamleiter.html" class="tree-item">📍 Standort &amp; KB <span class="tree-badge nb-purple">Tab 5</span></a>
+  <a href="teamleiter.html" class="tree-item">✉️ Nachrichten <span class="tree-badge nb-purple">Tab 6</span></a>
+  <a href="teamleiter.html" class="tree-item">🔍 Anruf-Suche <span class="tree-badge nb-purple">Tab 7</span></a>
+  <div class="tree-subsec">🏢 Standortleitung</div>
+  <a href="standortleitung.html" class="tree-leaf sub">📡 Live-Auslastung <span class="tree-badge nb-teal">Tab 1</span></a>
+  <a href="standortleitung.html" class="tree-leaf sub">📈 KPI Berichte <span class="tree-badge nb-teal">Tab 2</span></a>
+  <a href="standortleitung.html" class="tree-leaf sub">📬 Postfach <span class="tree-badge nb-teal">Tab 3</span></a>
+  <a href="standortleitung.html" class="tree-leaf sub">👥 Agenten (nur lesen) <span class="tree-badge nb-teal">Tab 4</span></a>
+  <a href="standortleitung.html" class="tree-leaf sub">🤖 Clickbot Builder <span class="tree-badge nb-teal">Tab 5</span></a>
+  <a href="standortleitung.html" class="tree-leaf sub">📍 Standort &amp; KB <span class="tree-badge nb-teal">Tab 6</span></a>
+  <a href="standortleitung.html" class="tree-leaf sub">🔍 Anruf-Suche <span class="tree-badge nb-teal">Tab 7</span></a>
+  <div class="tree-divider"></div>
+  <div class="tree-sec indigo">🧠 Flow Editor</div>
+  <a href="flow-editor.html" class="tree-item">🤖 Voicebot Modus <span class="tree-badge nb-indigo">Modus 1</span></a>
+  <a href="flow-editor.html" class="tree-item">👤 Clickbot Modus <span class="tree-badge nb-indigo">Modus 2</span></a>
+  <a href="flow-editor.html" class="tree-item">📚 Wissensdatenbank <span class="tree-badge nb-indigo">Panel</span></a>
+  <a href="flow-editor.html" class="tree-item">👁 Live-Vorschau <span class="tree-badge nb-indigo">Panel</span></a>
+  <div class="tree-divider"></div>
+  <div class="tree-sec green">🎧 Agenten Dashboard</div>
+  <a href="agent-board.html" class="tree-item">📞 Agent Board <span class="tree-badge nb-green">Board</span></a>
+  <a href="agent-board.html" class="tree-item">🎛 Klickbot &amp; Freitext</a>
+  <a href="agent-board.html" class="tree-item">📅 Terminbuchung</a>
+  <a href="agent-board.html" class="tree-item">🔢 Telefon &amp; Durchstellen</a>
+  <a href="agent-board.html" class="tree-item">📊 Agenten-Statistik</a>
+  <a href="agent-board.html" class="tree-item">🏷 Status-Steuerung</a>
+  <a href="agent-board.html" class="tree-item">✉️ Post-Call Mail</a>
+  <div class="tree-divider"></div>
+  <div class="tree-item" onclick="sessionStorage.removeItem('mr_guard_session');location.href='index.html'" style="cursor:pointer;color:#dc2626">🔓 Abmelden</div>
 </div>
 <!-- Main -->
 <div class="main">
