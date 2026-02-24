@@ -128,7 +128,9 @@ export const userAPI = {
   getOne: (id) => api.get(`/users/${id}`),
   create: (data) => api.post('/users', data),
   update: (id, data) => api.put(`/users/${id}`, data),
-  delete: (id) => api.delete(`/users/${id}`)
+  delete: (id) => api.delete(`/users/${id}`),
+  updateLocation: (data) => api.put('/users/location', data),
+  getTeamLocations: () => api.get('/users/locations')
 };
 
 // Health

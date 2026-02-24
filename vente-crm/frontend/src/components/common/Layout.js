@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import {
   Box, AppBar, Toolbar, Typography, Drawer, List, ListItem,
@@ -7,23 +7,34 @@ import {
 } from '@mui/material';
 import {
   Menu as MenuIcon, Dashboard, People, Description, Inventory,
-  AccountBalance, Map, Person, ExitToApp, ChevronLeft, BarChart
+  AccountBalance, Map, Person, ExitToApp, ChevronLeft, BarChart,
+  Groups
 } from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
+import { userAPI } from '../../services/api';
 
 const DRAWER_WIDTH = 260;
 
-const menuItems = [
+const ROLE_LABELS = {
+  ADMIN: 'Administrator',
+  STANDORTLEITUNG: 'Standortleitung',
+  TEAMLEAD: 'Teamleiter',
+  BACKOFFICE: 'Backoffice',
+  VERTRIEB: 'Vertriebsmitarbeiter'
+};
+
+const getMenuItems = (role) => [
   { text: 'Dashboard', icon: <Dashboard />, path: '/dashboard', permission: 'dashboard:read' },
   { text: 'Kunden', icon: <People />, path: '/customers', permission: 'customers:read' },
   { text: 'Verträge', icon: <Description />, path: '/contracts', permission: 'contracts:read' },
   { text: 'Produkte', icon: <Inventory />, path: '/products', permission: 'products:read' },
   { text: 'EÜR / Ausgaben', icon: <AccountBalance />, path: '/expenses', permission: 'expenses:read' },
-  { text: 'Adresslisten', icon: <Map />, path: '/address-lists', permission: 'addresses:read' },
+  { text: role === 'VERTRIEB' ? 'Mein Gebiet' : 'Adresslisten', icon: <Map />, path: '/address-lists', permission: 'addresses:read' },
   { text: 'Statistiken', icon: <BarChart />, path: '/dashboard', permission: 'reports:read' },
 ];
 
 const adminItems = [
+  { text: 'Team Live', icon: <Groups />, path: '/team-map', permission: 'users:read' },
   { text: 'Benutzer', icon: <Person />, path: '/users', permission: 'users:read' },
 ];
 
@@ -36,8 +47,36 @@ const Layout = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
+  // Live Location Tracking - sendet Position alle 30 Sekunden
+  const locationInterval = useRef(null);
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+
+    const sendLocation = () => {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          userAPI.updateLocation({
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude
+          }).catch(() => {}); // Fehler still ignorieren
+        },
+        () => {}, // Fehler still ignorieren
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    };
+
+    // Sofort senden + alle 30 Sekunden
+    sendLocation();
+    locationInterval.current = setInterval(sendLocation, 30000);
+
+    return () => {
+      if (locationInterval.current) clearInterval(locationInterval.current);
+    };
+  }, []);
+
   const handleLogout = async () => {
     setAnchorEl(null);
+    if (locationInterval.current) clearInterval(locationInterval.current);
     await logout();
     navigate('/login');
   };
@@ -68,7 +107,7 @@ const Layout = () => {
 
       {/* Navigation */}
       <List sx={{ flex: 1, px: 1.5, py: 1 }}>
-        {menuItems.filter(item => hasPermission(item.permission)).map((item) => (
+        {getMenuItems(user?.role).filter(item => hasPermission(item.permission)).map((item) => (
           <ListItem
             button
             key={item.text}
@@ -120,7 +159,7 @@ const Layout = () => {
               {user?.first_name ? `${user.first_name} ${user.last_name || ''}` : user?.email}
             </Typography>
             <Typography sx={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.7rem' }}>
-              {user?.role}
+              {ROLE_LABELS[user?.role] || user?.role}
             </Typography>
           </Box>
         </Box>

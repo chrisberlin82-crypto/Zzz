@@ -11,6 +11,7 @@ import {
   HourglassEmpty, CloudUpload, InsertDriveFile
 } from '@mui/icons-material';
 import { addressAPI } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 const BORDEAUX = '#7A1B2D';
 
@@ -28,6 +29,9 @@ const AddressListsPage = () => {
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { user, hasRole } = useAuth();
+  const isVertrieb = hasRole('VERTRIEB');
+  const pageTitle = isVertrieb ? 'Mein Geschaeftsgebiet' : 'Adresslisten';
 
   const { data, isLoading } = useQuery(
     'address-lists',
@@ -88,13 +92,15 @@ const AddressListsPage = () => {
     <Box>
       {/* Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h5" sx={{ fontWeight: 600 }}>Adresslisten</Typography>
-        <Button
-          variant="contained" startIcon={<Upload />}
-          onClick={() => setUploadDialogOpen(true)}
-        >
-          Excel importieren
-        </Button>
+        <Typography variant="h5" sx={{ fontWeight: 600 }}>{pageTitle}</Typography>
+        {!isVertrieb && (
+          <Button
+            variant="contained" startIcon={<Upload />}
+            onClick={() => setUploadDialogOpen(true)}
+          >
+            Excel importieren
+          </Button>
+        )}
       </Box>
 
       {/* Listen-Grid */}
@@ -204,7 +210,7 @@ const AddressListsPage = () => {
                       </Button>
                     )}
                   </Box>
-                  <IconButton
+                  {!isVertrieb && <IconButton
                     size="small" color="error"
                     onClick={() => {
                       if (window.confirm('Adressliste wirklich loeschen? Alle Adressen werden entfernt.')) {
@@ -213,7 +219,7 @@ const AddressListsPage = () => {
                     }}
                   >
                     <Delete fontSize="small" />
-                  </IconButton>
+                  </IconButton>}
                 </CardActions>
               </Card>
             </Grid>

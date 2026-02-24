@@ -76,6 +76,18 @@ module.exports = (sequelize, DataTypes) => {
     refresh_token: {
       type: DataTypes.TEXT,
       allowNull: true
+    },
+    last_latitude: {
+      type: DataTypes.DECIMAL(10, 7),
+      allowNull: true
+    },
+    last_longitude: {
+      type: DataTypes.DECIMAL(10, 7),
+      allowNull: true
+    },
+    last_location_at: {
+      type: DataTypes.DATE,
+      allowNull: true
     }
   }, {
     tableName: 'users',

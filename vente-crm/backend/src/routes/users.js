@@ -7,6 +7,16 @@ const userController = require('../controllers/userController');
 
 router.use(authenticateToken);
 
+// Location endpoints (vor ID-Parameter-Routes)
+router.put('/location',
+  userController.updateLocation
+);
+
+router.get('/locations',
+  checkPermission('users:read'),
+  userController.getTeamLocations
+);
+
 router.get('/',
   checkPermission('users:read'),
   userController.getUsers

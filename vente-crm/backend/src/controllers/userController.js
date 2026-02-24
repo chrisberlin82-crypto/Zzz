@@ -137,4 +137,53 @@ const deleteUser = async (req, res) => {
   }
 };
 
-module.exports = { getUsers, getUser, createUser, updateUser, deleteUser };
+// Eigene Position aktualisieren (fuer alle eingeloggten User)
+const updateLocation = async (req, res) => {
+  try {
+    const { User } = req.app.locals.db;
+    const { latitude, longitude } = req.body;
+
+    if (!latitude || !longitude) {
+      return res.status(400).json({ success: false, error: 'Latitude und Longitude erforderlich' });
+    }
+
+    await User.update(
+      { last_latitude: latitude, last_longitude: longitude, last_location_at: new Date() },
+      { where: { id: req.user.id } }
+    );
+
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('Update location error:', error);
+    res.status(500).json({ success: false, error: 'Position konnte nicht aktualisiert werden' });
+  }
+};
+
+// Alle aktiven Vertriebler mit Position (fuer Admin/Standortleitung)
+const getTeamLocations = async (req, res) => {
+  try {
+    const { User } = req.app.locals.db;
+    const { Op } = require('sequelize');
+
+    // Nur User die in den letzten 10 Minuten Position gesendet haben
+    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
+
+    const users = await User.findAll({
+      where: {
+        is_active: true,
+        last_latitude: { [Op.ne]: null },
+        last_longitude: { [Op.ne]: null },
+        last_location_at: { [Op.gte]: tenMinutesAgo }
+      },
+      attributes: ['id', 'first_name', 'last_name', 'role', 'email', 'phone',
+                    'last_latitude', 'last_longitude', 'last_location_at']
+    });
+
+    res.json({ success: true, data: users });
+  } catch (error) {
+    logger.error('Get team locations error:', error);
+    res.status(500).json({ success: false, error: 'Team-Positionen konnten nicht geladen werden' });
+  }
+};
+
+module.exports = { getUsers, getUser, createUser, updateUser, deleteUser, updateLocation, getTeamLocations };
