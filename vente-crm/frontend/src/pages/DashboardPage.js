@@ -10,9 +10,9 @@ import { dashboardAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 const PIPELINE_COLORS = {
-  LEAD: '#E0D8D0', QUALIFIED: '#C4A35A', OFFER: '#D4B97A',
+  LEAD: '#8B7355', QUALIFIED: '#A68836', OFFER: '#B8860B',
   NEGOTIATION: '#9E3347', SIGNED: '#7A1B2D', ACTIVE: '#2E7D32',
-  CANCELLED: '#D32F2F', EXPIRED: '#999'
+  CANCELLED: '#D32F2F', EXPIRED: '#666666'
 };
 
 const STATUS_LABELS = {

@@ -57,7 +57,12 @@ const theme = createTheme({
           '&:hover': { boxShadow: '0 2px 8px rgba(122, 27, 45, 0.25)' }
         },
         contained: {
-          background: 'linear-gradient(135deg, #7A1B2D 0%, #9E3347 100%)'
+          background: 'linear-gradient(135deg, #7A1B2D 0%, #9E3347 100%)',
+          color: '#FFFFFF',
+          '&:hover': {
+            background: 'linear-gradient(135deg, #5A0F1E 0%, #7A1B2D 100%)',
+            color: '#FFFFFF'
+          }
         }
       }
     },

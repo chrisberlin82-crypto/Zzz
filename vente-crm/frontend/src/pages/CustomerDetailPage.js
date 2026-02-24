@@ -8,7 +8,7 @@ import {
 } from '@mui/material';
 import {
   ArrowBack, Person, Email, Phone, Home, Business,
-  Description, Visibility
+  Description, Visibility, Add
 } from '@mui/icons-material';
 import { customerAPI } from '../services/api';
 
@@ -21,9 +21,9 @@ const STATUS_LABELS = {
 };
 
 const STATUS_COLORS = {
-  LEAD: '#E0D8D0', QUALIFIED: '#C4A35A', OFFER: '#D4B97A',
+  LEAD: '#8B7355', QUALIFIED: '#A68836', OFFER: '#B8860B',
   NEGOTIATION: '#9E3347', SIGNED: '#7A1B2D', ACTIVE: '#2E7D32',
-  CANCELLED: '#D32F2F', EXPIRED: '#999'
+  CANCELLED: '#D32F2F', EXPIRED: '#666666'
 };
 
 const SOURCE_LABELS = {
@@ -239,10 +239,16 @@ const CustomerDetailPage = () => {
                 <Typography variant="h6" sx={{ fontWeight: 600 }}>
                   Vertraege ({contracts.length})
                 </Typography>
-                <Button variant="contained" size="small"
-                  onClick={() => navigate('/contracts')}>
-                  Alle Vertraege
-                </Button>
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <Button variant="contained" size="small" startIcon={<Add />}
+                    onClick={() => navigate(`/contracts?customer_id=${customer.id}`)}>
+                    Neuer Vertrag
+                  </Button>
+                  <Button variant="outlined" size="small"
+                    onClick={() => navigate('/contracts')}>
+                    Alle Vertraege
+                  </Button>
+                </Box>
               </Box>
 
               {contracts.length > 0 ? (

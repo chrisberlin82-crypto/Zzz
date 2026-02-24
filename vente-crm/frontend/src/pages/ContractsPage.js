@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import {
   Box, Typography, Button, TextField, Table, TableBody, TableCell,
@@ -27,9 +27,9 @@ const STATUS_OPTIONS = [
 ];
 
 const STATUS_COLORS = {
-  LEAD: '#E0D8D0', QUALIFIED: '#C4A35A', OFFER: '#D4B97A',
+  LEAD: '#8B7355', QUALIFIED: '#A68836', OFFER: '#B8860B',
   NEGOTIATION: '#9E3347', SIGNED: '#7A1B2D', ACTIVE: '#2E7D32',
-  CANCELLED: '#D32F2F', EXPIRED: '#999'
+  CANCELLED: '#D32F2F', EXPIRED: '#666666'
 };
 
 const INITIAL_FORM = {
@@ -48,7 +48,18 @@ const ContractsPage = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [formData, setFormData] = useState(INITIAL_FORM);
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
+
+  // Auto-open dialog when customer_id is in URL (from CustomerDetailPage)
+  useEffect(() => {
+    const customerId = searchParams.get('customer_id');
+    if (customerId) {
+      setFormData(prev => ({ ...prev, customer_id: customerId }));
+      setDialogOpen(true);
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   const { data, isLoading } = useQuery(
     ['contracts', page + 1, statusFilter],
