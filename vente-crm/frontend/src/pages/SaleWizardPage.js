@@ -22,7 +22,7 @@ const STEPS = ['Kunde', 'Vertrag', 'Unterschrift'];
 const CUSTOMER_INITIAL = {
   first_name: '', last_name: '', email: '', phone: '',
   company_name: '', street: '', postal_code: '', city: '',
-  type: 'PRIVATE', source: 'DIRECT'
+  type: 'PRIVATE', source: 'OTHER'
 };
 
 const SaleWizardPage = () => {
