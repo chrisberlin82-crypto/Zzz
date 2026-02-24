@@ -23,6 +23,6 @@ USER nodejs
 EXPOSE 3001
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=5 \
-  CMD wget -q --spider http://localhost:3001/api/health || exit 1
+  CMD node -e "const http = require('http'); http.get('http://localhost:3001/api/health', (r) => { process.exit(r.statusCode === 200 ? 0 : 1); }).on('error', () => process.exit(1));"
 
 CMD ["node", "src/server.js"]
