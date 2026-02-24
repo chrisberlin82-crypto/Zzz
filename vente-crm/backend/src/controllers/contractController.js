@@ -152,13 +152,13 @@ const deleteContract = async (req, res) => {
     }
 
     // Stornieren statt löschen (GoBD)
-    const history = contract.status_history || [];
+    const history = [...(contract.status_history || [])];
     history.push({
       status: 'CANCELLED',
       previous_status: contract.status,
       date: new Date().toISOString(),
       user_id: req.user.id,
-      reason: req.body.reason || 'Storniert'
+      reason: (req.body && req.body.reason) || 'Storniert'
     });
 
     await contract.update({

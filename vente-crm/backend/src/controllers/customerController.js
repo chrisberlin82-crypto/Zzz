@@ -115,7 +115,7 @@ const createCustomer = async (req, res) => {
     ];
     const body = { ...req.body };
     optionalStringFields.forEach(field => {
-      if (body[field] !== undefined && body[field].toString().trim() === '') {
+      if (body[field] !== undefined && (body[field] === null || body[field].toString().trim() === '')) {
         body[field] = null;
       }
     });
@@ -166,7 +166,7 @@ const updateCustomer = async (req, res) => {
     const updates = {};
     allowedFields.forEach(field => {
       if (req.body[field] !== undefined) {
-        updates[field] = optionalStringFields.includes(field) && req.body[field].toString().trim() === ''
+        updates[field] = optionalStringFields.includes(field) && (req.body[field] === null || req.body[field].toString().trim() === '')
           ? null : req.body[field];
       }
     });
