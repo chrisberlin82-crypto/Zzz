@@ -109,13 +109,13 @@ const Layout = () => {
         )}
       </List>
 
-      {/* User Info */}
+      {/* User Info & Logout */}
       <Box sx={{ p: 2, borderTop: '1px solid rgba(255,255,255,0.15)' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
           <Avatar sx={{ width: 32, height: 32, bgcolor: 'rgba(255,255,255,0.2)', fontSize: '0.85rem' }}>
             {user?.first_name?.[0] || user?.email?.[0]?.toUpperCase()}
           </Avatar>
-          <Box sx={{ overflow: 'hidden' }}>
+          <Box sx={{ overflow: 'hidden', flex: 1 }}>
             <Typography sx={{ color: '#fff', fontSize: '0.85rem', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {user?.first_name ? `${user.first_name} ${user.last_name || ''}` : user?.email}
             </Typography>
@@ -124,6 +124,20 @@ const Layout = () => {
             </Typography>
           </Box>
         </Box>
+        <ListItem
+          button
+          onClick={handleLogout}
+          sx={{
+            borderRadius: '8px', py: 1,
+            backgroundColor: 'rgba(255,255,255,0.08)',
+            '&:hover': { backgroundColor: 'rgba(255,255,255,0.15)' }
+          }}
+        >
+          <ListItemIcon sx={{ color: '#fff', minWidth: 36 }}><ExitToApp fontSize="small" /></ListItemIcon>
+          <ListItemText primary="Abmelden"
+            primaryTypographyProps={{ fontSize: '0.85rem', fontWeight: 500, color: '#fff' }}
+          />
+        </ListItem>
       </Box>
     </Box>
   );
