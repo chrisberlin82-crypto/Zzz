@@ -107,8 +107,21 @@ const getCustomer = async (req, res) => {
 const createCustomer = async (req, res) => {
   try {
     const { Customer } = req.app.locals.db;
+
+    // Convert empty strings to null for optional fields
+    // (Sequelize validators like isEmail reject empty strings)
+    const optionalStringFields = [
+      'email', 'phone', 'company_name', 'street', 'postal_code', 'city', 'notes'
+    ];
+    const body = { ...req.body };
+    optionalStringFields.forEach(field => {
+      if (body[field] !== undefined && body[field].toString().trim() === '') {
+        body[field] = null;
+      }
+    });
+
     const customerData = {
-      ...req.body,
+      ...body,
       user_id: req.user.id,
       gdpr_consent_date: req.body.gdpr_consent ? new Date() : null
     };
@@ -147,10 +160,14 @@ const updateCustomer = async (req, res) => {
       'gdpr_consent'
     ];
 
+    const optionalStringFields = [
+      'email', 'phone', 'company_name', 'street', 'postal_code', 'city', 'notes'
+    ];
     const updates = {};
     allowedFields.forEach(field => {
       if (req.body[field] !== undefined) {
-        updates[field] = req.body[field];
+        updates[field] = optionalStringFields.includes(field) && req.body[field].toString().trim() === ''
+          ? null : req.body[field];
       }
     });
 
