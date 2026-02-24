@@ -4,7 +4,7 @@ import {
   Box, Typography, Button, TextField, Table, TableBody, TableCell,
   TableHead, TableRow, TablePagination, IconButton, Card, CardContent,
   Dialog, DialogTitle, DialogContent, DialogActions, Grid, MenuItem,
-  Alert, CircularProgress, Chip
+  Alert, CircularProgress, Chip, InputAdornment
 } from '@mui/material';
 import {
   Add, Delete, Edit, FileDownload, Euro, Receipt,
