@@ -2,7 +2,17 @@
 set -e
 
 # ===========================================
-# Vente CRM - Hetzner CX32 Deployment Script
+# Vente CRM - Hetzner Server Deployment
+# ===========================================
+# Deployt das Vente CRM auf einen Hetzner Server
+# via rsync (kein Git auf dem Server noetig).
+#
+# Verwendung:
+#   ./deploy-hetzner.sh <server-ip> [ssh-user] [domain]
+#
+# Beispiel:
+#   ./deploy-hetzner.sh 116.203.xxx.xxx
+#   ./deploy-hetzner.sh 116.203.xxx.xxx root mein-crm.de
 # ===========================================
 
 # Colors
@@ -26,166 +36,115 @@ print_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 # Validate arguments
 # ------------------------------------
 if [ -z "$1" ]; then
-    print_error "Usage: $0 <server-ip> [ssh-user] [repo-url]"
+    print_error "Usage: $0 <server-ip> [ssh-user] [domain]"
     echo ""
     echo "Arguments:"
-    echo "  server-ip   IP address of the Hetzner CX32 server (required)"
+    echo "  server-ip   IP address of the Hetzner server (required)"
     echo "  ssh-user    SSH user (default: root)"
-    echo "  repo-url    Git repository URL (default: https://github.com/vente-projekt/vente-crm.git)"
+    echo "  domain      Domain name (optional, for Let's Encrypt)"
     echo ""
     echo "Example:"
     echo "  $0 116.203.xxx.xxx"
-    echo "  $0 116.203.xxx.xxx root https://github.com/myorg/vente-crm.git"
+    echo "  $0 116.203.xxx.xxx root vente.example.de"
     exit 1
 fi
 
 SERVER_IP="$1"
 SSH_USER="${2:-root}"
-REPO_URL="${3:-https://github.com/vente-projekt/vente-crm.git}"
+DOMAIN="${3:-}"
 DEPLOY_DIR="/opt/vente-crm"
-BACKUP_CRON_HOUR="3"
-BACKUP_CRON_MINUTE="0"
 
-print_header "Vente CRM - Hetzner CX32 Deployment"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+
+print_header "Vente CRM - Hetzner Deployment"
 
 echo "Server:     ${SSH_USER}@${SERVER_IP}"
-echo "Repository: ${REPO_URL}"
 echo "Deploy to:  ${DEPLOY_DIR}"
+[ -n "$DOMAIN" ] && echo "Domain:     ${DOMAIN}"
 echo ""
 
 # ------------------------------------
 # Verify SSH connectivity
 # ------------------------------------
-print_header "Verifying SSH Connection"
+print_header "Pruefe SSH-Verbindung"
 
-echo "Testing SSH connection to ${SSH_USER}@${SERVER_IP}..."
-if ! ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new "${SSH_USER}@${SERVER_IP}" "echo 'SSH connection successful'"; then
-    print_error "Cannot connect to ${SSH_USER}@${SERVER_IP}"
-    echo "Make sure:"
-    echo "  1. The server IP is correct"
-    echo "  2. Your SSH key is added to the server"
-    echo "  3. The server is running and accessible"
+echo "Teste SSH Verbindung zu ${SSH_USER}@${SERVER_IP}..."
+if ! ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new "${SSH_USER}@${SERVER_IP}" "echo 'SSH OK'"; then
+    print_error "Kann nicht verbinden zu ${SSH_USER}@${SERVER_IP}"
     exit 1
 fi
-print_success "SSH connection established"
+print_success "SSH Verbindung hergestellt"
 
 # ------------------------------------
-# Deploy via SSH
+# Install Docker & dependencies on server
 # ------------------------------------
-print_header "Starting Remote Deployment"
+print_header "Server vorbereiten"
 
-ssh -o StrictHostKeyChecking=accept-new "${SSH_USER}@${SERVER_IP}" bash -s <<'REMOTE_SCRIPT'
+ssh -o StrictHostKeyChecking=accept-new "${SSH_USER}@${SERVER_IP}" bash -s <<'REMOTE_SETUP'
 set -e
+export DEBIAN_FRONTEND=noninteractive
 
-# Colors
-RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
 NC='\033[0m'
-
 print_success() { echo -e "${GREEN}[OK]${NC} $1"; }
 print_warning() { echo -e "${YELLOW}[WARN]${NC} $1"; }
-print_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
-echo "============================================"
-echo "  Remote Deployment Started"
-echo "  $(date '+%Y-%m-%d %H:%M:%S')"
-echo "============================================"
-echo ""
-
-# ------------------------------------
 # System update
-# ------------------------------------
-echo "Updating system packages..."
-export DEBIAN_FRONTEND=noninteractive
+echo "Systemupdate..."
 apt-get update -qq
 apt-get upgrade -y -qq
-print_success "System packages updated"
+print_success "System aktualisiert"
 
-# ------------------------------------
-# Install dependencies
-# ------------------------------------
-echo "Installing required packages..."
+# Install packages
+echo "Installiere Pakete..."
 apt-get install -y -qq \
-    ca-certificates \
-    curl \
-    gnupg \
-    lsb-release \
-    git \
-    ufw \
-    fail2ban \
-    htop \
-    unzip \
-    openssl
+    ca-certificates curl gnupg lsb-release \
+    git ufw fail2ban htop unzip openssl rsync
 
-print_success "Base packages installed"
+print_success "Pakete installiert"
 
-# ------------------------------------
-# Install Docker
-# ------------------------------------
+# Install Docker if not present
 if command -v docker &> /dev/null; then
-    print_warning "Docker is already installed: $(docker --version)"
+    print_warning "Docker bereits installiert: $(docker --version)"
 else
-    echo "Installing Docker..."
-
-    # Add Docker official GPG key
+    echo "Installiere Docker..."
     install -m 0755 -d /etc/apt/keyrings
     curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
     chmod a+r /etc/apt/keyrings/docker.asc
-
-    # Add Docker repository
     echo \
       "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
       $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
       tee /etc/apt/sources.list.d/docker.list > /dev/null
-
     apt-get update -qq
     apt-get install -y -qq docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-
-    # Start and enable Docker
     systemctl start docker
     systemctl enable docker
-
-    print_success "Docker installed: $(docker --version)"
+    print_success "Docker installiert: $(docker --version)"
 fi
 
 # Verify Docker Compose
 if docker compose version &> /dev/null; then
-    print_success "Docker Compose available: $(docker compose version --short)"
+    print_success "Docker Compose: $(docker compose version --short)"
 else
-    print_error "Docker Compose plugin not found"
+    echo "Docker Compose Plugin nicht gefunden!"
     exit 1
 fi
 
-# ------------------------------------
 # Configure UFW firewall
-# ------------------------------------
-echo "Configuring UFW firewall..."
-
+echo "Konfiguriere Firewall..."
 ufw --force reset > /dev/null 2>&1
 ufw default deny incoming
 ufw default allow outgoing
-
-# Allow SSH
 ufw allow 22/tcp comment 'SSH'
-
-# Allow HTTP and HTTPS
 ufw allow 80/tcp comment 'HTTP'
 ufw allow 443/tcp comment 'HTTPS'
-
-# Enable UFW
 ufw --force enable
+print_success "Firewall konfiguriert (22, 80, 443)"
 
-print_success "UFW firewall configured (ports: 22, 80, 443)"
-ufw status numbered
-
-# ------------------------------------
 # Configure fail2ban
-# ------------------------------------
-echo "Configuring fail2ban..."
-
-cat > /etc/fail2ban/jail.local <<'FAIL2BAN'
+cat > /etc/fail2ban/jail.local <<'F2B'
 [DEFAULT]
 bantime = 3600
 findtime = 600
@@ -198,159 +157,161 @@ filter = sshd
 logpath = /var/log/auth.log
 maxretry = 3
 bantime = 7200
-FAIL2BAN
+F2B
 
 systemctl restart fail2ban
 systemctl enable fail2ban
-print_success "fail2ban configured and running"
+print_success "fail2ban konfiguriert"
 
-# ------------------------------------
-# Create swap space (for CX32 with 8GB RAM)
-# ------------------------------------
+# Create swap if not exists
 if [ ! -f /swapfile ]; then
-    echo "Creating 4GB swap file..."
+    echo "Erstelle 4GB Swap..."
     fallocate -l 4G /swapfile
     chmod 600 /swapfile
     mkswap /swapfile
     swapon /swapfile
-    echo '/swapfile none swap sw 0 0' >> /etc/fstab
-
-    # Optimize swap settings
-    echo 'vm.swappiness=10' >> /etc/sysctl.conf
-    echo 'vm.vfs_cache_pressure=50' >> /etc/sysctl.conf
-    sysctl -p > /dev/null
-
-    print_success "4GB swap created and enabled"
+    grep -q '/swapfile' /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab
+    sysctl -w vm.swappiness=10 > /dev/null
+    grep -q 'vm.swappiness' /etc/sysctl.conf || echo 'vm.swappiness=10' >> /etc/sysctl.conf
+    print_success "4GB Swap erstellt"
 else
-    print_warning "Swap file already exists"
+    print_warning "Swap existiert bereits"
 fi
 
 echo ""
-echo "============================================"
-echo "  System preparation complete"
-echo "============================================"
-REMOTE_SCRIPT
+echo "Server-Vorbereitung abgeschlossen."
+REMOTE_SETUP
 
-print_success "System dependencies installed on remote server"
+print_success "Server ist bereit"
 
 # ------------------------------------
-# Clone repository and run setup
+# Upload project via rsync
 # ------------------------------------
-print_header "Cloning Repository & Running Setup"
+print_header "Projektdateien hochladen"
 
-ssh "${SSH_USER}@${SERVER_IP}" bash -s -- "$REPO_URL" "$DEPLOY_DIR" <<'CLONE_SCRIPT'
+echo "Synchronisiere Dateien..."
+
+# Create deploy dir on remote
+ssh "${SSH_USER}@${SERVER_IP}" "mkdir -p ${DEPLOY_DIR}"
+
+# Rsync project to server (exclude dev/temp files)
+rsync -avz --delete \
+    --exclude='.git' \
+    --exclude='node_modules' \
+    --exclude='__pycache__' \
+    --exclude='.env' \
+    --exclude='*.sqlite' \
+    --exclude='*.db' \
+    --exclude='nginx/ssl/*' \
+    --exclude='backups/*.tar.gz' \
+    --exclude='logs/*.log' \
+    --exclude='uploads/temp/*' \
+    "${PROJECT_DIR}/" "${SSH_USER}@${SERVER_IP}:${DEPLOY_DIR}/"
+
+print_success "Dateien hochgeladen"
+
+# ------------------------------------
+# Run setup on server
+# ------------------------------------
+print_header "Starte Setup auf dem Server"
+
+ssh "${SSH_USER}@${SERVER_IP}" bash -s -- "${DEPLOY_DIR}" <<'REMOTE_DEPLOY'
 set -e
-
-REPO_URL="$1"
-DEPLOY_DIR="$2"
+DEPLOY_DIR="$1"
 
 GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
 NC='\033[0m'
-
 print_success() { echo -e "${GREEN}[OK]${NC} $1"; }
-print_warning() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 
-# Clone or update repository
-if [ -d "${DEPLOY_DIR}" ]; then
-    print_warning "Deploy directory already exists. Pulling latest changes..."
-    cd "${DEPLOY_DIR}"
-    git pull origin main || git pull origin master || true
-else
-    echo "Cloning repository..."
-    git clone "${REPO_URL}" "${DEPLOY_DIR}"
-    cd "${DEPLOY_DIR}"
-fi
-
-print_success "Repository ready at ${DEPLOY_DIR}"
+cd "${DEPLOY_DIR}"
 
 # Make scripts executable
 chmod +x scripts/*.sh
-print_success "Scripts made executable"
+print_success "Scripts sind ausfuehrbar"
 
-# Run the setup script
-echo ""
-echo "Running setup.sh..."
-echo ""
+# Run setup.sh (creates .env, SSL certs, starts containers, runs migrations)
 ./scripts/setup.sh
 
-print_success "Setup completed"
-CLONE_SCRIPT
+print_success "Setup abgeschlossen"
+REMOTE_DEPLOY
 
-print_success "Application deployed and running"
+print_success "Anwendung deployed und laeuft"
 
 # ------------------------------------
-# Set up automatic backup cron job
+# Setup automatic backups
 # ------------------------------------
-print_header "Setting Up Automatic Backups"
+print_header "Automatische Backups einrichten"
 
-ssh "${SSH_USER}@${SERVER_IP}" bash -s -- "$DEPLOY_DIR" "$BACKUP_CRON_HOUR" "$BACKUP_CRON_MINUTE" <<'CRON_SCRIPT'
+ssh "${SSH_USER}@${SERVER_IP}" bash -s -- "${DEPLOY_DIR}" <<'CRON_SETUP'
 set -e
-
 DEPLOY_DIR="$1"
-CRON_HOUR="$2"
-CRON_MINUTE="$3"
-
 GREEN='\033[0;32m'
 NC='\033[0m'
-
 print_success() { echo -e "${GREEN}[OK]${NC} $1"; }
 
-CRON_JOB="${CRON_MINUTE} ${CRON_HOUR} * * * ${DEPLOY_DIR}/scripts/backup.sh >> /var/log/vente-backup.log 2>&1"
+CRON_JOB="0 3 * * * ${DEPLOY_DIR}/scripts/backup.sh >> /var/log/vente-backup.log 2>&1"
 
-# Remove any existing vente backup cron jobs
+# Remove existing vente backup crons
 crontab -l 2>/dev/null | grep -v "vente.*backup" | crontab - 2>/dev/null || true
 
-# Add the new cron job
+# Add new cron
 (crontab -l 2>/dev/null; echo "$CRON_JOB") | crontab -
 
-# Create log file
 touch /var/log/vente-backup.log
+print_success "Backup Cron eingerichtet (taeglich 3:00 Uhr)"
+CRON_SETUP
 
-print_success "Automatic backup cron job installed"
-echo "  Schedule: Daily at ${CRON_HOUR}:${CRON_MINUTE}"
-echo "  Log file: /var/log/vente-backup.log"
-CRON_SCRIPT
+print_success "Automatische Backups konfiguriert"
 
-print_success "Automatic backups configured"
+# ------------------------------------
+# Optional: Let's Encrypt SSL
+# ------------------------------------
+if [ -n "$DOMAIN" ]; then
+    print_header "Let's Encrypt SSL fuer ${DOMAIN}"
+    print_warning "Let's Encrypt Setup muss manuell durchgefuehrt werden:"
+    echo ""
+    echo "  1. DNS A-Record zeigt auf: ${SERVER_IP}"
+    echo "  2. SSH zum Server: ssh ${SSH_USER}@${SERVER_IP}"
+    echo "  3. Certbot installieren:"
+    echo "     apt install certbot"
+    echo "  4. Zertifikat holen:"
+    echo "     certbot certonly --standalone -d ${DOMAIN}"
+    echo "  5. SSL-Dateien in nginx/ssl/ verlinken:"
+    echo "     ln -sf /etc/letsencrypt/live/${DOMAIN}/fullchain.pem ${DEPLOY_DIR}/nginx/ssl/cert.pem"
+    echo "     ln -sf /etc/letsencrypt/live/${DOMAIN}/privkey.pem ${DEPLOY_DIR}/nginx/ssl/private.key"
+    echo "  6. Nginx neu starten:"
+    echo "     cd ${DEPLOY_DIR} && docker compose restart nginx"
+    echo ""
+fi
 
 # ------------------------------------
 # Final summary
 # ------------------------------------
-print_header "Deployment Complete!"
+print_header "Deployment abgeschlossen!"
 
-echo -e "${GREEN}Vente CRM has been deployed to Hetzner CX32!${NC}"
+echo -e "${GREEN}Vente CRM laeuft auf dem Hetzner Server!${NC}"
 echo ""
 echo "Server Details:"
-echo "  IP Address:    ${SERVER_IP}"
-echo "  Deploy Path:   ${DEPLOY_DIR}"
+echo "  IP:          ${SERVER_IP}"
+echo "  Pfad:        ${DEPLOY_DIR}"
 echo ""
-echo "Access URLs:"
-echo "  Frontend:      https://${SERVER_IP}"
-echo "  Backend API:   https://${SERVER_IP}/api"
+echo "URLs:"
+echo "  HTTPS:       https://${SERVER_IP}"
+echo "  HTTP:        http://${SERVER_IP} (-> HTTPS)"
+echo "  API Health:  https://${SERVER_IP}/api/health"
 echo ""
-echo "Firewall Rules:"
-echo "  Port 22  - SSH"
-echo "  Port 80  - HTTP (redirects to HTTPS)"
-echo "  Port 443 - HTTPS"
+echo "Standard-Login:"
+echo "  Admin:       admin@vente-projekt.de / Admin123!"
 echo ""
-echo "Automatic Backups:"
-echo "  Schedule:      Daily at ${BACKUP_CRON_HOUR}:${BACKUP_CRON_MINUTE}"
-echo "  Location:      ${DEPLOY_DIR}/backups/"
-echo "  Log:           /var/log/vente-backup.log"
+echo -e "${YELLOW}WICHTIG: Alle Standard-Passwoerter nach erstem Login aendern!${NC}"
+echo -e "${YELLOW}WICHTIG: Self-Signed SSL durch Let's Encrypt ersetzen!${NC}"
 echo ""
-echo "Default Login Credentials:"
-echo "  Admin:         admin@vente-projekt.de / Admin123!"
+echo "Nuetzliche Befehle (auf dem Server):"
+echo "  Status:      cd ${DEPLOY_DIR} && docker compose ps"
+echo "  Logs:        cd ${DEPLOY_DIR} && docker compose logs -f"
+echo "  Neustart:    cd ${DEPLOY_DIR} && docker compose restart"
+echo "  Backup:      ${DEPLOY_DIR}/scripts/backup.sh"
+echo "  Restore:     ${DEPLOY_DIR}/scripts/restore.sh <backup.tar.gz>"
 echo ""
-echo -e "${YELLOW}IMPORTANT: Change all default passwords immediately!${NC}"
-echo -e "${YELLOW}IMPORTANT: Replace self-signed SSL certificates with Let's Encrypt!${NC}"
-echo ""
-echo "Next Steps:"
-echo "  1. Point your domain DNS to ${SERVER_IP}"
-echo "  2. Set up Let's Encrypt: certbot --nginx -d yourdomain.de"
-echo "  3. Change all default passwords"
-echo "  4. Configure email SMTP settings in .env"
-echo "  5. Review and update .env for production"
-echo ""
-echo "SSH into server: ssh ${SSH_USER}@${SERVER_IP}"
+echo "SSH:           ssh ${SSH_USER}@${SERVER_IP}"
 echo ""

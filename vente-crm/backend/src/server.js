@@ -22,9 +22,10 @@ app.use(helmet({
   contentSecurityPolicy: false
 }));
 
-// CORS
+// CORS - In production via nginx, all requests come from same origin
+const corsOrigin = process.env.CORS_ORIGIN || process.env.FRONTEND_URL || 'http://localhost:3000';
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: corsOrigin === '*' ? true : corsOrigin,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']

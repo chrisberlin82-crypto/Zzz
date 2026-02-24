@@ -109,6 +109,7 @@ print_header "Creating Directories"
 mkdir -p uploads/receipts
 mkdir -p uploads/signatures
 mkdir -p uploads/documents
+mkdir -p uploads/address-lists
 mkdir -p uploads/temp
 mkdir -p backups
 mkdir -p logs

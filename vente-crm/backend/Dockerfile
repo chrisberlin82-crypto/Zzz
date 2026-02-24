@@ -2,7 +2,7 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci --only=production
+RUN npm install --omit=dev && npm cache clean --force
 
 FROM node:18-alpine AS runtime
 
@@ -15,7 +15,7 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --chown=nodejs:nodejs . .
 
 RUN mkdir -p /app/uploads/documents /app/uploads/signatures \
-    /app/uploads/address-lists /app/uploads/receipts /app/logs && \
+    /app/uploads/address-lists /app/uploads/receipts /app/uploads/temp /app/logs && \
     chown -R nodejs:nodejs /app/uploads /app/logs
 
 USER nodejs
