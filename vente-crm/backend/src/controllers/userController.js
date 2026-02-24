@@ -65,9 +65,15 @@ const createUser = async (req, res) => {
 
     const password_hash = await bcrypt.hash(password || 'Temp1234!', BCRYPT_ROUNDS);
 
+    // 30 Tage kostenlose Testphase
+    const trialEndsAt = new Date();
+    trialEndsAt.setDate(trialEndsAt.getDate() + 30);
+
     const user = await User.create({
       email, password_hash, role: role || 'VERTRIEB',
-      first_name, last_name, company_name, phone
+      first_name, last_name, company_name, phone,
+      trial_ends_at: trialEndsAt,
+      subscription_status: 'TRIAL'
     });
 
     logger.info(`User created: ${user.id} by admin ${req.user.id}`);
@@ -159,21 +165,18 @@ const updateLocation = async (req, res) => {
   }
 };
 
-// Alle aktiven Vertriebler mit Position (fuer Admin/Standortleitung)
+// Alle aktiven Mitarbeiter mit Position (fuer Admin/Standortleitung)
 const getTeamLocations = async (req, res) => {
   try {
     const { User } = req.app.locals.db;
     const { Op } = require('sequelize');
 
-    // Nur User die in den letzten 10 Minuten Position gesendet haben
-    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
-
+    // Alle aktiven User mit bekannter Position anzeigen (nicht nur letzte 10 Min)
     const users = await User.findAll({
       where: {
         is_active: true,
         last_latitude: { [Op.ne]: null },
-        last_longitude: { [Op.ne]: null },
-        last_location_at: { [Op.gte]: tenMinutesAgo }
+        last_longitude: { [Op.ne]: null }
       },
       attributes: ['id', 'first_name', 'last_name', 'role', 'email', 'phone',
                     'last_latitude', 'last_longitude', 'last_location_at']

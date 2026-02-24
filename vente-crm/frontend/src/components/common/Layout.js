@@ -8,7 +8,7 @@ import {
 import {
   Menu as MenuIcon, Dashboard, People, Description, Inventory,
   AccountBalance, Map, Person, ExitToApp, ChevronLeft, BarChart,
-  Groups
+  Groups, CreditCard
 } from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
 import { userAPI } from '../../services/api';
@@ -35,6 +35,10 @@ const getMenuItems = (role) => [
 const adminItems = [
   { text: 'Team Live', icon: <Groups />, path: '/team-map', permission: 'users:read' },
   { text: 'Benutzer', icon: <Person />, path: '/users', permission: 'users:read' },
+];
+
+const bottomItems = [
+  { text: 'Abonnement', icon: <CreditCard />, path: '/subscription' }
 ];
 
 const Layout = () => {
@@ -145,6 +149,22 @@ const Layout = () => {
             ))}
           </>
         )}
+
+        {/* Abonnement */}
+        <Divider sx={{ borderColor: 'rgba(255,255,255,0.15)', my: 1.5 }} />
+        {bottomItems.map((item) => (
+          <ListItem button key={item.text}
+            onClick={() => { navigate(item.path); if (isMobile) setDrawerOpen(false); }}
+            sx={{
+              borderRadius: '8px', mb: 0.5, py: 1.2,
+              backgroundColor: location.pathname === item.path ? 'rgba(255,255,255,0.15)' : 'transparent',
+              '&:hover': { backgroundColor: 'rgba(255,255,255,0.1)' }
+            }}
+          >
+            <ListItemIcon sx={{ color: '#fff', minWidth: 40 }}>{item.icon}</ListItemIcon>
+            <ListItemText primary={item.text} primaryTypographyProps={{ fontSize: '0.9rem' }} />
+          </ListItem>
+        ))}
       </List>
 
       {/* User Info & Logout */}

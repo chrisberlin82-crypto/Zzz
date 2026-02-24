@@ -45,6 +45,14 @@ api.interceptors.response.use(
       }
     }
 
+    // 402 = Abo erforderlich -> zur Abo-Seite weiterleiten
+    if (error.response?.status === 402 &&
+        error.response?.data?.code === 'SUBSCRIPTION_REQUIRED' &&
+        !window.location.pathname.includes('/subscription')) {
+      window.location.href = '/subscription';
+      return Promise.reject(error);
+    }
+
     return Promise.reject(error);
   }
 );
@@ -133,6 +141,14 @@ export const userAPI = {
   updateLocation: (data) => api.put('/users/location', data),
   getTeamLocations: () => api.get('/users/locations'),
   getSignedLocations: () => api.get('/users/signed-locations')
+};
+
+// Subscription / Abo
+export const subscriptionAPI = {
+  getStatus: () => api.get('/subscription/status'),
+  getPrices: () => api.get('/subscription/prices'),
+  createCheckout: () => api.post('/subscription/create-checkout'),
+  createPortal: () => api.post('/subscription/portal')
 };
 
 // Health

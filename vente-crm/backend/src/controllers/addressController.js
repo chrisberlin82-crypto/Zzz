@@ -204,6 +204,7 @@ const getMapData = async (req, res) => {
     res.json({
       success: true,
       data: {
+        list: addressList,
         addresses,
         center,
         bounds

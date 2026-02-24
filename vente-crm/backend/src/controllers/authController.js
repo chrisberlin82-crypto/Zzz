@@ -51,6 +51,10 @@ const register = async (req, res) => {
 
     const password_hash = await bcrypt.hash(password, BCRYPT_ROUNDS);
 
+    // 30 Tage kostenlose Testphase
+    const trialEndsAt = new Date();
+    trialEndsAt.setDate(trialEndsAt.getDate() + 30);
+
     const user = await User.create({
       email,
       password_hash,
@@ -65,7 +69,9 @@ const register = async (req, res) => {
       iban,
       first_name,
       last_name,
-      phone
+      phone,
+      trial_ends_at: trialEndsAt,
+      subscription_status: 'TRIAL'
     });
 
     logger.info(`User registered: ${email}`);
@@ -115,13 +121,26 @@ const login = async (req, res) => {
 
     logger.info(`User logged in: ${email}`);
 
+    // Subscription-Status berechnen
+    const now = new Date();
+    const trialEndsAt = user.trial_ends_at ? new Date(user.trial_ends_at) : null;
+    const isTrialActive = user.subscription_status === 'TRIAL' && trialEndsAt && trialEndsAt > now;
+    const isSubscriptionActive = user.subscription_status === 'ACTIVE';
+    const trialDaysLeft = trialEndsAt ? Math.max(0, Math.ceil((trialEndsAt - now) / (1000 * 60 * 60 * 24))) : 0;
+
     res.json({
       success: true,
       token,
       refreshToken,
       user: {
         ...user.toJSON(),
-        permissions: getPermissionsForRole(user.role)
+        permissions: getPermissionsForRole(user.role),
+        subscription: {
+          status: user.subscription_status,
+          trial_ends_at: user.trial_ends_at,
+          trial_days_left: trialDaysLeft,
+          has_access: isTrialActive || isSubscriptionActive
+        }
       }
     });
   } catch (error) {

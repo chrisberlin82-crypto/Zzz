@@ -81,6 +81,12 @@ const TeamMapPage = () => {
 
   const rawTeamMembers = data?.data?.data || [];
   const teamMembers = rawTeamMembers.filter(m => m.last_latitude && m.last_longitude && !isNaN(parseFloat(m.last_latitude)) && !isNaN(parseFloat(m.last_longitude)));
+
+  // Online = letzte 10 Minuten, Offline = aelter
+  const isOnline = (member) => {
+    if (!member.last_location_at) return false;
+    return (Date.now() - new Date(member.last_location_at).getTime()) < 10 * 60 * 1000;
+  };
   const rawSignedContracts = signedData?.data?.data || [];
   const signedContracts = rawSignedContracts.filter(s => s.gps_latitude && s.gps_longitude && !isNaN(parseFloat(s.gps_latitude)) && !isNaN(parseFloat(s.gps_longitude)));
 
@@ -121,8 +127,12 @@ const TeamMapPage = () => {
           />
           <Chip
             icon={<Circle sx={{ fontSize: '10px !important', color: '#2E7D32 !important' }} />}
-            label={`${teamMembers.length} aktiv`}
+            label={`${teamMembers.filter(m => isOnline(m)).length} online`}
             sx={{ bgcolor: '#2E7D3215', color: '#2E7D32', fontWeight: 600 }}
+          />
+          <Chip
+            label={`${teamMembers.length} gesamt`}
+            sx={{ bgcolor: '#66666615', color: '#666', fontWeight: 600 }}
           />
         </Box>
       </Box>
@@ -145,7 +155,8 @@ const TeamMapPage = () => {
               {/* Team Markers */}
               {teamMembers.map((member) => {
                 const name = `${member.first_name || ''} ${member.last_name || ''}`.trim();
-                const color = ROLE_COLORS[member.role] || BORDEAUX;
+                const online = isOnline(member);
+                const color = online ? (ROLE_COLORS[member.role] || BORDEAUX) : '#999999';
                 return (
                   <Marker
                     key={`user-${member.id}`}
@@ -245,8 +256,17 @@ const TeamMapPage = () => {
             )}
             {teamMembers.map((member) => {
               const name = `${member.first_name || ''} ${member.last_name || ''}`.trim();
-              const color = ROLE_COLORS[member.role] || BORDEAUX;
-              const minutesAgo = Math.round((Date.now() - new Date(member.last_location_at).getTime()) / 60000);
+              const online = isOnline(member);
+              const color = online ? (ROLE_COLORS[member.role] || BORDEAUX) : '#999';
+              const minutesAgo = member.last_location_at ? Math.round((Date.now() - new Date(member.last_location_at).getTime()) / 60000) : null;
+              const hoursAgo = minutesAgo !== null ? Math.round(minutesAgo / 60) : null;
+              let timeLabel = 'Keine Position';
+              if (minutesAgo !== null) {
+                if (minutesAgo < 1) timeLabel = 'Gerade eben';
+                else if (minutesAgo < 60) timeLabel = `Vor ${minutesAgo} Min.`;
+                else if (hoursAgo < 24) timeLabel = `Vor ${hoursAgo} Std.`;
+                else timeLabel = `Vor ${Math.round(hoursAgo / 24)} Tagen`;
+              }
               return (
                 <ListItem key={member.id} sx={{ py: 1 }}>
                   <ListItemAvatar sx={{ minWidth: 44 }}>
@@ -258,8 +278,8 @@ const TeamMapPage = () => {
                     primary={name || member.email}
                     secondary={
                       <Box component="span" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                        <Circle sx={{ fontSize: 8, color: minutesAgo < 2 ? '#2E7D32' : '#A68836' }} />
-                        {minutesAgo < 1 ? 'Gerade eben' : `Vor ${minutesAgo} Min.`}
+                        <Circle sx={{ fontSize: 8, color: online ? '#2E7D32' : '#999' }} />
+                        {online ? timeLabel : `Offline - ${timeLabel}`}
                       </Box>
                     }
                     primaryTypographyProps={{ fontSize: '0.85rem', fontWeight: 500 }}

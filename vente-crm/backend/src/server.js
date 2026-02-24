@@ -71,6 +71,9 @@ app.locals.db = db;
 // Audit middleware (GoBD)
 app.use('/api/', auditMiddleware);
 
+// Subscription middleware
+const { requireActiveSubscription } = require('./middleware/subscription');
+
 // Routes
 const authRoutes = require('./routes/auth');
 const customerRoutes = require('./routes/customers');
@@ -81,8 +84,17 @@ const addressRoutes = require('./routes/addresses');
 const signatureRoutes = require('./routes/signatures');
 const dashboardRoutes = require('./routes/dashboard');
 const userRoutes = require('./routes/users');
+const subscriptionRoutes = require('./routes/subscription');
+
+// Stripe Webhook (raw body noetig - VOR json parsing)
+app.use('/api/subscription/webhook', express.raw({ type: 'application/json' }));
 
 app.use('/api/auth', authRoutes);
+app.use('/api/subscription', subscriptionRoutes);
+
+// Subscription-Pruefung fuer alle geschuetzten Routen
+app.use('/api/', requireActiveSubscription);
+
 app.use('/api/customers', customerRoutes);
 app.use('/api/contracts', contractRoutes);
 app.use('/api/products', productRoutes);

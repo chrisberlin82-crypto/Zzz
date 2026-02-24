@@ -88,6 +88,39 @@ module.exports = (sequelize, DataTypes) => {
     last_location_at: {
       type: DataTypes.DATE,
       allowNull: true
+    },
+    trial_ends_at: {
+      type: DataTypes.DATE,
+      allowNull: true
+    },
+    subscription_status: {
+      type: DataTypes.ENUM('TRIAL', 'ACTIVE', 'PAST_DUE', 'CANCELLED', 'EXPIRED'),
+      allowNull: false,
+      defaultValue: 'TRIAL'
+    },
+    stripe_customer_id: {
+      type: DataTypes.STRING(255),
+      allowNull: true
+    },
+    stripe_subscription_id: {
+      type: DataTypes.STRING(255),
+      allowNull: true
+    },
+    subscription_plan: {
+      type: DataTypes.STRING(50),
+      allowNull: true
+    },
+    subscription_price_cents: {
+      type: DataTypes.INTEGER,
+      allowNull: true
+    },
+    subscription_started_at: {
+      type: DataTypes.DATE,
+      allowNull: true
+    },
+    subscription_ends_at: {
+      type: DataTypes.DATE,
+      allowNull: true
     }
   }, {
     tableName: 'users',
