@@ -128,16 +128,21 @@ print_header "Generating SSL Certificates (Development)"
 if [ -f nginx/ssl/cert.pem ] && [ -f nginx/ssl/private.key ]; then
     print_warning "SSL certificates already exist. Skipping generation."
 else
+    # Detect server IP for SAN (Subject Alternative Name)
+    SERVER_IP=$(hostname -I 2>/dev/null | awk '{print $1}')
+    SAN_ENTRY="IP:127.0.0.1"
+    [ -n "$SERVER_IP" ] && SAN_ENTRY="${SAN_ENTRY},IP:${SERVER_IP}"
+
     openssl req -x509 -nodes -days 365 \
         -newkey rsa:2048 \
         -keyout nginx/ssl/private.key \
         -out nginx/ssl/cert.pem \
-        -subj "/C=DE/ST=NRW/L=Duesseldorf/O=Vente Projekt GmbH/OU=Development/CN=localhost" \
+        -subj "/C=DE/ST=NRW/L=Duesseldorf/O=Vente Projekt GmbH/OU=Production/CN=${SERVER_IP:-localhost}" \
+        -addext "subjectAltName=DNS:localhost,${SAN_ENTRY}" \
         2>/dev/null
 
-    print_success "Self-signed SSL certificates generated"
-    print_warning "These certificates are for development only!"
-    print_warning "For production, use Let's Encrypt or a proper CA certificate."
+    print_success "Self-signed SSL certificates generated (CN=${SERVER_IP:-localhost})"
+    print_warning "For production with domain, use Let's Encrypt."
 fi
 
 # ------------------------------------

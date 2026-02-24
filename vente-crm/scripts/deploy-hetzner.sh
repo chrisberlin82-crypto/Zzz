@@ -215,9 +215,10 @@ print_success "Dateien hochgeladen"
 # ------------------------------------
 print_header "Starte Setup auf dem Server"
 
-ssh "${SSH_USER}@${SERVER_IP}" bash -s -- "${DEPLOY_DIR}" <<'REMOTE_DEPLOY'
+ssh "${SSH_USER}@${SERVER_IP}" bash -s -- "${DEPLOY_DIR}" "${SERVER_IP}" <<'REMOTE_DEPLOY'
 set -e
 DEPLOY_DIR="$1"
+SERVER_IP="$2"
 
 GREEN='\033[0;32m'
 NC='\033[0m'
@@ -231,6 +232,13 @@ print_success "Scripts sind ausfuehrbar"
 
 # Run setup.sh (creates .env, SSL certs, starts containers, runs migrations)
 ./scripts/setup.sh
+
+# Update URLs in .env to use the actual server IP
+if [ -n "${SERVER_IP}" ] && [ -f .env ]; then
+    sed -i "s|FRONTEND_URL=http://localhost:3000|FRONTEND_URL=https://${SERVER_IP}|g" .env
+    sed -i "s|BACKEND_URL=http://localhost:3001|BACKEND_URL=https://${SERVER_IP}/api|g" .env
+    print_success "URLs auf ${SERVER_IP} gesetzt"
+fi
 
 print_success "Setup abgeschlossen"
 REMOTE_DEPLOY
