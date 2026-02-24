@@ -8,6 +8,7 @@ const expenseController = require('../controllers/expenseController');
 router.use(authenticateToken);
 
 router.get('/categories',
+  checkPermission('expenses:read'),
   expenseController.getCategories
 );
 

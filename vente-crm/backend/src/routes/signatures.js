@@ -1,4 +1,5 @@
 const express = require('express');
+const { param } = require('express-validator');
 const router = express.Router();
 const { authenticateToken } = require('../middleware/auth');
 const { checkPermission } = require('../middleware/rbac');
@@ -9,6 +10,7 @@ router.use(authenticateToken);
 
 router.post('/contract/:contractId',
   checkPermission('signatures:create'),
+  param('contractId').isInt({ min: 1 }).withMessage('Ungültige Vertrags-ID'),
   validateSignature,
   signatureController.createSignature
 );

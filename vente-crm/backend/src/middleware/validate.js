@@ -82,14 +82,12 @@ const validateLogin = [
   handleValidationErrors
 ];
 
-// Signatur-Validierung
+// Signatur-Validierung (Hash wird serverseitig generiert)
 const validateSignature = [
   body('signedAt').isISO8601().withMessage('Gültiger Zeitstempel erforderlich'),
   body('consent').isBoolean().withMessage('Einwilligung erforderlich'),
   body('signature.pngBase64').isLength({ min: 100 })
     .withMessage('Signatur-Daten erforderlich'),
-  body('signature.hash').isLength({ min: 10 })
-    .withMessage('Signatur-Hash erforderlich'),
   handleValidationErrors
 ];
 

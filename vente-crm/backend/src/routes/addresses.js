@@ -33,6 +33,7 @@ router.post('/:id/geocode',
 
 router.put('/:id/addresses/:addressId',
   checkPermission('addresses:update'),
+  validateIdParam,
   addressController.updateAddress
 );
 
