@@ -21,6 +21,7 @@ const UsersPage = lazy(() => import('./pages/UsersPage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const TeamMapPage = lazy(() => import('./pages/TeamMapPage'));
 const SaleWizardPage = lazy(() => import('./pages/SaleWizardPage'));
+const AddressDetailPage = lazy(() => import('./pages/AddressDetailPage'));
 
 const Loading = () => (
   <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
@@ -65,6 +66,7 @@ const App = () => {
           <Route path="expenses" element={<ExpensesPage />} />
           <Route path="address-lists" element={<AddressListsPage />} />
           <Route path="address-lists/:id/map" element={<MapPage />} />
+          <Route path="address-lists/:id/addresses" element={<AddressDetailPage />} />
           <Route path="contracts/:id/signature" element={<SignaturePage />} />
           <Route path="team-map" element={<TeamMapPage />} />
           <Route path="users" element={<UsersPage />} />

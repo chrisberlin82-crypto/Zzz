@@ -33,7 +33,7 @@ const createSignature = async (req, res) => {
 
     // Vertrag-Status auf SIGNED setzen
     if (contract.status !== 'SIGNED' && contract.status !== 'ACTIVE') {
-      const history = contract.status_history || [];
+      const history = [...(contract.status_history || [])];
       history.push({
         status: 'SIGNED',
         previous_status: contract.status,

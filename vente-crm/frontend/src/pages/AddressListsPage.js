@@ -193,6 +193,13 @@ const AddressListsPage = () => {
                 <CardActions sx={{ px: 3, pb: 2, pt: 0, justifyContent: 'space-between' }}>
                   <Box sx={{ display: 'flex', gap: 1 }}>
                     <Button
+                      size="small" startIcon={<ListAlt />}
+                      onClick={() => navigate(`/address-lists/${list.id}/addresses`)}
+                      sx={{ color: BORDEAUX }}
+                    >
+                      Adressen
+                    </Button>
+                    <Button
                       size="small" startIcon={<Map />}
                       onClick={() => navigate(`/address-lists/${list.id}/map`)}
                       sx={{ color: BORDEAUX }}

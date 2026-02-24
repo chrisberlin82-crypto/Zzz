@@ -186,4 +186,38 @@ const getTeamLocations = async (req, res) => {
   }
 };
 
-module.exports = { getUsers, getUser, createUser, updateUser, deleteUser, updateLocation, getTeamLocations };
+// Signierte Vertraege mit GPS-Standorten (fuer TeamMap)
+const getSignedContractLocations = async (req, res) => {
+  try {
+    const { Signature, Contract, Customer, User } = req.app.locals.db;
+    const { Op } = require('sequelize');
+
+    const signatures = await Signature.findAll({
+      where: {
+        gps_latitude: { [Op.ne]: null },
+        gps_longitude: { [Op.ne]: null }
+      },
+      include: [
+        {
+          model: Contract, as: 'contract',
+          attributes: ['id', 'status', 'estimated_value'],
+          where: { status: { [Op.in]: ['SIGNED', 'ACTIVE'] } },
+          include: [
+            { model: Customer, as: 'customer', attributes: ['id', 'first_name', 'last_name', 'company_name'] }
+          ]
+        },
+        { model: User, as: 'user', attributes: ['id', 'first_name', 'last_name'] }
+      ],
+      attributes: ['id', 'gps_latitude', 'gps_longitude', 'signed_at'],
+      order: [['signed_at', 'DESC']],
+      limit: 200
+    });
+
+    res.json({ success: true, data: signatures });
+  } catch (error) {
+    logger.error('Get signed contract locations error:', error);
+    res.status(500).json({ success: false, error: 'Vertragsstandorte konnten nicht geladen werden' });
+  }
+};
+
+module.exports = { getUsers, getUser, createUser, updateUser, deleteUser, updateLocation, getTeamLocations, getSignedContractLocations };

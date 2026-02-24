@@ -19,6 +19,12 @@ router.post('/import',
   addressController.importAddressList
 );
 
+router.get('/:id/addresses',
+  checkPermission('addresses:read'),
+  validateIdParam,
+  addressController.getAddresses
+);
+
 router.get('/:id/map-data',
   checkPermission('addresses:read'),
   validateIdParam,

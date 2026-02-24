@@ -17,6 +17,11 @@ router.get('/locations',
   userController.getTeamLocations
 );
 
+router.get('/signed-locations',
+  checkPermission('signatures:read'),
+  userController.getSignedContractLocations
+);
+
 router.get('/',
   checkPermission('users:read'),
   userController.getUsers

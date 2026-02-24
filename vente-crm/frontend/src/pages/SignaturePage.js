@@ -92,12 +92,11 @@ const SignaturePage = () => {
     }
 
     const signatureData = {
-      signature_image: sigCanvasRef.current.toDataURL('image/png'),
-      gps_latitude: gpsLocation?.latitude || null,
-      gps_longitude: gpsLocation?.longitude || null,
-      gps_accuracy: gpsLocation?.accuracy || null,
-      consent_given: consent,
-      signed_at: new Date().toISOString()
+      signedAt: new Date().toISOString(),
+      consent: consent,
+      geo: gpsLocation || null,
+      deviceInfo: navigator.userAgent,
+      signature: { pngBase64: sigCanvasRef.current.toDataURL('image/png') }
     };
 
     submitMutation.mutate(signatureData);

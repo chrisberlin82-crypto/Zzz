@@ -299,7 +299,7 @@ const updateAddress = async (req, res) => {
       return res.status(404).json({ success: false, error: 'Adresse nicht gefunden' });
     }
 
-    const allowedFields = ['status', 'notes', 'contact_name', 'phone', 'email', 'visited_at'];
+    const allowedFields = ['status', 'notes', 'contact_name', 'phone', 'email', 'visited_at', 'total_households', 'contacted_households'];
     const updates = {};
     allowedFields.forEach(f => {
       if (req.body[f] !== undefined) updates[f] = req.body[f];
@@ -310,6 +310,37 @@ const updateAddress = async (req, res) => {
   } catch (error) {
     logger.error('Update address error:', error);
     res.status(500).json({ success: false, error: 'Adresse konnte nicht aktualisiert werden' });
+  }
+};
+
+const getAddresses = async (req, res) => {
+  try {
+    const { Address, AddressList } = req.app.locals.db;
+    const addressList = await AddressList.findByPk(req.params.id);
+
+    if (!addressList) {
+      return res.status(404).json({ success: false, error: 'Adressliste nicht gefunden' });
+    }
+
+    const { status } = req.query;
+    const where = { address_list_id: req.params.id };
+    if (status) where.status = status;
+
+    const addresses = await Address.findAll({
+      where,
+      order: [['status', 'ASC'], ['street', 'ASC'], ['house_number', 'ASC']]
+    });
+
+    res.json({
+      success: true,
+      data: {
+        list: addressList,
+        addresses
+      }
+    });
+  } catch (error) {
+    logger.error('Get addresses error:', error);
+    res.status(500).json({ success: false, error: 'Adressen konnten nicht geladen werden' });
   }
 };
 
@@ -333,6 +364,6 @@ const deleteAddressList = async (req, res) => {
 };
 
 module.exports = {
-  getAddressLists, importAddressList, getMapData,
+  getAddressLists, importAddressList, getMapData, getAddresses,
   geocodeAddressList, updateAddress, deleteAddressList, upload
 };

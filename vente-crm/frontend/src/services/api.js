@@ -99,6 +99,7 @@ export const expenseAPI = {
 // Adresslisten
 export const addressAPI = {
   getAll: () => api.get('/address-lists'),
+  getAddresses: (id, params) => api.get(`/address-lists/${id}/addresses`, { params }),
   import: (formData) => api.post('/address-lists/import', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   }),
@@ -130,7 +131,8 @@ export const userAPI = {
   update: (id, data) => api.put(`/users/${id}`, data),
   delete: (id) => api.delete(`/users/${id}`),
   updateLocation: (data) => api.put('/users/location', data),
-  getTeamLocations: () => api.get('/users/locations')
+  getTeamLocations: () => api.get('/users/locations'),
+  getSignedLocations: () => api.get('/users/signed-locations')
 };
 
 // Health

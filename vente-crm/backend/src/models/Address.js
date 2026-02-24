@@ -57,6 +57,18 @@ module.exports = (sequelize, DataTypes) => {
     visited_at: {
       type: DataTypes.DATE,
       allowNull: true
+    },
+    total_households: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      defaultValue: null,
+      comment: 'Anzahl Haushalte an der Adresse'
+    },
+    contacted_households: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      defaultValue: null,
+      comment: 'Anzahl angetroffener Haushalte'
     }
   }, {
     tableName: 'addresses',

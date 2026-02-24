@@ -232,13 +232,25 @@ const MapPage = () => {
                       </Box>
                     )}
 
+                    {/* Haushalte */}
+                    {(addr.total_households != null || addr.contacted_households != null) && (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5, mb: 0.5 }}>
+                        <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                          Haushalte: {addr.total_households ?? '-'}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: '#2E7D32', fontWeight: 600 }}>
+                          Angetroffen: {addr.contacted_households ?? '-'}
+                        </Typography>
+                      </Box>
+                    )}
+
                     {/* Status */}
                     {addr.status && (
                       <Chip
                         label={STATUS_LABELS[addr.status] || addr.status}
                         size="small"
                         sx={{
-                          mt: 1,
+                          mt: 0.5,
                           bgcolor: (STATUS_COLORS[addr.status] || '#999') + '20',
                           color: STATUS_COLORS[addr.status] || '#999',
                           fontWeight: 500
