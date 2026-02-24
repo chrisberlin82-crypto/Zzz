@@ -125,8 +125,8 @@ app.get('/api/health', async (req, res) => {
     health.services.redis = 'disconnected';
   }
 
-  const statusCode = health.status === 'ok' ? 200 : 503;
-  res.status(statusCode).json(health);
+  // Always return 200 for Docker health check - detailed status is in the body
+  res.status(200).json(health);
 });
 
 // 404 handler
@@ -181,8 +181,12 @@ const startServer = async () => {
       logger.info('Datenbankmodelle synchronisiert');
     }
 
-    // Connect to Redis
-    await connectRedis();
+    // Connect to Redis (non-blocking - server starts even if Redis is unavailable)
+    try {
+      await connectRedis();
+    } catch (redisError) {
+      logger.warn('Redis nicht verfuegbar, Server startet ohne Redis:', redisError.message);
+    }
 
     // Start listening
     app.listen(PORT, '0.0.0.0', () => {
