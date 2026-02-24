@@ -39,6 +39,12 @@ const CustomersPage = () => {
     { onSuccess: () => { queryClient.invalidateQueries('customers'); setDialogOpen(false); } }
   );
 
+  const errorMessage = createMutation.isError
+    ? (createMutation.error?.response?.data?.errors
+      ? createMutation.error.response.data.errors.map(e => e.message).join(', ')
+      : createMutation.error?.response?.data?.error || 'Fehler beim Speichern')
+    : null;
+
   const deleteMutation = useMutation(
     (id) => customerAPI.delete(id),
     { onSuccess: () => queryClient.invalidateQueries('customers') }
@@ -134,7 +140,7 @@ const CustomersPage = () => {
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>{editCustomer ? 'Kunde bearbeiten' : 'Neuer Kunde'}</DialogTitle>
         <DialogContent>
-          {createMutation.isError && <Alert severity="error" sx={{ mb: 2 }}>Fehler beim Speichern</Alert>}
+          {errorMessage && <Alert severity="error" sx={{ mb: 2 }}>{errorMessage}</Alert>}
           <Grid container spacing={2} sx={{ mt: 0.5 }}>
             <Grid item xs={6}>
               <TextField fullWidth label="Vorname" value={formData.first_name || ''} onChange={(e) => setFormData(p => ({ ...p, first_name: e.target.value }))} required />

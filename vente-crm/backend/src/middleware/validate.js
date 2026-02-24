@@ -23,10 +23,10 @@ const validateCustomer = [
     .withMessage('Vorname ist erforderlich (max. 100 Zeichen)'),
   body('last_name').trim().isLength({ min: 1, max: 100 })
     .withMessage('Nachname ist erforderlich (max. 100 Zeichen)'),
-  body('email').optional({ nullable: true }).isEmail().normalizeEmail()
+  body('email').optional({ nullable: true, checkFalsy: true }).isEmail().normalizeEmail()
     .withMessage('Ungültige E-Mail-Adresse'),
-  body('phone').optional({ nullable: true }).trim().isLength({ max: 50 }),
-  body('postal_code').optional({ nullable: true }).matches(/^\d{5}$/)
+  body('phone').optional({ nullable: true, checkFalsy: true }).trim().isLength({ max: 50 }),
+  body('postal_code').optional({ nullable: true, checkFalsy: true }).matches(/^\d{5}$/)
     .withMessage('PLZ muss 5-stellig sein'),
   body('type').optional().isIn(['PRIVATE', 'BUSINESS']),
   body('source').optional().isIn(['ONLINE', 'REFERRAL', 'COLD_CALL', 'EVENT', 'PARTNER', 'OTHER']),

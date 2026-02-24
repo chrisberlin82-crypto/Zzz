@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import {
   Box, Typography, Button, TextField, Grid, Card, CardContent,
@@ -7,7 +8,7 @@ import {
 } from '@mui/material';
 import {
   Add, Edit, Delete, ElectricBolt, LocalFireDepartment, Euro,
-  Timer, Business, Search, Category
+  Timer, Business, Search, Category, ShoppingCart
 } from '@mui/icons-material';
 import { productAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -39,6 +40,7 @@ const ProductsPage = () => {
   const [formData, setFormData] = useState(INITIAL_FORM);
   const { hasRole } = useAuth();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const isAdmin = hasRole(['ADMIN', 'STANDORTLEITUNG']);
 
   const { data, isLoading } = useQuery(
@@ -250,24 +252,31 @@ const ProductsPage = () => {
                 </CardContent>
 
                 {/* Aktionen */}
-                {isAdmin && (
-                  <CardActions sx={{ px: 3, pb: 2, pt: 0 }}>
-                    <Button size="small" startIcon={<Edit />}
-                      onClick={() => openDialog(product)}
-                      sx={{ color: BORDEAUX }}>
-                      Bearbeiten
-                    </Button>
-                    <IconButton size="small" color="error"
-                      onClick={() => {
-                        if (window.confirm('Produkt wirklich loeschen?')) {
-                          deleteMutation.mutate(product.id);
-                        }
-                      }}
-                      sx={{ ml: 'auto' }}>
-                      <Delete fontSize="small" />
-                    </IconButton>
-                  </CardActions>
-                )}
+                <CardActions sx={{ px: 3, pb: 2, pt: 0 }}>
+                  <Button size="small" startIcon={<ShoppingCart />}
+                    onClick={() => navigate(`/contracts?product_id=${product.id}`)}
+                    sx={{ color: BORDEAUX }}>
+                    Verkaufen
+                  </Button>
+                  {isAdmin && (
+                    <>
+                      <Button size="small" startIcon={<Edit />}
+                        onClick={() => openDialog(product)}
+                        sx={{ color: BORDEAUX }}>
+                        Bearbeiten
+                      </Button>
+                      <IconButton size="small" color="error"
+                        onClick={() => {
+                          if (window.confirm('Produkt wirklich loeschen?')) {
+                            deleteMutation.mutate(product.id);
+                          }
+                        }}
+                        sx={{ ml: 'auto' }}>
+                        <Delete fontSize="small" />
+                      </IconButton>
+                    </>
+                  )}
+                </CardActions>
               </Card>
             </Grid>
           );

@@ -51,11 +51,16 @@ const ContractsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
 
-  // Auto-open dialog when customer_id is in URL (from CustomerDetailPage)
+  // Auto-open dialog when customer_id or product_id is in URL
   useEffect(() => {
     const customerId = searchParams.get('customer_id');
-    if (customerId) {
-      setFormData(prev => ({ ...prev, customer_id: customerId }));
+    const productId = searchParams.get('product_id');
+    if (customerId || productId) {
+      setFormData(prev => ({
+        ...prev,
+        ...(customerId ? { customer_id: customerId } : {}),
+        ...(productId ? { product_id: productId } : {})
+      }));
       setDialogOpen(true);
       setSearchParams({}, { replace: true });
     }
