@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-# Vente CRM - Deploy Live auf Hetzner CPX Server (IP-only, ohne Domain)
+# MED Rezeption - Deploy Live auf Hetzner CPX Server (IP-only, ohne Domain)
 # ============================================================
 # Verwendung:
 #   ./deploy-hetzner.sh user@hetzner-ip
@@ -18,12 +18,12 @@ SSH_HOST="${1:?Fehler: SSH-Host angeben (z.B. root@89.167.100.239)}"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
-REMOTE_DIR="/opt/vente-crm"
+REMOTE_DIR="/opt/medrezeption"
 
 # IP aus SSH_HOST extrahieren
 SERVER_IP="${SSH_HOST#*@}"
 
-echo "=== Vente CRM LIVE-Deployment auf Hetzner CPX ==="
+echo "=== MED Rezeption LIVE-Deployment auf Hetzner CPX ==="
 echo "Host:   $SSH_HOST"
 echo "IP:     $SERVER_IP"
 echo "Remote: $REMOTE_DIR"
