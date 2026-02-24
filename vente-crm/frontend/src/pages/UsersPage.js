@@ -8,7 +8,7 @@ import {
 } from '@mui/material';
 import {
   Add, Edit, Delete, PersonAdd, AdminPanelSettings,
-  SupervisorAccount, Support, Badge, Storefront
+  SupervisorAccount, Badge, Storefront
 } from '@mui/icons-material';
 import { userAPI } from '../services/api';
 
@@ -18,7 +18,6 @@ const ROLES = [
   { value: 'ADMIN', label: 'Administrator', icon: <AdminPanelSettings />, color: '#7A1B2D' },
   { value: 'STANDORTLEITUNG', label: 'Standortleitung', icon: <SupervisorAccount />, color: '#9E3347' },
   { value: 'TEAMLEAD', label: 'Teamleiter', icon: <Badge />, color: '#C4A35A' },
-  { value: 'BACKOFFICE', label: 'Backoffice', icon: <Support />, color: '#2E7D32' },
   { value: 'VERTRIEB', label: 'Vertrieb', icon: <Storefront />, color: '#5A0F1E' }
 ];
 

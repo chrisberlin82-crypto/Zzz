@@ -20,6 +20,7 @@ const SignaturePage = lazy(() => import('./pages/SignaturePage'));
 const UsersPage = lazy(() => import('./pages/UsersPage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const TeamMapPage = lazy(() => import('./pages/TeamMapPage'));
+const SaleWizardPage = lazy(() => import('./pages/SaleWizardPage'));
 
 const Loading = () => (
   <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
@@ -68,6 +69,7 @@ const App = () => {
           <Route path="team-map" element={<TeamMapPage />} />
           <Route path="users" element={<UsersPage />} />
           <Route path="profile" element={<ProfilePage />} />
+          <Route path="sale" element={<SaleWizardPage />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/dashboard" replace />} />

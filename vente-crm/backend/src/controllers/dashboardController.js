@@ -17,7 +17,7 @@ const getDashboard = async (req, res) => {
     const expenseWhere = {};
 
     // Scope basierend auf Rolle
-    if (['VERTRIEB', 'BACKOFFICE'].includes(role)) {
+    if (role === 'VERTRIEB') {
       contractWhere.user_id = userId;
       customerWhere.user_id = userId;
       expenseWhere.user_id = userId;

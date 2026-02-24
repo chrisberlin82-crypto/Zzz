@@ -254,7 +254,7 @@ const ProductsPage = () => {
                 {/* Aktionen */}
                 <CardActions sx={{ px: 3, pb: 2, pt: 0 }}>
                   <Button size="small" startIcon={<ShoppingCart />}
-                    onClick={() => navigate(`/contracts?product_id=${product.id}`)}
+                    onClick={() => navigate(`/sale?product_id=${product.id}`)}
                     sx={{ color: BORDEAUX }}>
                     Verkaufen
                   </Button>

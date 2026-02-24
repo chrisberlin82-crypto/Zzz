@@ -16,7 +16,6 @@ const ROLE_COLORS = {
   VERTRIEB: '#2E7D32',
   TEAMLEAD: '#A68836',
   STANDORTLEITUNG: '#9E3347',
-  BACKOFFICE: '#666666',
   ADMIN: BORDEAUX
 };
 
@@ -24,7 +23,6 @@ const ROLE_LABELS = {
   ADMIN: 'Administrator',
   STANDORTLEITUNG: 'Standortleitung',
   TEAMLEAD: 'Teamleiter',
-  BACKOFFICE: 'Backoffice',
   VERTRIEB: 'Vertrieb'
 };
 

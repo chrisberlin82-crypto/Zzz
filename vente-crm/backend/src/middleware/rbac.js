@@ -1,13 +1,12 @@
 /**
  * Rollenbasierte Zugriffskontrolle (RBAC)
- * Hierarchie: ADMIN > STANDORTLEITUNG > TEAMLEAD > BACKOFFICE > VERTRIEB
+ * Hierarchie: ADMIN > STANDORTLEITUNG > TEAMLEAD > VERTRIEB
  */
 
 const ROLE_HIERARCHY = {
   ADMIN: 5,
   STANDORTLEITUNG: 4,
   TEAMLEAD: 3,
-  BACKOFFICE: 2,
   VERTRIEB: 1
 };
 
@@ -56,15 +55,6 @@ const ROLE_PERMISSIONS = {
     'addresses:read_all', 'addresses:import',
     'signatures:read', 'signatures:create',
     'dashboard:read', 'dashboard:read_all',
-    'reports:read'
-  ],
-  BACKOFFICE: [
-    'customers:read', 'customers:create', 'customers:update',
-    'contracts:read', 'contracts:update',
-    'contracts:approve', 'contracts:cancel',
-    'products:read',
-    'expenses:read', 'expenses:create', 'expenses:update', 'expenses:delete', 'expenses:export',
-    'dashboard:read',
     'reports:read'
   ],
   VERTRIEB: [
@@ -165,8 +155,8 @@ const scopeToUser = (req, res, next) => {
 
   const userLevel = ROLE_HIERARCHY[req.user.role] || 0;
 
-  // VERTRIEB und BACKOFFICE sehen nur eigene Daten
-  if (userLevel <= 2) {
+  // VERTRIEB sieht nur eigene Daten
+  if (userLevel <= 1) {
     req.scopeUserId = req.user.id;
   }
 

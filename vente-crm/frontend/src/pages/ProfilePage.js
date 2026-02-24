@@ -17,7 +17,6 @@ const ROLE_LABELS = {
   ADMIN: 'Administrator',
   STANDORTLEITUNG: 'Standortleitung',
   TEAMLEAD: 'Teamleiter',
-  BACKOFFICE: 'Backoffice',
   VERTRIEB: 'Vertrieb'
 };
 

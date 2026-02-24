@@ -27,13 +27,6 @@ const defaultUsers = [
     last_name: 'Lead',
   },
   {
-    email: 'backoffice@vente-projekt.de',
-    password: 'Backoffice123!',
-    role: 'BACKOFFICE',
-    first_name: 'Back',
-    last_name: 'Office',
-  },
-  {
     email: 'vertrieb@vente-projekt.de',
     password: 'Vertrieb123!',
     role: 'VERTRIEB',
