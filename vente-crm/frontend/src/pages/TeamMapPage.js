@@ -16,6 +16,7 @@ const ROLE_COLORS = {
   VERTRIEB: '#2E7D32',
   TEAMLEAD: '#A68836',
   STANDORTLEITUNG: '#9E3347',
+  BACKOFFICE: '#6A5ACD',
   ADMIN: BORDEAUX
 };
 
@@ -23,6 +24,7 @@ const ROLE_LABELS = {
   ADMIN: 'Administrator',
   STANDORTLEITUNG: 'Standortleitung',
   TEAMLEAD: 'Teamleiter',
+  BACKOFFICE: 'Backoffice',
   VERTRIEB: 'Vertrieb'
 };
 
@@ -77,8 +79,10 @@ const TeamMapPage = () => {
     { refetchInterval: 60000 }
   );
 
-  const teamMembers = data?.data?.data || [];
-  const signedContracts = signedData?.data?.data || [];
+  const rawTeamMembers = data?.data?.data || [];
+  const teamMembers = rawTeamMembers.filter(m => m.last_latitude && m.last_longitude && !isNaN(parseFloat(m.last_latitude)) && !isNaN(parseFloat(m.last_longitude)));
+  const rawSignedContracts = signedData?.data?.data || [];
+  const signedContracts = rawSignedContracts.filter(s => s.gps_latitude && s.gps_longitude && !isNaN(parseFloat(s.gps_latitude)) && !isNaN(parseFloat(s.gps_longitude)));
 
   // Kartenmittelpunkt berechnen
   const defaultCenter = [52.5200, 13.4050];

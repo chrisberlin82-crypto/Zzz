@@ -18,14 +18,9 @@ const ROLES = [
   { value: 'ADMIN', label: 'Administrator', icon: <AdminPanelSettings />, color: '#7A1B2D' },
   { value: 'STANDORTLEITUNG', label: 'Standortleitung', icon: <SupervisorAccount />, color: '#9E3347' },
   { value: 'TEAMLEAD', label: 'Teamleiter', icon: <Badge />, color: '#C4A35A' },
+  { value: 'BACKOFFICE', label: 'Backoffice', icon: <Badge />, color: '#6A5ACD' },
   { value: 'VERTRIEB', label: 'Vertrieb', icon: <Storefront />, color: '#5A0F1E' }
 ];
-
-const STATUS_CONFIG = {
-  ACTIVE: { label: 'Aktiv', color: '#2E7D32' },
-  INACTIVE: { label: 'Inaktiv', color: '#999' },
-  SUSPENDED: { label: 'Gesperrt', color: '#D32F2F' }
-};
 
 const INITIAL_FORM = {
   first_name: '',
@@ -33,7 +28,7 @@ const INITIAL_FORM = {
   email: '',
   password: '',
   role: 'VERTRIEB',
-  status: 'ACTIVE',
+  is_active: true,
   phone: ''
 };
 
@@ -81,7 +76,7 @@ const UsersPage = () => {
         email: user.email || '',
         password: '',
         role: user.role || 'VERTRIEB',
-        status: user.status || 'ACTIVE',
+        is_active: user.is_active !== false,
         phone: user.phone || ''
       });
     } else {
@@ -100,7 +95,6 @@ const UsersPage = () => {
   };
 
   const getRoleInfo = (role) => ROLES.find(r => r.value === role) || ROLES[4];
-  const getStatusInfo = (status) => STATUS_CONFIG[status] || STATUS_CONFIG.ACTIVE;
 
   return (
     <Box>
@@ -152,7 +146,9 @@ const UsersPage = () => {
               <TableBody>
                 {(Array.isArray(users) ? users : []).map((user) => {
                   const roleInfo = getRoleInfo(user.role);
-                  const statusInfo = getStatusInfo(user.status);
+                  const statusInfo = user.is_active !== false
+                    ? { label: 'Aktiv', color: '#2E7D32' }
+                    : { label: 'Inaktiv', color: '#999' };
                   return (
                     <TableRow key={user.id} hover>
                       <TableCell>
@@ -307,12 +303,11 @@ const UsersPage = () => {
             <Grid item xs={6}>
               <TextField
                 select fullWidth label="Status"
-                value={formData.status}
-                onChange={(e) => setFormData(p => ({ ...p, status: e.target.value }))}
+                value={formData.is_active ? 'true' : 'false'}
+                onChange={(e) => setFormData(p => ({ ...p, is_active: e.target.value === 'true' }))}
               >
-                <MenuItem value="ACTIVE">Aktiv</MenuItem>
-                <MenuItem value="INACTIVE">Inaktiv</MenuItem>
-                <MenuItem value="SUSPENDED">Gesperrt</MenuItem>
+                <MenuItem value="true">Aktiv</MenuItem>
+                <MenuItem value="false">Inaktiv</MenuItem>
               </TextField>
             </Grid>
           </Grid>
