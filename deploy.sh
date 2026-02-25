@@ -207,9 +207,14 @@ do_update() {
   cd "$SCRIPT_DIR"
   git pull origin "$(git branch --show-current)" || true
 
-  log_info "Container neu bauen und starten..."
-  stop_containers
-  start_containers --build
+  log_info "Container neu bauen (Frontend + Backend)..."
+  cd "$CRM_DIR"
+  docker compose build --no-cache frontend backend
+
+  log_info "Container neu starten..."
+  docker compose down
+  docker compose up -d
+
   run_migrations
   show_status
 }

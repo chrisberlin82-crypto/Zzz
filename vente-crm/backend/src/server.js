@@ -191,10 +191,12 @@ const startServer = async () => {
     await db.sequelize.authenticate();
     logger.info('Datenbankverbindung hergestellt');
 
-    // Sync models in development
-    if (process.env.NODE_ENV === 'development') {
+    // Sync models (stellt sicher dass alle Tabellen/Spalten existieren)
+    try {
       await db.sequelize.sync({ alter: true });
       logger.info('Datenbankmodelle synchronisiert');
+    } catch (syncError) {
+      logger.warn('Model-Sync fehlgeschlagen (nicht kritisch):', syncError.message);
     }
 
     // Connect to Redis (non-blocking - server starts even if Redis is unavailable)
