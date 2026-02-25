@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from 'react-query';
+import { useQuery, useQueries, useMutation, useQueryClient } from 'react-query';
 import {
   Box, Typography, Button, Card, CardContent, CircularProgress, Alert,
   Chip, Accordion, AccordionSummary, AccordionDetails, Table, TableBody,
@@ -46,13 +46,16 @@ const TerritoryOverviewPage = () => {
   const salespersons = allUsers.filter(u => u.role === 'VERTRIEB');
 
   // Fuer jedes Assignment die Adressen laden
-  const territoryQueries = assignments.map(a => ({
+  const territoryQueryResults = useQueries(
+    assignments.map(a => ({
+      queryKey: ['territory-addresses', a.id],
+      queryFn: () => territoryAPI.getAddresses(a.id),
+      enabled: !!a.id
+    }))
+  );
+  const territoryQueries = assignments.map((a, i) => ({
     id: a.id,
-    query: useQuery(
-      ['territory-addresses', a.id],
-      () => territoryAPI.getAddresses(a.id),
-      { enabled: !!a.id }
-    )
+    query: territoryQueryResults[i]
   }));
 
   const assignMutation = useMutation(
