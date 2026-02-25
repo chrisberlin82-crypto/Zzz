@@ -39,15 +39,21 @@ const getMenuItems = (role) => {
     items.push({ text: 'Meine Gebiete', icon: <Assignment />, path: '/territory-overview', permission: 'territories:read' });
   }
 
-  items.push({ text: 'Statistiken', icon: <BarChart />, path: '/dashboard', permission: 'reports:read' });
+  if (role !== 'ADMIN') {
+    items.push({ text: 'Statistiken', icon: <BarChart />, path: '/dashboard', permission: 'reports:read' });
+  }
   return items;
 };
 
+// Admin-Bereich: Gebiete immer anzeigen fuer ADMIN-Rolle
 const adminItems = [
-  { text: 'Gebiete', icon: <LocationOn />, path: '/territories', permission: 'territories:create' },
-  { text: 'Team Live', icon: <Groups />, path: '/team-map', permission: 'users:read' },
-  { text: 'Benutzer', icon: <Person />, path: '/users', permission: 'users:read' },
+  { text: 'Gebietsverwaltung', icon: <LocationOn />, path: '/territories', roles: ['ADMIN'] },
+  { text: 'Team Live', icon: <Groups />, path: '/team-map', roles: ['ADMIN', 'STANDORTLEITUNG'] },
+  { text: 'Benutzer', icon: <Person />, path: '/users', roles: ['ADMIN', 'STANDORTLEITUNG'] },
+  { text: 'Statistiken', icon: <BarChart />, path: '/dashboard', roles: ['ADMIN'] },
 ];
+
+/* adminItems ist jetzt oben bei getMenuItems definiert (rollenbasiert) */
 
 const bottomItems = [
   { text: 'Abonnement', icon: <CreditCard />, path: '/subscription' }
@@ -140,13 +146,13 @@ const Layout = () => {
           </ListItem>
         ))}
 
-        {adminItems.filter(item => hasPermission(item.permission)).length > 0 && (
+        {adminItems.filter(item => item.roles.includes(user?.role)).length > 0 && (
           <>
             <Divider sx={{ borderColor: 'rgba(255,255,255,0.15)', my: 1.5 }} />
             <Typography sx={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem', px: 2, py: 0.5, textTransform: 'uppercase', letterSpacing: 1 }}>
               Administration
             </Typography>
-            {adminItems.filter(item => hasPermission(item.permission)).map((item) => (
+            {adminItems.filter(item => item.roles.includes(user?.role)).map((item) => (
               <ListItem button key={item.text}
                 onClick={() => { navigate(item.path); if (isMobile) setDrawerOpen(false); }}
                 sx={{

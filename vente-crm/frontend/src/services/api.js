@@ -145,6 +145,8 @@ export const userAPI = {
 
 // Gebiete / Territories
 export const territoryAPI = {
+  // Verfuegbare PLZ aus Adresslisten
+  getAvailablePLZ: () => api.get('/territories/available-plz'),
   // Admin: Alle Gebietszuweisungen
   getAll: (params) => api.get('/territories', { params }),
   create: (data) => api.post('/territories', data),

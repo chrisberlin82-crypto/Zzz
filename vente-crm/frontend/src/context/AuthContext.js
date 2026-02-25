@@ -19,7 +19,23 @@ export const AuthProvider = ({ children }) => {
 
     if (savedUser && token) {
       try {
-        setUser(JSON.parse(savedUser));
+        const parsed = JSON.parse(savedUser);
+        setUser(parsed);
+
+        // Berechtigungen vom Server aktualisieren (Token koennte veraltet sein)
+        authAPI.getProfile().then(({ data }) => {
+          if (data.success && data.user) {
+            const updatedUser = { ...parsed, ...data.user };
+            setUser(updatedUser);
+            localStorage.setItem('vente_user', JSON.stringify(updatedUser));
+          }
+        }).catch(() => {
+          // Bei Fehler (z.B. Token abgelaufen) ausloggen
+          localStorage.removeItem('vente_token');
+          localStorage.removeItem('vente_refresh_token');
+          localStorage.removeItem('vente_user');
+          setUser(null);
+        });
       } catch {
         localStorage.clear();
       }

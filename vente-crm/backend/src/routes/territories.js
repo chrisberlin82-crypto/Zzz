@@ -7,6 +7,12 @@ const territoryController = require('../controllers/territoryController');
 
 router.use(authenticateToken);
 
+// ====== Verfuegbare PLZ aus Adresslisten ======
+router.get('/available-plz',
+  checkPermission('territories:read'),
+  territoryController.getAvailablePostalCodes
+);
+
 // ====== Admin: Gebietszuweisungen verwalten ======
 router.get('/',
   checkPermission('territories:read'),

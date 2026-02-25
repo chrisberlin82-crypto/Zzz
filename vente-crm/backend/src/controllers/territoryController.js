@@ -455,6 +455,40 @@ const getMyTerritory = async (req, res) => {
   }
 };
 
+// ====== Verfuegbare PLZ aus Adresslisten laden ======
+
+const getAvailablePostalCodes = async (req, res) => {
+  try {
+    const { Address } = req.app.locals.db;
+    const sequelize = req.app.locals.db.sequelize;
+
+    const results = await Address.findAll({
+      attributes: [
+        [sequelize.fn('DISTINCT', sequelize.col('postal_code')), 'postal_code'],
+        [sequelize.fn('MIN', sequelize.col('city')), 'city']
+      ],
+      where: {
+        postal_code: { [Op.ne]: null, [Op.ne]: '' }
+      },
+      group: ['postal_code'],
+      order: [['postal_code', 'ASC']],
+      raw: true
+    });
+
+    const postalCodes = results
+      .filter(r => r.postal_code && /^\d{5}$/.test(r.postal_code))
+      .map(r => ({
+        plz: r.postal_code,
+        city: r.city || ''
+      }));
+
+    res.json({ success: true, data: postalCodes });
+  } catch (error) {
+    logger.error('Get available postal codes error:', error);
+    res.status(500).json({ success: false, error: 'PLZ konnten nicht geladen werden' });
+  }
+};
+
 module.exports = {
   getAllTerritoryAssignments,
   createTerritoryAssignment,
@@ -465,5 +499,6 @@ module.exports = {
   assignSalesperson,
   updateSalespersonTerritory,
   deleteSalespersonTerritory,
-  getMyTerritory
+  getMyTerritory,
+  getAvailablePostalCodes
 };

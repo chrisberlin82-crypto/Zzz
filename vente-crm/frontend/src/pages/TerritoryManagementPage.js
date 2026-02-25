@@ -4,7 +4,7 @@ import {
   Box, Typography, Button, Card, CardContent, Table, TableBody, TableCell,
   TableContainer, TableHead, TableRow, Chip, IconButton, Dialog, DialogTitle,
   DialogContent, DialogActions, TextField, MenuItem, CircularProgress, Alert,
-  Tooltip
+  Tooltip, Autocomplete
 } from '@mui/material';
 import {
   Add, Edit, Delete, Map, CheckCircle, Cancel, Schedule
@@ -19,7 +19,7 @@ const TerritoryManagementPage = () => {
   const [editItem, setEditItem] = useState(null);
   const [form, setForm] = useState({
     assigned_to_user_id: '',
-    postal_codes: '',
+    postal_codes: [],
     name: '',
     valid_from: '',
     valid_until: '',
@@ -36,6 +36,13 @@ const TerritoryManagementPage = () => {
     'users-for-territory',
     () => userAPI.getAll()
   );
+
+  const { data: plzData } = useQuery(
+    'available-plz',
+    () => territoryAPI.getAvailablePLZ()
+  );
+
+  const availablePLZ = plzData?.data?.data || [];
 
   const createMutation = useMutation(
     (data) => territoryAPI.create(data),
@@ -63,7 +70,7 @@ const TerritoryManagementPage = () => {
     const in14days = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
     setForm({
       assigned_to_user_id: '',
-      postal_codes: '',
+      postal_codes: [],
       name: '',
       valid_from: today,
       valid_until: in14days,
@@ -75,7 +82,9 @@ const TerritoryManagementPage = () => {
 
   const handleOpenEdit = (item) => {
     setEditItem(item);
-    const postalCodes = Array.isArray(item.postal_codes) ? item.postal_codes.join(', ') : item.postal_codes;
+    const postalCodes = Array.isArray(item.postal_codes)
+      ? item.postal_codes
+      : (item.postal_codes || '').split(',').map(s => s.trim()).filter(Boolean);
     setForm({
       assigned_to_user_id: item.assigned_to_user_id,
       postal_codes: postalCodes,
@@ -96,7 +105,7 @@ const TerritoryManagementPage = () => {
   const handleSubmit = () => {
     const payload = {
       ...form,
-      postal_codes: form.postal_codes.split(',').map(s => s.trim()).filter(Boolean)
+      postal_codes: form.postal_codes
     };
 
     if (editItem) {
@@ -272,14 +281,41 @@ const TerritoryManagementPage = () => {
               fullWidth
             />
 
-            <TextField
-              label="PLZ-Gebiete (kommagetrennt)"
+            <Autocomplete
+              multiple
+              freeSolo
+              options={availablePLZ.map(p => p.plz)}
               value={form.postal_codes}
-              onChange={(e) => setForm({ ...form, postal_codes: e.target.value })}
-              placeholder="z.B. 10115, 10117, 10119"
-              fullWidth
-              required
-              helperText="Geben Sie die Postleitzahlen kommagetrennt ein"
+              onChange={(e, newValue) => setForm({ ...form, postal_codes: newValue })}
+              getOptionLabel={(option) => {
+                const match = availablePLZ.find(p => p.plz === option);
+                return match ? `${option} (${match.city})` : option;
+              }}
+              renderTags={(value, getTagProps) =>
+                value.map((plz, index) => {
+                  const match = availablePLZ.find(p => p.plz === plz);
+                  return (
+                    <Chip
+                      key={plz}
+                      label={match ? `${plz} - ${match.city}` : plz}
+                      size="small"
+                      sx={{ bgcolor: `${BORDEAUX}15`, color: BORDEAUX, fontWeight: 500 }}
+                      {...getTagProps({ index })}
+                    />
+                  );
+                })
+              }
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="PLZ-Gebiete"
+                  placeholder={form.postal_codes.length === 0 ? 'PLZ eingeben oder auswaehlen...' : ''}
+                  required
+                  helperText={availablePLZ.length > 0
+                    ? `${availablePLZ.length} PLZ aus Adresslisten verfuegbar. Sie koennen auch neue PLZ eingeben.`
+                    : 'Geben Sie Postleitzahlen ein (Enter zum Bestaetigen)'}
+                />
+              )}
             />
 
             <Box sx={{ display: 'flex', gap: 2 }}>
