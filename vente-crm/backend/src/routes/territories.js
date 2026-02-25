@@ -38,7 +38,7 @@ router.delete('/:id',
 
 // ====== Standortleiter/Teamleiter: Eigene Gebiete sehen ======
 router.get('/my-assignments',
-  checkPermission('territories:read'),
+  checkPermission('territories:read', 'territories:read_own'),
   territoryController.getMyTerritoryAssignment
 );
 

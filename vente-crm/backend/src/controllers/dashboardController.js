@@ -1,5 +1,6 @@
 const { Op } = require('sequelize');
 const logger = require('../utils/logger');
+const { getTeamMemberIds } = require('./territoryController');
 
 const getDashboard = async (req, res) => {
   try {
@@ -16,11 +17,19 @@ const getDashboard = async (req, res) => {
     const customerWhere = {};
     const expenseWhere = {};
 
-    // Scope basierend auf Rolle
+    // Scope basierend auf Rolle und Gebietszugehoerigkeiten
     if (role === 'VERTRIEB') {
       contractWhere.user_id = userId;
       customerWhere.user_id = userId;
       expenseWhere.user_id = userId;
+    } else if (['STANDORTLEITUNG', 'TEAMLEAD'].includes(role)) {
+      // Alle Vertriebler in eigenen Gebieten finden
+      const memberIds = await getTeamMemberIds(req.app.locals.db, userId, role);
+      if (memberIds) {
+        contractWhere.user_id = { [Op.in]: memberIds };
+        customerWhere.user_id = { [Op.in]: memberIds };
+        expenseWhere.user_id = { [Op.in]: memberIds };
+      }
     }
 
     // KPIs berechnen

@@ -11,9 +11,11 @@ const getCustomers = async (req, res) => {
     const offset = (page - 1) * limit;
     const where = {};
 
-    // Scope: VERTRIEB sieht nur eigene Kunden
+    // Scope: VERTRIEB sieht nur eigene Kunden, STANDORTLEITUNG/TEAMLEAD sieht Gebiets-Mitglieder
     if (req.scopeUserId) {
       where.user_id = req.scopeUserId;
+    } else if (req.scopeUserIds) {
+      where.user_id = { [Op.in]: req.scopeUserIds };
     }
 
     if (search) {

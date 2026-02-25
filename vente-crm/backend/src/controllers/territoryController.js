@@ -1,11 +1,51 @@
 const { Op } = require('sequelize');
 const logger = require('../utils/logger');
 
+// ====== HELPER: Vertriebler-IDs fuer Standortleiter/Teamleiter ermitteln ======
+
+const getTeamMemberIds = async (db, userId, userRole) => {
+  const { TerritoryAssignment, SalespersonTerritory } = db;
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  if (userRole === 'ADMIN') return null; // null = kein Filter noetig
+  if (userRole === 'VERTRIEB') return [userId]; // nur eigene Daten
+
+  // STANDORTLEITUNG/TEAMLEAD: Alle Vertriebler in eigenen Gebieten finden
+  const assignments = await TerritoryAssignment.findAll({
+    where: {
+      assigned_to_user_id: userId,
+      is_active: true,
+      valid_from: { [Op.lte]: today },
+      valid_until: { [Op.gte]: today }
+    },
+    attributes: ['id']
+  });
+
+  if (assignments.length === 0) return [userId];
+
+  const assignmentIds = assignments.map(a => a.id);
+  const spTerritories = await SalespersonTerritory.findAll({
+    where: {
+      territory_assignment_id: { [Op.in]: assignmentIds },
+      is_active: true
+    },
+    attributes: ['salesperson_user_id']
+  });
+
+  const memberIds = [...new Set([
+    userId,
+    ...spTerritories.map(sp => sp.salesperson_user_id)
+  ])];
+
+  return memberIds;
+};
+
 // ====== TERRITORY ASSIGNMENTS (Admin -> Standortleiter/Teamleiter) ======
 
 const getAllTerritoryAssignments = async (req, res) => {
   try {
-    const { TerritoryAssignment, User } = req.app.locals.db;
+    const { TerritoryAssignment, SalespersonTerritory, User } = req.app.locals.db;
     const { active_only } = req.query;
 
     const where = {};
@@ -14,11 +54,24 @@ const getAllTerritoryAssignments = async (req, res) => {
       where.valid_until = { [Op.gte]: new Date() };
     }
 
+    // STANDORTLEITUNG/TEAMLEAD sehen nur eigene Zuweisungen
+    if (['STANDORTLEITUNG', 'TEAMLEAD'].includes(req.user.role)) {
+      where.assigned_to_user_id = req.user.id;
+    }
+
     const assignments = await TerritoryAssignment.findAll({
       where,
       include: [
         { model: User, as: 'assignedTo', attributes: ['id', 'first_name', 'last_name', 'email', 'role'] },
-        { model: User, as: 'assignedBy', attributes: ['id', 'first_name', 'last_name', 'email'] }
+        { model: User, as: 'assignedBy', attributes: ['id', 'first_name', 'last_name', 'email'] },
+        {
+          model: SalespersonTerritory,
+          as: 'salespersonTerritories',
+          required: false,
+          include: [
+            { model: User, as: 'salesperson', attributes: ['id', 'first_name', 'last_name', 'email', 'role'] }
+          ]
+        }
       ],
       order: [['created_at', 'DESC']]
     });
@@ -137,16 +190,22 @@ const deleteTerritoryAssignment = async (req, res) => {
 const getMyTerritoryAssignment = async (req, res) => {
   try {
     const { TerritoryAssignment, SalespersonTerritory, User } = req.app.locals.db;
-    const today = new Date().toISOString().split('T')[0];
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-    // Aktive Gebietszuweisungen fuer den aktuellen Benutzer
+    const where = {
+      is_active: true,
+      valid_from: { [Op.lte]: today },
+      valid_until: { [Op.gte]: today }
+    };
+
+    // ADMIN sieht alle, andere nur eigene
+    if (req.user.role !== 'ADMIN') {
+      where.assigned_to_user_id = req.user.id;
+    }
+
     const assignments = await TerritoryAssignment.findAll({
-      where: {
-        assigned_to_user_id: req.user.id,
-        is_active: true,
-        valid_from: { [Op.lte]: today },
-        valid_until: { [Op.gte]: today }
-      },
+      where,
       include: [
         {
           model: SalespersonTerritory,
@@ -155,6 +214,7 @@ const getMyTerritoryAssignment = async (req, res) => {
             { model: User, as: 'salesperson', attributes: ['id', 'first_name', 'last_name', 'email', 'role'] }
           ]
         },
+        { model: User, as: 'assignedTo', attributes: ['id', 'first_name', 'last_name', 'email', 'role'] },
         { model: User, as: 'assignedBy', attributes: ['id', 'first_name', 'last_name', 'email'] }
       ],
       order: [['created_at', 'DESC']]
@@ -500,5 +560,6 @@ module.exports = {
   updateSalespersonTerritory,
   deleteSalespersonTerritory,
   getMyTerritory,
-  getAvailablePostalCodes
+  getAvailablePostalCodes,
+  getTeamMemberIds
 };

@@ -9,7 +9,11 @@ const getContracts = async (req, res) => {
     const offset = (page - 1) * limit;
     const where = {};
 
-    if (req.scopeUserId) where.user_id = req.scopeUserId;
+    if (req.scopeUserId) {
+      where.user_id = req.scopeUserId;
+    } else if (req.scopeUserIds) {
+      where.user_id = { [Op.in]: req.scopeUserIds };
+    }
     if (status) where.status = status;
     if (customer_id) where.customer_id = customer_id;
 

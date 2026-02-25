@@ -1,14 +1,16 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useQuery, useMutation } from 'react-query';
 import { useSearchParams } from 'react-router-dom';
 import {
   Box, Typography, Card, CardContent, Button, Grid, Chip,
-  CircularProgress, Alert, Divider, LinearProgress
+  CircularProgress, Alert, Divider, LinearProgress, List, ListItem,
+  ListItemIcon, ListItemText
 } from '@mui/material';
 import {
   CreditCard, CheckCircle, Warning, Timer, Star,
   AdminPanelSettings, SupervisorAccount, Badge, Storefront,
-  Payment, Receipt
+  Payment, Receipt, Calculate, Check, AccountBalance,
+  AddShoppingCart
 } from '@mui/icons-material';
 import { subscriptionAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -57,6 +59,16 @@ const SubscriptionPage = () => {
     }
   );
 
+  const addonCheckoutMutation = useMutation(
+    (addonId) => subscriptionAPI.createAddonCheckout({ addon_id: addonId }),
+    {
+      onSuccess: (response) => {
+        const url = response?.data?.data?.checkout_url;
+        if (url) window.location.href = url;
+      }
+    }
+  );
+
   const portalMutation = useMutation(
     () => subscriptionAPI.createPortal(),
     {
@@ -70,8 +82,10 @@ const SubscriptionPage = () => {
   const sub = statusData?.data?.data || {};
   const priceInfo = pricesData?.data?.data || {};
   const allPrices = priceInfo.prices || {};
+  const addons = priceInfo.addons || {};
   const statusConfig = STATUS_CONFIG[sub.subscription_status] || STATUS_CONFIG.TRIAL;
   const roleConfig = ROLE_CONFIG[user?.role] || ROLE_CONFIG.VERTRIEB;
+  const euerAddon = addons.EUER_RECHNER;
 
   if (statusLoading || pricesLoading) {
     return (
@@ -87,6 +101,11 @@ const SubscriptionPage = () => {
       {checkoutStatus === 'success' && (
         <Alert severity="success" sx={{ mb: 3 }} icon={<CheckCircle />}>
           Zahlung erfolgreich! Ihr Abonnement ist jetzt aktiv. Vielen Dank!
+        </Alert>
+      )}
+      {checkoutStatus === 'addon_success' && (
+        <Alert severity="success" sx={{ mb: 3 }} icon={<CheckCircle />}>
+          Add-On erfolgreich aktiviert! Der EUeR-Rechner steht Ihnen jetzt zur Verfuegung.
         </Alert>
       )}
       {checkoutStatus === 'cancelled' && (
@@ -272,12 +291,130 @@ const SubscriptionPage = () => {
                   <Typography variant="caption" color="text.secondary" display="block">
                     30 Tage kostenlos testen
                   </Typography>
+                  {role === 'VERTRIEB' && (
+                    <Typography variant="caption" sx={{ color: '#2E7D32', fontWeight: 500, display: 'block', mt: 0.5 }}>
+                      Wird z.B. von Vente bezahlt
+                    </Typography>
+                  )}
                 </CardContent>
               </Card>
             </Grid>
           );
         })}
       </Grid>
+
+      {/* ====== EUeR-Rechner Add-On ====== */}
+      <Box sx={{ mt: 4 }}>
+        <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
+          <Calculate sx={{ mr: 1, verticalAlign: 'middle', color: BORDEAUX }} />
+          Add-Ons
+        </Typography>
+
+        <Card sx={{
+          border: '2px solid #C4A35A',
+          transition: 'transform 0.2s',
+          '&:hover': { transform: 'translateY(-2px)', boxShadow: '0 8px 24px rgba(196, 163, 90, 0.2)' }
+        }}>
+          <CardContent sx={{ p: 3 }}>
+            <Grid container spacing={3} alignItems="center">
+              {/* Links: Info */}
+              <Grid item xs={12} md={7}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+                  <Box sx={{
+                    width: 56, height: 56, borderRadius: '14px',
+                    bgcolor: '#C4A35A15', display: 'flex',
+                    alignItems: 'center', justifyContent: 'center'
+                  }}>
+                    <AccountBalance sx={{ fontSize: 28, color: '#C4A35A' }} />
+                  </Box>
+                  <Box>
+                    <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                      Einnahmen-Ueberschuss-Rechner
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Professioneller EUeR fuer Vertriebsmitarbeiter - steueroptimiert und DATEV-kompatibel
+                    </Typography>
+                  </Box>
+                </Box>
+
+                <List dense sx={{ py: 0 }}>
+                  {(euerAddon?.features || [
+                    'Automatische Kategorisierung (SKR03)',
+                    'Steuerlich absetzbare Betraege',
+                    'Export fuer Steuerberater (DATEV)',
+                    'Monats- und Jahresuebersicht',
+                    'Belege fotografieren und zuordnen',
+                    'Vorsteuerabzug-Berechnung'
+                  ]).map((feature, idx) => (
+                    <ListItem key={idx} sx={{ py: 0.25, px: 0 }}>
+                      <ListItemIcon sx={{ minWidth: 28 }}>
+                        <Check sx={{ fontSize: 16, color: '#2E7D32' }} />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={feature}
+                        primaryTypographyProps={{ variant: 'body2', fontSize: '0.85rem' }}
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+              </Grid>
+
+              {/* Rechts: Preis + Aktion */}
+              <Grid item xs={12} md={5}>
+                <Card variant="outlined" sx={{ p: 3, textAlign: 'center', bgcolor: '#FAFAF8' }}>
+                  <Chip label="Add-On" size="small"
+                    sx={{ mb: 1.5, bgcolor: '#C4A35A15', color: '#C4A35A', fontWeight: 600 }} />
+
+                  <Typography variant="h3" sx={{ fontWeight: 700, color: BORDEAUX }}>
+                    {euerAddon?.price?.net ? euerAddon.price.net.toFixed(2).replace('.', ',') : '9,95'}
+                    <Typography component="span" variant="body1" sx={{ fontWeight: 400, color: 'text.secondary' }}>
+                      {' '}EUR
+                    </Typography>
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                    pro Monat (netto)
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 2 }}>
+                    inkl. 19% MwSt ={' '}
+                    {euerAddon?.price?.gross
+                      ? euerAddon.price.gross.toFixed(2).replace('.', ',')
+                      : '11,84'} EUR
+                  </Typography>
+
+                  <Divider sx={{ my: 1.5 }} />
+
+                  <Alert severity="info" sx={{ mb: 2, textAlign: 'left', fontSize: '0.75rem' }}>
+                    Dieses Add-On wird vom Vertriebler selbst bezahlt und ist steuerlich absetzbar als Betriebsausgabe.
+                  </Alert>
+
+                  <Button
+                    variant="contained"
+                    size="large"
+                    fullWidth
+                    startIcon={addonCheckoutMutation.isLoading
+                      ? <CircularProgress size={20} color="inherit" />
+                      : <AddShoppingCart />}
+                    onClick={() => addonCheckoutMutation.mutate('EUER_RECHNER')}
+                    disabled={addonCheckoutMutation.isLoading}
+                    sx={{
+                      bgcolor: '#C4A35A', '&:hover': { bgcolor: '#A68836' },
+                      py: 1.5, fontWeight: 600
+                    }}
+                  >
+                    {addonCheckoutMutation.isLoading ? 'Wird geladen...' : 'EUeR-Rechner aktivieren'}
+                  </Button>
+
+                  {addonCheckoutMutation.isError && (
+                    <Alert severity="error" sx={{ mt: 1, fontSize: '0.75rem' }}>
+                      {addonCheckoutMutation.error?.response?.data?.error || 'Fehler beim Checkout'}
+                    </Alert>
+                  )}
+                </Card>
+              </Grid>
+            </Grid>
+          </CardContent>
+        </Card>
+      </Box>
 
       {/* Zahlungsmethoden Info */}
       <Card sx={{ mt: 3 }}>

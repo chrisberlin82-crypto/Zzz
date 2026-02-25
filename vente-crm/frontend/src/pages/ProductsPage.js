@@ -1,16 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import {
   Box, Typography, Button, TextField, Grid, Card, CardContent,
   CardActions, Chip, Dialog, DialogTitle, DialogContent, DialogActions,
-  MenuItem, IconButton, CircularProgress, Alert, InputAdornment
+  MenuItem, IconButton, CircularProgress, Alert, InputAdornment,
+  Divider, Tooltip
 } from '@mui/material';
 import {
   Add, Edit, Delete, ElectricBolt, LocalFireDepartment, Euro,
-  Timer, Business, Search, Category, ShoppingCart
+  Timer, Business, Search, Category, ShoppingCart, Api, OpenInNew,
+  TrackChanges, Language, Bolt, Info
 } from '@mui/icons-material';
-import { productAPI } from '../services/api';
+import { productAPI, energyProviderAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 const BORDEAUX = '#7A1B2D';
@@ -32,6 +34,329 @@ const INITIAL_FORM = {
   notes: ''
 };
 
+// ====== Energie-Dienstleister API Card (Slot 1) ======
+const EnergyProviderCard = () => {
+  const [lookupOpen, setLookupOpen] = useState(false);
+  const [plz, setPlz] = useState('');
+  const [consumption, setConsumption] = useState('3500');
+  const [category, setCategory] = useState('STROM');
+
+  const tariffMutation = useMutation(
+    (data) => energyProviderAPI.tariffLookup(data)
+  );
+
+  const handleLookup = () => {
+    if (!plz) return;
+    tariffMutation.mutate({
+      postal_code: plz,
+      consumption_kwh: parseInt(consumption) || 3500,
+      category
+    });
+  };
+
+  const tariffs = tariffMutation.data?.data?.data?.tariffs || [];
+
+  return (
+    <>
+      <Card sx={{
+        height: '100%', display: 'flex', flexDirection: 'column',
+        border: '2px dashed #E0D8D0',
+        transition: 'transform 0.2s, box-shadow 0.2s, border-color 0.2s',
+        '&:hover': {
+          transform: 'translateY(-4px)',
+          boxShadow: '0 8px 24px rgba(122, 27, 45, 0.15)',
+          borderColor: BORDEAUX
+        }
+      }}>
+        <CardContent sx={{ p: 3, flexGrow: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <Box sx={{
+            width: 64, height: 64, borderRadius: '16px',
+            bgcolor: `${BORDEAUX}10`, display: 'flex',
+            alignItems: 'center', justifyContent: 'center', mb: 2
+          }}>
+            <Api sx={{ fontSize: 32, color: BORDEAUX }} />
+          </Box>
+
+          <Typography variant="h6" sx={{ fontWeight: 600, mb: 1, textAlign: 'center' }}>
+            Energiedienstleister
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', mb: 2 }}>
+            GASAG &amp; E.ON Tarife ueber Partner-Schnittstelle
+          </Typography>
+
+          <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', justifyContent: 'center', mb: 2 }}>
+            <Chip icon={<Bolt sx={{ fontSize: 14 }} />} label="GASAG" size="small"
+              sx={{ bgcolor: '#9E334715', color: '#9E3347', fontWeight: 500 }} />
+            <Chip icon={<ElectricBolt sx={{ fontSize: 14 }} />} label="E.ON" size="small"
+              sx={{ bgcolor: '#C4A35A15', color: '#C4A35A', fontWeight: 500 }} />
+          </Box>
+
+          <Alert severity="info" sx={{ fontSize: '0.75rem', mb: 1 }}>
+            Integration ueber Ennux / EnerConnex / Verivox. Direkte API-Anbindung in Vorbereitung.
+          </Alert>
+        </CardContent>
+
+        <CardActions sx={{ px: 3, pb: 2, pt: 0, justifyContent: 'center' }}>
+          <Button size="small" variant="outlined" startIcon={<Search />}
+            onClick={() => setLookupOpen(true)}
+            sx={{ borderColor: BORDEAUX, color: BORDEAUX }}>
+            Tarifsuche
+          </Button>
+        </CardActions>
+      </Card>
+
+      {/* Tarifsuche Dialog */}
+      <Dialog open={lookupOpen} onClose={() => setLookupOpen(false)} maxWidth="md" fullWidth>
+        <DialogTitle sx={{ fontWeight: 600 }}>
+          <Api sx={{ mr: 1, verticalAlign: 'middle', color: BORDEAUX }} />
+          Energietarife suchen (GASAG / E.ON)
+        </DialogTitle>
+        <DialogContent>
+          <Grid container spacing={2} sx={{ mt: 0.5 }}>
+            <Grid item xs={12} sm={4}>
+              <TextField fullWidth label="Postleitzahl" value={plz}
+                onChange={(e) => setPlz(e.target.value)} placeholder="z.B. 10115"
+                size="small" />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <TextField fullWidth label="Jahresverbrauch (kWh)" type="number"
+                value={consumption} onChange={(e) => setConsumption(e.target.value)}
+                size="small" />
+            </Grid>
+            <Grid item xs={12} sm={2}>
+              <TextField select fullWidth label="Kategorie" value={category}
+                onChange={(e) => setCategory(e.target.value)} size="small">
+                <MenuItem value="STROM">Strom</MenuItem>
+                <MenuItem value="GAS">Gas</MenuItem>
+              </TextField>
+            </Grid>
+            <Grid item xs={12} sm={2}>
+              <Button fullWidth variant="contained" onClick={handleLookup}
+                disabled={tariffMutation.isLoading || !plz}
+                sx={{ bgcolor: BORDEAUX, '&:hover': { bgcolor: '#5A0F1E' }, height: 40 }}>
+                {tariffMutation.isLoading ? <CircularProgress size={20} color="inherit" /> : 'Suchen'}
+              </Button>
+            </Grid>
+          </Grid>
+
+          {tariffs.length > 0 && (
+            <Box sx={{ mt: 3 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+                Ergebnisse fuer PLZ {plz}
+              </Typography>
+              <Alert severity="warning" sx={{ mb: 2, fontSize: '0.75rem' }}>
+                Platzhalter-Daten. Echte Tarife nach Aktivierung der Partner-Schnittstelle.
+              </Alert>
+              <Grid container spacing={2}>
+                {tariffs.map((tariff, idx) => (
+                  <Grid item xs={12} sm={4} key={idx}>
+                    <Card variant="outlined" sx={{ p: 2 }}>
+                      <Typography variant="caption" color="text.secondary">{tariff.provider}</Typography>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>{tariff.tariff_name}</Typography>
+                      <Divider sx={{ my: 1 }} />
+                      <Typography variant="body2">
+                        Grundpreis: <strong>{tariff.base_price_monthly} EUR/Monat</strong>
+                      </Typography>
+                      <Typography variant="body2">
+                        Arbeitspreis: <strong>{tariff.working_price_ct} ct/kWh</strong>
+                      </Typography>
+                      <Divider sx={{ my: 1 }} />
+                      <Typography variant="body2" sx={{ color: BORDEAUX, fontWeight: 600 }}>
+                        ca. {tariff.estimated_monthly} EUR/Monat
+                      </Typography>
+                      <Box sx={{ mt: 1, display: 'flex', gap: 0.5 }}>
+                        <Chip label={`${tariff.duration_months} Mon.`} size="small" variant="outlined" />
+                        {tariff.is_eco && <Chip label="Oeko" size="small" color="success" />}
+                      </Box>
+                    </Card>
+                  </Grid>
+                ))}
+              </Grid>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setLookupOpen(false)}>Schliessen</Button>
+        </DialogActions>
+      </Dialog>
+    </>
+  );
+};
+
+// ====== Externe Seite iFrame Card (Slot 2) ======
+const ExternalIframeCard = () => {
+  const [iframeOpen, setIframeOpen] = useState(false);
+  const [iframeUrl, setIframeUrl] = useState('');
+  const [customUrl, setCustomUrl] = useState('');
+  const iframeRef = useRef(null);
+  const startTimeRef = useRef(null);
+
+  const activityMutation = useMutation(
+    (data) => energyProviderAPI.logIframeActivity(data)
+  );
+
+  const PRESET_URLS = [
+    { label: 'Verivox Tarifrechner', url: 'https://www.verivox.de/strom/', category: 'TARIFF' },
+    { label: 'Check24 Energie', url: 'https://www.check24.de/strom/', category: 'TARIFF' },
+    { label: 'GASAG Tarifrechner', url: 'https://www.gasag.de/privatkunden/erdgas', category: 'PROVIDER' },
+    { label: 'E.ON Tarife', url: 'https://www.eon.de/de/pk/strom.html', category: 'PROVIDER' }
+  ];
+
+  const handleOpenIframe = (url) => {
+    setIframeUrl(url);
+    setIframeOpen(true);
+    startTimeRef.current = Date.now();
+
+    // Aktivitaet dokumentieren: Seite geoeffnet
+    activityMutation.mutate({
+      url,
+      action: 'PAGE_OPENED',
+      details: `Externe Seite geoeffnet: ${url}`
+    });
+  };
+
+  const handleCloseIframe = () => {
+    // Dauer berechnen und Aktivitaet dokumentieren
+    const duration = startTimeRef.current
+      ? Math.round((Date.now() - startTimeRef.current) / 1000)
+      : 0;
+
+    activityMutation.mutate({
+      url: iframeUrl,
+      action: 'PAGE_CLOSED',
+      details: `Externe Seite geschlossen nach ${duration}s`,
+      duration_seconds: duration
+    });
+
+    setIframeOpen(false);
+    setIframeUrl('');
+    startTimeRef.current = null;
+  };
+
+  return (
+    <>
+      <Card sx={{
+        height: '100%', display: 'flex', flexDirection: 'column',
+        border: '2px dashed #E0D8D0',
+        transition: 'transform 0.2s, box-shadow 0.2s, border-color 0.2s',
+        '&:hover': {
+          transform: 'translateY(-4px)',
+          boxShadow: '0 8px 24px rgba(122, 27, 45, 0.15)',
+          borderColor: BORDEAUX
+        }
+      }}>
+        <CardContent sx={{ p: 3, flexGrow: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <Box sx={{
+            width: 64, height: 64, borderRadius: '16px',
+            bgcolor: '#C4A35A10', display: 'flex',
+            alignItems: 'center', justifyContent: 'center', mb: 2
+          }}>
+            <Language sx={{ fontSize: 32, color: '#C4A35A' }} />
+          </Box>
+
+          <Typography variant="h6" sx={{ fontWeight: 600, mb: 1, textAlign: 'center' }}>
+            Externe Angebote
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', mb: 2 }}>
+            Tarifrechner und Partnerseiten direkt im System
+          </Typography>
+
+          <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', justifyContent: 'center', mb: 2 }}>
+            <Chip icon={<TrackChanges sx={{ fontSize: 14 }} />} label="Tracking" size="small"
+              sx={{ bgcolor: '#2E7D3215', color: '#2E7D32', fontWeight: 500 }} />
+            <Chip icon={<OpenInNew sx={{ fontSize: 14 }} />} label="iFrame" size="small"
+              sx={{ bgcolor: '#C4A35A15', color: '#C4A35A', fontWeight: 500 }} />
+          </Box>
+
+          <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'center' }}>
+            Alle Aktivitaeten auf externen Seiten werden automatisch dokumentiert.
+          </Typography>
+        </CardContent>
+
+        <CardActions sx={{ px: 3, pb: 2, pt: 0, display: 'flex', flexDirection: 'column', gap: 1 }}>
+          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: 'center' }}>
+            {PRESET_URLS.slice(0, 2).map((preset) => (
+              <Button key={preset.url} size="small" variant="outlined"
+                startIcon={<OpenInNew />}
+                onClick={() => handleOpenIframe(preset.url)}
+                sx={{ borderColor: BORDEAUX, color: BORDEAUX, fontSize: '0.7rem' }}>
+                {preset.label}
+              </Button>
+            ))}
+          </Box>
+        </CardActions>
+      </Card>
+
+      {/* iFrame Dialog */}
+      <Dialog open={iframeOpen} onClose={handleCloseIframe}
+        maxWidth={false}
+        fullWidth
+        PaperProps={{ sx: { width: '95vw', height: '90vh', maxWidth: 'none' } }}>
+        <DialogTitle sx={{ fontWeight: 600, display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Language sx={{ color: BORDEAUX }} />
+            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+              Externe Seite
+            </Typography>
+            <Chip label={iframeUrl} size="small" variant="outlined" sx={{ maxWidth: 400, fontSize: '0.7rem' }} />
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Tooltip title="Aktivitaeten werden automatisch dokumentiert">
+              <Chip icon={<TrackChanges sx={{ fontSize: 14 }} />} label="Tracking aktiv"
+                size="small" color="success" />
+            </Tooltip>
+          </Box>
+        </DialogTitle>
+        <DialogContent sx={{ p: 0, overflow: 'hidden' }}>
+          {iframeUrl && (
+            <iframe
+              ref={iframeRef}
+              src={iframeUrl}
+              title="Externe Seite"
+              style={{
+                width: '100%',
+                height: '100%',
+                border: 'none',
+                minHeight: 'calc(90vh - 130px)'
+              }}
+              sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+            />
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 2, py: 1, borderTop: '1px solid #E0D8D0' }}>
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flex: 1 }}>
+            <TextField size="small" placeholder="Eigene URL eingeben..." value={customUrl}
+              onChange={(e) => setCustomUrl(e.target.value)}
+              sx={{ flex: 1, maxWidth: 400 }}
+              InputProps={{
+                startAdornment: <InputAdornment position="start"><Language sx={{ fontSize: 18 }} /></InputAdornment>
+              }}
+            />
+            <Button size="small" variant="outlined"
+              onClick={() => { if (customUrl) handleOpenIframe(customUrl); }}
+              disabled={!customUrl}
+              sx={{ borderColor: BORDEAUX, color: BORDEAUX }}>
+              Laden
+            </Button>
+            {PRESET_URLS.slice(2).map((preset) => (
+              <Button key={preset.url} size="small" variant="text"
+                onClick={() => { setIframeUrl(preset.url); activityMutation.mutate({ url: preset.url, action: 'PAGE_NAVIGATED', details: `Navigiert zu: ${preset.label}` }); }}
+                sx={{ color: BORDEAUX, fontSize: '0.7rem' }}>
+                {preset.label}
+              </Button>
+            ))}
+          </Box>
+          <Button onClick={handleCloseIframe} variant="contained"
+            sx={{ bgcolor: BORDEAUX, '&:hover': { bgcolor: '#5A0F1E' } }}>
+            Schliessen
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </>
+  );
+};
+
+// ====== Haupt-Seite ======
 const ProductsPage = () => {
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
@@ -132,7 +457,8 @@ const ProductsPage = () => {
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h5" sx={{ fontWeight: 600 }}>Produkte (Energietarife)</Typography>
         {isAdmin && (
-          <Button variant="contained" startIcon={<Add />} onClick={() => openDialog()}>
+          <Button variant="contained" startIcon={<Add />} onClick={() => openDialog()}
+            sx={{ bgcolor: BORDEAUX, '&:hover': { bgcolor: '#5A0F1E' } }}>
             Neues Produkt
           </Button>
         )}
@@ -178,8 +504,19 @@ const ProductsPage = () => {
         </Grid>
       </Card>
 
-      {/* Produkt-Grid */}
+      {/* Produkt-Grid mit 2 leeren Slots vorne */}
       <Grid container spacing={3}>
+        {/* Slot 1: Energiedienstleister API */}
+        <Grid item xs={12} sm={6} md={4}>
+          <EnergyProviderCard />
+        </Grid>
+
+        {/* Slot 2: Externe Seiten iFrame */}
+        <Grid item xs={12} sm={6} md={4}>
+          <ExternalIframeCard />
+        </Grid>
+
+        {/* Regulaere Produkte */}
         {filteredProducts.map((product) => {
           const catInfo = CATEGORIES.find(c => c.value === product.category) || CATEGORIES[0];
           return (
@@ -283,11 +620,14 @@ const ProductsPage = () => {
         })}
 
         {filteredProducts.length === 0 && (
-          <Grid item xs={12}>
+          <Grid item xs={12} sm={6} md={4}>
             <Box sx={{ py: 6, textAlign: 'center' }}>
               <Category sx={{ fontSize: 64, color: '#E0D8D0', mb: 2 }} />
               <Typography color="text.secondary" variant="h6">
-                Keine Produkte gefunden
+                Keine weiteren Produkte
+              </Typography>
+              <Typography color="text.secondary" variant="body2">
+                Nutzen Sie die Energiedienstleister-Karte oder erstellen Sie neue Produkte.
               </Typography>
             </Box>
           </Grid>
@@ -383,6 +723,7 @@ const ProductsPage = () => {
           <Button
             variant="contained" onClick={handleSubmit}
             disabled={createMutation.isLoading || !formData.provider || !formData.tariff_name}
+            sx={{ bgcolor: BORDEAUX, '&:hover': { bgcolor: '#5A0F1E' } }}
           >
             {createMutation.isLoading ? 'Wird gespeichert...' : 'Speichern'}
           </Button>

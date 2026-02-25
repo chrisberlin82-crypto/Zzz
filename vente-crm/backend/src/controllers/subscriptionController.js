@@ -13,6 +13,26 @@ const VAT_RATE = 0.19; // 19% MwSt
 
 const TRIAL_DAYS = 30;
 
+// Add-On Produkte
+const ADDON_PRODUCTS = {
+  EUER_RECHNER: {
+    id: 'euer_rechner',
+    name: 'Einnahmen-Ueberschuss-Rechner',
+    description: 'Professioneller EUeR fuer Vertriebsmitarbeiter. Alle Einnahmen und Ausgaben automatisch erfasst, steueroptimiert und exportfertig.',
+    price_net_cents: 995,   // 9,95 EUR netto
+    interval: 'month',
+    paid_by: 'SELF',        // Wird vom Vertriebler selbst bezahlt
+    features: [
+      'Automatische Kategorisierung (SKR03)',
+      'Steuerlich absetzbare Betraege',
+      'Export fuer Steuerberater (DATEV)',
+      'Monats- und Jahresuebersicht',
+      'Belege fotografieren und zuordnen',
+      'Vorsteuerabzug-Berechnung'
+    ]
+  }
+};
+
 const getPriceForRole = (role) => {
   const netCents = ROLE_PRICES[role] || 4900;
   const grossCents = Math.round(netCents * (1 + VAT_RATE));
@@ -94,10 +114,26 @@ const getPrices = async (req, res) => {
     };
   }
 
+  // Add-On Preise berechnen
+  const addons = {};
+  for (const [key, addon] of Object.entries(ADDON_PRODUCTS)) {
+    const grossCents = Math.round(addon.price_net_cents * (1 + VAT_RATE));
+    addons[key] = {
+      ...addon,
+      price: {
+        net: addon.price_net_cents / 100,
+        gross: grossCents / 100,
+        vat: (grossCents - addon.price_net_cents) / 100,
+        currency: 'EUR'
+      }
+    };
+  }
+
   res.json({
     success: true,
     data: {
       prices,
+      addons,
       vat_rate: VAT_RATE * 100,
       trial_days: TRIAL_DAYS
     }
@@ -327,13 +363,114 @@ const handleWebhook = async (req, res) => {
   res.json({ received: true });
 };
 
+/**
+ * GET /api/subscription/addons - Add-On Produkte
+ */
+const getAddons = async (req, res) => {
+  const addons = {};
+  for (const [key, addon] of Object.entries(ADDON_PRODUCTS)) {
+    const grossCents = Math.round(addon.price_net_cents * (1 + VAT_RATE));
+    addons[key] = {
+      ...addon,
+      price: {
+        net: addon.price_net_cents / 100,
+        gross: grossCents / 100,
+        vat: (grossCents - addon.price_net_cents) / 100,
+        currency: 'EUR'
+      }
+    };
+  }
+  res.json({ success: true, data: addons });
+};
+
+/**
+ * POST /api/subscription/create-addon-checkout - Add-On Stripe Checkout
+ */
+const createAddonCheckout = async (req, res) => {
+  try {
+    const stripeClient = getStripe();
+    if (!stripeClient) {
+      return res.status(503).json({
+        success: false,
+        error: 'Zahlungssystem nicht konfiguriert. Bitte kontaktieren Sie den Support.'
+      });
+    }
+
+    const { addon_id } = req.body;
+    const addon = ADDON_PRODUCTS[addon_id];
+    if (!addon) {
+      return res.status(400).json({ success: false, error: 'Ungueltiges Add-On' });
+    }
+
+    const { User } = req.app.locals.db;
+    const user = await User.findByPk(req.user.id);
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'Benutzer nicht gefunden' });
+    }
+
+    const grossCents = Math.round(addon.price_net_cents * (1 + VAT_RATE));
+    const baseUrl = process.env.FRONTEND_URL || process.env.APP_URL || 'http://localhost:3000';
+
+    // Stripe Customer erstellen oder vorhandenen nutzen
+    let customerId = user.stripe_customer_id;
+    if (!customerId) {
+      const customer = await stripeClient.customers.create({
+        email: user.email,
+        name: `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email,
+        metadata: { user_id: String(user.id), role: user.role }
+      });
+      customerId = customer.id;
+      await user.update({ stripe_customer_id: customerId });
+    }
+
+    const session = await stripeClient.checkout.sessions.create({
+      customer: customerId,
+      payment_method_types: ['card', 'sepa_debit'],
+      mode: 'subscription',
+      line_items: [{
+        price_data: {
+          currency: 'eur',
+          product_data: {
+            name: `Vente CRM - ${addon.name}`,
+            description: addon.description
+          },
+          unit_amount: grossCents,
+          recurring: { interval: addon.interval },
+          tax_behavior: 'inclusive'
+        },
+        quantity: 1
+      }],
+      success_url: `${baseUrl}/subscription?status=addon_success&addon=${addon_id}`,
+      cancel_url: `${baseUrl}/subscription?status=addon_cancelled`,
+      metadata: {
+        user_id: String(user.id),
+        addon_id,
+        type: 'ADDON',
+        net_amount: String(addon.price_net_cents)
+      },
+      locale: 'de'
+    });
+
+    res.json({
+      success: true,
+      data: { checkout_url: session.url, session_id: session.id }
+    });
+  } catch (error) {
+    logger.error('Create addon checkout error:', error);
+    res.status(500).json({ success: false, error: 'Add-On Checkout konnte nicht erstellt werden' });
+  }
+};
+
 module.exports = {
   getSubscriptionStatus,
   getPrices,
+  getAddons,
   createCheckoutSession,
+  createAddonCheckout,
   createPortalSession,
   handleWebhook,
   ROLE_PRICES,
+  ADDON_PRODUCTS,
   VAT_RATE,
   TRIAL_DAYS,
   getPriceForRole

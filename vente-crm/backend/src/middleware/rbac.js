@@ -151,9 +151,12 @@ const requireMinRole = (minRole) => {
 };
 
 /**
- * Filtert Daten basierend auf Rolle (nur eigene Daten für VERTRIEB)
+ * Filtert Daten basierend auf Rolle und Gebietszugehoerigkeiten
+ * VERTRIEB: nur eigene Daten
+ * STANDORTLEITUNG/TEAMLEAD: eigene + Daten der Vertriebler in eigenen Gebieten
+ * ADMIN: alle Daten
  */
-const scopeToUser = (req, res, next) => {
+const scopeToUser = async (req, res, next) => {
   if (!req.user) {
     return res.status(401).json({ success: false, error: 'Authentifizierung erforderlich' });
   }
@@ -164,6 +167,19 @@ const scopeToUser = (req, res, next) => {
   if (userLevel <= 1) {
     req.scopeUserId = req.user.id;
   }
+  // STANDORTLEITUNG/TEAMLEAD: eigene + Gebiets-Mitglieder
+  else if (['STANDORTLEITUNG', 'TEAMLEAD'].includes(req.user.role)) {
+    try {
+      const { getTeamMemberIds } = require('../controllers/territoryController');
+      const memberIds = await getTeamMemberIds(req.app.locals.db, req.user.id, req.user.role);
+      if (memberIds) {
+        req.scopeUserIds = memberIds; // Array von IDs
+      }
+    } catch (err) {
+      // Bei Fehler: kein Scope-Filter (sieht alles)
+    }
+  }
+  // ADMIN: kein Filter
 
   next();
 };

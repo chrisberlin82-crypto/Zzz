@@ -163,12 +163,21 @@ export const territoryAPI = {
   getMyTerritory: () => api.get('/territories/my-territory')
 };
 
+// Energiedienstleister
+export const energyProviderAPI = {
+  getProviders: () => api.get('/energy-providers'),
+  tariffLookup: (data) => api.post('/energy-providers/tariff-lookup', data),
+  logIframeActivity: (data) => api.post('/energy-providers/iframe-activity', data),
+  getIframeActivities: (params) => api.get('/energy-providers/iframe-activities', { params })
+};
+
 // Subscription / Abo
 export const subscriptionAPI = {
   getStatus: () => api.get('/subscription/status'),
   getPrices: () => api.get('/subscription/prices'),
-  createCheckout: () => api.post('/subscription/create-checkout'),
-  createPortal: () => api.post('/subscription/portal')
+  createCheckout: (data) => api.post('/subscription/create-checkout', data),
+  createPortal: () => api.post('/subscription/portal'),
+  createAddonCheckout: (data) => api.post('/subscription/create-addon-checkout', data)
 };
 
 // Health

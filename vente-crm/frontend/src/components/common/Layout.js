@@ -45,10 +45,10 @@ const getMenuItems = (role) => {
   return items;
 };
 
-// Admin-Bereich: Gebiete immer anzeigen fuer ADMIN-Rolle
+// Admin-Bereich: Gebiete immer anzeigen fuer ADMIN- und STANDORTLEITUNG-Rolle
 const adminItems = [
-  { text: 'Gebietsverwaltung', icon: <LocationOn />, path: '/territories', roles: ['ADMIN'] },
-  { text: 'Team Live', icon: <Groups />, path: '/team-map', roles: ['ADMIN', 'STANDORTLEITUNG'] },
+  { text: 'Gebietsverwaltung', icon: <LocationOn />, path: '/territories', roles: ['ADMIN', 'STANDORTLEITUNG'] },
+  { text: 'Team Live', icon: <Groups />, path: '/team-map', roles: ['ADMIN', 'STANDORTLEITUNG', 'TEAMLEAD'] },
   { text: 'Benutzer', icon: <Person />, path: '/users', roles: ['ADMIN', 'STANDORTLEITUNG'] },
   { text: 'Statistiken', icon: <BarChart />, path: '/dashboard', roles: ['ADMIN'] },
 ];
