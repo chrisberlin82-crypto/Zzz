@@ -8,7 +8,6 @@ module.exports = (sequelize, DataTypes) => {
     code: {
       type: DataTypes.STRING(10),
       allowNull: false,
-      unique: true,
       comment: 'SKR03/SKR04 Kontonummer'
     },
     name: {
