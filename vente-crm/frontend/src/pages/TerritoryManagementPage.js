@@ -1,16 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import {
-  Box, Typography, Button, Card, CardContent, Table, TableBody, TableCell,
-  TableContainer, TableHead, TableRow, Chip, IconButton, Dialog, DialogTitle,
+  Box, Typography, Button, Card, CardContent, Chip, IconButton, Dialog, DialogTitle,
   DialogContent, DialogActions, TextField, MenuItem, CircularProgress, Alert,
-  Tooltip, Autocomplete, Collapse, Grid, LinearProgress, Tabs, Tab, Divider,
-  Avatar, List, ListItem, ListItemText, ListItemAvatar
+  Tooltip, Autocomplete, Grid, LinearProgress, Divider, Avatar, InputAdornment
 } from '@mui/material';
 import {
   Add, Edit, Delete, Map, CheckCircle, Cancel, Schedule,
-  ExpandMore, ExpandLess, Home, LocationOn, Groups,
-  Person, Circle, Visibility
+  ExpandMore, ExpandLess, Home, LocationOn, Groups, Search,
+  Person, Circle
 } from '@mui/icons-material';
 import { MapContainer, TileLayer, Marker, Popup, Rectangle } from 'react-leaflet';
 import L from 'leaflet';
@@ -32,6 +30,7 @@ const ROLE_COLORS = {
   VERTRIEB: '#2E7D32', TEAMLEAD: '#A68836',
   STANDORTLEITUNG: '#9E3347', BACKOFFICE: '#6A5ACD', ADMIN: BORDEAUX
 };
+const TERRITORY_COLORS = ['#7A1B2D', '#2E7D32', '#A68836', '#6A5ACD', '#D32F2F', '#0288D1'];
 
 const createUserIcon = (name, color) => {
   const initials = (name || '?').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
@@ -48,38 +47,22 @@ const createAddressIcon = (color) => L.divIcon({
   iconSize: [12, 12], iconAnchor: [6, 6]
 });
 
-// ====== Strassen-Detail Komponente ======
-const StreetDetail = ({ territoryId }) => {
-  const { data, isLoading } = useQuery(
-    ['territory-addresses', territoryId],
-    () => territoryAPI.getAddresses(territoryId),
-    { enabled: !!territoryId }
-  );
-
-  if (isLoading) return <Box sx={{ p: 2 }}><CircularProgress size={24} sx={{ color: BORDEAUX }} /></Box>;
-
-  const result = data?.data?.data;
-  if (!result || !result.streets || result.streets.length === 0) {
-    return <Alert severity="info" sx={{ m: 2 }}>Keine Adressen in diesem Gebiet vorhanden.</Alert>;
+// ====== Strassen-Detail mit Hausnummern ======
+const StreetList = ({ streets, totalAddresses }) => {
+  if (!streets || streets.length === 0) {
+    return <Alert severity="info" sx={{ m: 1 }}>Keine Adressen in diesem Gebiet.</Alert>;
   }
 
-  const { streets, total_addresses } = result;
-
-  // Statistiken berechnen
   const allAddresses = streets.flatMap(s => s.addresses);
-  const statusCounts = {};
-  allAddresses.forEach(a => {
-    const st = a.status || 'NEW';
-    statusCounts[st] = (statusCounts[st] || 0) + 1;
-  });
   const visited = allAddresses.filter(a => a.status && a.status !== 'NEW').length;
+  const statusCounts = {};
+  allAddresses.forEach(a => { statusCounts[a.status || 'NEW'] = (statusCounts[a.status || 'NEW'] || 0) + 1; });
 
   return (
-    <Box sx={{ p: 2 }}>
-      {/* Gebiet-Statistik */}
-      <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
-        <Chip label={`${total_addresses} Adressen`} size="small" sx={{ fontWeight: 600 }} />
-        <Chip label={`${visited} besucht (${total_addresses > 0 ? Math.round(visited / total_addresses * 100) : 0}%)`}
+    <Box>
+      <Box sx={{ display: 'flex', gap: 1, mb: 1.5, flexWrap: 'wrap' }}>
+        <Chip label={`${totalAddresses || allAddresses.length} Adressen`} size="small" sx={{ fontWeight: 600 }} />
+        <Chip label={`${visited} besucht (${allAddresses.length > 0 ? Math.round(visited / allAddresses.length * 100) : 0}%)`}
           size="small" color="info" variant="outlined" />
         {Object.entries(statusCounts).map(([st, count]) => (
           <Chip key={st} label={`${STATUS_LABELS[st] || st}: ${count}`} size="small"
@@ -88,11 +71,10 @@ const StreetDetail = ({ territoryId }) => {
       </Box>
 
       <LinearProgress variant="determinate"
-        value={total_addresses > 0 ? (visited / total_addresses * 100) : 0}
+        value={allAddresses.length > 0 ? (visited / allAddresses.length * 100) : 0}
         sx={{ mb: 2, height: 6, borderRadius: 3, bgcolor: '#E0D8D0',
           '& .MuiLinearProgress-bar': { bgcolor: '#2E7D32' } }} />
 
-      {/* Strassen-Liste */}
       {streets.map((street, si) => {
         const streetVisited = street.addresses.filter(a => a.status && a.status !== 'NEW').length;
         return (
@@ -101,12 +83,8 @@ const StreetDetail = ({ territoryId }) => {
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <LocationOn sx={{ fontSize: 18, color: BORDEAUX }} />
-                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                    {street.street}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    ({street.postal_code} {street.city})
-                  </Typography>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>{street.street}</Typography>
+                  <Typography variant="caption" color="text.secondary">({street.postal_code} {street.city})</Typography>
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                   <Chip label={`${street.addresses.length} HNr.`} size="small" variant="outlined" sx={{ fontSize: '0.7rem' }} />
@@ -114,19 +92,15 @@ const StreetDetail = ({ territoryId }) => {
                     sx={{ fontSize: '0.7rem', bgcolor: '#2E7D3220', color: '#2E7D32' }} />
                 </Box>
               </Box>
-
-              {/* Hausnummern als Chips */}
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                 {street.addresses.map((addr, ai) => (
                   <Tooltip key={ai} title={
                     <Box>
                       <Typography variant="caption" display="block">{addr.street} {addr.house_number}</Typography>
                       {addr.contact_name && <Typography variant="caption" display="block">Kontakt: {addr.contact_name}</Typography>}
-                      <Typography variant="caption" display="block">Status: {STATUS_LABELS[addr.status] || addr.status || 'Neu'}</Typography>
+                      <Typography variant="caption" display="block">Status: {STATUS_LABELS[addr.status] || 'Neu'}</Typography>
                       {addr.total_households != null && (
-                        <Typography variant="caption" display="block">
-                          Haushalte: {addr.contacted_households || 0}/{addr.total_households}
-                        </Typography>
+                        <Typography variant="caption" display="block">HH: {addr.contacted_households || 0}/{addr.total_households}</Typography>
                       )}
                       {addr.notes && <Typography variant="caption" display="block" sx={{ fontStyle: 'italic' }}>{addr.notes}</Typography>}
                     </Box>
@@ -139,8 +113,7 @@ const StreetDetail = ({ territoryId }) => {
                         fontSize: '0.75rem',
                         bgcolor: (STATUS_COLORS[addr.status] || STATUS_COLORS.NEW) + '20',
                         color: STATUS_COLORS[addr.status] || STATUS_COLORS.NEW,
-                        fontWeight: 500,
-                        cursor: 'default',
+                        fontWeight: 500, cursor: 'default',
                         '& .MuiChip-icon': { color: 'inherit' }
                       }}
                     />
@@ -155,217 +128,13 @@ const StreetDetail = ({ territoryId }) => {
   );
 };
 
-// ====== Gebiets-Karte ======
-const TerritoryMap = ({ assignments }) => {
-  const { data: teamData, isLoading: teamLoading } = useQuery(
-    'team-locations-map',
-    () => userAPI.getTeamLocations(),
-    { refetchInterval: 30000 }
-  );
-
-  // Alle Adressen aller Gebiete laden
-  const territoryIds = assignments.map(a => a.id);
-  const addressQueries = useQuery(
-    ['all-territory-addresses', territoryIds.join(',')],
-    async () => {
-      const results = await Promise.all(
-        assignments.map(a => territoryAPI.getAddresses(a.id).catch(() => null))
-      );
-      return results;
-    },
-    { enabled: assignments.length > 0 }
-  );
-
-  const teamMembers = (teamData?.data?.data || []).filter(
-    m => m.last_latitude && m.last_longitude && !isNaN(parseFloat(m.last_latitude))
-  );
-
-  // Alle Adressen mit Koordinaten sammeln
-  const allAddresses = [];
-  const territoryBounds = [];
-  (addressQueries.data || []).forEach((res, idx) => {
-    const d = res?.data?.data;
-    if (!d) return;
-    const assignment = assignments[idx];
-    (d.streets || []).forEach(street => {
-      street.addresses.forEach(addr => {
-        if (addr.latitude && addr.longitude) {
-          allAddresses.push({ ...addr, territoryName: assignment?.name || `Gebiet #${assignment?.id}` });
-        }
-      });
-    });
-    // Bounds berechnen
-    const geocoded = (d.streets || []).flatMap(s => s.addresses).filter(a => a.latitude && a.longitude);
-    if (geocoded.length > 0) {
-      const lats = geocoded.map(a => parseFloat(a.latitude));
-      const lons = geocoded.map(a => parseFloat(a.longitude));
-      territoryBounds.push({
-        name: assignment?.name || `Gebiet #${assignment?.id}`,
-        assignedTo: assignment?.assignedTo,
-        bounds: [[Math.min(...lats) - 0.001, Math.min(...lons) - 0.001],
-                  [Math.max(...lats) + 0.001, Math.max(...lons) + 0.001]]
-      });
-    }
-  });
-
-  // Kartenmittelpunkt
-  const defaultCenter = [52.52, 13.405];
-  let center = defaultCenter;
-  let zoom = 11;
-
-  if (allAddresses.length > 0) {
-    center = [
-      allAddresses.reduce((s, a) => s + parseFloat(a.latitude), 0) / allAddresses.length,
-      allAddresses.reduce((s, a) => s + parseFloat(a.longitude), 0) / allAddresses.length
-    ];
-    zoom = 12;
-  } else if (teamMembers.length > 0) {
-    center = [
-      teamMembers.reduce((s, m) => s + parseFloat(m.last_latitude), 0) / teamMembers.length,
-      teamMembers.reduce((s, m) => s + parseFloat(m.last_longitude), 0) / teamMembers.length
-    ];
-  }
-
-  const TERRITORY_COLORS = ['#7A1B2D', '#2E7D32', '#A68836', '#6A5ACD', '#D32F2F', '#0288D1'];
-
-  if (teamLoading || addressQueries.isLoading) {
-    return <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}><CircularProgress sx={{ color: BORDEAUX }} /></Box>;
-  }
-
-  return (
-    <Box>
-      {/* Legende */}
-      <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap', alignItems: 'center' }}>
-        <Chip icon={<Groups sx={{ fontSize: '16px !important' }} />}
-          label={`${teamMembers.length} Team-Mitglieder`}
-          size="small" sx={{ bgcolor: `${BORDEAUX}15`, color: BORDEAUX, fontWeight: 600 }} />
-        <Chip label={`${allAddresses.length} Adressen`} size="small" variant="outlined" />
-        <Chip label={`${territoryBounds.length} Gebiete`} size="small" variant="outlined" />
-        <Box sx={{ display: 'flex', gap: 1, ml: 'auto' }}>
-          {Object.entries(STATUS_LABELS).slice(0, 4).map(([st, label]) => (
-            <Chip key={st} label={label} size="small"
-              sx={{ fontSize: '0.65rem', height: 20, bgcolor: STATUS_COLORS[st] + '20', color: STATUS_COLORS[st] }} />
-          ))}
-        </Box>
-      </Box>
-
-      <Card sx={{ overflow: 'hidden' }}>
-        <MapContainer center={center} zoom={zoom}
-          style={{ height: '500px', width: '100%' }} scrollWheelZoom={true}>
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-
-          {/* Gebiets-Rahmen */}
-          {territoryBounds.map((tb, i) => (
-            <Rectangle key={i} bounds={tb.bounds}
-              pathOptions={{
-                color: TERRITORY_COLORS[i % TERRITORY_COLORS.length],
-                weight: 3, fillOpacity: 0.08, dashArray: '8, 4'
-              }}>
-              <Popup>
-                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>{tb.name}</Typography>
-                {tb.assignedTo && (
-                  <Typography variant="body2">
-                    Zugewiesen: {tb.assignedTo.first_name} {tb.assignedTo.last_name}
-                  </Typography>
-                )}
-              </Popup>
-            </Rectangle>
-          ))}
-
-          {/* Adress-Marker */}
-          {allAddresses.map((addr, i) => (
-            <Marker key={`addr-${i}`}
-              position={[parseFloat(addr.latitude), parseFloat(addr.longitude)]}
-              icon={createAddressIcon(STATUS_COLORS[addr.status] || STATUS_COLORS.NEW)}>
-              <Popup>
-                <Box sx={{ minWidth: 180 }}>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                    {addr.street} {addr.house_number}
-                  </Typography>
-                  <Typography variant="caption" display="block">{addr.postal_code} {addr.city}</Typography>
-                  <Chip label={STATUS_LABELS[addr.status] || 'Neu'} size="small"
-                    sx={{ mt: 0.5, bgcolor: (STATUS_COLORS[addr.status] || '#999') + '20',
-                      color: STATUS_COLORS[addr.status] || '#999', fontWeight: 500 }} />
-                  {addr.contact_name && <Typography variant="caption" display="block" sx={{ mt: 0.5 }}>Kontakt: {addr.contact_name}</Typography>}
-                  <Typography variant="caption" display="block" color="text.secondary">{addr.territoryName}</Typography>
-                </Box>
-              </Popup>
-            </Marker>
-          ))}
-
-          {/* Team-Mitglieder */}
-          {teamMembers.map((member) => {
-            const name = `${member.first_name || ''} ${member.last_name || ''}`.trim();
-            const isOnline = member.last_location_at && (Date.now() - new Date(member.last_location_at).getTime()) < 10 * 60 * 1000;
-            const color = isOnline ? (ROLE_COLORS[member.role] || BORDEAUX) : '#999';
-            return (
-              <Marker key={`user-${member.id}`}
-                position={[parseFloat(member.last_latitude), parseFloat(member.last_longitude)]}
-                icon={createUserIcon(name, color)}>
-                <Popup>
-                  <Box sx={{ minWidth: 180 }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>{name || member.email}</Typography>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
-                      <Circle sx={{ fontSize: 8, color: isOnline ? '#2E7D32' : '#999' }} />
-                      <Typography variant="caption">{isOnline ? 'Online' : 'Offline'}</Typography>
-                    </Box>
-                    <Typography variant="caption" display="block" color="text.secondary">
-                      {member.last_location_at ? new Date(member.last_location_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) + ' Uhr' : ''}
-                    </Typography>
-                  </Box>
-                </Popup>
-              </Marker>
-            );
-          })}
-        </MapContainer>
-      </Card>
-
-      {/* Team-Liste unter der Karte */}
-      {teamMembers.length > 0 && (
-        <Card sx={{ mt: 2 }}>
-          <CardContent sx={{ p: 2 }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
-              <Groups sx={{ mr: 1, verticalAlign: 'middle', color: BORDEAUX, fontSize: 20 }} />
-              Team-Mitglieder auf der Karte
-            </Typography>
-            <Grid container spacing={1}>
-              {teamMembers.map((member) => {
-                const name = `${member.first_name || ''} ${member.last_name || ''}`.trim();
-                const isOnline = member.last_location_at && (Date.now() - new Date(member.last_location_at).getTime()) < 10 * 60 * 1000;
-                return (
-                  <Grid item xs={12} sm={6} md={4} key={member.id}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 1, borderRadius: 1, bgcolor: '#F5F3F0' }}>
-                      <Avatar sx={{ width: 28, height: 28, bgcolor: isOnline ? (ROLE_COLORS[member.role] || BORDEAUX) : '#999', fontSize: '0.7rem' }}>
-                        {(member.first_name?.[0] || '') + (member.last_name?.[0] || '')}
-                      </Avatar>
-                      <Box sx={{ flex: 1, minWidth: 0 }}>
-                        <Typography variant="body2" sx={{ fontWeight: 500, fontSize: '0.8rem' }} noWrap>{name}</Typography>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                          <Circle sx={{ fontSize: 6, color: isOnline ? '#2E7D32' : '#999' }} />
-                          <Typography variant="caption" color="text.secondary">{isOnline ? 'Online' : 'Offline'}</Typography>
-                        </Box>
-                      </Box>
-                    </Box>
-                  </Grid>
-                );
-              })}
-            </Grid>
-          </CardContent>
-        </Card>
-      )}
-    </Box>
-  );
-};
-
 // ====== Haupt-Komponente ======
 const TerritoryManagementPage = () => {
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
   const [expandedId, setExpandedId] = useState(null);
-  const [activeTab, setActiveTab] = useState(0);
+  const [plzSearch, setPlzSearch] = useState('');
   const [form, setForm] = useState({
     assigned_to_user_id: '', postal_codes: [], name: '',
     valid_from: '', valid_until: '', rotation_days: 14, notes: ''
@@ -374,7 +143,77 @@ const TerritoryManagementPage = () => {
   const { data: assignmentsData, isLoading } = useQuery('territory-assignments', () => territoryAPI.getAll());
   const { data: usersData } = useQuery('users-for-territory', () => userAPI.getAll());
   const { data: plzData } = useQuery('available-plz', () => territoryAPI.getAvailablePLZ());
+  const { data: teamData } = useQuery('team-locations-map', () => userAPI.getTeamLocations(), { refetchInterval: 30000 });
   const availablePLZ = plzData?.data?.data || [];
+  const assignments = assignmentsData?.data?.data || [];
+  const users = (usersData?.data?.data || []).filter(u => ['STANDORTLEITUNG', 'TEAMLEAD'].includes(u.role));
+  const teamMembers = (teamData?.data?.data || []).filter(m => m.last_latitude && m.last_longitude);
+
+  // PLZ-Filter: Gebiete die die gesuchte PLZ enthalten
+  const filteredAssignments = useMemo(() => {
+    if (!plzSearch.trim()) return assignments;
+    return assignments.filter(a => {
+      const codes = Array.isArray(a.postal_codes) ? a.postal_codes : (a.postal_codes || '').split(',');
+      return codes.some(c => c.trim().includes(plzSearch.trim()));
+    });
+  }, [assignments, plzSearch]);
+
+  // Adressen fuer alle gefilterten Gebiete laden
+  const filteredIds = filteredAssignments.map(a => a.id);
+  const { data: addressData, isLoading: addrLoading } = useQuery(
+    ['territory-addresses-all', filteredIds.join(',')],
+    async () => {
+      const results = await Promise.all(
+        filteredAssignments.map(a => territoryAPI.getAddresses(a.id).catch(() => null))
+      );
+      return results;
+    },
+    { enabled: filteredAssignments.length > 0 }
+  );
+
+  // Adressen und Bounds aus den Daten berechnen
+  const { allAddresses, territoryBounds, allStreets, totalAddresses } = useMemo(() => {
+    const addrs = [];
+    const bounds = [];
+    const streets = [];
+    let total = 0;
+    (addressData || []).forEach((res, idx) => {
+      const d = res?.data?.data;
+      if (!d) return;
+      const assignment = filteredAssignments[idx];
+      total += d.total_addresses || 0;
+      (d.streets || []).forEach(street => {
+        streets.push(street);
+        street.addresses.forEach(addr => {
+          if (addr.latitude && addr.longitude) {
+            addrs.push({ ...addr, territoryName: assignment?.name || `Gebiet #${assignment?.id}` });
+          }
+        });
+      });
+      const geocoded = (d.streets || []).flatMap(s => s.addresses).filter(a => a.latitude && a.longitude);
+      if (geocoded.length > 0) {
+        const lats = geocoded.map(a => parseFloat(a.latitude));
+        const lons = geocoded.map(a => parseFloat(a.longitude));
+        bounds.push({
+          name: assignment?.name || `Gebiet #${assignment?.id}`,
+          assignedTo: assignment?.assignedTo,
+          bounds: [[Math.min(...lats) - 0.002, Math.min(...lons) - 0.002],
+                    [Math.max(...lats) + 0.002, Math.max(...lons) + 0.002]]
+        });
+      }
+    });
+    return { allAddresses: addrs, territoryBounds: bounds, allStreets: streets, totalAddresses: total };
+  }, [addressData, filteredAssignments]);
+
+  // Karten-Center
+  const mapCenter = allAddresses.length > 0
+    ? [allAddresses.reduce((s, a) => s + parseFloat(a.latitude), 0) / allAddresses.length,
+       allAddresses.reduce((s, a) => s + parseFloat(a.longitude), 0) / allAddresses.length]
+    : teamMembers.length > 0
+      ? [teamMembers.reduce((s, m) => s + parseFloat(m.last_latitude), 0) / teamMembers.length,
+         teamMembers.reduce((s, m) => s + parseFloat(m.last_longitude), 0) / teamMembers.length]
+      : [52.52, 13.405];
+  const mapZoom = allAddresses.length > 0 ? 14 : 11;
 
   const createMutation = useMutation(
     (data) => territoryAPI.create(data),
@@ -389,43 +228,35 @@ const TerritoryManagementPage = () => {
     { onSuccess: () => queryClient.invalidateQueries('territory-assignments') }
   );
 
-  const assignments = assignmentsData?.data?.data || [];
-  const users = (usersData?.data?.data || []).filter(u => ['STANDORTLEITUNG', 'TEAMLEAD'].includes(u.role));
-
   const handleOpenCreate = () => {
     setEditItem(null);
     const today = new Date().toISOString().split('T')[0];
-    const in14days = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const in14d = new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0];
     setForm({ assigned_to_user_id: '', postal_codes: [], name: '',
-      valid_from: today, valid_until: in14days, rotation_days: 14, notes: '' });
+      valid_from: today, valid_until: in14d, rotation_days: 14, notes: '' });
     setDialogOpen(true);
   };
 
   const handleOpenEdit = (item) => {
     setEditItem(item);
-    const postalCodes = Array.isArray(item.postal_codes)
-      ? item.postal_codes
+    const pc = Array.isArray(item.postal_codes) ? item.postal_codes
       : (item.postal_codes || '').split(',').map(s => s.trim()).filter(Boolean);
-    setForm({
-      assigned_to_user_id: item.assigned_to_user_id,
-      postal_codes: postalCodes, name: item.name || '',
-      valid_from: item.valid_from, valid_until: item.valid_until,
-      rotation_days: item.rotation_days || 14, notes: item.notes || ''
-    });
+    setForm({ assigned_to_user_id: item.assigned_to_user_id, postal_codes: pc,
+      name: item.name || '', valid_from: item.valid_from, valid_until: item.valid_until,
+      rotation_days: item.rotation_days || 14, notes: item.notes || '' });
     setDialogOpen(true);
   };
 
   const handleCloseDialog = () => { setDialogOpen(false); setEditItem(null); };
 
   const handleSubmit = () => {
-    const payload = { ...form, postal_codes: form.postal_codes };
+    const payload = { ...form };
     if (editItem) updateMutation.mutate({ id: editItem.id, data: payload });
     else createMutation.mutate(payload);
   };
 
   const handleDelete = (id) => {
-    if (window.confirm('Gebietszuweisung wirklich loeschen? Alle Vertriebler-Zuweisungen werden ebenfalls geloescht.'))
-      deleteMutation.mutate(id);
+    if (window.confirm('Gebietszuweisung wirklich loeschen?')) deleteMutation.mutate(id);
   };
 
   const getStatusChip = (item) => {
@@ -442,6 +273,7 @@ const TerritoryManagementPage = () => {
 
   return (
     <Box>
+      {/* Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h5" sx={{ fontWeight: 600 }}>
           <Map sx={{ mr: 1, verticalAlign: 'middle', color: BORDEAUX }} />
@@ -453,112 +285,237 @@ const TerritoryManagementPage = () => {
         </Button>
       </Box>
 
-      {/* Tabs: Tabelle / Karte */}
-      <Tabs value={activeTab} onChange={(e, v) => setActiveTab(v)} sx={{ mb: 2,
-        '& .MuiTab-root': { fontWeight: 600 },
-        '& .Mui-selected': { color: BORDEAUX },
-        '& .MuiTabs-indicator': { bgcolor: BORDEAUX }
-      }}>
-        <Tab icon={<LocationOn sx={{ fontSize: 18 }} />} iconPosition="start" label="Gebiete & Strassen" />
-        <Tab icon={<Map sx={{ fontSize: 18 }} />} iconPosition="start" label="Karte mit Teams" />
-      </Tabs>
+      {/* PLZ-Suche */}
+      <Card sx={{ mb: 3 }}>
+        <CardContent sx={{ p: 2 }}>
+          <TextField
+            fullWidth
+            placeholder="PLZ eingeben um Gebiet auf der Karte zu suchen..."
+            value={plzSearch}
+            onChange={(e) => setPlzSearch(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search sx={{ color: BORDEAUX }} />
+                </InputAdornment>
+              )
+            }}
+            sx={{ '& .MuiOutlinedInput-root': {
+              '&.Mui-focused fieldset': { borderColor: BORDEAUX }
+            } }}
+          />
+          {plzSearch && (
+            <Box sx={{ display: 'flex', gap: 1, mt: 1.5, flexWrap: 'wrap', alignItems: 'center' }}>
+              <Typography variant="body2" color="text.secondary">
+                {filteredAssignments.length} Gebiet(e) gefunden
+              </Typography>
+              {filteredAssignments.map(a => {
+                const codes = Array.isArray(a.postal_codes) ? a.postal_codes : (a.postal_codes || '').split(',');
+                return codes.filter(c => c.trim().includes(plzSearch.trim())).map((c, i) => (
+                  <Chip key={`${a.id}-${i}`} label={`${c.trim()} - ${a.name || `Gebiet #${a.id}`}`}
+                    size="small" sx={{ bgcolor: `${BORDEAUX}15`, color: BORDEAUX, fontWeight: 500 }} />
+                ));
+              })}
+              <Button size="small" onClick={() => setPlzSearch('')} sx={{ color: BORDEAUX, ml: 'auto' }}>
+                Filter zuruecksetzen
+              </Button>
+            </Box>
+          )}
+        </CardContent>
+      </Card>
 
-      {/* ====== TAB 0: Gebietstabelle mit expandierbaren Strassen ====== */}
-      {activeTab === 0 && (
-        <>
-          {assignments.length === 0 ? (
-            <Alert severity="info">
-              Noch keine Gebiete zugewiesen. Erstellen Sie eine Gebietszuweisung fuer Standortleiter oder Teamleiter.
-            </Alert>
+      {/* Karte - immer sichtbar */}
+      <Card sx={{ mb: 3, overflow: 'hidden' }}>
+        <CardContent sx={{ p: 0 }}>
+          {addrLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}><CircularProgress sx={{ color: BORDEAUX }} /></Box>
           ) : (
-            assignments.map((item) => {
-              const isExpanded = expandedId === item.id;
-              const plzList = (Array.isArray(item.postal_codes) ? item.postal_codes : (item.postal_codes || '').split(',')).filter(Boolean);
+            <MapContainer key={`map-${mapCenter[0].toFixed(4)}-${mapCenter[1].toFixed(4)}`}
+              center={mapCenter} zoom={mapZoom}
+              style={{ height: '450px', width: '100%' }} scrollWheelZoom={true}>
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 
-              return (
-                <Card key={item.id} sx={{ mb: 2 }}>
-                  {/* Gebiet-Header */}
-                  <CardContent sx={{ p: 2, '&:last-child': { pb: isExpanded ? 0 : 2 } }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1 }}>
-                        <Box>
-                          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                            {item.name || `Gebiet #${item.id}`}
-                          </Typography>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
-                            <Person sx={{ fontSize: 14, color: 'text.secondary' }} />
-                            <Typography variant="body2" color="text.secondary">
-                              {item.assignedTo
-                                ? `${item.assignedTo.first_name || ''} ${item.assignedTo.last_name || ''}`.trim() || item.assignedTo.email
-                                : 'Unbekannt'}
-                              {' '}({item.assignedTo?.role === 'STANDORTLEITUNG' ? 'Standortleitung' : 'Teamleiter'})
-                            </Typography>
-                          </Box>
-                        </Box>
+              {/* Gebiets-Rahmen */}
+              {territoryBounds.map((tb, i) => (
+                <Rectangle key={i} bounds={tb.bounds}
+                  pathOptions={{
+                    color: TERRITORY_COLORS[i % TERRITORY_COLORS.length],
+                    weight: 3, fillOpacity: 0.1, dashArray: '8, 4'
+                  }}>
+                  <Popup>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>{tb.name}</Typography>
+                    {tb.assignedTo && (
+                      <Typography variant="body2">
+                        {tb.assignedTo.first_name} {tb.assignedTo.last_name}
+                      </Typography>
+                    )}
+                  </Popup>
+                </Rectangle>
+              ))}
 
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                          {plzList.slice(0, 5).map((plz, i) => (
-                            <Chip key={i} label={plz.trim()} size="small"
-                              sx={{ bgcolor: `${BORDEAUX}15`, color: BORDEAUX, fontWeight: 500 }} />
-                          ))}
-                          {plzList.length > 5 && <Chip label={`+${plzList.length - 5}`} size="small" variant="outlined" />}
-                        </Box>
+              {/* Adress-Marker */}
+              {allAddresses.map((addr, i) => (
+                <Marker key={`a-${i}`}
+                  position={[parseFloat(addr.latitude), parseFloat(addr.longitude)]}
+                  icon={createAddressIcon(STATUS_COLORS[addr.status] || STATUS_COLORS.NEW)}>
+                  <Popup>
+                    <Box sx={{ minWidth: 180 }}>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                        {addr.street} {addr.house_number}
+                      </Typography>
+                      <Typography variant="caption" display="block">{addr.postal_code} {addr.city}</Typography>
+                      <Chip label={STATUS_LABELS[addr.status] || 'Neu'} size="small"
+                        sx={{ mt: 0.5, bgcolor: (STATUS_COLORS[addr.status] || '#999') + '20',
+                          color: STATUS_COLORS[addr.status] || '#999', fontWeight: 500 }} />
+                      {addr.contact_name && <Typography variant="caption" display="block" sx={{ mt: 0.5 }}>Kontakt: {addr.contact_name}</Typography>}
+                    </Box>
+                  </Popup>
+                </Marker>
+              ))}
 
-                        <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
-                          {new Date(item.valid_from).toLocaleDateString('de-DE')} - {new Date(item.valid_until).toLocaleDateString('de-DE')}
-                        </Typography>
-
-                        {getStatusChip(item)}
-                      </Box>
-
+              {/* Team-Mitglieder */}
+              {teamMembers.map((member) => {
+                const name = `${member.first_name || ''} ${member.last_name || ''}`.trim();
+                const isOnline = member.last_location_at && (Date.now() - new Date(member.last_location_at).getTime()) < 600000;
+                const color = isOnline ? (ROLE_COLORS[member.role] || BORDEAUX) : '#999';
+                return (
+                  <Marker key={`u-${member.id}`}
+                    position={[parseFloat(member.last_latitude), parseFloat(member.last_longitude)]}
+                    icon={createUserIcon(name, color)}>
+                    <Popup>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>{name}</Typography>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                        <Tooltip title="Strassen & Hausnummern anzeigen">
-                          <IconButton size="small" onClick={() => setExpandedId(isExpanded ? null : item.id)}
-                            sx={{ color: BORDEAUX }}>
-                            {isExpanded ? <ExpandLess /> : <ExpandMore />}
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Bearbeiten">
-                          <IconButton size="small" onClick={() => handleOpenEdit(item)}><Edit fontSize="small" /></IconButton>
-                        </Tooltip>
-                        <Tooltip title="Loeschen">
-                          <IconButton size="small" color="error" onClick={() => handleDelete(item.id)}><Delete fontSize="small" /></IconButton>
-                        </Tooltip>
+                        <Circle sx={{ fontSize: 8, color: isOnline ? '#2E7D32' : '#999' }} />
+                        <Typography variant="caption">{isOnline ? 'Online' : 'Offline'}</Typography>
+                      </Box>
+                    </Popup>
+                  </Marker>
+                );
+              })}
+            </MapContainer>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Legende */}
+      <Box sx={{ display: 'flex', gap: 1, mb: 3, flexWrap: 'wrap', alignItems: 'center' }}>
+        <Chip icon={<Groups sx={{ fontSize: '16px !important' }} />}
+          label={`${teamMembers.length} Team-Mitglieder`}
+          size="small" sx={{ bgcolor: `${BORDEAUX}15`, color: BORDEAUX, fontWeight: 600 }} />
+        <Chip label={`${allAddresses.length} Adressen auf Karte`} size="small" variant="outlined" />
+        <Chip label={`${territoryBounds.length} Gebiete markiert`} size="small" variant="outlined" />
+        <Box sx={{ display: 'flex', gap: 0.5, ml: 'auto' }}>
+          {Object.entries(STATUS_LABELS).map(([st, label]) => (
+            <Chip key={st} label={label} size="small"
+              sx={{ fontSize: '0.65rem', height: 20, bgcolor: STATUS_COLORS[st] + '20', color: STATUS_COLORS[st] }} />
+          ))}
+        </Box>
+      </Box>
+
+      {/* Strassen und Hausnummern - wenn PLZ gesucht oder Gebiet expandiert */}
+      {(plzSearch || expandedId) && allStreets.length > 0 && (
+        <Card sx={{ mb: 3 }}>
+          <CardContent sx={{ p: 2 }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
+              <Home sx={{ mr: 1, verticalAlign: 'middle', color: BORDEAUX }} />
+              Strassen & Hausnummern {plzSearch && `(PLZ: ${plzSearch})`}
+            </Typography>
+            <StreetList streets={allStreets} totalAddresses={totalAddresses} />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Gebietsliste */}
+      <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
+        Zugewiesene Gebiete ({filteredAssignments.length})
+      </Typography>
+
+      {filteredAssignments.length === 0 ? (
+        <Alert severity="info">
+          {plzSearch ? `Keine Gebiete fuer PLZ "${plzSearch}" gefunden.` : 'Noch keine Gebiete zugewiesen.'}
+        </Alert>
+      ) : (
+        filteredAssignments.map((item) => {
+          const isExpanded = expandedId === item.id;
+          const plzList = (Array.isArray(item.postal_codes) ? item.postal_codes : (item.postal_codes || '').split(',')).filter(Boolean);
+
+          return (
+            <Card key={item.id} sx={{ mb: 2 }}>
+              <CardContent sx={{ p: 2, '&:last-child': { pb: isExpanded ? 0 : 2 } }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1, minWidth: 0 }}>
+                    <Box sx={{ minWidth: 0 }}>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                        {item.name || `Gebiet #${item.id}`}
+                      </Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+                        <Person sx={{ fontSize: 14, color: 'text.secondary' }} />
+                        <Typography variant="body2" color="text.secondary" noWrap>
+                          {item.assignedTo
+                            ? `${item.assignedTo.first_name || ''} ${item.assignedTo.last_name || ''}`.trim()
+                            : 'Unbekannt'}
+                        </Typography>
                       </Box>
                     </Box>
 
-                    {/* Zugewiesene Vertriebler */}
-                    {item.salespersonTerritories && item.salespersonTerritories.length > 0 && (
-                      <Box sx={{ display: 'flex', gap: 1, mt: 1, flexWrap: 'wrap' }}>
-                        <Typography variant="caption" color="text.secondary" sx={{ alignSelf: 'center' }}>Vertriebler:</Typography>
-                        {item.salespersonTerritories.map((sp) => (
-                          <Chip key={sp.id} size="small"
-                            avatar={<Avatar sx={{ bgcolor: '#2E7D32', width: 20, height: 20, fontSize: '0.6rem' }}>
-                              {(sp.salesperson?.first_name?.[0] || '') + (sp.salesperson?.last_name?.[0] || '')}
-                            </Avatar>}
-                            label={`${sp.salesperson?.first_name || ''} ${sp.salesperson?.last_name || ''}`.trim()}
-                            sx={{ bgcolor: '#2E7D3215', color: '#2E7D32', fontWeight: 500 }}
-                          />
-                        ))}
-                      </Box>
-                    )}
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                      {plzList.slice(0, 5).map((plz, i) => (
+                        <Chip key={i} label={plz.trim()} size="small"
+                          sx={{ bgcolor: `${BORDEAUX}15`, color: BORDEAUX, fontWeight: 500 }} />
+                      ))}
+                      {plzList.length > 5 && <Chip label={`+${plzList.length - 5}`} size="small" variant="outlined" />}
+                    </Box>
+
+                    {getStatusChip(item)}
+                  </Box>
+
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Tooltip title="Strassen anzeigen">
+                      <IconButton size="small" onClick={() => setExpandedId(isExpanded ? null : item.id)}
+                        sx={{ color: BORDEAUX }}>
+                        {isExpanded ? <ExpandLess /> : <ExpandMore />}
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Bearbeiten">
+                      <IconButton size="small" onClick={() => handleOpenEdit(item)}><Edit fontSize="small" /></IconButton>
+                    </Tooltip>
+                    <Tooltip title="Loeschen">
+                      <IconButton size="small" color="error" onClick={() => handleDelete(item.id)}><Delete fontSize="small" /></IconButton>
+                    </Tooltip>
+                  </Box>
+                </Box>
+
+                {/* Vertriebler */}
+                {item.salespersonTerritories && item.salespersonTerritories.length > 0 && (
+                  <Box sx={{ display: 'flex', gap: 1, mt: 1, flexWrap: 'wrap' }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ alignSelf: 'center' }}>Vertriebler:</Typography>
+                    {item.salespersonTerritories.map((sp) => (
+                      <Chip key={sp.id} size="small"
+                        avatar={<Avatar sx={{ bgcolor: '#2E7D32', width: 20, height: 20, fontSize: '0.6rem' }}>
+                          {(sp.salesperson?.first_name?.[0] || '') + (sp.salesperson?.last_name?.[0] || '')}
+                        </Avatar>}
+                        label={`${sp.salesperson?.first_name || ''} ${sp.salesperson?.last_name || ''}`.trim()}
+                        sx={{ bgcolor: '#2E7D3215', color: '#2E7D32', fontWeight: 500 }}
+                      />
+                    ))}
+                  </Box>
+                )}
+              </CardContent>
+
+              {/* Expandierte Strassenansicht */}
+              {isExpanded && (
+                <>
+                  <Divider />
+                  <CardContent sx={{ p: 2 }}>
+                    <ExpandedStreetDetail territoryId={item.id} />
                   </CardContent>
-
-                  {/* Expandierter Strassen-Bereich */}
-                  <Collapse in={isExpanded}>
-                    <Divider />
-                    <StreetDetail territoryId={item.id} />
-                  </Collapse>
-                </Card>
-              );
-            })
-          )}
-        </>
-      )}
-
-      {/* ====== TAB 1: Karte mit Gebieten und Teams ====== */}
-      {activeTab === 1 && (
-        <TerritoryMap assignments={assignments} />
+                </>
+              )}
+            </Card>
+          );
+        })
       )}
 
       {/* Create/Edit Dialog */}
@@ -584,16 +541,16 @@ const TerritoryManagementPage = () => {
               placeholder="z.B. Berlin Mitte Nord" fullWidth />
             <Autocomplete multiple freeSolo options={availablePLZ.map(p => p.plz)}
               value={form.postal_codes}
-              onChange={(e, newValue) => setForm({ ...form, postal_codes: newValue })}
-              getOptionLabel={(option) => {
-                const match = availablePLZ.find(p => p.plz === option);
-                return match ? `${option} (${match.city})` : option;
+              onChange={(e, v) => setForm({ ...form, postal_codes: v })}
+              getOptionLabel={(opt) => {
+                const m = availablePLZ.find(p => p.plz === opt);
+                return m ? `${opt} (${m.city})` : opt;
               }}
               renderTags={(value, getTagProps) =>
                 value.map((plz, index) => {
-                  const match = availablePLZ.find(p => p.plz === plz);
+                  const m = availablePLZ.find(p => p.plz === plz);
                   return (
-                    <Chip key={plz} label={match ? `${plz} - ${match.city}` : plz} size="small"
+                    <Chip key={plz} label={m ? `${plz} - ${m.city}` : plz} size="small"
                       sx={{ bgcolor: `${BORDEAUX}15`, color: BORDEAUX, fontWeight: 500 }}
                       {...getTagProps({ index })} />
                   );
@@ -601,10 +558,9 @@ const TerritoryManagementPage = () => {
               }
               renderInput={(params) => (
                 <TextField {...params} label="PLZ-Gebiete"
-                  placeholder={form.postal_codes.length === 0 ? 'PLZ eingeben oder auswaehlen...' : ''}
+                  placeholder={form.postal_codes.length === 0 ? 'PLZ eingeben...' : ''}
                   required helperText={availablePLZ.length > 0
-                    ? `${availablePLZ.length} PLZ aus Adresslisten verfuegbar.`
-                    : 'Geben Sie Postleitzahlen ein (Enter zum Bestaetigen)'} />
+                    ? `${availablePLZ.length} PLZ verfuegbar` : 'PLZ eingeben + Enter'} />
               )}
             />
             <Box sx={{ display: 'flex', gap: 2 }}>
@@ -617,7 +573,7 @@ const TerritoryManagementPage = () => {
             </Box>
             <TextField label="Rotationsintervall (Tage)" type="number" value={form.rotation_days}
               onChange={(e) => setForm({ ...form, rotation_days: parseInt(e.target.value) || 14 })}
-              fullWidth helperText="z.B. 14 = alle 2 Wochen wechselt das Gebiet" />
+              fullWidth />
             <TextField label="Notizen" value={form.notes}
               onChange={(e) => setForm({ ...form, notes: e.target.value })}
               multiline rows={2} fullWidth />
@@ -645,6 +601,24 @@ const TerritoryManagementPage = () => {
       )}
     </Box>
   );
+};
+
+// Separate Komponente fuer expandierte Strassen (eigene Query)
+const ExpandedStreetDetail = ({ territoryId }) => {
+  const { data, isLoading } = useQuery(
+    ['territory-addresses', territoryId],
+    () => territoryAPI.getAddresses(territoryId),
+    { enabled: !!territoryId }
+  );
+
+  if (isLoading) return <Box sx={{ p: 2 }}><CircularProgress size={24} sx={{ color: BORDEAUX }} /></Box>;
+
+  const result = data?.data?.data;
+  if (!result || !result.streets || result.streets.length === 0) {
+    return <Alert severity="info">Keine Adressen in diesem Gebiet.</Alert>;
+  }
+
+  return <StreetList streets={result.streets} totalAddresses={result.total_addresses} />;
 };
 
 export default TerritoryManagementPage;
