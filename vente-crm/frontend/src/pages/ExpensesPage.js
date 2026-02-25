@@ -1,16 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
+import { useNavigate } from 'react-router-dom';
 import {
   Box, Typography, Button, TextField, Table, TableBody, TableCell,
   TableHead, TableRow, TablePagination, IconButton, Card, CardContent,
   Dialog, DialogTitle, DialogContent, DialogActions, Grid, MenuItem,
-  Alert, CircularProgress, Chip, InputAdornment
+  Alert, CircularProgress, Chip, InputAdornment, Tooltip, LinearProgress
 } from '@mui/material';
 import {
   Add, Delete, Edit, FileDownload, Euro, Receipt,
-  CalendarMonth, TrendingDown
+  CalendarMonth, TrendingDown, CameraAlt, Image,
+  Lock, PlayArrow, AccountBalance, Calculate
 } from '@mui/icons-material';
-import { expenseAPI } from '../services/api';
+import { expenseAPI, subscriptionAPI } from '../services/api';
 
 const BORDEAUX = '#7A1B2D';
 
@@ -32,17 +34,15 @@ const QUARTERS = [
 
 const INITIAL_FORM = {
   amount: '',
-  category: '',
+  category_id: '',
   description: '',
   expense_date: new Date().toISOString().split('T')[0],
-  tax_rate: '19',
-  is_deductible: true,
-  receipt_number: '',
   notes: ''
 };
 
 const ExpensesPage = () => {
   const currentYear = new Date().getFullYear();
+  const navigate = useNavigate();
   const [page, setPage] = useState(0);
   const [year, setYear] = useState(String(currentYear));
   const [month, setMonth] = useState('');
@@ -51,6 +51,23 @@ const ExpensesPage = () => {
   const [editExpense, setEditExpense] = useState(null);
   const [formData, setFormData] = useState(INITIAL_FORM);
   const queryClient = useQueryClient();
+
+  // Add-On Status pruefen
+  const { data: addonData, isLoading: addonLoading } = useQuery(
+    'addon-status',
+    () => subscriptionAPI.getAddonStatus(),
+    { staleTime: 60000 }
+  );
+
+  const addonTrialMutation = useMutation(
+    () => subscriptionAPI.startAddonTrial({ addon_id: 'EUER_RECHNER' }),
+    { onSuccess: () => queryClient.invalidateQueries('addon-status') }
+  );
+
+  const euerStatus = addonData?.data?.data?.euer || {};
+  const addonActive = euerStatus.is_active;
+  const addonNeverStarted = euerStatus.never_started;
+  const addonTrialExpired = euerStatus.trial_expired;
 
   const { data, isLoading } = useQuery(
     ['expenses', page + 1, year, month, quarter],
@@ -88,6 +105,32 @@ const ExpensesPage = () => {
     { onSuccess: () => queryClient.invalidateQueries('expenses') }
   );
 
+  const receiptMutation = useMutation(
+    ({ id, file }) => {
+      const fd = new FormData();
+      fd.append('receipt', file);
+      return expenseAPI.uploadReceipt(id, fd);
+    },
+    { onSuccess: () => queryClient.invalidateQueries('expenses') }
+  );
+
+  const fileInputRef = useRef(null);
+  const [uploadExpenseId, setUploadExpenseId] = useState(null);
+
+  const handleReceiptUpload = (expenseId) => {
+    setUploadExpenseId(expenseId);
+    fileInputRef.current?.click();
+  };
+
+  const handleFileSelected = (e) => {
+    const file = e.target.files?.[0];
+    if (file && uploadExpenseId) {
+      receiptMutation.mutate({ id: uploadExpenseId, file });
+    }
+    e.target.value = '';
+    setUploadExpenseId(null);
+  };
+
   const expenses = data?.data?.data?.expenses || [];
   const pagination = data?.data?.data?.pagination || { total: 0 };
   const totals = data?.data?.data?.totals || {};
@@ -97,8 +140,7 @@ const ExpensesPage = () => {
     const submitData = {
       ...formData,
       amount: parseFloat(formData.amount),
-      tax_rate: parseFloat(formData.tax_rate),
-      is_deductible: formData.is_deductible
+      category_id: parseInt(formData.category_id, 10)
     };
     createMutation.mutate(submitData);
   };
@@ -108,12 +150,9 @@ const ExpensesPage = () => {
     if (expense) {
       setFormData({
         amount: expense.amount || '',
-        category: expense.category || '',
+        category_id: expense.category_id || '',
         description: expense.description || '',
         expense_date: expense.expense_date ? expense.expense_date.split('T')[0] : '',
-        tax_rate: expense.tax_rate || '19',
-        is_deductible: expense.is_deductible !== false,
-        receipt_number: expense.receipt_number || '',
         notes: expense.notes || ''
       });
     } else {
@@ -147,20 +186,153 @@ const ExpensesPage = () => {
     years.push(String(y));
   }
 
+  // Add-On Locked State
+  if (!addonLoading && !addonActive) {
+    return (
+      <Box>
+        <Card sx={{
+          p: 4, textAlign: 'center',
+          opacity: addonTrialExpired ? 0.85 : 1,
+          border: addonTrialExpired ? '2px solid #D32F2F' : '2px solid #C4A35A'
+        }}>
+          <Box sx={{
+            width: 80, height: 80, borderRadius: '50%', mx: 'auto', mb: 2,
+            bgcolor: addonTrialExpired ? '#D32F2F15' : '#C4A35A15',
+            display: 'flex', alignItems: 'center', justifyContent: 'center'
+          }}>
+            {addonTrialExpired
+              ? <Lock sx={{ fontSize: 40, color: '#D32F2F' }} />
+              : <AccountBalance sx={{ fontSize: 40, color: '#C4A35A' }} />
+            }
+          </Box>
+          <Typography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>
+            {addonTrialExpired
+              ? 'EUeR-Rechner - Testphase abgelaufen'
+              : 'Einnahmen-Ueberschuss-Rechner (EUeR)'}
+          </Typography>
+          <Typography color="text.secondary" sx={{ mb: 3, maxWidth: 500, mx: 'auto' }}>
+            {addonTrialExpired
+              ? 'Ihre 30-Tage Testphase ist abgelaufen. Buchen Sie das Add-On um den EUeR-Rechner weiter zu nutzen.'
+              : 'Professioneller EUeR fuer Vertriebsmitarbeiter - steuerkonform mit DATEV- und ELSTER-Schnittstelle. 30 Tage kostenlos testen!'}
+          </Typography>
+
+          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
+            {addonNeverStarted && (
+              <Button
+                variant="contained"
+                size="large"
+                startIcon={addonTrialMutation.isLoading ? <CircularProgress size={20} color="inherit" /> : <PlayArrow />}
+                onClick={() => addonTrialMutation.mutate()}
+                disabled={addonTrialMutation.isLoading}
+                sx={{ bgcolor: '#C4A35A', '&:hover': { bgcolor: '#A68836' }, px: 4, py: 1.5, fontWeight: 600 }}
+              >
+                30 Tage kostenlos testen
+              </Button>
+            )}
+            <Button
+              variant={addonTrialExpired ? 'contained' : 'outlined'}
+              size="large"
+              startIcon={<Calculate />}
+              onClick={() => navigate('/subscription')}
+              sx={addonTrialExpired
+                ? { bgcolor: BORDEAUX, '&:hover': { bgcolor: '#5A0F1E' }, px: 4, py: 1.5, fontWeight: 600 }
+                : { borderColor: BORDEAUX, color: BORDEAUX, px: 4, py: 1.5, fontWeight: 600 }
+              }
+            >
+              {addonTrialExpired ? 'Jetzt buchen (9,95 EUR/Monat)' : 'Preise ansehen'}
+            </Button>
+          </Box>
+
+          {addonTrialMutation.isError && (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              {addonTrialMutation.error?.response?.data?.error || 'Fehler beim Starten der Testphase'}
+            </Alert>
+          )}
+
+          {/* Feature-Liste */}
+          <Grid container spacing={1} sx={{ mt: 3, textAlign: 'left', maxWidth: 600, mx: 'auto' }}>
+            {['Automatische Kategorisierung (SKR03)', 'Steuerlich absetzbare Betraege',
+              'DATEV-Export fuer Steuerberater', 'ELSTER-konforme Aufbereitung',
+              'Belege fotografieren & zuordnen', 'Vorsteuerabzug-Berechnung'
+            ].map((f, i) => (
+              <Grid item xs={12} sm={6} key={i}>
+                <Typography variant="body2" sx={{ color: addonTrialExpired ? '#999' : 'text.secondary' }}>
+                  &#10003; {f}
+                </Typography>
+              </Grid>
+            ))}
+          </Grid>
+        </Card>
+      </Box>
+    );
+  }
+
   return (
     <Box>
+      {/* Hidden file input fuer Beleg-Upload */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        style={{ display: 'none' }}
+        accept="image/*,.pdf"
+        onChange={handleFileSelected}
+      />
+      {receiptMutation.isSuccess && (
+        <Alert severity="success" sx={{ mb: 2 }} onClose={() => receiptMutation.reset()}>
+          Beleg erfolgreich hochgeladen
+        </Alert>
+      )}
+      {receiptMutation.isError && (
+        <Alert severity="error" sx={{ mb: 2 }} onClose={() => receiptMutation.reset()}>
+          Beleg konnte nicht hochgeladen werden
+        </Alert>
+      )}
+
+      {/* Trial-Banner */}
+      {euerStatus.is_trial && (
+        <Alert
+          severity={euerStatus.trial_days_left <= 7 ? 'warning' : 'info'}
+          sx={{ mb: 2 }}
+          action={
+            <Button size="small" onClick={() => navigate('/subscription')} sx={{ color: 'inherit' }}>
+              Jetzt buchen
+            </Button>
+          }
+        >
+          EUeR-Rechner Testphase: noch {euerStatus.trial_days_left} Tage verbleibend
+        </Alert>
+      )}
+
       {/* Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h5" sx={{ fontWeight: 600 }}>
           Einnahmen-Ueberschuss-Rechnung (EUeR)
         </Typography>
         <Box sx={{ display: 'flex', gap: 1 }}>
+          <Tooltip title="DATEV-konformer Export (SKR03)">
+            <Button
+              variant="outlined" startIcon={<FileDownload />}
+              onClick={handleExport}
+              sx={{ borderColor: '#2E7D32', color: '#2E7D32' }}
+            >
+              DATEV
+            </Button>
+          </Tooltip>
+          <Tooltip title="ELSTER-konforme Aufbereitung">
+            <Button
+              variant="outlined" startIcon={<FileDownload />}
+              onClick={handleExport}
+              sx={{ borderColor: '#1565C0', color: '#1565C0' }}
+            >
+              ELSTER
+            </Button>
+          </Tooltip>
           <Button
             variant="outlined" startIcon={<FileDownload />}
             onClick={handleExport}
             sx={{ borderColor: BORDEAUX, color: BORDEAUX }}
           >
-            Excel Export
+            Excel
           </Button>
           <Button variant="contained" startIcon={<Add />} onClick={() => openDialog()}>
             Neue Ausgabe
@@ -175,7 +347,7 @@ const ExpensesPage = () => {
             <CardContent sx={{ p: 2, textAlign: 'center' }}>
               <Typography variant="caption" color="text.secondary">Brutto</Typography>
               <Typography variant="h5" sx={{ fontWeight: 700, color: BORDEAUX }}>
-                {parseFloat(totals.brutto || 0).toFixed(2)} EUR
+                {parseFloat(totals.total_amount || 0).toFixed(2)} EUR
               </Typography>
             </CardContent>
           </Card>
@@ -185,7 +357,7 @@ const ExpensesPage = () => {
             <CardContent sx={{ p: 2, textAlign: 'center' }}>
               <Typography variant="caption" color="text.secondary">Netto</Typography>
               <Typography variant="h5" sx={{ fontWeight: 700, color: '#9E3347' }}>
-                {parseFloat(totals.netto || 0).toFixed(2)} EUR
+                {parseFloat(totals.total_net || 0).toFixed(2)} EUR
               </Typography>
             </CardContent>
           </Card>
@@ -195,7 +367,7 @@ const ExpensesPage = () => {
             <CardContent sx={{ p: 2, textAlign: 'center' }}>
               <Typography variant="caption" color="text.secondary">USt (Vorsteuer)</Typography>
               <Typography variant="h5" sx={{ fontWeight: 700, color: '#C4A35A' }}>
-                {parseFloat(totals.ust || 0).toFixed(2)} EUR
+                {parseFloat(totals.total_tax || 0).toFixed(2)} EUR
               </Typography>
             </CardContent>
           </Card>
@@ -205,7 +377,7 @@ const ExpensesPage = () => {
             <CardContent sx={{ p: 2, textAlign: 'center' }}>
               <Typography variant="caption" color="text.secondary">Absetzbar</Typography>
               <Typography variant="h5" sx={{ fontWeight: 700, color: '#2E7D32' }}>
-                {parseFloat(totals.absetzbar || totals.deductible || 0).toFixed(2)} EUR
+                {parseFloat(totals.total_deductible || 0).toFixed(2)} EUR
               </Typography>
             </CardContent>
           </Card>
@@ -266,8 +438,7 @@ const ExpensesPage = () => {
               <TableBody>
                 {expenses.map((expense) => {
                   const amount = parseFloat(expense.amount || 0);
-                  const taxRate = parseFloat(expense.tax_rate || 19);
-                  const ust = amount - (amount / (1 + taxRate / 100));
+                  const taxAmount = parseFloat(expense.tax_amount || 0);
                   return (
                     <TableRow key={expense.id} hover>
                       <TableCell>
@@ -276,7 +447,7 @@ const ExpensesPage = () => {
                           : '-'}
                       </TableCell>
                       <TableCell>
-                        <Chip label={expense.category || '-'} size="small" variant="outlined"
+                        <Chip label={expense.category?.name || '-'} size="small" variant="outlined"
                           sx={{ borderColor: BORDEAUX, color: BORDEAUX }} />
                       </TableCell>
                       <TableCell>{expense.description || '-'}</TableCell>
@@ -284,16 +455,28 @@ const ExpensesPage = () => {
                         {amount.toFixed(2)} EUR
                       </TableCell>
                       <TableCell align="right">
-                        {ust.toFixed(2)} EUR
+                        {taxAmount.toFixed(2)} EUR
                       </TableCell>
                       <TableCell>
                         <Chip
-                          label={expense.is_deductible !== false ? 'Ja' : 'Nein'}
+                          label={expense.category?.tax_deductible !== false ? 'Ja' : 'Nein'}
                           size="small"
-                          color={expense.is_deductible !== false ? 'success' : 'default'}
+                          color={expense.category?.tax_deductible !== false ? 'success' : 'default'}
                         />
                       </TableCell>
                       <TableCell align="right">
+                        <Tooltip title={expense.receipt_url ? 'Beleg vorhanden' : 'Beleg hochladen'}>
+                          <IconButton
+                            size="small"
+                            onClick={() => expense.receipt_url
+                              ? window.open(expense.receipt_url, '_blank')
+                              : handleReceiptUpload(expense.id)
+                            }
+                            sx={{ color: expense.receipt_url ? '#2E7D32' : '#999' }}
+                          >
+                            {expense.receipt_url ? <Image fontSize="small" /> : <CameraAlt fontSize="small" />}
+                          </IconButton>
+                        </Tooltip>
                         <IconButton size="small" onClick={() => openDialog(expense)}>
                           <Edit fontSize="small" />
                         </IconButton>
@@ -350,13 +533,13 @@ const ExpensesPage = () => {
             <Grid item xs={6}>
               <TextField
                 select fullWidth label="Kategorie" required
-                value={formData.category}
-                onChange={(e) => setFormData(p => ({ ...p, category: e.target.value }))}
+                value={formData.category_id}
+                onChange={(e) => setFormData(p => ({ ...p, category_id: e.target.value }))}
               >
                 <MenuItem value="">-- Kategorie waehlen --</MenuItem>
                 {(Array.isArray(categories) ? categories : []).map((cat) => (
-                  <MenuItem key={typeof cat === 'string' ? cat : cat.value || cat.id} value={typeof cat === 'string' ? cat : cat.value || cat.name}>
-                    {typeof cat === 'string' ? cat : cat.label || cat.name}
+                  <MenuItem key={cat.id} value={cat.id}>
+                    {cat.code ? `${cat.code} - ${cat.name}` : cat.name}
                   </MenuItem>
                 ))}
               </TextField>
@@ -368,40 +551,12 @@ const ExpensesPage = () => {
                 onChange={(e) => setFormData(p => ({ ...p, description: e.target.value }))}
               />
             </Grid>
-            <Grid item xs={6}>
+            <Grid item xs={12}>
               <TextField
                 fullWidth label="Datum" type="date" required
                 InputLabelProps={{ shrink: true }}
                 value={formData.expense_date}
                 onChange={(e) => setFormData(p => ({ ...p, expense_date: e.target.value }))}
-              />
-            </Grid>
-            <Grid item xs={6}>
-              <TextField
-                select fullWidth label="USt-Satz"
-                value={formData.tax_rate}
-                onChange={(e) => setFormData(p => ({ ...p, tax_rate: e.target.value }))}
-              >
-                <MenuItem value="19">19% (Regelsteuersatz)</MenuItem>
-                <MenuItem value="7">7% (Ermaessigt)</MenuItem>
-                <MenuItem value="0">0% (Steuerfrei)</MenuItem>
-              </TextField>
-            </Grid>
-            <Grid item xs={6}>
-              <TextField
-                select fullWidth label="Absetzbar"
-                value={formData.is_deductible ? 'true' : 'false'}
-                onChange={(e) => setFormData(p => ({ ...p, is_deductible: e.target.value === 'true' }))}
-              >
-                <MenuItem value="true">Ja</MenuItem>
-                <MenuItem value="false">Nein</MenuItem>
-              </TextField>
-            </Grid>
-            <Grid item xs={6}>
-              <TextField
-                fullWidth label="Belegnummer"
-                value={formData.receipt_number}
-                onChange={(e) => setFormData(p => ({ ...p, receipt_number: e.target.value }))}
               />
             </Grid>
             <Grid item xs={12}>
@@ -419,7 +574,7 @@ const ExpensesPage = () => {
           </Button>
           <Button
             variant="contained" onClick={handleSubmit}
-            disabled={createMutation.isLoading || !formData.amount || !formData.category || !formData.description}
+            disabled={createMutation.isLoading || !formData.amount || !formData.category_id || !formData.description}
           >
             {createMutation.isLoading ? 'Wird gespeichert...' : 'Speichern'}
           </Button>

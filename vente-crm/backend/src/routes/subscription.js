@@ -12,6 +12,8 @@ router.post('/webhook', express.raw({ type: 'application/json' }), subscriptionC
 // Authentifiziert
 router.get('/status', authenticateToken, subscriptionController.getSubscriptionStatus);
 router.get('/addons', authenticateToken, subscriptionController.getAddons);
+router.get('/addon-status', authenticateToken, subscriptionController.getAddonStatus);
+router.post('/addon-trial', authenticateToken, subscriptionController.startAddonTrial);
 router.post('/create-checkout', authenticateToken, subscriptionController.createCheckoutSession);
 router.post('/create-addon-checkout', authenticateToken, subscriptionController.createAddonCheckout);
 router.post('/portal', authenticateToken, subscriptionController.createPortalSession);

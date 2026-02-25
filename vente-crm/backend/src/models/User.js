@@ -121,6 +121,21 @@ module.exports = (sequelize, DataTypes) => {
     subscription_ends_at: {
       type: DataTypes.DATE,
       allowNull: true
+    },
+    addon_euer_trial_ends_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      comment: 'EUeR Add-On: Testphase endet'
+    },
+    addon_euer_active: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      comment: 'EUeR Add-On: aktives Abo'
+    },
+    addon_euer_stripe_subscription_id: {
+      type: DataTypes.STRING(255),
+      allowNull: true
     }
   }, {
     tableName: 'users',

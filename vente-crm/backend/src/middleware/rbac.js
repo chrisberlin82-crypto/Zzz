@@ -1,12 +1,13 @@
 /**
  * Rollenbasierte Zugriffskontrolle (RBAC)
- * Hierarchie: ADMIN > STANDORTLEITUNG > TEAMLEAD > VERTRIEB
+ * Hierarchie: ADMIN > STANDORTLEITUNG > TEAMLEAD > BACKOFFICE > VERTRIEB
  */
 
 const ROLE_HIERARCHY = {
   ADMIN: 5,
   STANDORTLEITUNG: 4,
   TEAMLEAD: 3,
+  BACKOFFICE: 2,
   VERTRIEB: 1
 };
 
@@ -59,6 +60,16 @@ const ROLE_PERMISSIONS = {
     'territories:read', 'territories:assign', 'territories:read_own',
     'signatures:read', 'signatures:create',
     'dashboard:read', 'dashboard:read_all',
+    'reports:read'
+  ],
+  BACKOFFICE: [
+    'customers:read', 'customers:create', 'customers:update',
+    'contracts:read', 'contracts:create', 'contracts:update',
+    'products:read',
+    'expenses:read', 'expenses:create', 'expenses:update', 'expenses:delete', 'expenses:export',
+    'addresses:read',
+    'signatures:read',
+    'dashboard:read',
     'reports:read'
   ],
   VERTRIEB: [
@@ -152,7 +163,7 @@ const requireMinRole = (minRole) => {
 
 /**
  * Filtert Daten basierend auf Rolle und Gebietszugehoerigkeiten
- * VERTRIEB: nur eigene Daten
+ * VERTRIEB/BACKOFFICE: nur eigene Daten
  * STANDORTLEITUNG/TEAMLEAD: eigene + Daten der Vertriebler in eigenen Gebieten
  * ADMIN: alle Daten
  */
@@ -163,8 +174,8 @@ const scopeToUser = async (req, res, next) => {
 
   const userLevel = ROLE_HIERARCHY[req.user.role] || 0;
 
-  // VERTRIEB sieht nur eigene Daten
-  if (userLevel <= 1) {
+  // VERTRIEB/BACKOFFICE sieht nur eigene Daten
+  if (userLevel <= 2) {
     req.scopeUserId = req.user.id;
   }
   // STANDORTLEITUNG/TEAMLEAD: eigene + Gebiets-Mitglieder
@@ -174,9 +185,10 @@ const scopeToUser = async (req, res, next) => {
       const memberIds = await getTeamMemberIds(req.app.locals.db, req.user.id, req.user.role);
       if (memberIds) {
         req.scopeUserIds = memberIds; // Array von IDs
+        req.scopeUserId = memberIds;  // Auch als einzelner Wert fuer abwaertskompatibilitaet
       }
     } catch (err) {
-      // Bei Fehler: kein Scope-Filter (sieht alles)
+      req.scopeUserId = req.user.id;
     }
   }
   // ADMIN: kein Filter

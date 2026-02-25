@@ -461,6 +461,89 @@ const createAddonCheckout = async (req, res) => {
   }
 };
 
+/**
+ * POST /api/subscription/addon-trial - Add-On 30 Tage Testphase starten
+ */
+const startAddonTrial = async (req, res) => {
+  try {
+    const { addon_id } = req.body;
+    if (addon_id !== 'EUER_RECHNER') {
+      return res.status(400).json({ success: false, error: 'Ungueltiges Add-On' });
+    }
+
+    const { User } = req.app.locals.db;
+    const user = await User.findByPk(req.user.id);
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'Benutzer nicht gefunden' });
+    }
+
+    // Pruefen ob Trial bereits gestartet wurde
+    if (user.addon_euer_trial_ends_at || user.addon_euer_active) {
+      return res.status(400).json({ success: false, error: 'Testphase wurde bereits gestartet' });
+    }
+
+    const trialEndsAt = new Date();
+    trialEndsAt.setDate(trialEndsAt.getDate() + 30);
+
+    await user.update({ addon_euer_trial_ends_at: trialEndsAt });
+
+    logger.info(`EUeR Add-On trial started for user ${user.id}, ends at ${trialEndsAt.toISOString()}`);
+
+    res.json({
+      success: true,
+      message: 'EUeR-Rechner Testphase gestartet (30 Tage)',
+      data: {
+        trial_ends_at: trialEndsAt,
+        trial_days_left: 30
+      }
+    });
+  } catch (error) {
+    logger.error('Start addon trial error:', error);
+    res.status(500).json({ success: false, error: 'Testphase konnte nicht gestartet werden' });
+  }
+};
+
+/**
+ * GET /api/subscription/addon-status - Add-On Status pruefen
+ */
+const getAddonStatus = async (req, res) => {
+  try {
+    const { User } = req.app.locals.db;
+    const user = await User.findByPk(req.user.id, {
+      attributes: ['id', 'addon_euer_trial_ends_at', 'addon_euer_active']
+    });
+
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'Benutzer nicht gefunden' });
+    }
+
+    const now = new Date();
+    const trialEndsAt = user.addon_euer_trial_ends_at ? new Date(user.addon_euer_trial_ends_at) : null;
+    const isTrialActive = trialEndsAt && trialEndsAt > now;
+    const trialDaysLeft = trialEndsAt ? Math.max(0, Math.ceil((trialEndsAt - now) / (1000 * 60 * 60 * 24))) : 0;
+    const isActive = user.addon_euer_active || isTrialActive;
+    const trialExpired = trialEndsAt && trialEndsAt <= now && !user.addon_euer_active;
+
+    res.json({
+      success: true,
+      data: {
+        euer: {
+          is_active: isActive,
+          is_trial: isTrialActive,
+          is_paid: user.addon_euer_active,
+          trial_expired: trialExpired,
+          trial_ends_at: trialEndsAt,
+          trial_days_left: trialDaysLeft,
+          never_started: !trialEndsAt && !user.addon_euer_active
+        }
+      }
+    });
+  } catch (error) {
+    logger.error('Get addon status error:', error);
+    res.status(500).json({ success: false, error: 'Add-On Status konnte nicht geladen werden' });
+  }
+};
+
 module.exports = {
   getSubscriptionStatus,
   getPrices,
@@ -469,6 +552,8 @@ module.exports = {
   createAddonCheckout,
   createPortalSession,
   handleWebhook,
+  startAddonTrial,
+  getAddonStatus,
   ROLE_PRICES,
   ADDON_PRODUCTS,
   VAT_RATE,

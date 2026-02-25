@@ -27,8 +27,10 @@ const getExpenses = async (req, res) => {
     const where = {};
     const offset = (page - 1) * limit;
 
-    // Scope: User-Filter
-    if (req.scopeUserId) {
+    // Scope: User-Filter (scopeUserIds = Array fuer Team, scopeUserId = einzelner User)
+    if (req.scopeUserIds && Array.isArray(req.scopeUserIds)) {
+      where.user_id = { [Op.in]: req.scopeUserIds };
+    } else if (req.scopeUserId) {
       where.user_id = req.scopeUserId;
     } else if (req.query.user_id) {
       where.user_id = req.query.user_id;
@@ -207,8 +209,13 @@ const exportExpenses = async (req, res) => {
     const { year, quarter, format = 'json' } = req.query;
 
     const where = {};
-    if (req.scopeUserId) where.user_id = req.scopeUserId;
-    else if (req.query.user_id) where.user_id = req.query.user_id;
+    if (req.scopeUserIds && Array.isArray(req.scopeUserIds)) {
+      where.user_id = { [Op.in]: req.scopeUserIds };
+    } else if (req.scopeUserId) {
+      where.user_id = req.scopeUserId;
+    } else if (req.query.user_id) {
+      where.user_id = req.query.user_id;
+    }
 
     if (year) {
       if (quarter) {
@@ -289,7 +296,41 @@ const exportExpenses = async (req, res) => {
   }
 };
 
+const uploadReceipt = async (req, res) => {
+  try {
+    const { Expense } = req.app.locals.db;
+    if (!req.file) {
+      return res.status(400).json({ success: false, error: 'Keine Datei hochgeladen' });
+    }
+
+    const where = { id: req.params.id };
+    if (req.scopeUserIds && Array.isArray(req.scopeUserIds)) {
+      where.user_id = { [Op.in]: req.scopeUserIds };
+    } else if (req.scopeUserId) {
+      where.user_id = req.scopeUserId;
+    }
+
+    const expense = await Expense.findOne({ where });
+    if (!expense) {
+      return res.status(404).json({ success: false, error: 'Ausgabe nicht gefunden' });
+    }
+
+    const receiptUrl = `/uploads/receipts/${req.file.filename}`;
+    await expense.update({ receipt_url: receiptUrl });
+
+    logger.info(`Receipt uploaded for expense ${expense.id} by user ${req.user.id}`);
+    res.json({
+      success: true,
+      message: 'Beleg erfolgreich hochgeladen',
+      data: { receipt_url: receiptUrl }
+    });
+  } catch (error) {
+    logger.error('Upload receipt error:', error);
+    res.status(500).json({ success: false, error: 'Beleg konnte nicht hochgeladen werden' });
+  }
+};
+
 module.exports = {
   getExpenses, createExpense, updateExpense, deleteExpense,
-  getCategories, exportExpenses
+  getCategories, exportExpenses, uploadReceipt
 };

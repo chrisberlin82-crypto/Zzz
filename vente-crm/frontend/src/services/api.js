@@ -101,7 +101,10 @@ export const expenseAPI = {
   update: (id, data) => api.put(`/expenses/${id}`, data),
   delete: (id) => api.delete(`/expenses/${id}`),
   getCategories: () => api.get('/expenses/categories'),
-  export: (params) => api.get('/expenses/export', { params, responseType: 'blob' })
+  export: (params) => api.get('/expenses/export', { params, responseType: 'blob' }),
+  uploadReceipt: (id, formData) => api.post(`/expenses/${id}/receipt`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  })
 };
 
 // Adresslisten
@@ -177,7 +180,9 @@ export const subscriptionAPI = {
   getPrices: () => api.get('/subscription/prices'),
   createCheckout: (data) => api.post('/subscription/create-checkout', data),
   createPortal: () => api.post('/subscription/portal'),
-  createAddonCheckout: (data) => api.post('/subscription/create-addon-checkout', data)
+  createAddonCheckout: (data) => api.post('/subscription/create-addon-checkout', data),
+  getAddonStatus: () => api.get('/subscription/addon-status'),
+  startAddonTrial: (data) => api.post('/subscription/addon-trial', data)
 };
 
 // Health

@@ -19,6 +19,7 @@ const ROLE_LABELS = {
   ADMIN: 'Administrator',
   STANDORTLEITUNG: 'Standortleitung',
   TEAMLEAD: 'Teamleiter',
+  BACKOFFICE: 'Backoffice',
   VERTRIEB: 'Vertriebsmitarbeiter'
 };
 
@@ -26,9 +27,8 @@ const getMenuItems = (role) => {
   const items = [
     { text: 'Dashboard', icon: <Dashboard />, path: '/dashboard', permission: 'dashboard:read' },
     { text: 'Kunden', icon: <People />, path: '/customers', permission: 'customers:read' },
-    { text: 'Verträge', icon: <Description />, path: '/contracts', permission: 'contracts:read' },
+    { text: 'Vertraege', icon: <Description />, path: '/contracts', permission: 'contracts:read' },
     { text: 'Produkte', icon: <Inventory />, path: '/products', permission: 'products:read' },
-    { text: 'EÜR / Ausgaben', icon: <AccountBalance />, path: '/expenses', permission: 'expenses:read' },
     { text: 'Adresslisten', icon: <Map />, path: '/address-lists', permission: 'addresses:read' },
   ];
 
@@ -39,21 +39,17 @@ const getMenuItems = (role) => {
     items.push({ text: 'Meine Gebiete', icon: <Assignment />, path: '/territory-overview', permission: 'territories:read' });
   }
 
-  if (role !== 'ADMIN') {
-    items.push({ text: 'Statistiken', icon: <BarChart />, path: '/dashboard', permission: 'reports:read' });
-  }
   return items;
 };
 
-// Admin-Bereich: Gebiete immer anzeigen fuer ADMIN- und STANDORTLEITUNG-Rolle
+// Admin-Bereich
 const adminItems = [
   { text: 'Gebietsverwaltung', icon: <LocationOn />, path: '/territories', roles: ['ADMIN', 'STANDORTLEITUNG'] },
   { text: 'Team Live', icon: <Groups />, path: '/team-map', roles: ['ADMIN', 'STANDORTLEITUNG', 'TEAMLEAD'] },
   { text: 'Benutzer', icon: <Person />, path: '/users', roles: ['ADMIN', 'STANDORTLEITUNG'] },
   { text: 'Statistiken', icon: <BarChart />, path: '/dashboard', roles: ['ADMIN'] },
+  { text: 'EUeR / Ausgaben', icon: <AccountBalance />, path: '/expenses', roles: ['ADMIN', 'STANDORTLEITUNG', 'TEAMLEAD', 'BACKOFFICE', 'VERTRIEB'], isAddon: true },
 ];
-
-/* adminItems ist jetzt oben bei getMenuItems definiert (rollenbasiert) */
 
 const bottomItems = [
   { text: 'Abonnement', icon: <CreditCard />, path: '/subscription' }
