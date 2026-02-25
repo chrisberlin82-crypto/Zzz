@@ -23,6 +23,9 @@ const TeamMapPage = lazy(() => import('./pages/TeamMapPage'));
 const SaleWizardPage = lazy(() => import('./pages/SaleWizardPage'));
 const AddressDetailPage = lazy(() => import('./pages/AddressDetailPage'));
 const SubscriptionPage = lazy(() => import('./pages/SubscriptionPage'));
+const TerritoryManagementPage = lazy(() => import('./pages/TerritoryManagementPage'));
+const TerritoryOverviewPage = lazy(() => import('./pages/TerritoryOverviewPage'));
+const MyTerritoryMapPage = lazy(() => import('./pages/MyTerritoryMapPage'));
 
 const Loading = () => (
   <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
@@ -74,6 +77,9 @@ const App = () => {
           <Route path="profile" element={<ProfilePage />} />
           <Route path="subscription" element={<SubscriptionPage />} />
           <Route path="sale" element={<SaleWizardPage />} />
+          <Route path="territories" element={<TerritoryManagementPage />} />
+          <Route path="territory-overview" element={<TerritoryOverviewPage />} />
+          <Route path="my-territory" element={<MyTerritoryMapPage />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/dashboard" replace />} />

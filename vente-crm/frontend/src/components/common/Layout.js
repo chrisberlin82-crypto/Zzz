@@ -8,7 +8,7 @@ import {
 import {
   Menu as MenuIcon, Dashboard, People, Description, Inventory,
   AccountBalance, Map, Person, ExitToApp, ChevronLeft, BarChart,
-  Groups, CreditCard
+  Groups, CreditCard, LocationOn, Assignment
 } from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
 import { userAPI } from '../../services/api';
@@ -22,17 +22,29 @@ const ROLE_LABELS = {
   VERTRIEB: 'Vertriebsmitarbeiter'
 };
 
-const getMenuItems = (role) => [
-  { text: 'Dashboard', icon: <Dashboard />, path: '/dashboard', permission: 'dashboard:read' },
-  { text: 'Kunden', icon: <People />, path: '/customers', permission: 'customers:read' },
-  { text: 'Verträge', icon: <Description />, path: '/contracts', permission: 'contracts:read' },
-  { text: 'Produkte', icon: <Inventory />, path: '/products', permission: 'products:read' },
-  { text: 'EÜR / Ausgaben', icon: <AccountBalance />, path: '/expenses', permission: 'expenses:read' },
-  { text: role === 'VERTRIEB' ? 'Mein Gebiet' : 'Adresslisten', icon: <Map />, path: '/address-lists', permission: 'addresses:read' },
-  { text: 'Statistiken', icon: <BarChart />, path: '/dashboard', permission: 'reports:read' },
-];
+const getMenuItems = (role) => {
+  const items = [
+    { text: 'Dashboard', icon: <Dashboard />, path: '/dashboard', permission: 'dashboard:read' },
+    { text: 'Kunden', icon: <People />, path: '/customers', permission: 'customers:read' },
+    { text: 'Verträge', icon: <Description />, path: '/contracts', permission: 'contracts:read' },
+    { text: 'Produkte', icon: <Inventory />, path: '/products', permission: 'products:read' },
+    { text: 'EÜR / Ausgaben', icon: <AccountBalance />, path: '/expenses', permission: 'expenses:read' },
+    { text: 'Adresslisten', icon: <Map />, path: '/address-lists', permission: 'addresses:read' },
+  ];
+
+  // Rollenbasierte Gebiets-Navigation
+  if (role === 'VERTRIEB') {
+    items.push({ text: 'Mein Gebiet', icon: <LocationOn />, path: '/my-territory', permission: 'territories:read_own' });
+  } else if (role === 'STANDORTLEITUNG' || role === 'TEAMLEAD') {
+    items.push({ text: 'Meine Gebiete', icon: <Assignment />, path: '/territory-overview', permission: 'territories:read' });
+  }
+
+  items.push({ text: 'Statistiken', icon: <BarChart />, path: '/dashboard', permission: 'reports:read' });
+  return items;
+};
 
 const adminItems = [
+  { text: 'Gebiete', icon: <LocationOn />, path: '/territories', permission: 'territories:create' },
   { text: 'Team Live', icon: <Groups />, path: '/team-map', permission: 'users:read' },
   { text: 'Benutzer', icon: <Person />, path: '/users', permission: 'users:read' },
 ];

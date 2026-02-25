@@ -22,6 +22,8 @@ const ROLE_PERMISSIONS = {
     'expenses:read_all',
     'addresses:read', 'addresses:create', 'addresses:update', 'addresses:delete',
     'addresses:read_all', 'addresses:import',
+    'territories:read', 'territories:create', 'territories:update', 'territories:delete',
+    'territories:assign', 'territories:read_own',
     'signatures:read', 'signatures:create',
     'audit:read',
     'dashboard:read', 'dashboard:read_all',
@@ -38,6 +40,7 @@ const ROLE_PERMISSIONS = {
     'expenses:read_all',
     'addresses:read', 'addresses:create', 'addresses:update', 'addresses:delete',
     'addresses:read_all', 'addresses:import',
+    'territories:read', 'territories:assign', 'territories:read_own',
     'signatures:read', 'signatures:create',
     'audit:read',
     'dashboard:read', 'dashboard:read_all',
@@ -53,6 +56,7 @@ const ROLE_PERMISSIONS = {
     'expenses:read_all',
     'addresses:read', 'addresses:create', 'addresses:update', 'addresses:delete',
     'addresses:read_all', 'addresses:import',
+    'territories:read', 'territories:assign', 'territories:read_own',
     'signatures:read', 'signatures:create',
     'dashboard:read', 'dashboard:read_all',
     'reports:read'
@@ -63,6 +67,7 @@ const ROLE_PERMISSIONS = {
     'products:read',
     'expenses:read', 'expenses:create', 'expenses:update', 'expenses:delete', 'expenses:export',
     'addresses:read', 'addresses:create', 'addresses:update', 'addresses:import',
+    'territories:read_own',
     'signatures:read', 'signatures:create',
     'dashboard:read'
   ]

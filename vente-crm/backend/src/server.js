@@ -85,6 +85,7 @@ const signatureRoutes = require('./routes/signatures');
 const dashboardRoutes = require('./routes/dashboard');
 const userRoutes = require('./routes/users');
 const subscriptionRoutes = require('./routes/subscription');
+const territoryRoutes = require('./routes/territories');
 
 // Stripe Webhook (raw body noetig - VOR json parsing)
 app.use('/api/subscription/webhook', express.raw({ type: 'application/json' }));
@@ -103,6 +104,7 @@ app.use('/api/address-lists', addressRoutes);
 app.use('/api/signatures', signatureRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/territories', territoryRoutes);
 
 // Health check
 app.get('/api/health', async (req, res) => {

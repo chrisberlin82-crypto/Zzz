@@ -143,6 +143,24 @@ export const userAPI = {
   getSignedLocations: () => api.get('/users/signed-locations')
 };
 
+// Gebiete / Territories
+export const territoryAPI = {
+  // Admin: Alle Gebietszuweisungen
+  getAll: (params) => api.get('/territories', { params }),
+  create: (data) => api.post('/territories', data),
+  update: (id, data) => api.put(`/territories/${id}`, data),
+  delete: (id) => api.delete(`/territories/${id}`),
+  // Standortleiter/Teamleiter: Meine Gebietszuweisungen
+  getMyAssignments: () => api.get('/territories/my-assignments'),
+  getAddresses: (id) => api.get(`/territories/${id}/addresses`),
+  // Vertriebler zuweisen
+  assignSalesperson: (data) => api.post('/territories/salesperson', data),
+  updateSalesperson: (id, data) => api.put(`/territories/salesperson/${id}`, data),
+  deleteSalesperson: (id) => api.delete(`/territories/salesperson/${id}`),
+  // Vertriebler: Mein Gebiet
+  getMyTerritory: () => api.get('/territories/my-territory')
+};
+
 // Subscription / Abo
 export const subscriptionAPI = {
   getStatus: () => api.get('/subscription/status'),

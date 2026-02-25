@@ -36,6 +36,8 @@ const AddressList = require('./AddressList')(sequelize, Sequelize.DataTypes);
 const Address = require('./Address')(sequelize, Sequelize.DataTypes);
 const Signature = require('./Signature')(sequelize, Sequelize.DataTypes);
 const AuditLog = require('./AuditLog')(sequelize, Sequelize.DataTypes);
+const TerritoryAssignment = require('./TerritoryAssignment')(sequelize, Sequelize.DataTypes);
+const SalespersonTerritory = require('./SalespersonTerritory')(sequelize, Sequelize.DataTypes);
 
 const db = {
   sequelize,
@@ -49,7 +51,9 @@ const db = {
   AddressList,
   Address,
   Signature,
-  AuditLog
+  AuditLog,
+  TerritoryAssignment,
+  SalespersonTerritory
 };
 
 // Define associations
@@ -96,5 +100,19 @@ Signature.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 // User -> AuditLogs (1:n)
 User.hasMany(AuditLog, { foreignKey: 'user_id', as: 'auditLogs' });
 AuditLog.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+// Territory Assignments: Admin -> Standortleitung/Teamlead
+User.hasMany(TerritoryAssignment, { foreignKey: 'assigned_to_user_id', as: 'territories' });
+TerritoryAssignment.belongsTo(User, { foreignKey: 'assigned_to_user_id', as: 'assignedTo' });
+User.hasMany(TerritoryAssignment, { foreignKey: 'assigned_by_user_id', as: 'assignedTerritories' });
+TerritoryAssignment.belongsTo(User, { foreignKey: 'assigned_by_user_id', as: 'assignedBy' });
+
+// Salesperson Territories: Standortleitung/Teamlead -> Vertriebler
+TerritoryAssignment.hasMany(SalespersonTerritory, { foreignKey: 'territory_assignment_id', as: 'salespersonTerritories' });
+SalespersonTerritory.belongsTo(TerritoryAssignment, { foreignKey: 'territory_assignment_id', as: 'territoryAssignment' });
+User.hasMany(SalespersonTerritory, { foreignKey: 'salesperson_user_id', as: 'myTerritories' });
+SalespersonTerritory.belongsTo(User, { foreignKey: 'salesperson_user_id', as: 'salesperson' });
+User.hasMany(SalespersonTerritory, { foreignKey: 'assigned_by_user_id', as: 'delegatedTerritories' });
+SalespersonTerritory.belongsTo(User, { foreignKey: 'assigned_by_user_id', as: 'delegatedBy' });
 
 module.exports = db;
