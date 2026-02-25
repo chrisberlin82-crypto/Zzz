@@ -24,6 +24,15 @@ const requireActiveSubscription = async (req, res, next) => {
       return next();
     }
 
+    // TEMPORAER: Abo-Pruefung deaktiviert bis Stripe (HTTPS/SSL) eingerichtet ist
+    // Alle User haben Zugang - nach SSL-Setup wieder aktivieren
+    const STRIPE_CONFIGURED = !!(process.env.STRIPE_SECRET_KEY && process.env.STRIPE_WEBHOOK_SECRET);
+
+    if (!STRIPE_CONFIGURED) {
+      // Stripe noch nicht konfiguriert - alle User durchlassen
+      return next();
+    }
+
     const now = new Date();
     const trialEndsAt = user.trial_ends_at ? new Date(user.trial_ends_at) : null;
     const isTrialActive = user.subscription_status === 'TRIAL' && trialEndsAt && trialEndsAt > now;
