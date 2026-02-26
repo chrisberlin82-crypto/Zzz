@@ -146,11 +146,12 @@ start_containers() {
   log_info "Container starten..."
   docker compose up -d $BUILD_FLAG
 
-  # Warten bis Backend gesund ist
+  # Warten bis Backend gesund ist (via Nginx auf Port 80)
   log_info "Warte auf Backend..."
   local retries=0
   while [ $retries -lt 30 ]; do
-    if docker exec vente-backend wget -q -O- http://localhost:3001/api/health 2>/dev/null | grep -q "ok\|healthy\|success"; then
+    if curl -sf http://localhost/api/health 2>/dev/null | grep -q '"status":"ok"'; then
+      log_ok "Backend laeuft und ist gesund"
       break
     fi
     retries=$((retries + 1))
@@ -158,7 +159,7 @@ start_containers() {
   done
 
   if [ $retries -ge 30 ]; then
-    log_warn "Backend antwortet noch nicht - Container-Status pruefen"
+    log_warn "Backend antwortet noch nicht - Container-Logs pruefen: docker logs vente-backend --tail 20"
   fi
 }
 

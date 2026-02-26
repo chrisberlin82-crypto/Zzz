@@ -85,7 +85,7 @@ module.exports = {
       updated_at: now,
     }));
 
-    await queryInterface.bulkInsert('expense_categories', records);
+    await queryInterface.bulkInsert('expense_categories', records, { ignoreDuplicates: true });
   },
 
   async down(queryInterface) {

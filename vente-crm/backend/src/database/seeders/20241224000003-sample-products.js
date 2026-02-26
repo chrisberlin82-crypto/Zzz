@@ -153,7 +153,7 @@ module.exports = {
       updated_at: now,
     }));
 
-    await queryInterface.bulkInsert('products', records);
+    await queryInterface.bulkInsert('products', records, { ignoreDuplicates: true });
   },
 
   async down(queryInterface) {

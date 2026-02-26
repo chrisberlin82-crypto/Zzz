@@ -44,7 +44,7 @@ module.exports = {
       updated_at: now,
     }));
 
-    await queryInterface.bulkInsert('customers', rows);
+    await queryInterface.bulkInsert('customers', rows, { ignoreDuplicates: true });
   },
 
   async down(queryInterface) {

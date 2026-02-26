@@ -49,6 +49,12 @@ module.exports = {
     const userId = users.length > 0 ? users[0].id : 1;
 
     // Adressliste erstellen
+    // Pruefen ob Adressliste bereits existiert
+    const [existing] = await queryInterface.sequelize.query(
+      "SELECT id FROM address_lists WHERE name = 'Friedrichstr. / Unter den Linden - Berlin Mitte' LIMIT 1"
+    );
+    if (existing.length > 0) return;
+
     await queryInterface.bulkInsert('address_lists', [{
       user_id: userId,
       name: 'Friedrichstr. / Unter den Linden - Berlin Mitte',
