@@ -38,6 +38,11 @@ const Signature = require('./Signature')(sequelize, Sequelize.DataTypes);
 const AuditLog = require('./AuditLog')(sequelize, Sequelize.DataTypes);
 const TerritoryAssignment = require('./TerritoryAssignment')(sequelize, Sequelize.DataTypes);
 const SalespersonTerritory = require('./SalespersonTerritory')(sequelize, Sequelize.DataTypes);
+const StreetUnit = require('./StreetUnit')(sequelize);
+const TerritoryRun = require('./TerritoryRun')(sequelize);
+const RunTerritory = require('./RunTerritory')(sequelize);
+const RunTerritoryUnit = require('./RunTerritoryUnit')(sequelize);
+const LocationPing = require('./LocationPing')(sequelize);
 
 const db = {
   sequelize,
@@ -53,7 +58,12 @@ const db = {
   Signature,
   AuditLog,
   TerritoryAssignment,
-  SalespersonTerritory
+  SalespersonTerritory,
+  StreetUnit,
+  TerritoryRun,
+  RunTerritory,
+  RunTerritoryUnit,
+  LocationPing
 };
 
 // Define associations
@@ -114,5 +124,22 @@ User.hasMany(SalespersonTerritory, { foreignKey: 'salesperson_user_id', as: 'myT
 SalespersonTerritory.belongsTo(User, { foreignKey: 'salesperson_user_id', as: 'salesperson' });
 User.hasMany(SalespersonTerritory, { foreignKey: 'assigned_by_user_id', as: 'delegatedTerritories' });
 SalespersonTerritory.belongsTo(User, { foreignKey: 'assigned_by_user_id', as: 'delegatedBy' });
+
+// Associations for new models (StreetUnit, TerritoryRun, RunTerritory, RunTerritoryUnit, LocationPing)
+StreetUnit.hasMany(RunTerritoryUnit, { foreignKey: 'street_unit_id', as: 'territoryUnits' });
+RunTerritoryUnit.belongsTo(StreetUnit, { foreignKey: 'street_unit_id', as: 'streetUnit' });
+
+TerritoryRun.belongsTo(User, { foreignKey: 'created_by_user_id', as: 'createdBy' });
+TerritoryRun.hasMany(RunTerritory, { foreignKey: 'run_id', as: 'territories' });
+TerritoryRun.hasMany(LocationPing, { foreignKey: 'run_id', as: 'pings' });
+
+RunTerritory.belongsTo(TerritoryRun, { foreignKey: 'run_id', as: 'run' });
+RunTerritory.belongsTo(User, { foreignKey: 'rep_user_id', as: 'rep' });
+RunTerritory.hasMany(RunTerritoryUnit, { foreignKey: 'run_territory_id', as: 'units' });
+
+RunTerritoryUnit.belongsTo(RunTerritory, { foreignKey: 'run_territory_id', as: 'territory' });
+
+LocationPing.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+LocationPing.belongsTo(TerritoryRun, { foreignKey: 'run_id', as: 'run' });
 
 module.exports = db;
