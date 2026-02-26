@@ -14,6 +14,7 @@
 #   ./deploy.sh --status     # Status aller Container
 #   ./deploy.sh --backup     # Datenbank-Backup erstellen
 #   ./deploy.sh --update     # Git pull + Neu-Build + Restart
+#   ./deploy.sh --reset-db   # DB-Volume loeschen + neu initialisieren
 # ===========================================
 
 set -e
@@ -67,14 +68,44 @@ check_dirs() {
 }
 
 # ===========================================
-# .env pruefen
+# Zufaelliges Passwort generieren
+# ===========================================
+generate_password() {
+  local length="${1:-32}"
+  # Sichere Zufallszeichen (alphanumerisch, keine Sonderzeichen fuer DB-Kompatibilitaet)
+  tr -dc 'A-Za-z0-9' < /dev/urandom | head -c "$length" 2>/dev/null || \
+    openssl rand -hex "$((length / 2))" 2>/dev/null || \
+    date +%s%N | sha256sum | head -c "$length"
+}
+
+# ===========================================
+# .env pruefen und Passwoerter generieren
 # ===========================================
 check_env() {
   if [ ! -f "$ENV_FILE" ]; then
-    log_warn ".env-Datei nicht gefunden, kopiere .env.example..."
+    log_warn ".env-Datei nicht gefunden, erstelle aus .env.example..."
     if [ -f "$CRM_DIR/.env.example" ]; then
       cp "$CRM_DIR/.env.example" "$ENV_FILE"
-      log_warn "Bitte .env-Datei anpassen: $ENV_FILE"
+
+      # Sichere Passwoerter automatisch generieren
+      local PG_PASS
+      PG_PASS=$(generate_password 32)
+      local REDIS_PASS
+      REDIS_PASS=$(generate_password 24)
+      local JWT_SEC
+      JWT_SEC=$(generate_password 48)
+      local JWT_REF
+      JWT_REF=$(generate_password 48)
+
+      # Platzhalter in .env ersetzen
+      sed -i "s|POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=${PG_PASS}|" "$ENV_FILE"
+      sed -i "s|DATABASE_URL=.*|DATABASE_URL=postgresql://vente_user:${PG_PASS}@postgres:5432/vente_crm|" "$ENV_FILE"
+      sed -i "s|REDIS_PASSWORD=.*|REDIS_PASSWORD=${REDIS_PASS}|" "$ENV_FILE"
+      sed -i "s|JWT_SECRET=.*|JWT_SECRET=${JWT_SEC}|" "$ENV_FILE"
+      sed -i "s|JWT_REFRESH_SECRET=.*|JWT_REFRESH_SECRET=${JWT_REF}|" "$ENV_FILE"
+
+      log_ok ".env erstellt mit sicheren Passwoertern"
+      log_info "Passwoerter gespeichert in: $ENV_FILE"
     else
       log_error "Keine .env.example gefunden!"
       exit 1
@@ -200,6 +231,32 @@ create_backup() {
 }
 
 # ===========================================
+# Datenbank-Volume zuruecksetzen
+# ===========================================
+reset_db() {
+  log_warn "ACHTUNG: Alle Daten in der Datenbank werden geloescht!"
+  read -p "Fortfahren? (j/N) " -n 1 -r
+  echo
+  if [[ ! $REPLY =~ ^[jJyY]$ ]]; then
+    log_info "Abgebrochen."
+    exit 0
+  fi
+
+  cd "$CRM_DIR"
+  log_info "Container stoppen..."
+  docker compose down 2>/dev/null || true
+  log_info "Datenbank-Volume loeschen..."
+  docker volume rm "$(basename "$CRM_DIR" | tr '[:upper:]' '[:lower:]')_postgres_data" 2>/dev/null || \
+    docker volume rm vente-crm_postgres_data 2>/dev/null || \
+    log_warn "Volume nicht gefunden - wird beim Start neu erstellt"
+  log_ok "Datenbank-Volume geloescht"
+  log_info "Starte mit frischer Datenbank..."
+  start_containers --build
+  run_migrations
+  show_status
+}
+
+# ===========================================
 # Git Update + Rebuild
 # ===========================================
 do_update() {
@@ -257,6 +314,13 @@ case "${1:-}" in
   --update)
     check_docker
     do_update
+    ;;
+  --reset-db)
+    check_docker
+    check_dirs
+    check_env
+    check_ssl
+    reset_db
     ;;
   --build)
     check_docker
