@@ -478,6 +478,101 @@ const deleteRun = async (req, res) => {
   }
 };
 
+// ====== Strassen + Adressen eines Runs (Admin-Uebersicht) ======
+
+const getRunAddresses = async (req, res) => {
+  try {
+    const { TerritoryRun, RunTerritory, RunTerritoryUnit, StreetUnit, Address, User } = req.app.locals.db;
+    const runId = req.params.runId || req.params.id;
+
+    const run = await TerritoryRun.findByPk(runId, {
+      include: [{
+        model: RunTerritory, as: 'territories',
+        include: [
+          { model: User, as: 'rep', attributes: ['id', 'first_name', 'last_name', 'email'] },
+          { model: RunTerritoryUnit, as: 'units', include: [{ model: StreetUnit, as: 'streetUnit' }] }
+        ]
+      }]
+    });
+
+    if (!run) return res.status(404).json({ success: false, error: 'Run nicht gefunden' });
+
+    const result = [];
+    for (const territory of run.territories) {
+      const streetNames = territory.units.map(u => u.streetUnit?.street).filter(Boolean);
+      const addresses = streetNames.length > 0
+        ? await Address.findAll({
+            where: { postal_code: run.plz, street: { [Op.in]: streetNames } },
+            order: [['street', 'ASC'], ['house_number', 'ASC']]
+          })
+        : [];
+
+      const streetMap = {};
+      addresses.forEach(addr => {
+        const key = addr.street || 'Unbekannt';
+        if (!streetMap[key]) streetMap[key] = { street: key, postal_code: addr.postal_code, city: addr.city, addresses: [] };
+        streetMap[key].addresses.push(addr);
+      });
+
+      const total = addresses.length;
+      const visited = addresses.filter(a => a.status !== 'NEW').length;
+      const converted = addresses.filter(a => a.status === 'CONVERTED').length;
+      const contacted = addresses.filter(a => a.status === 'CONTACTED').length;
+      const appointment = addresses.filter(a => a.status === 'APPOINTMENT').length;
+      const hhTotal = addresses.reduce((s, a) => s + (a.total_households || 0), 0);
+      const hhContacted = addresses.reduce((s, a) => s + (a.contacted_households || 0), 0);
+
+      result.push({
+        id: territory.id,
+        rep: territory.rep,
+        weight: territory.weight,
+        polygon_json: territory.polygon_json,
+        bounds_json: territory.bounds_json,
+        streets: Object.values(streetMap),
+        stats: { total, visited, converted, contacted, appointment, households_total: hhTotal, households_contacted: hhContacted }
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        run: { id: run.id, plz: run.plz, status: run.status, valid_from: run.valid_from, valid_until: run.valid_until },
+        territories: result
+      }
+    });
+  } catch (error) {
+    logger.error('Get run addresses error:', error);
+    res.status(500).json({ success: false, error: 'Run-Adressen konnten nicht geladen werden' });
+  }
+};
+
+// ====== Adresse direkt aktualisieren (fuer Territory-Views) ======
+
+const updateTerritoryAddress = async (req, res) => {
+  try {
+    const { Address } = req.app.locals.db;
+    const address = await Address.findByPk(req.params.addressId);
+    if (!address) return res.status(404).json({ success: false, error: 'Adresse nicht gefunden' });
+
+    const allowedFields = ['status', 'notes', 'contact_name', 'phone', 'email', 'visited_at', 'total_households', 'contacted_households'];
+    const updates = {};
+    allowedFields.forEach(f => {
+      if (req.body[f] !== undefined) updates[f] = req.body[f];
+    });
+
+    // Auto-set visited_at bei erstem Statuswechsel
+    if (updates.status && updates.status !== 'NEW' && !address.visited_at) {
+      updates.visited_at = new Date();
+    }
+
+    await address.update(updates);
+    res.json({ success: true, data: address });
+  } catch (error) {
+    logger.error('Update territory address error:', error);
+    res.status(500).json({ success: false, error: 'Adresse konnte nicht aktualisiert werden' });
+  }
+};
+
 module.exports = {
   createRun,
   assignRun,
@@ -485,5 +580,7 @@ module.exports = {
   getRuns,
   getRun,
   getMyActiveRun,
-  deleteRun
+  deleteRun,
+  getRunAddresses,
+  updateTerritoryAddress
 };

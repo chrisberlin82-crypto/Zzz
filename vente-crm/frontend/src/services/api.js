@@ -171,7 +171,9 @@ export const territoryAPI = {
   assignRun: (runId, data) => api.post(`/territories/runs/${runId}/assign`, data || {}),
   activateRun: (runId) => api.post(`/territories/runs/${runId}/activate`),
   deleteRun: (runId) => api.delete(`/territories/runs/${runId}`),
-  getMyActiveRun: () => api.get('/territories/runs/my-active')
+  getMyActiveRun: () => api.get('/territories/runs/my-active'),
+  getRunAddresses: (runId) => api.get(`/territories/runs/${runId}/addresses`),
+  updateTerritoryAddress: (addrId, data) => api.put(`/territories/addresses/${addrId}`, data)
 };
 
 // Energiedienstleister

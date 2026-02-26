@@ -4,13 +4,14 @@ import {
   Box, Typography, Button, Card, CardContent, Chip, IconButton, Dialog, DialogTitle,
   DialogContent, DialogActions, TextField, MenuItem, CircularProgress, Alert,
   Tooltip, Autocomplete, Grid, LinearProgress, Divider, Avatar, InputAdornment,
-  Switch, FormControlLabel, Collapse, Badge, Tabs, Tab
+  Switch, FormControlLabel, Collapse, Badge, Tabs, Tab, Table, TableBody,
+  TableCell, TableContainer, TableHead, TableRow, Paper
 } from '@mui/material';
 import {
   Add, Edit, Delete, Map, CheckCircle, Cancel, Schedule,
   ExpandMore, ExpandLess, Home, LocationOn, Groups, Search,
-  Person, Circle, Visibility, CalendarMonth, FiberManualRecord,
-  PlayArrow, Archive, AutoAwesome
+  Person, Visibility, CalendarMonth, FiberManualRecord,
+  PlayArrow, Archive, AutoAwesome, Apartment, Handshake
 } from '@mui/icons-material';
 import { MapContainer, TileLayer, Marker, Popup, Rectangle, GeoJSON } from 'react-leaflet';
 import L from 'leaflet';
@@ -24,7 +25,7 @@ const STATUS_COLORS = {
 };
 const STATUS_LABELS = {
   NEW: 'Neu', CONTACTED: 'Kontaktiert', APPOINTMENT: 'Termin',
-  NOT_INTERESTED: 'Kein Interesse', CONVERTED: 'Konvertiert', INVALID: 'Ungueltig'
+  NOT_INTERESTED: 'Kein Interesse', CONVERTED: 'Vertrag', INVALID: 'Ungueltig'
 };
 const ROLE_COLORS = {
   VERTRIEB: '#2E7D32', TEAMLEAD: '#A68836',
@@ -53,7 +54,7 @@ const getStatus = (item) => {
   return { label: 'Aktiv', color: '#2E7D32', icon: <CheckCircle />, chipColor: 'success' };
 };
 
-// ====== Strassen + Hausnummern ======
+// ====== Strassen + Hausnummern (Legacy-Gebiete) ======
 const StreetList = ({ streets, totalAddresses }) => {
   if (!streets?.length) return <Alert severity="info" sx={{ m: 1 }}>Keine Adressen vorhanden.</Alert>;
   const all = streets.flatMap(s => s.addresses);
@@ -97,7 +98,7 @@ const StreetList = ({ streets, totalAddresses }) => {
                       <Typography variant="caption" display="block">{addr.street} {addr.house_number}</Typography>
                       {addr.contact_name && <Typography variant="caption" display="block">Kontakt: {addr.contact_name}</Typography>}
                       <Typography variant="caption" display="block">Status: {STATUS_LABELS[addr.status] || 'Neu'}</Typography>
-                      {addr.total_households != null && <Typography variant="caption" display="block">HH: {addr.contacted_households || 0}/{addr.total_households}</Typography>}
+                      {addr.total_households != null && <Typography variant="caption" display="block">WE: {addr.contacted_households || 0}/{addr.total_households}</Typography>}
                       {addr.notes && <Typography variant="caption" display="block" sx={{ fontStyle: 'italic' }}>{addr.notes}</Typography>}
                     </Box>
                   }>
@@ -129,12 +130,164 @@ const ExpandedStreets = ({ territoryId }) => {
   return <StreetList streets={r.streets} totalAddresses={r.total_addresses} />;
 };
 
-// ====== Haupt-Komponente ======
+// ====== Run-Detail: Strassen pro Vertriebler (Admin-Ansicht) ======
+const RunStreetDetails = ({ runId }) => {
+  const { data, isLoading, isError } = useQuery(
+    ['run-addresses', runId],
+    () => territoryAPI.getRunAddresses(runId),
+    { enabled: !!runId }
+  );
+
+  if (isLoading) return <Box sx={{ p: 3, textAlign: 'center' }}><CircularProgress size={28} sx={{ color: BORDEAUX }} /></Box>;
+  if (isError) return <Alert severity="warning" sx={{ m: 1 }}>Strassen konnten nicht geladen werden.</Alert>;
+
+  const result = data?.data?.data;
+  if (!result?.territories?.length) return <Alert severity="info" sx={{ m: 1 }}>Noch keine Zuweisungen.</Alert>;
+
+  return (
+    <Box>
+      {result.territories.map((territory, tIdx) => {
+        const repName = territory.rep ? `${territory.rep.first_name} ${territory.rep.last_name}` : 'Unbekannt';
+        const color = T_COLORS[tIdx % T_COLORS.length];
+        const st = territory.stats || {};
+        const pct = st.total > 0 ? Math.round(st.visited / st.total * 100) : 0;
+
+        return (
+          <Card key={territory.id} variant="outlined" sx={{ mb: 2, borderLeft: `4px solid ${color}` }}>
+            <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+              {/* Rep-Header mit Stats */}
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5, flexWrap: 'wrap', gap: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Avatar sx={{ bgcolor: color, width: 32, height: 32, fontSize: '0.75rem', fontWeight: 700 }}>
+                    {(territory.rep?.first_name?.[0] || '') + (territory.rep?.last_name?.[0] || '')}
+                  </Avatar>
+                  <Box>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.2 }}>{repName}</Typography>
+                    <Typography variant="caption" color="text.secondary">{territory.rep?.email}</Typography>
+                  </Box>
+                </Box>
+                <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                  <Chip label={`${st.total || 0} Adr.`} size="small" sx={{ fontWeight: 600 }} />
+                  <Chip label={`${pct}% besucht`} size="small" color="info" variant="outlined" />
+                  <Chip icon={<Handshake sx={{ fontSize: '14px !important' }} />}
+                    label={`${st.converted || 0} Vertraege`} size="small"
+                    sx={{ bgcolor: '#5A0F1E20', color: '#5A0F1E', fontWeight: 600 }} />
+                  {st.households_total > 0 && (
+                    <Chip icon={<Apartment sx={{ fontSize: '14px !important' }} />}
+                      label={`${st.households_contacted || 0}/${st.households_total} WE`}
+                      size="small" variant="outlined" />
+                  )}
+                </Box>
+              </Box>
+
+              <LinearProgress variant="determinate" value={pct}
+                sx={{ mb: 2, height: 5, borderRadius: 3, bgcolor: '#E0D8D0',
+                  '& .MuiLinearProgress-bar': { bgcolor: color } }} />
+
+              {/* Strassen-Tabelle */}
+              {territory.streets?.length > 0 ? (
+                <TableContainer component={Paper} variant="outlined" sx={{ maxHeight: 400 }}>
+                  <Table size="small" stickyHeader>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell sx={{ fontWeight: 700, bgcolor: '#F5F3F0', fontSize: '0.8rem' }}>Strasse</TableCell>
+                        <TableCell sx={{ fontWeight: 700, bgcolor: '#F5F3F0', fontSize: '0.8rem' }}>Hausnummern</TableCell>
+                        <TableCell sx={{ fontWeight: 700, bgcolor: '#F5F3F0', fontSize: '0.8rem', width: 60 }}>WE</TableCell>
+                        <TableCell sx={{ fontWeight: 700, bgcolor: '#F5F3F0', fontSize: '0.8rem', width: 100 }}>Fortschritt</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {territory.streets.map((street, si) => {
+                        const sVisited = street.addresses.filter(a => a.status !== 'NEW').length;
+                        const sConverted = street.addresses.filter(a => a.status === 'CONVERTED').length;
+                        const sHH = street.addresses.reduce((s, a) => s + (a.total_households || 0), 0);
+                        const sPct = street.addresses.length > 0 ? Math.round(sVisited / street.addresses.length * 100) : 0;
+
+                        return (
+                          <TableRow key={si} hover>
+                            <TableCell sx={{ verticalAlign: 'top', py: 1 }}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                <LocationOn sx={{ fontSize: 16, color }} />
+                                <Box>
+                                  <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.85rem' }}>
+                                    {street.street}
+                                  </Typography>
+                                  <Typography variant="caption" color="text.secondary">
+                                    {street.postal_code} {street.city}
+                                  </Typography>
+                                </Box>
+                              </Box>
+                            </TableCell>
+                            <TableCell sx={{ py: 1 }}>
+                              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.3 }}>
+                                {street.addresses.map((addr, ai) => (
+                                  <Tooltip key={ai} arrow title={
+                                    <Box sx={{ fontSize: '0.75rem' }}>
+                                      <b>{addr.street} {addr.house_number}</b><br />
+                                      Status: {STATUS_LABELS[addr.status] || 'Neu'}<br />
+                                      {addr.total_households != null && <>WE: {addr.contacted_households || 0}/{addr.total_households}<br /></>}
+                                      {addr.status === 'CONVERTED' && <>Vertrag: Ja<br /></>}
+                                      {addr.contact_name && <>Kontakt: {addr.contact_name}<br /></>}
+                                      {addr.notes && <i>{addr.notes}</i>}
+                                    </Box>
+                                  }>
+                                    <Chip
+                                      label={addr.house_number || '?'}
+                                      size="small"
+                                      sx={{
+                                        fontSize: '0.7rem', height: 22, minWidth: 28,
+                                        bgcolor: (STATUS_COLORS[addr.status] || STATUS_COLORS.NEW) + '20',
+                                        color: STATUS_COLORS[addr.status] || STATUS_COLORS.NEW,
+                                        fontWeight: 600, cursor: 'default',
+                                        border: addr.status === 'CONVERTED' ? `2px solid ${STATUS_COLORS.CONVERTED}` : 'none'
+                                      }}
+                                    />
+                                  </Tooltip>
+                                ))}
+                              </Box>
+                            </TableCell>
+                            <TableCell sx={{ py: 1, textAlign: 'center' }}>
+                              <Typography variant="body2" sx={{ fontWeight: 500, fontSize: '0.8rem' }}>
+                                {sHH > 0 ? sHH : '-'}
+                              </Typography>
+                            </TableCell>
+                            <TableCell sx={{ py: 1 }}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                <LinearProgress variant="determinate" value={sPct}
+                                  sx={{ flex: 1, height: 4, borderRadius: 2, bgcolor: '#E0D8D0',
+                                    '& .MuiLinearProgress-bar': { bgcolor: sConverted > 0 ? '#5A0F1E' : '#2E7D32' } }} />
+                                <Typography variant="caption" sx={{ fontWeight: 600, minWidth: 30 }}>
+                                  {sPct}%
+                                </Typography>
+                              </Box>
+                              {sConverted > 0 && (
+                                <Typography variant="caption" sx={{ color: '#5A0F1E', fontWeight: 600, fontSize: '0.65rem' }}>
+                                  {sConverted} Vertrag{sConverted !== 1 ? 'e' : ''}
+                                </Typography>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              ) : (
+                <Alert severity="info" sx={{ py: 0.5 }}>Keine Strassen zugewiesen.</Alert>
+              )}
+            </CardContent>
+          </Card>
+        );
+      })}
+    </Box>
+  );
+};
+
 // ====== Runs-Tab Komponente ======
 const RunsTab = () => {
   const qc = useQueryClient();
   const [runDialogOpen, setRunDialogOpen] = useState(false);
-  const [selectedRun, setSelectedRun] = useState(null);
+  const [expandedRunId, setExpandedRunId] = useState(null);
   const [runForm, setRunForm] = useState({ plz: '', rep_ids: [], valid_from: '', valid_until: '' });
 
   const { data: runsData, isLoading: runsLoading } = useQuery('territory-runs', () => territoryAPI.getRuns());
@@ -149,7 +302,7 @@ const RunsTab = () => {
     onSuccess: () => { qc.invalidateQueries('territory-runs'); setRunDialogOpen(false); }
   });
   const assignRunM = useMutation(id => territoryAPI.assignRun(id), {
-    onSuccess: (res) => { qc.invalidateQueries('territory-runs'); setSelectedRun(res?.data?.data || null); }
+    onSuccess: () => qc.invalidateQueries('territory-runs')
   });
   const activateRunM = useMutation(id => territoryAPI.activateRun(id), {
     onSuccess: () => qc.invalidateQueries('territory-runs')
@@ -163,11 +316,6 @@ const RunsTab = () => {
     const e = new Date(Date.now() + 14 * 864e5).toISOString().split('T')[0];
     setRunForm({ plz: '', rep_ids: [], valid_from: t, valid_until: e });
     setRunDialogOpen(true);
-  };
-
-  const handleCreateRun = () => {
-    if (!runForm.plz || runForm.rep_ids.length === 0) return;
-    createRunM.mutate(runForm);
   };
 
   const RUN_STATUS = {
@@ -190,18 +338,16 @@ const RunsTab = () => {
         <Alert severity="info">Noch keine Runs erstellt. Erstellen Sie einen Run um PLZ automatisch zuzuteilen.</Alert>
       ) : runs.map(run => {
         const st = RUN_STATUS[run.status] || RUN_STATUS.draft;
-        const repIds = Array.isArray(run.rep_ids) ? run.rep_ids : (run.getDataValue?.('rep_ids') || run.rep_ids || '').toString().split(',').map(Number).filter(Boolean);
         const territories = run.territories || [];
+        const isExp = expandedRunId === run.id;
 
         return (
           <Card key={run.id} sx={{ mb: 2, borderLeft: `4px solid ${st.color}` }}>
-            <CardContent sx={{ p: 2.5, '&:last-child': { pb: 2.5 } }}>
+            <CardContent sx={{ p: 2.5, '&:last-child': { pb: isExp ? 0 : 2.5 } }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
                 <Box>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                    <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '1.1rem' }}>
-                      PLZ {run.plz}
-                    </Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '1.1rem' }}>PLZ {run.plz}</Typography>
                     <Chip icon={st.icon} label={st.label} size="small"
                       sx={{ bgcolor: st.color + '20', color: st.color, fontWeight: 600 }} />
                     <Chip label={`${run.num_reps} Reps`} size="small" variant="outlined" />
@@ -212,19 +358,24 @@ const RunsTab = () => {
                   </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', gap: 0.5 }}>
+                  {territories.length > 0 && (
+                    <Tooltip title="Strassen-Details">
+                      <IconButton size="small" onClick={() => setExpandedRunId(isExp ? null : run.id)} sx={{ color: BORDEAUX }}>
+                        {isExp ? <ExpandLess /> : <ExpandMore />}
+                      </IconButton>
+                    </Tooltip>
+                  )}
                   {run.status === 'draft' && (
                     <>
                       <Tooltip title="Auto-Zuteilen">
                         <IconButton size="small" onClick={() => assignRunM.mutate(run.id)}
-                          disabled={assignRunM.isLoading}
-                          sx={{ color: '#A68836' }}>
+                          disabled={assignRunM.isLoading} sx={{ color: '#A68836' }}>
                           {assignRunM.isLoading ? <CircularProgress size={18} /> : <AutoAwesome fontSize="small" />}
                         </IconButton>
                       </Tooltip>
                       <Tooltip title="Aktivieren">
                         <IconButton size="small" onClick={() => activateRunM.mutate(run.id)}
-                          disabled={territories.length === 0 || activateRunM.isLoading}
-                          sx={{ color: '#2E7D32' }}>
+                          disabled={territories.length === 0 || activateRunM.isLoading} sx={{ color: '#2E7D32' }}>
                           <PlayArrow fontSize="small" />
                         </IconButton>
                       </Tooltip>
@@ -234,15 +385,13 @@ const RunsTab = () => {
                     <Tooltip title="Loeschen">
                       <IconButton size="small" color="error" onClick={() => {
                         if (window.confirm('Run wirklich loeschen?')) deleteRunM.mutate(run.id);
-                      }}>
-                        <Delete fontSize="small" />
-                      </IconButton>
+                      }}><Delete fontSize="small" /></IconButton>
                     </Tooltip>
                   )}
                 </Box>
               </Box>
 
-              {/* Territories / Zuweisungen */}
+              {/* Zuweisungen */}
               {territories.length > 0 && (
                 <Box sx={{ mt: 1.5 }}>
                   <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>Zuweisungen:</Typography>
@@ -259,7 +408,7 @@ const RunsTab = () => {
                 </Box>
               )}
 
-              {/* Karte mit GeoJSON Polygonen */}
+              {/* Karte - deutlichere Gebiete */}
               {territories.length > 0 && territories.some(t => t.polygon_json) && (
                 <Box sx={{ mt: 2, borderRadius: 1, overflow: 'hidden', height: 300 }}>
                   <MapContainer
@@ -279,11 +428,12 @@ const RunsTab = () => {
                       try {
                         const poly = typeof t.polygon_json === 'string' ? JSON.parse(t.polygon_json) : t.polygon_json;
                         if (!poly) return null;
+                        const c = T_COLORS[i % T_COLORS.length];
                         return (
                           <GeoJSON key={`${t.id}-${i}`} data={poly}
-                            style={{ color: T_COLORS[i % T_COLORS.length], weight: 3, fillOpacity: 0.2, fillColor: T_COLORS[i % T_COLORS.length] }}>
+                            style={{ color: c, weight: 5, fillOpacity: 0.3, fillColor: c, opacity: 1 }}>
                             <Popup>
-                              <b>{t.rep?.first_name} {t.rep?.last_name}</b><br />
+                              <b style={{ fontSize: '14px' }}>{t.rep?.first_name} {t.rep?.last_name}</b><br />
                               Gewicht: {parseFloat(t.weight || 0).toFixed(0)}
                             </Popup>
                           </GeoJSON>
@@ -294,6 +444,18 @@ const RunsTab = () => {
                 </Box>
               )}
             </CardContent>
+
+            {/* Expandiert: Strassen pro Vertriebler */}
+            <Collapse in={isExp}>
+              <Divider />
+              <CardContent sx={{ p: 2.5 }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Home sx={{ fontSize: 22, color: BORDEAUX }} />
+                  Strassen & Hausnummern pro Vertriebler
+                </Typography>
+                <RunStreetDetails runId={run.id} />
+              </CardContent>
+            </Collapse>
           </Card>
         );
       })}
@@ -322,8 +484,7 @@ const RunsTab = () => {
                 return <Chip key={id} label={r ? `${r.first_name} ${r.last_name}` : `#${id}`} size="small"
                   sx={{ bgcolor: `${BORDEAUX}15`, color: BORDEAUX }} {...gtp({ index: i })} />;
               })}
-              renderInput={p => <TextField {...p} label="Vertriebler" required
-                helperText={`${reps.length} verfuegbar`} />}
+              renderInput={p => <TextField {...p} label="Vertriebler" required helperText={`${reps.length} verfuegbar`} />}
               renderOption={(props, id) => {
                 const r = reps.find(u => u.id === id);
                 return <li {...props} key={id}>{r ? `${r.first_name} ${r.last_name} (${r.email})` : `#${id}`}</li>;
@@ -339,7 +500,7 @@ const RunsTab = () => {
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={() => setRunDialogOpen(false)}>Abbrechen</Button>
-          <Button variant="contained" onClick={handleCreateRun}
+          <Button variant="contained" onClick={() => { if (runForm.plz && runForm.rep_ids.length > 0) createRunM.mutate(runForm); }}
             disabled={createRunM.isLoading || !runForm.plz || runForm.rep_ids.length === 0}
             sx={{ bgcolor: BORDEAUX, '&:hover': { bgcolor: '#5A0F1E' } }}>
             {createRunM.isLoading ? <CircularProgress size={20} color="inherit" /> : 'Run erstellen'}
@@ -357,6 +518,7 @@ const RunsTab = () => {
   );
 };
 
+// ====== Haupt-Komponente ======
 const TerritoryManagementPage = () => {
   const qc = useQueryClient();
   const [activeTab, setActiveTab] = useState(0);
@@ -398,7 +560,6 @@ const TerritoryManagementPage = () => {
     return { total: assignments.length, active, plz: plzSet.size, sp: spSet.size };
   }, [assignments]);
 
-  // Karten-Adressen
   const mapItems = plzSearch ? filtered : assignments;
   const mapIds = mapItems.map(a => a.id);
   const { data: addrData, isLoading: addrLoading } = useQuery(
@@ -456,7 +617,6 @@ const TerritoryManagementPage = () => {
 
   return (
     <Box>
-      {/* Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
         <Typography variant="h5" sx={{ fontWeight: 600 }}>
           <Map sx={{ mr: 1, verticalAlign: 'middle', color: BORDEAUX }} />Gebietsverwaltung
@@ -467,7 +627,6 @@ const TerritoryManagementPage = () => {
         )}
       </Box>
 
-      {/* Tabs */}
       <Tabs value={activeTab} onChange={(e, v) => setActiveTab(v)} sx={{ mb: 3,
         '& .MuiTab-root': { fontWeight: 600 },
         '& .Mui-selected': { color: BORDEAUX },
@@ -477,13 +636,9 @@ const TerritoryManagementPage = () => {
         <Tab label="Auto-Runs" icon={<AutoAwesome sx={{ fontSize: 18 }} />} iconPosition="start" />
       </Tabs>
 
-      {/* Runs-Tab */}
       {activeTab === 1 && <RunsTab />}
 
-      {/* Gebiete-Tab */}
       {activeTab === 0 && (<>
-
-      {/* Statistik-Karten */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
         {[
           { v: stats.total, l: 'Gebiete gesamt', c: BORDEAUX },
@@ -506,7 +661,6 @@ const TerritoryManagementPage = () => {
         </Alert>
       )}
 
-      {/* PLZ-Suche + Karten-Toggle */}
       <Card sx={{ mb: 3 }}>
         <CardContent sx={{ p: 2 }}>
           <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
@@ -528,7 +682,6 @@ const TerritoryManagementPage = () => {
         </CardContent>
       </Card>
 
-      {/* Karte */}
       {showMap && (
         <Card sx={{ mb: 3, overflow: 'hidden' }}>
           {addrLoading ? (
@@ -540,7 +693,9 @@ const TerritoryManagementPage = () => {
                 style={{ height: 450, width: '100%' }} scrollWheelZoom>
                 <TileLayer attribution='&copy; OpenStreetMap' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                 {mapBounds.map((tb, i) => (
-                  <Rectangle key={i} bounds={tb.b} pathOptions={{ color: T_COLORS[i % T_COLORS.length], weight: 3, fillOpacity: .1, dashArray: '8,4' }}>
+                  <Rectangle key={i} bounds={tb.b} pathOptions={{
+                    color: T_COLORS[i % T_COLORS.length], weight: 5, fillOpacity: 0.2, dashArray: '8,4', opacity: 1
+                  }}>
                     <Popup><b>{tb.name}</b>{tb.assignedTo && <div>{tb.assignedTo.first_name} {tb.assignedTo.last_name}</div>}</Popup>
                   </Rectangle>
                 ))}
@@ -571,7 +726,6 @@ const TerritoryManagementPage = () => {
         </Card>
       )}
 
-      {/* ====== GEBIETS-LISTE ====== */}
       <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>Gebiete ({filtered.length})</Typography>
 
       {filtered.length === 0 ? (
@@ -589,7 +743,6 @@ const TerritoryManagementPage = () => {
         return (
           <Card key={item.id} sx={{ mb: 2, borderLeft: `4px solid ${st.color}`, '&:hover': { boxShadow: 3 } }}>
             <CardContent sx={{ p: 2.5, '&:last-child': { pb: isExp ? 0 : 2.5 } }}>
-              {/* Zeile 1: Name + Status + Aktionen */}
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1.5 }}>
                 <Box sx={{ flex: 1, minWidth: 0 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 0.5, flexWrap: 'wrap' }}>
@@ -641,7 +794,6 @@ const TerritoryManagementPage = () => {
                 </Box>
               </Box>
 
-              {/* PLZ-Chips */}
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: spCount > 0 ? 1.5 : 0 }}>
                 {plzList.map((plz, i) => (
                   <Chip key={i} label={plz.trim()} size="small"
@@ -649,7 +801,6 @@ const TerritoryManagementPage = () => {
                 ))}
               </Box>
 
-              {/* Vertriebler */}
               {spCount > 0 && (
                 <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
                   <Typography variant="caption" color="text.secondary">Vertriebler:</Typography>
@@ -670,7 +821,6 @@ const TerritoryManagementPage = () => {
               )}
             </CardContent>
 
-            {/* Expandiert: Strassen + Hausnummern */}
             <Collapse in={isExp}>
               <Divider />
               <CardContent sx={{ p: 2 }}>
@@ -684,7 +834,6 @@ const TerritoryManagementPage = () => {
         );
       })}
 
-      {/* Dialog */}
       <Dialog open={dialogOpen} onClose={closeDialog} maxWidth="sm" fullWidth>
         <DialogTitle sx={{ fontWeight: 600 }}>{editItem ? 'Gebiet bearbeiten' : 'Neues Gebiet zuweisen'}</DialogTitle>
         <DialogContent>
@@ -738,7 +887,6 @@ const TerritoryManagementPage = () => {
           {createM.error?.response?.data?.error || updateM.error?.response?.data?.error || deleteM.error?.response?.data?.error || 'Fehler'}
         </Alert>
       )}
-
       </>)}
     </Box>
   );

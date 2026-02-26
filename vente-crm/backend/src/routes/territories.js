@@ -44,6 +44,18 @@ router.delete('/runs/:runId',
   runController.deleteRun
 );
 
+// Strassen + Adressen eines Runs (Admin-Uebersicht)
+router.get('/runs/:runId/addresses',
+  checkPermission('territories:read'),
+  runController.getRunAddresses
+);
+
+// Adresse direkt per ID aktualisieren (fuer Territory-Views)
+router.put('/addresses/:addressId',
+  checkPermission('territories:read_own'),
+  runController.updateTerritoryAddress
+);
+
 // ====== Verfuegbare PLZ aus Adresslisten ======
 router.get('/available-plz',
   checkPermission('territories:read'),
