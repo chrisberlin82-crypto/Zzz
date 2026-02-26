@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Build output
+frontend/build/
+
+# Logs
+logs/*.log
+
+# Uploads (keep directory structure)
+uploads/receipts/*
+uploads/signatures/*
+uploads/documents/*
+uploads/address-lists/*
+uploads/temp/*
+!uploads/*/.gitkeep
+
+# Backups
+backups/*.tar.gz
+
+# SSL certificates
+nginx/ssl/*.pem
+nginx/ssl/*.key
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
