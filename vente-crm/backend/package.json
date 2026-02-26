@@ -17,6 +17,7 @@
     "lint": "eslint src/ --ext .js"
   },
   "dependencies": {
+    "@turf/turf": "^7.3.4",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "crypto": "^1.0.1",

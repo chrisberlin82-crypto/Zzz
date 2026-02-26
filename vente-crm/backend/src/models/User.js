@@ -136,6 +136,15 @@ module.exports = (sequelize, DataTypes) => {
     addon_euer_stripe_subscription_id: {
       type: DataTypes.STRING(255),
       allowNull: true
+    },
+    is_in_area: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false
+    },
+    current_run_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true
     }
   }, {
     tableName: 'users',

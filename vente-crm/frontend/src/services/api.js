@@ -163,7 +163,15 @@ export const territoryAPI = {
   updateSalesperson: (id, data) => api.put(`/territories/salesperson/${id}`, data),
   deleteSalesperson: (id) => api.delete(`/territories/salesperson/${id}`),
   // Vertriebler: Mein Gebiet
-  getMyTerritory: () => api.get('/territories/my-territory')
+  getMyTerritory: () => api.get('/territories/my-territory'),
+  // Territory Runs
+  getRuns: (params) => api.get('/territories/runs', { params }),
+  getRun: (runId) => api.get(`/territories/runs/${runId}`),
+  createRun: (data) => api.post('/territories/runs', data),
+  assignRun: (runId, data) => api.post(`/territories/runs/${runId}/assign`, data || {}),
+  activateRun: (runId) => api.post(`/territories/runs/${runId}/activate`),
+  deleteRun: (runId) => api.delete(`/territories/runs/${runId}`),
+  getMyActiveRun: () => api.get('/territories/runs/my-active')
 };
 
 // Energiedienstleister

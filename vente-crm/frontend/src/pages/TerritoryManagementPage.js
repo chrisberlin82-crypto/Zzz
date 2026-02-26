@@ -4,14 +4,15 @@ import {
   Box, Typography, Button, Card, CardContent, Chip, IconButton, Dialog, DialogTitle,
   DialogContent, DialogActions, TextField, MenuItem, CircularProgress, Alert,
   Tooltip, Autocomplete, Grid, LinearProgress, Divider, Avatar, InputAdornment,
-  Switch, FormControlLabel, Collapse, Badge
+  Switch, FormControlLabel, Collapse, Badge, Tabs, Tab
 } from '@mui/material';
 import {
   Add, Edit, Delete, Map, CheckCircle, Cancel, Schedule,
   ExpandMore, ExpandLess, Home, LocationOn, Groups, Search,
-  Person, Circle, Visibility, CalendarMonth, FiberManualRecord
+  Person, Circle, Visibility, CalendarMonth, FiberManualRecord,
+  PlayArrow, Archive, AutoAwesome
 } from '@mui/icons-material';
-import { MapContainer, TileLayer, Marker, Popup, Rectangle } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Rectangle, GeoJSON } from 'react-leaflet';
 import L from 'leaflet';
 import { territoryAPI, userAPI } from '../services/api';
 import 'leaflet/dist/leaflet.css';
@@ -129,8 +130,236 @@ const ExpandedStreets = ({ territoryId }) => {
 };
 
 // ====== Haupt-Komponente ======
+// ====== Runs-Tab Komponente ======
+const RunsTab = () => {
+  const qc = useQueryClient();
+  const [runDialogOpen, setRunDialogOpen] = useState(false);
+  const [selectedRun, setSelectedRun] = useState(null);
+  const [runForm, setRunForm] = useState({ plz: '', rep_ids: [], valid_from: '', valid_until: '' });
+
+  const { data: runsData, isLoading: runsLoading } = useQuery('territory-runs', () => territoryAPI.getRuns());
+  const { data: pData } = useQuery('available-plz', () => territoryAPI.getAvailablePLZ());
+  const { data: uData } = useQuery('users-for-runs', () => userAPI.getAll());
+
+  const availablePLZ = pData?.data?.data || [];
+  const reps = (uData?.data?.data || []).filter(u => u.role === 'VERTRIEB' && u.is_active);
+  const runs = runsData?.data?.data || [];
+
+  const createRunM = useMutation(d => territoryAPI.createRun(d), {
+    onSuccess: () => { qc.invalidateQueries('territory-runs'); setRunDialogOpen(false); }
+  });
+  const assignRunM = useMutation(id => territoryAPI.assignRun(id), {
+    onSuccess: (res) => { qc.invalidateQueries('territory-runs'); setSelectedRun(res?.data?.data || null); }
+  });
+  const activateRunM = useMutation(id => territoryAPI.activateRun(id), {
+    onSuccess: () => qc.invalidateQueries('territory-runs')
+  });
+  const deleteRunM = useMutation(id => territoryAPI.deleteRun(id), {
+    onSuccess: () => qc.invalidateQueries('territory-runs')
+  });
+
+  const openCreateRun = () => {
+    const t = new Date().toISOString().split('T')[0];
+    const e = new Date(Date.now() + 14 * 864e5).toISOString().split('T')[0];
+    setRunForm({ plz: '', rep_ids: [], valid_from: t, valid_until: e });
+    setRunDialogOpen(true);
+  };
+
+  const handleCreateRun = () => {
+    if (!runForm.plz || runForm.rep_ids.length === 0) return;
+    createRunM.mutate(runForm);
+  };
+
+  const RUN_STATUS = {
+    draft: { label: 'Entwurf', color: '#A68836', icon: <Edit sx={{ fontSize: 14 }} /> },
+    active: { label: 'Aktiv', color: '#2E7D32', icon: <CheckCircle sx={{ fontSize: 14 }} /> },
+    archived: { label: 'Archiviert', color: '#999', icon: <Archive sx={{ fontSize: 14 }} /> }
+  };
+
+  if (runsLoading) return <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}><CircularProgress sx={{ color: BORDEAUX }} /></Box>;
+
+  return (
+    <Box>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <Typography variant="h6" sx={{ fontWeight: 600 }}>Territory Runs ({runs.length})</Typography>
+        <Button variant="contained" startIcon={<Add />} onClick={openCreateRun}
+          sx={{ bgcolor: BORDEAUX, '&:hover': { bgcolor: '#5A0F1E' } }}>Neuer Run</Button>
+      </Box>
+
+      {runs.length === 0 ? (
+        <Alert severity="info">Noch keine Runs erstellt. Erstellen Sie einen Run um PLZ automatisch zuzuteilen.</Alert>
+      ) : runs.map(run => {
+        const st = RUN_STATUS[run.status] || RUN_STATUS.draft;
+        const repIds = Array.isArray(run.rep_ids) ? run.rep_ids : (run.getDataValue?.('rep_ids') || run.rep_ids || '').toString().split(',').map(Number).filter(Boolean);
+        const territories = run.territories || [];
+
+        return (
+          <Card key={run.id} sx={{ mb: 2, borderLeft: `4px solid ${st.color}` }}>
+            <CardContent sx={{ p: 2.5, '&:last-child': { pb: 2.5 } }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+                <Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '1.1rem' }}>
+                      PLZ {run.plz}
+                    </Typography>
+                    <Chip icon={st.icon} label={st.label} size="small"
+                      sx={{ bgcolor: st.color + '20', color: st.color, fontWeight: 600 }} />
+                    <Chip label={`${run.num_reps} Reps`} size="small" variant="outlined" />
+                  </Box>
+                  <Typography variant="body2" color="text.secondary">
+                    {run.valid_from ? new Date(run.valid_from).toLocaleDateString('de-DE') : '?'} - {run.valid_until ? new Date(run.valid_until).toLocaleDateString('de-DE') : '?'}
+                    {run.createdBy && ` | Erstellt von ${run.createdBy.first_name} ${run.createdBy.last_name}`}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', gap: 0.5 }}>
+                  {run.status === 'draft' && (
+                    <>
+                      <Tooltip title="Auto-Zuteilen">
+                        <IconButton size="small" onClick={() => assignRunM.mutate(run.id)}
+                          disabled={assignRunM.isLoading}
+                          sx={{ color: '#A68836' }}>
+                          {assignRunM.isLoading ? <CircularProgress size={18} /> : <AutoAwesome fontSize="small" />}
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Aktivieren">
+                        <IconButton size="small" onClick={() => activateRunM.mutate(run.id)}
+                          disabled={territories.length === 0 || activateRunM.isLoading}
+                          sx={{ color: '#2E7D32' }}>
+                          <PlayArrow fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </>
+                  )}
+                  {run.status !== 'active' && (
+                    <Tooltip title="Loeschen">
+                      <IconButton size="small" color="error" onClick={() => {
+                        if (window.confirm('Run wirklich loeschen?')) deleteRunM.mutate(run.id);
+                      }}>
+                        <Delete fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  )}
+                </Box>
+              </Box>
+
+              {/* Territories / Zuweisungen */}
+              {territories.length > 0 && (
+                <Box sx={{ mt: 1.5 }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>Zuweisungen:</Typography>
+                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 0.5 }}>
+                    {territories.map((t, i) => (
+                      <Chip key={t.id} size="small"
+                        avatar={<Avatar sx={{ bgcolor: T_COLORS[i % T_COLORS.length], width: 22, height: 22, fontSize: '0.6rem' }}>
+                          {(t.rep?.first_name?.[0] || '') + (t.rep?.last_name?.[0] || '')}
+                        </Avatar>}
+                        label={`${t.rep?.first_name || ''} ${t.rep?.last_name || ''} (${parseFloat(t.weight || 0).toFixed(0)})`}
+                        sx={{ fontWeight: 500 }} />
+                    ))}
+                  </Box>
+                </Box>
+              )}
+
+              {/* Karte mit GeoJSON Polygonen */}
+              {territories.length > 0 && territories.some(t => t.polygon_json) && (
+                <Box sx={{ mt: 2, borderRadius: 1, overflow: 'hidden', height: 300 }}>
+                  <MapContainer
+                    center={(() => {
+                      try {
+                        const first = territories.find(t => t.bounds_json);
+                        if (first) {
+                          const b = typeof first.bounds_json === 'string' ? JSON.parse(first.bounds_json) : first.bounds_json;
+                          return [(b.north + b.south) / 2, (b.east + b.west) / 2];
+                        }
+                      } catch {}
+                      return [52.52, 13.405];
+                    })()}
+                    zoom={14} style={{ height: 300, width: '100%' }} scrollWheelZoom>
+                    <TileLayer attribution='&copy; OpenStreetMap' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                    {territories.map((t, i) => {
+                      try {
+                        const poly = typeof t.polygon_json === 'string' ? JSON.parse(t.polygon_json) : t.polygon_json;
+                        if (!poly) return null;
+                        return (
+                          <GeoJSON key={`${t.id}-${i}`} data={poly}
+                            style={{ color: T_COLORS[i % T_COLORS.length], weight: 3, fillOpacity: 0.2, fillColor: T_COLORS[i % T_COLORS.length] }}>
+                            <Popup>
+                              <b>{t.rep?.first_name} {t.rep?.last_name}</b><br />
+                              Gewicht: {parseFloat(t.weight || 0).toFixed(0)}
+                            </Popup>
+                          </GeoJSON>
+                        );
+                      } catch { return null; }
+                    })}
+                  </MapContainer>
+                </Box>
+              )}
+            </CardContent>
+          </Card>
+        );
+      })}
+
+      {/* Run-Erstellen-Dialog */}
+      <Dialog open={runDialogOpen} onClose={() => setRunDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ fontWeight: 600 }}>Neuen Run erstellen</DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+            <Autocomplete
+              options={availablePLZ.map(p => p.plz)}
+              value={runForm.plz || null}
+              onChange={(e, v) => setRunForm({ ...runForm, plz: v || '' })}
+              getOptionLabel={o => { const m = availablePLZ.find(p => p.plz === o); return m ? `${o} (${m.city})` : o; }}
+              renderInput={p => <TextField {...p} label="PLZ" required />}
+              freeSolo
+            />
+            <Autocomplete
+              multiple
+              options={reps.map(r => r.id)}
+              value={runForm.rep_ids}
+              onChange={(e, v) => setRunForm({ ...runForm, rep_ids: v })}
+              getOptionLabel={id => { const r = reps.find(u => u.id === id); return r ? `${r.first_name} ${r.last_name}` : `#${id}`; }}
+              renderTags={(val, gtp) => val.map((id, i) => {
+                const r = reps.find(u => u.id === id);
+                return <Chip key={id} label={r ? `${r.first_name} ${r.last_name}` : `#${id}`} size="small"
+                  sx={{ bgcolor: `${BORDEAUX}15`, color: BORDEAUX }} {...gtp({ index: i })} />;
+              })}
+              renderInput={p => <TextField {...p} label="Vertriebler" required
+                helperText={`${reps.length} verfuegbar`} />}
+              renderOption={(props, id) => {
+                const r = reps.find(u => u.id === id);
+                return <li {...props} key={id}>{r ? `${r.first_name} ${r.last_name} (${r.email})` : `#${id}`}</li>;
+              }}
+            />
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <TextField label="Gueltig ab" type="date" value={runForm.valid_from}
+                onChange={e => setRunForm({ ...runForm, valid_from: e.target.value })} fullWidth required InputLabelProps={{ shrink: true }} />
+              <TextField label="Gueltig bis" type="date" value={runForm.valid_until}
+                onChange={e => setRunForm({ ...runForm, valid_until: e.target.value })} fullWidth required InputLabelProps={{ shrink: true }} />
+            </Box>
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setRunDialogOpen(false)}>Abbrechen</Button>
+          <Button variant="contained" onClick={handleCreateRun}
+            disabled={createRunM.isLoading || !runForm.plz || runForm.rep_ids.length === 0}
+            sx={{ bgcolor: BORDEAUX, '&:hover': { bgcolor: '#5A0F1E' } }}>
+            {createRunM.isLoading ? <CircularProgress size={20} color="inherit" /> : 'Run erstellen'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {(createRunM.isError || assignRunM.isError || activateRunM.isError || deleteRunM.isError) && (
+        <Alert severity="error" sx={{ mt: 2 }}>
+          {createRunM.error?.response?.data?.error || assignRunM.error?.response?.data?.error ||
+           activateRunM.error?.response?.data?.error || deleteRunM.error?.response?.data?.error || 'Fehler'}
+        </Alert>
+      )}
+    </Box>
+  );
+};
+
 const TerritoryManagementPage = () => {
   const qc = useQueryClient();
+  const [activeTab, setActiveTab] = useState(0);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
   const [expandedId, setExpandedId] = useState(null);
@@ -228,13 +457,31 @@ const TerritoryManagementPage = () => {
   return (
     <Box>
       {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 1 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
         <Typography variant="h5" sx={{ fontWeight: 600 }}>
           <Map sx={{ mr: 1, verticalAlign: 'middle', color: BORDEAUX }} />Gebietsverwaltung
         </Typography>
-        <Button variant="contained" startIcon={<Add />} onClick={openCreate}
-          sx={{ bgcolor: BORDEAUX, '&:hover': { bgcolor: '#5A0F1E' } }}>Neues Gebiet</Button>
+        {activeTab === 0 && (
+          <Button variant="contained" startIcon={<Add />} onClick={openCreate}
+            sx={{ bgcolor: BORDEAUX, '&:hover': { bgcolor: '#5A0F1E' } }}>Neues Gebiet</Button>
+        )}
       </Box>
+
+      {/* Tabs */}
+      <Tabs value={activeTab} onChange={(e, v) => setActiveTab(v)} sx={{ mb: 3,
+        '& .MuiTab-root': { fontWeight: 600 },
+        '& .Mui-selected': { color: BORDEAUX },
+        '& .MuiTabs-indicator': { bgcolor: BORDEAUX }
+      }}>
+        <Tab label="Gebiete" />
+        <Tab label="Auto-Runs" icon={<AutoAwesome sx={{ fontSize: 18 }} />} iconPosition="start" />
+      </Tabs>
+
+      {/* Runs-Tab */}
+      {activeTab === 1 && <RunsTab />}
+
+      {/* Gebiete-Tab */}
+      {activeTab === 0 && (<>
 
       {/* Statistik-Karten */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
@@ -491,6 +738,8 @@ const TerritoryManagementPage = () => {
           {createM.error?.response?.data?.error || updateM.error?.response?.data?.error || deleteM.error?.response?.data?.error || 'Fehler'}
         </Alert>
       )}
+
+      </>)}
     </Box>
   );
 };

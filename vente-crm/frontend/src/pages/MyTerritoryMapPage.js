@@ -1,20 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import {
   Box, Typography, Card, CardContent, CircularProgress, Alert, Chip,
-  List, ListItem, ListItemText, Divider, IconButton, Tooltip
+  List, ListItem, ListItemText, Divider, IconButton, Tooltip, Button
 } from '@mui/material';
 import {
-  Map, LocationOn, Home, Phone, Email, CheckCircle
+  Map, LocationOn, Home, Phone, Email, CheckCircle, Navigation, Info
 } from '@mui/icons-material';
-import { MapContainer, TileLayer, Marker, Popup, Rectangle } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Rectangle, GeoJSON } from 'react-leaflet';
 import L from 'leaflet';
 import { territoryAPI, addressAPI } from '../services/api';
 import 'leaflet/dist/leaflet.css';
 
 const BORDEAUX = '#7A1B2D';
 
-// Fix Leaflet default marker icons
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
@@ -27,16 +26,13 @@ const createCustomIcon = (color = BORDEAUX) => {
     className: 'custom-marker',
     html: `<div style="
       background-color: ${color};
-      width: 24px;
-      height: 24px;
+      width: 24px; height: 24px;
       border-radius: 50% 50% 50% 0;
       transform: rotate(-45deg);
       border: 2px solid white;
       box-shadow: 0 2px 6px rgba(0,0,0,0.3);
     "></div>`,
-    iconSize: [24, 24],
-    iconAnchor: [12, 24],
-    popupAnchor: [0, -24]
+    iconSize: [24, 24], iconAnchor: [12, 24], popupAnchor: [0, -24]
   });
 };
 
@@ -44,7 +40,6 @@ const STATUS_COLORS = {
   NEW: '#7A1B2D', CONTACTED: '#A68836', APPOINTMENT: '#2E7D32',
   NOT_INTERESTED: '#666666', CONVERTED: '#5A0F1E', INVALID: '#D32F2F'
 };
-
 const STATUS_LABELS = {
   NEW: 'Neu', CONTACTED: 'Kontaktiert', APPOINTMENT: 'Termin',
   NOT_INTERESTED: 'Kein Interesse', CONVERTED: 'Konvertiert', INVALID: 'Ungueltig'
@@ -63,18 +58,36 @@ const getIconForStatus = (status) => {
   }
 };
 
+const openNavigation = (lat, lon, street, houseNumber) => {
+  const dest = street && houseNumber
+    ? encodeURIComponent(`${street} ${houseNumber}`)
+    : `${lat},${lon}`;
+  window.open(`https://www.google.com/maps/dir/?api=1&destination=${dest}`, '_blank');
+};
+
 const MyTerritoryMapPage = () => {
   const queryClient = useQueryClient();
 
-  const { data, isLoading, isError } = useQuery(
+  // Zuerst versuchen: Run-basiertes Territory (neues System)
+  const { data: runData, isLoading: runLoading } = useQuery(
+    'my-active-run',
+    () => territoryAPI.getMyActiveRun(),
+    { retry: 1 }
+  );
+
+  // Fallback: Altes Territory-System
+  const { data: legacyData, isLoading: legacyLoading } = useQuery(
     'my-territory',
-    () => territoryAPI.getMyTerritory()
+    () => territoryAPI.getMyTerritory(),
+    { enabled: !runData?.data?.data?.territory }
   );
 
   const updateMutation = useMutation(
     ({ listId, addrId, updates }) => addressAPI.updateAddress(listId, addrId, updates),
-    { onSuccess: () => queryClient.invalidateQueries('my-territory') }
+    { onSuccess: () => { queryClient.invalidateQueries('my-active-run'); queryClient.invalidateQueries('my-territory'); } }
   );
+
+  const isLoading = runLoading || legacyLoading;
 
   if (isLoading) {
     return (
@@ -84,21 +97,38 @@ const MyTerritoryMapPage = () => {
     );
   }
 
-  if (isError) {
-    return <Alert severity="error">Fehler beim Laden des Gebiets</Alert>;
-  }
+  // Daten zusammenfuehren: Run-System hat Prioritaet
+  const runResult = runData?.data?.data;
+  const legacyResult = legacyData?.data?.data;
+  const hasRunTerritory = runResult && runResult.territory;
 
-  const territoryData = data?.data?.data || {};
-  const addresses = territoryData.addresses || [];
-  const bounds = territoryData.bounds;
-  const center = territoryData.center;
-  const postalCodes = territoryData.postal_codes || [];
-  const territories = territoryData.territories || [];
+  let addresses, bounds, center, postalCodes, polygon;
+
+  if (hasRunTerritory) {
+    addresses = runResult.addresses || [];
+    polygon = runResult.polygon || null;
+    bounds = runResult.bounds || null;
+    postalCodes = runResult.run?.plz ? [runResult.run.plz] : [];
+    if (bounds) {
+      center = { latitude: (bounds.north + bounds.south) / 2, longitude: (bounds.east + bounds.west) / 2 };
+    }
+  } else if (legacyResult) {
+    addresses = legacyResult.addresses || [];
+    bounds = legacyResult.bounds || null;
+    center = legacyResult.center || null;
+    postalCodes = legacyResult.postal_codes || [];
+    polygon = null;
+  } else {
+    addresses = [];
+    bounds = null;
+    center = null;
+    postalCodes = [];
+    polygon = null;
+  }
 
   const mappableAddresses = addresses.filter(a => a.latitude && a.longitude);
 
-  // Kartenmittelpunkt
-  const defaultCenter = [52.52, 13.405]; // Berlin
+  const defaultCenter = [52.52, 13.405];
   let mapCenter = defaultCenter;
   let zoom = 10;
 
@@ -110,16 +140,14 @@ const MyTerritoryMapPage = () => {
       mappableAddresses.reduce((sum, a) => sum + parseFloat(a.latitude), 0) / mappableAddresses.length,
       mappableAddresses.reduce((sum, a) => sum + parseFloat(a.longitude), 0) / mappableAddresses.length
     ];
-    zoom = 13;
+    zoom = 14;
   }
 
-  // Rahmen/Bounds fuer das Gebiet
-  const boundsRect = bounds ? [
+  const boundsRect = (!polygon && bounds) ? [
     [bounds.south - 0.001, bounds.west - 0.001],
     [bounds.north + 0.001, bounds.east + 0.001]
   ] : null;
 
-  // Stats
   const totalAddr = addresses.length;
   const visitedAddr = addresses.filter(a => a.status !== 'NEW').length;
   const convertedAddr = addresses.filter(a => a.status === 'CONVERTED').length;
@@ -127,7 +155,7 @@ const MyTerritoryMapPage = () => {
   return (
     <Box sx={{ height: 'calc(100vh - 120px)', display: 'flex', flexDirection: 'column' }}>
       {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1, flexWrap: 'wrap', gap: 1 }}>
         <Typography variant="h5" sx={{ fontWeight: 600 }}>
           <Map sx={{ mr: 1, verticalAlign: 'middle', color: BORDEAUX }} />
           Mein Gebiet
@@ -135,16 +163,19 @@ const MyTerritoryMapPage = () => {
         <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
           {postalCodes.map((plz, i) => (
             <Chip key={i} icon={<LocationOn sx={{ fontSize: 14 }} />} label={plz}
-              size="small" sx={{ bgcolor: `${BORDEAUX}15`, color: BORDEAUX, fontWeight: 500 }}
-            />
+              size="small" sx={{ bgcolor: `${BORDEAUX}15`, color: BORDEAUX, fontWeight: 500 }} />
           ))}
           <Chip label={`${totalAddr} Adressen`} size="small" variant="outlined" />
           <Chip label={`${visitedAddr} besucht`} size="small" color="info" variant="outlined" />
           <Chip icon={<CheckCircle sx={{ fontSize: 14 }} />} label={`${convertedAddr} konvertiert`}
-            size="small" color="success" variant="outlined"
-          />
+            size="small" color="success" variant="outlined" />
         </Box>
       </Box>
+
+      {/* Live-Tracking Hinweis */}
+      <Alert severity="info" icon={<Info />} sx={{ mb: 1, py: 0, '& .MuiAlert-message': { fontSize: '0.8rem' } }}>
+        Live-Tracking aktiv — Seite geoeffnet lassen fuer Positionsuebermittlung an Ihre Teamleitung.
+      </Alert>
 
       {addresses.length === 0 ? (
         <Alert severity="info">
@@ -156,38 +187,32 @@ const MyTerritoryMapPage = () => {
           {/* Karte */}
           <Card sx={{ flex: 2, overflow: 'hidden' }}>
             <CardContent sx={{ p: 0, height: '100%', '&:last-child': { pb: 0 } }}>
-              <MapContainer
-                center={mapCenter}
-                zoom={zoom}
-                style={{ height: '100%', width: '100%', minHeight: '500px' }}
-                scrollWheelZoom={true}
-              >
-                <TileLayer
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                />
+              <MapContainer center={mapCenter} zoom={zoom}
+                style={{ height: '100%', width: '100%', minHeight: '500px' }} scrollWheelZoom>
+                <TileLayer attribution='&copy; OpenStreetMap'
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 
-                {/* Gebietsrahmen */}
-                {boundsRect && (
-                  <Rectangle
-                    bounds={boundsRect}
-                    pathOptions={{
-                      color: BORDEAUX,
-                      weight: 3,
-                      fillColor: BORDEAUX,
-                      fillOpacity: 0.05,
-                      dashArray: '10, 5'
-                    }}
-                  />
+                {/* GeoJSON Polygon (neues System) */}
+                {polygon && (
+                  <GeoJSON data={polygon} style={{
+                    color: BORDEAUX, weight: 3, fillColor: BORDEAUX,
+                    fillOpacity: 0.08, dashArray: '10, 5'
+                  }} />
+                )}
+
+                {/* Fallback: Rectangle (altes System) */}
+                {boundsRect && !polygon && (
+                  <Rectangle bounds={boundsRect} pathOptions={{
+                    color: BORDEAUX, weight: 3, fillColor: BORDEAUX,
+                    fillOpacity: 0.05, dashArray: '10, 5'
+                  }} />
                 )}
 
                 {/* Adress-Marker */}
                 {mappableAddresses.map((addr) => (
-                  <Marker
-                    key={addr.id}
+                  <Marker key={addr.id}
                     position={[parseFloat(addr.latitude), parseFloat(addr.longitude)]}
-                    icon={getIconForStatus(addr.status)}
-                  >
+                    icon={getIconForStatus(addr.status)}>
                     <Popup>
                       <Box sx={{ minWidth: 220 }}>
                         {addr.contact_name && (
@@ -218,21 +243,16 @@ const MyTerritoryMapPage = () => {
                             Haushalte: {addr.contacted_households || 0}/{addr.total_households}
                           </Typography>
                         )}
-                        <Chip
-                          label={STATUS_LABELS[addr.status] || addr.status}
-                          size="small"
-                          sx={{
-                            mt: 0.5,
-                            bgcolor: (STATUS_COLORS[addr.status] || '#999') + '20',
-                            color: STATUS_COLORS[addr.status] || '#999',
-                            fontWeight: 500
-                          }}
-                        />
-                        {addr.notes && (
-                          <Typography variant="caption" display="block" sx={{ mt: 0.5, color: '#999', fontStyle: 'italic' }}>
-                            {addr.notes}
-                          </Typography>
-                        )}
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+                          <Chip label={STATUS_LABELS[addr.status] || addr.status} size="small"
+                            sx={{ bgcolor: (STATUS_COLORS[addr.status] || '#999') + '20',
+                              color: STATUS_COLORS[addr.status] || '#999', fontWeight: 500 }} />
+                          <Button size="small" variant="outlined" startIcon={<Navigation sx={{ fontSize: 14 }} />}
+                            onClick={() => openNavigation(addr.latitude, addr.longitude, addr.street, addr.house_number)}
+                            sx={{ fontSize: '0.65rem', py: 0, minHeight: 24, color: BORDEAUX, borderColor: BORDEAUX }}>
+                            Navigation
+                          </Button>
+                        </Box>
                       </Box>
                     </Popup>
                   </Marker>
@@ -242,7 +262,7 @@ const MyTerritoryMapPage = () => {
           </Card>
 
           {/* Sidebar: Adressliste */}
-          <Card sx={{ flex: 1, overflow: 'auto', maxWidth: 350 }}>
+          <Card sx={{ flex: 1, overflow: 'auto', maxWidth: 380 }}>
             <CardContent sx={{ p: 1 }}>
               <Typography variant="subtitle2" sx={{ fontWeight: 600, px: 1, py: 0.5 }}>
                 Adressen ({addresses.length})
@@ -251,22 +271,28 @@ const MyTerritoryMapPage = () => {
               <List dense sx={{ p: 0 }}>
                 {addresses.map((addr, i) => (
                   <React.Fragment key={addr.id}>
-                    <ListItem sx={{ px: 1, py: 0.5 }}>
+                    <ListItem sx={{ px: 1, py: 0.5 }}
+                      secondaryAction={
+                        addr.latitude && addr.longitude ? (
+                          <Tooltip title="Zur Navigation">
+                            <IconButton edge="end" size="small"
+                              onClick={() => openNavigation(addr.latitude, addr.longitude, addr.street, addr.house_number)}
+                              sx={{ color: BORDEAUX }}>
+                              <Navigation sx={{ fontSize: 18 }} />
+                            </IconButton>
+                          </Tooltip>
+                        ) : null
+                      }>
                       <ListItemText
                         primary={
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                             <Typography variant="body2" sx={{ fontWeight: 500, fontSize: '0.8rem' }}>
                               {addr.street} {addr.house_number}
                             </Typography>
-                            <Chip
-                              label={STATUS_LABELS[addr.status] || addr.status}
-                              size="small"
-                              sx={{
-                                fontSize: '0.6rem', height: 18,
+                            <Chip label={STATUS_LABELS[addr.status] || addr.status} size="small"
+                              sx={{ fontSize: '0.6rem', height: 18,
                                 bgcolor: (STATUS_COLORS[addr.status] || '#999') + '20',
-                                color: STATUS_COLORS[addr.status] || '#999'
-                              }}
-                            />
+                                color: STATUS_COLORS[addr.status] || '#999' }} />
                           </Box>
                         }
                         secondary={

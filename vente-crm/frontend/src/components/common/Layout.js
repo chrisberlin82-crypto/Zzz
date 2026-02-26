@@ -74,7 +74,10 @@ const Layout = () => {
         (pos) => {
           userAPI.updateLocation({
             latitude: pos.coords.latitude,
-            longitude: pos.coords.longitude
+            longitude: pos.coords.longitude,
+            accuracy: pos.coords.accuracy || null,
+            speed: pos.coords.speed || null,
+            heading: pos.coords.heading || null
           }).catch(() => {}); // Fehler still ignorieren
         },
         () => {}, // Fehler still ignorieren

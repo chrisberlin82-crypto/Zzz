@@ -146,19 +146,85 @@ const deleteUser = async (req, res) => {
 // Eigene Position aktualisieren (fuer alle eingeloggten User)
 const updateLocation = async (req, res) => {
   try {
-    const { User } = req.app.locals.db;
-    const { latitude, longitude } = req.body;
+    const { User, LocationPing, TerritoryRun, RunTerritory } = req.app.locals.db;
+    const { Op } = require('sequelize');
+    const { latitude, longitude, accuracy, speed, heading } = req.body;
 
     if (!latitude || !longitude) {
       return res.status(400).json({ success: false, error: 'Latitude und Longitude erforderlich' });
     }
 
+    // is_in_area berechnen
+    let isInArea = false;
+    let activeRunId = null;
+
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const activeRuns = await TerritoryRun.findAll({
+        where: {
+          status: 'active',
+          valid_from: { [Op.lte]: today },
+          valid_until: { [Op.gte]: today }
+        },
+        raw: true
+      });
+
+      // Finde Run wo User Rep ist
+      for (const run of activeRuns) {
+        const ids = run.rep_ids ? run.rep_ids.split(',').map(s => parseInt(s.trim(), 10)) : [];
+        if (ids.includes(req.user.id)) {
+          activeRunId = run.id;
+          break;
+        }
+      }
+
+      if (activeRunId) {
+        const territory = await RunTerritory.findOne({
+          where: { run_id: activeRunId, rep_user_id: req.user.id },
+          attributes: ['polygon_json'],
+          raw: true
+        });
+
+        if (territory && territory.polygon_json) {
+          try {
+            const { isPointInPolygon } = require('../services/territoryAssigner');
+            isInArea = isPointInPolygon(latitude, longitude, territory.polygon_json);
+          } catch { /* turf nicht verfuegbar -> false */ }
+        }
+      }
+    } catch (err) {
+      logger.warn('is_in_area check failed:', err.message);
+    }
+
+    // User aktualisieren
     await User.update(
-      { last_latitude: latitude, last_longitude: longitude, last_location_at: new Date() },
+      {
+        last_latitude: latitude,
+        last_longitude: longitude,
+        last_location_at: new Date(),
+        is_in_area: isInArea,
+        current_run_id: activeRunId
+      },
       { where: { id: req.user.id } }
     );
 
-    res.json({ success: true });
+    // Location Ping speichern (fire and forget)
+    try {
+      await LocationPing.create({
+        user_id: req.user.id,
+        run_id: activeRunId,
+        latitude,
+        longitude,
+        accuracy_m: accuracy || null,
+        speed_mps: speed || null,
+        heading_deg: heading || null,
+        is_in_area: isInArea
+      });
+    } catch (err) {
+      logger.warn('Location ping save failed:', err.message);
+    }
+
+    res.json({ success: true, data: { is_in_area: isInArea } });
   } catch (error) {
     logger.error('Update location error:', error);
     res.status(500).json({ success: false, error: 'Position konnte nicht aktualisiert werden' });
@@ -179,7 +245,8 @@ const getTeamLocations = async (req, res) => {
         last_longitude: { [Op.ne]: null }
       },
       attributes: ['id', 'first_name', 'last_name', 'role', 'email', 'phone',
-                    'last_latitude', 'last_longitude', 'last_location_at']
+                    'last_latitude', 'last_longitude', 'last_location_at',
+                    'is_in_area', 'current_run_id']
     });
 
     res.json({ success: true, data: users });

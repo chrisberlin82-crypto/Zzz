@@ -4,8 +4,45 @@ const { authenticateToken } = require('../middleware/auth');
 const { checkPermission, requireRole } = require('../middleware/rbac');
 const { validateIdParam } = require('../middleware/validate');
 const territoryController = require('../controllers/territoryController');
+const runController = require('../controllers/territoryRunController');
 
 router.use(authenticateToken);
+
+// ====== Territory Runs (MUSS vor /:id Routen stehen) ======
+router.get('/runs/my-active',
+  checkPermission('territories:read_own'),
+  runController.getMyActiveRun
+);
+
+router.get('/runs',
+  checkPermission('territories:read'),
+  runController.getRuns
+);
+
+router.get('/runs/:runId',
+  checkPermission('territories:read'),
+  runController.getRun
+);
+
+router.post('/runs',
+  checkPermission('territories:create'),
+  runController.createRun
+);
+
+router.post('/runs/:runId/assign',
+  checkPermission('territories:create'),
+  runController.assignRun
+);
+
+router.post('/runs/:runId/activate',
+  checkPermission('territories:create'),
+  runController.activateRun
+);
+
+router.delete('/runs/:runId',
+  checkPermission('territories:delete'),
+  runController.deleteRun
+);
 
 // ====== Verfuegbare PLZ aus Adresslisten ======
 router.get('/available-plz',

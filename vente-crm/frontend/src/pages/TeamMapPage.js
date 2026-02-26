@@ -4,10 +4,10 @@ import {
   Box, Typography, Card, CardContent, CircularProgress, Chip, Avatar,
   List, ListItem, ListItemAvatar, ListItemText, Divider, FormControlLabel, Switch
 } from '@mui/material';
-import { Groups, Circle, Phone, Email, Description, Person, Euro } from '@mui/icons-material';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { Groups, Circle, Phone, Email, Description, Person, Euro, GpsFixed, GpsOff } from '@mui/icons-material';
+import { MapContainer, TileLayer, Marker, Popup, GeoJSON } from 'react-leaflet';
 import L from 'leaflet';
-import { userAPI } from '../services/api';
+import { userAPI, territoryAPI } from '../services/api';
 import 'leaflet/dist/leaflet.css';
 
 const BORDEAUX = '#7A1B2D';
@@ -28,15 +28,18 @@ const ROLE_LABELS = {
   VERTRIEB: 'Vertrieb'
 };
 
-const createUserIcon = (name, color) => {
+const T_COLORS = ['#7A1B2D', '#2E7D32', '#A68836', '#6A5ACD', '#D32F2F', '#0288D1'];
+
+const createUserIcon = (name, color, isInArea) => {
   const initials = (name || '?').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+  const border = isInArea ? '3px solid #2E7D32' : '3px solid white';
   return L.divIcon({
     className: 'team-marker',
     html: `<div style="
       background-color: ${color};
       width: 36px; height: 36px;
       border-radius: 50%;
-      border: 3px solid white;
+      border: ${border};
       box-shadow: 0 2px 8px rgba(0,0,0,0.3);
       display: flex; align-items: center; justify-content: center;
       color: white; font-weight: 700; font-size: 12px;
@@ -66,6 +69,7 @@ const contractIcon = L.divIcon({
 
 const TeamMapPage = () => {
   const [showContracts, setShowContracts] = useState(true);
+  const [showTerritories, setShowTerritories] = useState(true);
 
   const { data, isLoading } = useQuery(
     'team-locations',
@@ -79,18 +83,48 @@ const TeamMapPage = () => {
     { refetchInterval: 60000 }
   );
 
+  // Aktive Runs laden fuer Territory-Polygone
+  const { data: runsData } = useQuery(
+    'active-territory-runs',
+    () => territoryAPI.getRuns({ status: 'active' }),
+    { refetchInterval: 60000 }
+  );
+
   const rawTeamMembers = data?.data?.data || [];
   const teamMembers = rawTeamMembers.filter(m => m.last_latitude && m.last_longitude && !isNaN(parseFloat(m.last_latitude)) && !isNaN(parseFloat(m.last_longitude)));
 
-  // Online = letzte 10 Minuten, Offline = aelter
   const isOnline = (member) => {
     if (!member.last_location_at) return false;
-    return (Date.now() - new Date(member.last_location_at).getTime()) < 10 * 60 * 1000;
+    return (Date.now() - new Date(member.last_location_at).getTime()) < 60 * 1000; // 60s = live
   };
+  const isStale = (member) => {
+    if (!member.last_location_at) return true;
+    const diff = Date.now() - new Date(member.last_location_at).getTime();
+    return diff >= 60 * 1000 && diff < 10 * 60 * 1000; // 1-10 min
+  };
+
   const rawSignedContracts = signedData?.data?.data || [];
   const signedContracts = rawSignedContracts.filter(s => s.gps_latitude && s.gps_longitude && !isNaN(parseFloat(s.gps_latitude)) && !isNaN(parseFloat(s.gps_longitude)));
 
-  // Kartenmittelpunkt berechnen
+  // Territory-Polygone aus aktiven Runs
+  const activeRuns = runsData?.data?.data || [];
+  const allTerritoryPolygons = [];
+  activeRuns.forEach(run => {
+    (run.territories || []).forEach((t, i) => {
+      try {
+        const poly = typeof t.polygon_json === 'string' ? JSON.parse(t.polygon_json) : t.polygon_json;
+        if (poly) {
+          allTerritoryPolygons.push({
+            polygon: poly,
+            rep: t.rep,
+            plz: run.plz,
+            color: T_COLORS[i % T_COLORS.length]
+          });
+        }
+      } catch { /* ignore */ }
+    });
+  });
+
   const defaultCenter = [52.5200, 13.4050];
   let center = defaultCenter;
   let zoom = 11;
@@ -111,29 +145,36 @@ const TeamMapPage = () => {
     );
   }
 
+  const onlineCount = teamMembers.filter(m => isOnline(m)).length;
+  const inAreaCount = teamMembers.filter(m => m.is_in_area).length;
+
   return (
     <Box sx={{ height: 'calc(100vh - 120px)', display: 'flex', flexDirection: 'column' }}>
       {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <Groups sx={{ color: BORDEAUX, fontSize: 28 }} />
           <Typography variant="h5" sx={{ fontWeight: 600 }}>Team Live</Typography>
         </Box>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
           <FormControlLabel
-            control={<Switch checked={showContracts} onChange={(e) => setShowContracts(e.target.checked)}
+            control={<Switch checked={showTerritories} onChange={(e) => setShowTerritories(e.target.checked)} size="small"
+              sx={{ '& .Mui-checked': { color: BORDEAUX }, '& .Mui-checked + .MuiSwitch-track': { bgcolor: BORDEAUX } }} />}
+            label={<Typography variant="body2">Gebiete</Typography>}
+          />
+          <FormControlLabel
+            control={<Switch checked={showContracts} onChange={(e) => setShowContracts(e.target.checked)} size="small"
               sx={{ '& .Mui-checked': { color: '#2E7D32' }, '& .Mui-checked + .MuiSwitch-track': { bgcolor: '#2E7D32' } }} />}
             label={<Typography variant="body2">Vertraege ({signedContracts.length})</Typography>}
           />
-          <Chip
-            icon={<Circle sx={{ fontSize: '10px !important', color: '#2E7D32 !important' }} />}
-            label={`${teamMembers.filter(m => isOnline(m)).length} online`}
-            sx={{ bgcolor: '#2E7D3215', color: '#2E7D32', fontWeight: 600 }}
-          />
-          <Chip
-            label={`${teamMembers.length} gesamt`}
-            sx={{ bgcolor: '#66666615', color: '#666', fontWeight: 600 }}
-          />
+          <Chip icon={<Circle sx={{ fontSize: '10px !important', color: '#2E7D32 !important' }} />}
+            label={`${onlineCount} live`}
+            sx={{ bgcolor: '#2E7D3215', color: '#2E7D32', fontWeight: 600 }} />
+          <Chip icon={<GpsFixed sx={{ fontSize: '14px !important', color: '#0288D1 !important' }} />}
+            label={`${inAreaCount} im Gebiet`}
+            sx={{ bgcolor: '#0288D115', color: '#0288D1', fontWeight: 600 }} />
+          <Chip label={`${teamMembers.length} gesamt`}
+            sx={{ bgcolor: '#66666615', color: '#666', fontWeight: 600 }} />
         </Box>
       </Box>
 
@@ -141,38 +182,49 @@ const TeamMapPage = () => {
         {/* Karte */}
         <Card sx={{ flex: 1, overflow: 'hidden' }}>
           <CardContent sx={{ p: 0, height: '100%', '&:last-child': { pb: 0 } }}>
-            <MapContainer
-              center={center}
-              zoom={zoom}
-              style={{ height: '100%', width: '100%', minHeight: '500px' }}
-              scrollWheelZoom={true}
-            >
-              <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
+            <MapContainer center={center} zoom={zoom}
+              style={{ height: '100%', width: '100%', minHeight: '500px' }} scrollWheelZoom>
+              <TileLayer attribution='&copy; OpenStreetMap'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+
+              {/* Territory Polygone */}
+              {showTerritories && allTerritoryPolygons.map((tp, i) => (
+                <GeoJSON key={`tp-${i}`} data={tp.polygon}
+                  style={{ color: tp.color, weight: 2, fillOpacity: 0.1, fillColor: tp.color }}>
+                  <Popup>
+                    <b>PLZ {tp.plz}</b><br />
+                    {tp.rep && `${tp.rep.first_name} ${tp.rep.last_name}`}
+                  </Popup>
+                </GeoJSON>
+              ))}
 
               {/* Team Markers */}
               {teamMembers.map((member) => {
                 const name = `${member.first_name || ''} ${member.last_name || ''}`.trim();
                 const online = isOnline(member);
-                const color = online ? (ROLE_COLORS[member.role] || BORDEAUX) : '#999999';
+                const stale = isStale(member);
+                const color = online ? (ROLE_COLORS[member.role] || BORDEAUX) :
+                              stale ? '#ED6C02' : '#999999';
                 return (
-                  <Marker
-                    key={`user-${member.id}`}
+                  <Marker key={`user-${member.id}`}
                     position={[parseFloat(member.last_latitude), parseFloat(member.last_longitude)]}
-                    icon={createUserIcon(name, color)}
-                  >
+                    icon={createUserIcon(name, color, member.is_in_area)}>
                     <Popup>
                       <Box sx={{ minWidth: 200 }}>
                         <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
                           {name || member.email}
                         </Typography>
-                        <Chip
-                          label={ROLE_LABELS[member.role] || member.role}
-                          size="small"
-                          sx={{ mb: 1, bgcolor: `${color}20`, color, fontWeight: 500 }}
-                        />
+                        <Box sx={{ display: 'flex', gap: 0.5, mb: 1 }}>
+                          <Chip label={ROLE_LABELS[member.role] || member.role} size="small"
+                            sx={{ bgcolor: `${ROLE_COLORS[member.role] || BORDEAUX}20`, color: ROLE_COLORS[member.role] || BORDEAUX, fontWeight: 500 }} />
+                          {member.is_in_area ? (
+                            <Chip icon={<GpsFixed sx={{ fontSize: '12px !important' }} />} label="Im Gebiet" size="small"
+                              sx={{ bgcolor: '#2E7D3220', color: '#2E7D32', fontWeight: 500, fontSize: '0.7rem' }} />
+                          ) : (
+                            <Chip icon={<GpsOff sx={{ fontSize: '12px !important' }} />} label="Ausserhalb" size="small"
+                              sx={{ bgcolor: '#99999920', color: '#999', fontWeight: 500, fontSize: '0.7rem' }} />
+                          )}
+                        </Box>
                         {member.phone && (
                           <Typography variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.3 }}>
                             <Phone sx={{ fontSize: 14, color: BORDEAUX }} /> {member.phone}
@@ -184,7 +236,10 @@ const TeamMapPage = () => {
                           </Typography>
                         )}
                         <Typography variant="caption" color="text.secondary">
-                          Zuletzt: {new Date(member.last_location_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr
+                          Zuletzt: {member.last_location_at
+                            ? new Date(member.last_location_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) + ' Uhr'
+                            : 'Unbekannt'}
+                          {online ? ' (Live)' : stale ? ' (Veraltet)' : ' (Offline)'}
                         </Typography>
                       </Box>
                     </Popup>
@@ -192,17 +247,15 @@ const TeamMapPage = () => {
                 );
               })}
 
-              {/* Signed Contract Location Markers */}
+              {/* Signed Contract Markers */}
               {showContracts && signedContracts.map((sig) => {
                 const contract = sig.contract || {};
                 const customer = contract.customer || {};
                 const signer = sig.user || {};
                 return (
-                  <Marker
-                    key={`sig-${sig.id}`}
+                  <Marker key={`sig-${sig.id}`}
                     position={[parseFloat(sig.gps_latitude), parseFloat(sig.gps_longitude)]}
-                    icon={contractIcon}
-                  >
+                    icon={contractIcon}>
                     <Popup>
                       <Box sx={{ minWidth: 220 }}>
                         <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5, display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -237,7 +290,7 @@ const TeamMapPage = () => {
         </Card>
 
         {/* Seitenleiste */}
-        <Card sx={{ width: 280, flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
+        <Card sx={{ width: 300, flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
           <CardContent sx={{ p: 2, pb: 1 }}>
             <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
               Aktive Mitarbeiter
@@ -257,7 +310,8 @@ const TeamMapPage = () => {
             {teamMembers.map((member) => {
               const name = `${member.first_name || ''} ${member.last_name || ''}`.trim();
               const online = isOnline(member);
-              const color = online ? (ROLE_COLORS[member.role] || BORDEAUX) : '#999';
+              const stale = isStale(member);
+              const color = online ? (ROLE_COLORS[member.role] || BORDEAUX) : stale ? '#ED6C02' : '#999';
               const minutesAgo = member.last_location_at ? Math.round((Date.now() - new Date(member.last_location_at).getTime()) / 60000) : null;
               const hoursAgo = minutesAgo !== null ? Math.round(minutesAgo / 60) : null;
               let timeLabel = 'Keine Position';
@@ -268,22 +322,29 @@ const TeamMapPage = () => {
                 else timeLabel = `Vor ${Math.round(hoursAgo / 24)} Tagen`;
               }
               return (
-                <ListItem key={member.id} sx={{ py: 1 }}>
+                <ListItem key={member.id} sx={{ py: 0.5 }}>
                   <ListItemAvatar sx={{ minWidth: 44 }}>
                     <Avatar sx={{ width: 32, height: 32, bgcolor: color, fontSize: '0.75rem' }}>
                       {(member.first_name?.[0] || '') + (member.last_name?.[0] || '')}
                     </Avatar>
                   </ListItemAvatar>
                   <ListItemText
-                    primary={name || member.email}
-                    secondary={
-                      <Box component="span" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                        <Circle sx={{ fontSize: 8, color: online ? '#2E7D32' : '#999' }} />
-                        {online ? timeLabel : `Offline - ${timeLabel}`}
+                    primary={
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <span style={{ fontSize: '0.85rem', fontWeight: 500 }}>{name || member.email}</span>
+                        {member.is_in_area && (
+                          <GpsFixed sx={{ fontSize: 12, color: '#2E7D32' }} />
+                        )}
                       </Box>
                     }
-                    primaryTypographyProps={{ fontSize: '0.85rem', fontWeight: 500 }}
-                    secondaryTypographyProps={{ fontSize: '0.75rem' }}
+                    secondary={
+                      <Box component="span" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <Circle sx={{ fontSize: 8, color: online ? '#2E7D32' : stale ? '#ED6C02' : '#999' }} />
+                        <span style={{ fontSize: '0.75rem' }}>
+                          {online ? `Live - ${timeLabel}` : stale ? `Veraltet - ${timeLabel}` : `Offline - ${timeLabel}`}
+                        </span>
+                      </Box>
+                    }
                   />
                 </ListItem>
               );
