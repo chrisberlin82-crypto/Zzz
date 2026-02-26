@@ -1,6 +1,42 @@
 'use strict';
 
-const turf = require('@turf/turf');
+const { point, featureCollection, polygon: turfPolygon } = require('@turf/helpers');
+const turfDistance = require('@turf/distance').default;
+const turfCenter = require('@turf/center').default;
+const turfBuffer = require('@turf/buffer').default;
+const turfBbox = require('@turf/bbox').default;
+const turfBooleanPointInPolygon = require('@turf/boolean-point-in-polygon').default;
+
+/**
+ * Convex hull using Andrew's monotone chain algorithm.
+ * Returns a GeoJSON Polygon Feature or null if fewer than 3 unique points.
+ */
+const convexHull = (fc) => {
+  const coords = fc.features.map(f => f.geometry.coordinates);
+  const pts = coords.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  if (pts.length < 3) return null;
+
+  const cross = (O, A, B) => (A[0] - O[0]) * (B[1] - O[1]) - (A[1] - O[1]) * (B[0] - O[0]);
+
+  const lower = [];
+  for (const p of pts) {
+    while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], p) <= 0) lower.pop();
+    lower.push(p);
+  }
+  const upper = [];
+  for (let i = pts.length - 1; i >= 0; i--) {
+    while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], pts[i]) <= 0) upper.pop();
+    upper.push(pts[i]);
+  }
+  lower.pop();
+  upper.pop();
+  const hull = lower.concat(upper);
+
+  if (hull.length < 3) return null;
+  // Close the ring
+  hull.push(hull[0]);
+  return turfPolygon([hull]);
+};
 
 const NEIGHBOR_THRESHOLD_M = 200;
 
@@ -9,9 +45,9 @@ const NEIGHBOR_THRESHOLD_M = 200;
  */
 const distanceM = (lat1, lon1, lat2, lon2) => {
   if (!lat1 || !lon1 || !lat2 || !lon2) return Infinity;
-  return turf.distance(
-    turf.point([parseFloat(lon1), parseFloat(lat1)]),
-    turf.point([parseFloat(lon2), parseFloat(lat2)]),
+  return turfDistance(
+    point([parseFloat(lon1), parseFloat(lat1)]),
+    point([parseFloat(lon2), parseFloat(lat2)]),
     { units: 'meters' }
   );
 };
@@ -308,27 +344,27 @@ const computePolygon = (points) => {
 
   const features = points
     .filter(p => p.lat && p.lon)
-    .map(p => turf.point([parseFloat(p.lon), parseFloat(p.lat)]));
+    .map(p => point([parseFloat(p.lon), parseFloat(p.lat)]));
 
   if (features.length === 0) return null;
 
-  const fc = turf.featureCollection(features);
+  const fc = featureCollection(features);
 
   if (features.length < 3) {
     // Zu wenige Punkte fuer ConvexHull -> Buffer um Centroid
-    const center = turf.center(fc);
-    return turf.buffer(center, 0.05, { units: 'kilometers' });
+    const center = turfCenter(fc);
+    return turfBuffer(center, 0.05, { units: 'kilometers' });
   }
 
-  const hull = turf.convex(fc);
+  const hull = convexHull(fc);
   if (!hull) {
     // Kollineare Punkte -> Buffer
-    const center = turf.center(fc);
-    return turf.buffer(center, 0.05, { units: 'kilometers' });
+    const center = turfCenter(fc);
+    return turfBuffer(center, 0.05, { units: 'kilometers' });
   }
 
   // Leichten Buffer hinzufuegen damit Polygon die Punkte etwas umschliesst
-  return turf.buffer(hull, 0.02, { units: 'kilometers' });
+  return turfBuffer(hull, 0.02, { units: 'kilometers' });
 };
 
 /**
@@ -336,7 +372,7 @@ const computePolygon = (points) => {
  */
 const computeBounds = (polygon) => {
   if (!polygon) return null;
-  const bbox = turf.bbox(polygon);
+  const bbox = turfBbox(polygon);
   return {
     west: bbox[0],
     south: bbox[1],
@@ -351,9 +387,9 @@ const computeBounds = (polygon) => {
 const isPointInPolygon = (lat, lon, polygonGeoJSON) => {
   if (!lat || !lon || !polygonGeoJSON) return false;
   try {
-    const point = turf.point([parseFloat(lon), parseFloat(lat)]);
-    const polygon = typeof polygonGeoJSON === 'string' ? JSON.parse(polygonGeoJSON) : polygonGeoJSON;
-    return turf.booleanPointInPolygon(point, polygon);
+    const pt = point([parseFloat(lon), parseFloat(lat)]);
+    const poly = typeof polygonGeoJSON === 'string' ? JSON.parse(polygonGeoJSON) : polygonGeoJSON;
+    return turfBooleanPointInPolygon(pt, poly);
   } catch {
     return false;
   }
