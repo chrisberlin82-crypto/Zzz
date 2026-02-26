@@ -191,12 +191,17 @@ const startServer = async () => {
     await db.sequelize.authenticate();
     logger.info('Datenbankverbindung hergestellt');
 
-    // Sync models (stellt sicher dass alle Tabellen/Spalten existieren)
-    try {
-      await db.sequelize.sync({ alter: true });
-      logger.info('Datenbankmodelle synchronisiert');
-    } catch (syncError) {
-      logger.warn('Model-Sync fehlgeschlagen (nicht kritisch):', syncError.message);
+    // In Production: Migrations verwalten das Schema (kein sync noetig)
+    // In Development: sync({ alter: true }) fuer schnelle Aenderungen
+    if (process.env.NODE_ENV !== 'production') {
+      try {
+        await db.sequelize.sync({ alter: true });
+        logger.info('Datenbankmodelle synchronisiert (dev mode)');
+      } catch (syncError) {
+        logger.warn('Model-Sync fehlgeschlagen (nicht kritisch):', syncError.message);
+      }
+    } else {
+      logger.info('Production-Modus: Schema wird durch Migrationen verwaltet');
     }
 
     // Connect to Redis (non-blocking - server starts even if Redis is unavailable)
