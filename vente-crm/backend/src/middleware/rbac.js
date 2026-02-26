@@ -41,7 +41,7 @@ const ROLE_PERMISSIONS = {
     'expenses:read_all',
     'addresses:read', 'addresses:create', 'addresses:update', 'addresses:delete',
     'addresses:read_all', 'addresses:import',
-    'territories:read', 'territories:assign', 'territories:read_own',
+    'territories:read', 'territories:create', 'territories:assign', 'territories:read_own',
     'signatures:read', 'signatures:create',
     'audit:read',
     'dashboard:read', 'dashboard:read_all',

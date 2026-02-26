@@ -262,15 +262,39 @@ const activateRun = async (req, res) => {
 
 const getRuns = async (req, res) => {
   try {
-    const { TerritoryRun, RunTerritory, User } = req.app.locals.db;
+    const { TerritoryRun, TerritoryAssignment, RunTerritory, User } = req.app.locals.db;
     const { plz, status } = req.query;
 
     const where = {};
     if (plz) where.plz = plz;
     if (status) where.status = status;
 
-    // STANDORTLEITUNG/TEAMLEAD: Nur Runs sehen wo sie Zugang haben
-    // (ueber territory_assignment_id oder alle wenn ADMIN)
+    // STANDORTLEITUNG/TEAMLEAD: Nur Runs fuer eigene PLZ-Gebiete anzeigen
+    if (['STANDORTLEITUNG', 'TEAMLEAD'].includes(req.user.role)) {
+      const today = new Date().toISOString().split('T')[0];
+      const myAssignments = await TerritoryAssignment.findAll({
+        where: {
+          assigned_to_user_id: req.user.id,
+          is_active: true,
+          valid_from: { [Op.lte]: today },
+          valid_until: { [Op.gte]: today }
+        },
+        attributes: ['postal_codes'],
+        raw: true
+      });
+      const myPLZs = new Set();
+      myAssignments.forEach(a => {
+        const codes = a.postal_codes ? a.postal_codes.split(',').map(s => s.trim()) : [];
+        codes.forEach(c => myPLZs.add(c));
+      });
+      if (myPLZs.size > 0) {
+        where.plz = { [Op.in]: [...myPLZs] };
+      } else {
+        // Keine Gebiete zugewiesen -> leere Liste
+        return res.json({ success: true, data: [] });
+      }
+    }
+
     const runs = await TerritoryRun.findAll({
       where,
       include: [

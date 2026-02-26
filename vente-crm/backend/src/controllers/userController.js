@@ -231,19 +231,29 @@ const updateLocation = async (req, res) => {
   }
 };
 
-// Alle aktiven Mitarbeiter mit Position (fuer Admin/Standortleitung)
+// Alle aktiven Mitarbeiter mit Position (gefiltert nach Team fuer TEAMLEAD)
 const getTeamLocations = async (req, res) => {
   try {
     const { User } = req.app.locals.db;
     const { Op } = require('sequelize');
 
-    // Alle aktiven User mit bekannter Position anzeigen (nicht nur letzte 10 Min)
+    const where = {
+      is_active: true,
+      last_latitude: { [Op.ne]: null },
+      last_longitude: { [Op.ne]: null }
+    };
+
+    // TEAMLEAD: Nur eigenes Team anzeigen (Vertriebler in eigenen Gebieten)
+    if (req.user.role === 'TEAMLEAD') {
+      const { getTeamMemberIds } = require('./territoryController');
+      const memberIds = await getTeamMemberIds(req.app.locals.db, req.user.id, req.user.role);
+      if (memberIds) {
+        where.id = { [Op.in]: memberIds };
+      }
+    }
+
     const users = await User.findAll({
-      where: {
-        is_active: true,
-        last_latitude: { [Op.ne]: null },
-        last_longitude: { [Op.ne]: null }
-      },
+      where,
       attributes: ['id', 'first_name', 'last_name', 'role', 'email', 'phone',
                     'last_latitude', 'last_longitude', 'last_location_at',
                     'is_in_area', 'current_run_id']

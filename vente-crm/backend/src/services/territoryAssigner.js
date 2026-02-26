@@ -396,12 +396,13 @@ const isPointInPolygon = (lat, lon, polygonGeoJSON) => {
 };
 
 /**
- * Hauptfunktion: Weise StreetUnits an Reps zu
+ * Grid-basierte Gebietszuteilung: Teilt das PLZ-Gebiet in gleichgrosse Quadrate.
+ * Jeder Vertriebler erhaelt ein gleich grosses Rechteck/Quadrat.
  *
  * @param {Array} streetUnits - [{id, plz, street, centroid_lat, centroid_lon, weight}]
  * @param {number[]} repIds - User-IDs der Vertriebler
- * @param {Object} options - { thresholdM, doImprovement }
- * @returns {Array} territories - [{repUserId, streetUnitIds, weight, polygon, bounds}]
+ * @param {Object} options - { thresholdM, doImprovement } (thresholdM/doImprovement werden hier nicht benoetigt)
+ * @returns {{ territories: Array, balanceScore: number, totalWeight: number }}
  */
 const assignTerritories = (streetUnits, repIds, options = {}) => {
   const numReps = repIds.length;
@@ -414,67 +415,159 @@ const assignTerritories = (streetUnits, repIds, options = {}) => {
     return { territories: [], balanceScore: 0, totalWeight: 0 };
   }
 
-  // Edge case: nur 1 Rep bekommt alles
-  if (numReps === 1) {
+  // Einheiten mit gueltigen Koordinaten filtern
+  const validUnits = streetUnits.filter(u => u.centroid_lat && u.centroid_lon);
+  const noCoordUnits = streetUnits.filter(u => !u.centroid_lat || !u.centroid_lon);
+
+  if (validUnits.length === 0) {
+    // Alle Units gleichmaessig verteilen wenn keine Koordinaten
     const totalWeight = streetUnits.reduce((sum, u) => sum + (parseFloat(u.weight) || 1), 0);
-    const points = streetUnits.map(u => ({ lat: u.centroid_lat, lon: u.centroid_lon }));
-    const polygon = computePolygon(points);
-    const bounds = computeBounds(polygon);
+    const perRep = Math.ceil(streetUnits.length / numReps);
+    const result = repIds.map((repId, i) => {
+      const slice = streetUnits.slice(i * perRep, (i + 1) * perRep);
+      return {
+        repUserId: repId,
+        streetUnitIds: slice.map(u => u.id),
+        weight: slice.reduce((s, u) => s + (parseFloat(u.weight) || 1), 0),
+        polygon: null,
+        bounds: null
+      };
+    });
+    return { territories: result, balanceScore: 1, totalWeight };
+  }
+
+  // Bounding Box berechnen
+  const lats = validUnits.map(u => parseFloat(u.centroid_lat));
+  const lons = validUnits.map(u => parseFloat(u.centroid_lon));
+  const minLat = Math.min(...lats);
+  const maxLat = Math.max(...lats);
+  const minLon = Math.min(...lons);
+  const maxLon = Math.max(...lons);
+
+  // Kleines Padding hinzufuegen
+  const padLat = Math.max((maxLat - minLat) * 0.02, 0.0005);
+  const padLon = Math.max((maxLon - minLon) * 0.02, 0.0005);
+  const south = minLat - padLat;
+  const north = maxLat + padLat;
+  const west = minLon - padLon;
+  const east = maxLon + padLon;
+
+  const height = north - south;
+  const width = east - west;
+
+  // Breitengrad-Korrektur (Laengengrade sind bei hoeheren Breiten kuerzer)
+  const latMid = (south + north) / 2;
+  const lonScale = Math.cos(latMid * Math.PI / 180);
+  const effectiveWidth = width * lonScale;
+
+  // Optimale Grid-Dimensionen finden: moeglichst quadratische Zellen
+  let bestCols = 1, bestRows = numReps;
+  let bestAspect = Infinity;
+
+  for (let cols = 1; cols <= numReps; cols++) {
+    const rows = Math.ceil(numReps / cols);
+    const cellW = effectiveWidth / cols;
+    const cellH = height / rows;
+    const aspect = Math.max(cellW, cellH) / (Math.min(cellW, cellH) || 0.0001);
+    if (aspect < bestAspect) {
+      bestAspect = aspect;
+      bestCols = cols;
+      bestRows = rows;
+    }
+  }
+
+  const cols = bestCols;
+  const rows = bestRows;
+  const cellWidth = width / cols;
+  const cellHeight = height / rows;
+
+  // Grid-Zellen erstellen (maximal numReps)
+  const cells = [];
+  for (let r = 0; r < rows && cells.length < numReps; r++) {
+    for (let c = 0; c < cols && cells.length < numReps; c++) {
+      cells.push({
+        row: r, col: c,
+        south: south + r * cellHeight,
+        north: south + (r + 1) * cellHeight,
+        west: west + c * cellWidth,
+        east: west + (c + 1) * cellWidth,
+        unitIds: [],
+        weight: 0
+      });
+    }
+  }
+
+  // StreetUnits den Grid-Zellen zuweisen
+  for (const unit of validUnits) {
+    const lat = parseFloat(unit.centroid_lat);
+    const lon = parseFloat(unit.centroid_lon);
+
+    let col = Math.floor((lon - west) / cellWidth);
+    let row = Math.floor((lat - south) / cellHeight);
+
+    // Auf Grid begrenzen
+    col = Math.max(0, Math.min(cols - 1, col));
+    row = Math.max(0, Math.min(rows - 1, row));
+
+    let cellIdx = row * cols + col;
+    // Wenn Zelle ausserhalb numReps liegt, naechste gueltige Zelle finden
+    if (cellIdx >= cells.length) {
+      // Naechste Zelle per Distanz finden
+      let bestIdx = 0;
+      let bestDist = Infinity;
+      for (let i = 0; i < cells.length; i++) {
+        const cLat = (cells[i].south + cells[i].north) / 2;
+        const cLon = (cells[i].west + cells[i].east) / 2;
+        const d = Math.sqrt(Math.pow(lat - cLat, 2) + Math.pow((lon - cLon) * lonScale, 2));
+        if (d < bestDist) { bestDist = d; bestIdx = i; }
+      }
+      cellIdx = bestIdx;
+    }
+
+    cells[cellIdx].unitIds.push(unit.id);
+    cells[cellIdx].weight += parseFloat(unit.weight) || 1;
+  }
+
+  // Units ohne Koordinaten der Zelle mit dem wenigsten Gewicht zuweisen
+  for (const unit of noCoordUnits) {
+    const minCell = cells.reduce((a, b) => a.weight <= b.weight ? a : b);
+    minCell.unitIds.push(unit.id);
+    minCell.weight += parseFloat(unit.weight) || 1;
+  }
+
+  // Ergebnis aufbauen: Jede Zelle = ein Quadrat-Territory
+  const totalWeight = cells.reduce((sum, c) => sum + c.weight, 0);
+  const targetWeight = numReps > 0 ? totalWeight / numReps : 0;
+
+  const result = cells.map((cell, i) => {
+    // Rechteck als GeoJSON Polygon
+    const polygon = turfPolygon([[
+      [cell.west, cell.south],
+      [cell.east, cell.south],
+      [cell.east, cell.north],
+      [cell.west, cell.north],
+      [cell.west, cell.south]
+    ]]);
+
+    const bounds = {
+      west: cell.west,
+      south: cell.south,
+      east: cell.east,
+      north: cell.north
+    };
 
     return {
-      territories: [{
-        repUserId: repIds[0],
-        streetUnitIds: streetUnits.map(u => u.id),
-        weight: totalWeight,
-        polygon,
-        bounds
-      }],
-      balanceScore: 1,
-      totalWeight
-    };
-  }
-
-  // Region Growing
-  const { territories, weights, adjacency } = regionGrowing(streetUnits, numReps, options);
-
-  // Local Improvement
-  if (options.doImprovement !== false) {
-    const unitMap = new Map(streetUnits.map(u => [u.id, u]));
-    localImprovement(territories, weights, adjacency, unitMap);
-  }
-
-  // Ergebnis aufbauen
-  const totalWeight = Array.from(weights.values()).reduce((a, b) => a + b, 0);
-  const targetWeight = totalWeight / numReps;
-
-  const result = [];
-  const unitMap = new Map(streetUnits.map(u => [u.id, u]));
-
-  for (let i = 0; i < numReps; i++) {
-    const unitIds = [...(territories.get(i) || [])];
-    const w = weights.get(i) || 0;
-
-    // Punkte fuer Polygon
-    const points = unitIds
-      .map(uid => unitMap.get(uid))
-      .filter(u => u)
-      .map(u => ({ lat: u.centroid_lat, lon: u.centroid_lon }));
-
-    const polygon = computePolygon(points);
-    const bounds = computeBounds(polygon);
-
-    result.push({
       repUserId: repIds[i],
-      streetUnitIds: unitIds,
-      weight: w,
+      streetUnitIds: cell.unitIds,
+      weight: cell.weight,
       polygon,
       bounds
-    });
-  }
+    };
+  });
 
   // Balance Score: 1 = perfekt, 0 = schlecht
   const maxDeviation = targetWeight > 0
-    ? Math.max(...Array.from(weights.values()).map(w => Math.abs(w - targetWeight) / targetWeight))
+    ? Math.max(...cells.map(c => Math.abs(c.weight - targetWeight) / targetWeight))
     : 0;
   const balanceScore = Math.max(0, 1 - maxDeviation);
 
