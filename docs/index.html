@@ -3,52 +3,280 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MED Rezeption - Dashboard</title>
+    <title>MED Rezeption - Zugang</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="style.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding-bottom: 5rem;
+            background: linear-gradient(160deg, #0f172a 0%, #1e293b 40%, #0c4a6e 100%);
+        }
+        .portal-card {
+            background: rgba(255,255,255,0.97);
+            border-radius: 20px;
+            box-shadow:
+                0 25px 80px rgba(0,0,0,0.35),
+                0 0 0 1px rgba(255,255,255,0.1),
+                0 0 60px rgba(6,182,212,0.15);
+            overflow: hidden;
+            width: 100%;
+            max-width: 440px;
+            margin: 1rem;
+            backdrop-filter: blur(10px);
+        }
+        .portal-header {
+            background: linear-gradient(135deg, #0c4a6e 0%, #155e75 40%, #164e63 100%);
+            padding: 2.5rem 2rem 2rem;
+            text-align: center;
+            color: #fff;
+            position: relative;
+            overflow: hidden;
+        }
+        .portal-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(6,182,212,0.15) 0%, transparent 60%);
+            pointer-events: none;
+        }
+        .portal-icon {
+            width: 76px;
+            height: 76px;
+            background: rgba(255,255,255,0.12);
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            font-size: 1.9rem;
+            position: relative;
+            z-index: 1;
+        }
+        .portal-header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.3rem;
+            letter-spacing: 0.02em;
+            position: relative;
+            z-index: 1;
+        }
+        .portal-header p {
+            font-size: 0.85rem;
+            opacity: 0.8;
+            position: relative;
+            z-index: 1;
+        }
+        .portal-body {
+            padding: 2rem;
+        }
+        .portal-label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+        }
+        .portal-eingabe-wrap {
+            position: relative;
+            margin-bottom: 1rem;
+        }
+        .portal-eingabe-wrap i {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+        .portal-eingabe {
+            width: 100%;
+            padding: 0.9rem 1rem 0.9rem 2.8rem;
+            font-size: 1rem;
+            border: 2px solid #cbd5e1;
+            border-radius: 12px;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            background: #f8fafc;
+            color: #0f172a;
+        }
+        .portal-eingabe:focus {
+            border-color: #0c4a6e;
+            box-shadow: 0 0 0 4px rgba(12,74,110,0.12);
+            background: #fff;
+        }
+        .portal-eingabe.fehler {
+            border-color: #dc2626;
+            animation: shake 0.4s ease;
+        }
+        .portal-eingabe.ok {
+            border-color: #16a34a;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-6px); }
+            75% { transform: translateX(6px); }
+        }
+        .demo-hinweis {
+            background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+            border: 1px solid #bae6fd;
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            margin-bottom: 1.2rem;
+            text-align: center;
+        }
+        .demo-hinweis span {
+            font-size: 0.78rem;
+            color: #475569;
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+        .demo-hinweis code {
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 1rem;
+            font-weight: 700;
+            color: #0c4a6e;
+            letter-spacing: 0.05em;
+            background: rgba(255,255,255,0.7);
+            padding: 0.2rem 0.6rem;
+            border-radius: 6px;
+        }
+        .portal-status {
+            text-align: center;
+            font-size: 0.85rem;
+            min-height: 1.5rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+        .portal-status.fehler { color: #dc2626; }
+        .portal-status.ok { color: #16a34a; }
+        .portal-btn {
+            width: 100%;
+            padding: 0.9rem;
+            font-size: 1rem;
+            font-weight: 700;
+            color: #fff;
+            background: linear-gradient(135deg, #0c4a6e 0%, #155e75 100%);
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.2s;
+            box-shadow: 0 4px 15px rgba(12,74,110,0.3);
+        }
+        .portal-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(12,74,110,0.4);
+        }
+        .portal-btn:active { transform: scale(0.98); }
+        .portal-footer {
+            text-align: center;
+            padding: 1.2rem 2rem;
+            border-top: 1px solid #e2e8f0;
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+        .portal-footer i { margin-right: 0.25rem; }
+
+        .zitat-banner {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(135deg, #0c4a6e 0%, #1e3a5f 50%, #0f172a 100%);
+            padding: 1.2rem 2rem;
+            text-align: center;
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 800;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            box-shadow: 0 -6px 30px rgba(0,0,0,0.3);
+            z-index: 100;
+            border-top: 2px solid rgba(6,182,212,0.3);
+        }
+    </style>
 </head>
 <body>
-    <aside class="sidebar" id="sidebar">
-        <div class="sidebar-logo"><h2>MED Rezeption</h2><small>Praxisverwaltung</small></div>
-        <nav class="sidebar-nav">
-            <a href="index.html" class="active"><i class="fa-solid fa-chart-pie nav-icon"></i> Dashboard</a>
-            <a href="patienten.html"><i class="fa-solid fa-users nav-icon"></i> Patienten</a>
-            <a href="aerzte.html"><i class="fa-solid fa-user-doctor nav-icon"></i> Aerzte</a>
-            <a href="termine.html"><i class="fa-solid fa-calendar-days nav-icon"></i> Termine</a>
-            <a href="wartezimmer.html"><i class="fa-solid fa-couch nav-icon"></i> Wartezimmer</a>
-            <a href="wissensdatenbank.html"><i class="fa-solid fa-book nav-icon"></i> Wissensdatenbank</a>
-            <a href="ansagen.html"><i class="fa-solid fa-tower-broadcast nav-icon"></i> Ansagen Generator</a>
-            <a href="auswertung.html"><i class="fa-solid fa-chart-line nav-icon"></i> Auswertungen</a>
-            <a href="standort.html"><i class="fa-solid fa-building nav-icon"></i> Standort &amp; ACD</a>
-            <a href="flow-editor.html"><i class="fa-solid fa-diagram-project nav-icon"></i> Callflow Editor</a>
-            <a href="voicebot.html"><i class="fa-solid fa-robot nav-icon"></i> Voicebot</a>
-            <a href="agenten.html"><i class="fa-solid fa-headset nav-icon"></i> Agenten</a>
-            <a href="softphone.html"><i class="fa-solid fa-phone nav-icon"></i> Softphone</a>
-            <a href="uebersetzung.html"><i class="fa-solid fa-language nav-icon"></i> Uebersetzer</a>
-            <a href="benutzer.html"><i class="fa-solid fa-user-gear nav-icon"></i> Benutzer</a>
-        </nav>
-        <div class="sidebar-footer"><button id="btn-demo-reset" type="button">Demo zuruecksetzen</button></div>
-    </aside>
-    <div class="main-wrapper">
-        <header class="topbar">
-            <button id="menu-toggle" type="button"><i class="fa-solid fa-bars"></i></button>
-            <h1 id="dashboard-titel">Dashboard</h1>
-            <div class="topbar-right">Demo-Modus</div>
-        </header>
-        <main id="dashboard">
-            <!-- Wird rollenbasiert von app.js befuellt -->
-        </main>
-    </div>
-    <button id="chat-toggle" type="button"><i class="fa-solid fa-comment-dots"></i></button>
-    <div id="chat-fenster">
-        <div class="chat-header"><span><i class="fa-solid fa-robot"></i> Praxis-Assistent</span><button id="chat-schliessen" type="button"><i class="fa-solid fa-xmark"></i></button></div>
-        <div id="chat-nachrichten"></div>
-        <div class="chat-eingabe">
-            <input id="chat-input" type="text" placeholder="Frage stellen oder sprechen...">
-            <button id="chat-mikrofon" type="button" title="Sprechen"><i class="fa-solid fa-microphone"></i></button>
-            <button id="chat-senden" type="button"><i class="fa-solid fa-paper-plane"></i></button>
+    <div class="portal-card">
+        <div class="portal-header">
+            <div class="portal-icon"><i class="fa-solid fa-stethoscope"></i></div>
+            <h1>MED Rezeption</h1>
+            <p>Praxisverwaltung</p>
+        </div>
+        <div class="portal-body">
+            <label class="portal-label" for="zugangscode">Zugangscode</label>
+            <div class="portal-eingabe-wrap">
+                <i class="fa-solid fa-lock"></i>
+                <input type="password" id="zugangscode" class="portal-eingabe" placeholder="Zugangscode eingeben..." autocomplete="off" autofocus>
+            </div>
+            <div class="demo-hinweis">
+                <span>Demo-Zugangscode:</span>
+                <code>MedReception2025!</code>
+            </div>
+            <div class="portal-status" id="portal-status"></div>
+            <button type="button" class="portal-btn" id="portal-btn">
+                <i class="fa-solid fa-right-to-bracket"></i> Zugang erhalten
+            </button>
+        </div>
+        <div class="portal-footer">
+            <i class="fa-solid fa-shield-halved"></i> Geschuetzter Bereich &nbsp;&bull;&nbsp; <i class="fa-solid fa-clock"></i> Sitzung zeitbegrenzt
         </div>
     </div>
-    <script src="app.js"></script>
+
+    <div class="zitat-banner">
+        &bdquo;NIEMAND HAT DIE ABSICHT, AI AGENTS ZU ENTWICKELN.&ldquo;
+    </div>
+
+    <script>
+    (function() {
+        var ZUTRITTS_CODE = "MedReception2025!";
+
+        if (sessionStorage.getItem("med_portal_ok")) {
+            window.location.href = "uebersicht.html";
+            return;
+        }
+
+        var eingabe = document.getElementById("zugangscode");
+        var statusEl = document.getElementById("portal-status");
+        var btn = document.getElementById("portal-btn");
+
+        function pruefen() {
+            var code = eingabe.value;
+            if (!code) return;
+
+            if (code === ZUTRITTS_CODE) {
+                eingabe.classList.remove("fehler");
+                eingabe.classList.add("ok");
+                statusEl.textContent = "Zugang gewaehrt";
+                statusEl.className = "portal-status ok";
+                sessionStorage.setItem("med_portal_ok", "1");
+                setTimeout(function() { window.location.href = "uebersicht.html"; }, 600);
+            } else {
+                eingabe.classList.add("fehler");
+                statusEl.textContent = "Zugangscode falsch";
+                statusEl.className = "portal-status fehler";
+                setTimeout(function() {
+                    eingabe.classList.remove("fehler");
+                    statusEl.textContent = "";
+                    eingabe.value = "";
+                    eingabe.focus();
+                }, 1500);
+            }
+        }
+
+        btn.addEventListener("click", pruefen);
+        eingabe.addEventListener("keydown", function(e) {
+            if (e.key === "Enter") pruefen();
+        });
+    })();
+    </script>
 </body>
 </html>
