@@ -19,40 +19,51 @@ dashboard_verbindungen: list[WebSocket] = []
 @router.websocket("/voicebot/{kanal_id}")
 async def voicebot_stream(ws: WebSocket, kanal_id: str):
     """
-    Audio-Stream fuer Voicebot.
-    Client sendet Audio-Chunks, Server antwortet mit TTS-Audio.
+    Audio-Stream fuer Voicebot via WebRTC/WebSocket.
+    Protokoll:
+      1. Client verbindet sich
+      2. Client sendet JSON: {"typ": "start", "branche": "arztpraxis"}
+      3. Server antwortet mit Begruessung (JSON + WAV-Audio)
+      4. Client streamt Audio-Chunks (binary, 16kHz 16bit mono PCM)
+      5. Server antwortet mit Erkennung + TTS-Audio
+      6. Client sendet {"typ": "beenden"} zum Auflegen
     Barge-In: Server hoert auch waehrend er spricht.
     """
     await ws.accept()
     log.info("[WS] Voicebot-Verbindung: %s", kanal_id)
 
-    # Voicebot-Session starten
     from main import app
     engine = app.state.voicebot
-    session = engine.neue_session(kanal_id)
-    await session.starten()
+
+    session = None
 
     try:
         while True:
-            # Audio-Chunk empfangen (binary)
             data = await ws.receive()
 
-            if "bytes" in data:
-                # Audio verarbeiten
-                ergebnis = await session.audio_empfangen(data["bytes"])
-                if ergebnis:
-                    # Text-Antwort senden
+            if "text" in data:
+                msg = json.loads(data["text"])
+
+                if msg.get("typ") == "start":
+                    # --- Session starten mit Branchen-Auswahl ---
+                    branche = msg.get("branche", "arztpraxis")
+                    session = engine.neue_session(kanal_id, branche=branche)
+                    ergebnis = await session.starten()
+
+                    # Begruessung senden
                     await ws.send_json({
-                        "typ": "antwort",
+                        "typ": "begruessung",
                         "text": ergebnis["text"],
-                        "erkannt": ergebnis["erkannt"],
+                        "branche": branche,
                     })
-                    # Audio-Antwort senden
                     if ergebnis.get("audio"):
                         await ws.send_bytes(ergebnis["audio"])
+                    continue
 
-            elif "text" in data:
-                msg = json.loads(data["text"])
+                if not session:
+                    # Kein Start empfangen — Session mit Default starten
+                    session = engine.neue_session(kanal_id)
+                    await session.starten()
 
                 if msg.get("typ") == "beenden":
                     ergebnis = await session.beenden()
@@ -64,23 +75,40 @@ async def voicebot_stream(ws: WebSocket, kanal_id: str):
                     break
 
                 elif msg.get("typ") == "ansage":
-                    # Direkte Ansage abspielen
                     audio = await session.text_senden(msg["text"])
                     await ws.send_json({"typ": "ansage", "text": msg["text"]})
                     await ws.send_bytes(audio)
 
                 elif msg.get("typ") == "config":
-                    # Laufzeit-Konfiguration aendern
                     if "barge_in" in msg:
                         session.barge_in_aktiv = msg["barge_in"]
                     await ws.send_json({"typ": "config_ok"})
 
+            elif "bytes" in data:
+                if not session:
+                    # Auto-Start mit Default-Branche
+                    session = engine.neue_session(kanal_id)
+                    await session.starten()
+
+                # Audio verarbeiten
+                ergebnis = await session.audio_empfangen(data["bytes"])
+                if ergebnis:
+                    await ws.send_json({
+                        "typ": "antwort",
+                        "text": ergebnis["text"],
+                        "erkannt": ergebnis["erkannt"],
+                    })
+                    if ergebnis.get("audio"):
+                        await ws.send_bytes(ergebnis["audio"])
+
     except WebSocketDisconnect:
         log.info("[WS] Voicebot getrennt: %s", kanal_id)
-        await session.beenden()
+        if session:
+            await session.beenden()
     except Exception as e:
         log.error("[WS] Voicebot Fehler: %s — %s", kanal_id, e)
-        await session.beenden()
+        if session:
+            await session.beenden()
 
 
 @router.websocket("/agent/{agent_id}")
