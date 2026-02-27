@@ -3817,8 +3817,13 @@ if (typeof window !== "undefined") {
 /** Init (nur im Browser) */
 if (typeof document !== "undefined") {
     document.addEventListener("DOMContentLoaded", function () {
-        // Guard: Auth-Check deaktiviert (Direktzugriff)
-        // Alle Seiten sichtbar, keine Rolle noetig
+        // Portal-Check: Zugangscode muss eingegeben sein
+        var istPortalSeite = window.location.pathname.indexOf("portal.html") !== -1;
+        var istGuardSeite = window.location.pathname.indexOf("guard.html") !== -1;
+        if (!istPortalSeite && !istGuardSeite && !sessionStorage.getItem("med_portal_ok")) {
+            window.location.href = "portal.html";
+            return;
+        }
 
         brancheLaden();
         brancheAnwenden();
