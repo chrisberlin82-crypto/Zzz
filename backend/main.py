@@ -30,7 +30,7 @@ async def lifespan(app: FastAPI):
 
     # Verzeichnisse anlegen
     for d in [settings.data_dir, settings.log_dir, settings.audio_dir,
-              settings.audio_hintergrund_dir, settings.tts_models_dir]:
+              settings.audio_hintergrund_dir]:
         Path(d).mkdir(parents=True, exist_ok=True)
 
     # Datenbank initialisieren

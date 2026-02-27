@@ -33,7 +33,7 @@ class VoicebotEngine:
         self.stt = STTProcessor()
         await self.stt.initialize()
 
-        log.info("Lade TTS (Piper, Stimme: %s)...", settings.tts_model)
+        log.info("Lade TTS (Edge TTS, Stimme: %s)...", settings.tts_stimme)
         self.tts = TTSProcessor()
         await self.tts.initialize()
 
