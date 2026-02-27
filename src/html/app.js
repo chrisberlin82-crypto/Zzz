@@ -3817,11 +3817,10 @@ if (typeof window !== "undefined") {
 /** Init (nur im Browser) */
 if (typeof document !== "undefined") {
     document.addEventListener("DOMContentLoaded", function () {
-        // Guard: Auth-Check auf allen Seiten ausser guard.html
+        // Guard: Auth-Check deaktiviert (Direktzugriff)
         var istGuardSeite = window.location.pathname.indexOf("guard.html") !== -1;
         if (!istGuardSeite) {
-            var auth = guardPruefen();
-            if (!auth) return; // Redirect zur Guard-Seite
+            // guardPruefen() deaktiviert - kein Portal/Login noetig
             guardInfoAnzeigen();
         }
 
