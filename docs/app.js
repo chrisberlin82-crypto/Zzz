@@ -100,6 +100,11 @@ function modusAnzeigeAktualisieren() {
             badge.innerHTML = '<span class="badge badge-gruen"><i class="fa-solid fa-circle" style="font-size:0.5rem"></i> Live-Modus (KI aktiv)</span>';
         }
     }
+    // Dashboard und Agenten-Board mit Live-Daten neu laden
+    if (MED_MODUS === "live") {
+        initDashboard();
+        agentenBoardAktualisieren();
+    }
 }
 
 // ===== Guard / Auth Check =====
@@ -1262,13 +1267,36 @@ async function wartezimmerAktualisieren() {
     } catch (_) {}
 }
 
-// ===== Agenten API (localStorage) =====
+// ===== Agenten API (localStorage / Backend) =====
 
 async function agentenLadenApi() {
+    if (MED_MODUS === "live") {
+        try {
+            var res = await fetch(API_BASE + "/agenten");
+            if (res.ok) return await res.json();
+        } catch (e) {}
+    }
     return dbLaden("agenten");
 }
 
 async function agentSpeichernApi(daten) {
+    if (MED_MODUS === "live") {
+        try {
+            var res = await fetch(API_BASE + "/agenten", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    name: daten.name,
+                    extension: daten.nebenstelle,
+                    email: daten.email || "",
+                    rolle: daten.rolle || "agent",
+                    queues: [daten.warteschlange || "rezeption"],
+                    skills: [],
+                }),
+            });
+            if (res.ok) return await res.json();
+        } catch (e) {}
+    }
     var liste = dbLaden("agenten");
     daten.id = dbNaechsteId("agenten");
     daten.status = daten.status || "offline";
@@ -1278,6 +1306,16 @@ async function agentSpeichernApi(daten) {
 }
 
 async function agentAktualisierenApi(id, daten) {
+    if (MED_MODUS === "live") {
+        try {
+            var res = await fetch(API_BASE + "/agenten/" + id + "/status", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(daten),
+            });
+            if (res.ok) return await res.json();
+        } catch (e) {}
+    }
     dbAktualisieren("agenten", parseInt(id), daten);
     return daten;
 }
@@ -1288,16 +1326,78 @@ async function agentLoeschenApi(id) {
 }
 
 async function agentStatusSetzenApi(id, status) {
+    if (MED_MODUS === "live") {
+        try {
+            var res = await fetch(API_BASE + "/agenten/" + id + "/status?status=" + status, {
+                method: "PUT",
+            });
+            if (res.ok) return await res.json();
+        } catch (e) {}
+    }
     dbAktualisieren("agenten", parseInt(id), { status: status });
     return { erfolg: true };
 }
 
 async function anrufeLadenApi(aktiv) {
+    if (MED_MODUS === "live") {
+        try {
+            var res = await fetch(API_BASE + "/anrufe?limit=50");
+            if (res.ok) {
+                var liste = await res.json();
+                if (aktiv) {
+                    liste = liste.filter(function (a) { return a.status === "klingelt" || a.status === "verbunden"; });
+                }
+                return liste;
+            }
+        } catch (e) {}
+    }
     var liste = dbLaden("anrufe");
     if (aktiv) {
         liste = liste.filter(function (a) { return a.status === "klingelt" || a.status === "verbunden"; });
     }
     return liste;
+}
+
+async function dashboardKpisLadenApi() {
+    if (MED_MODUS === "live") {
+        try {
+            var res = await fetch(API_BASE + "/dashboard");
+            if (res.ok) return await res.json();
+        } catch (e) {}
+    }
+    return null;
+}
+
+async function queuesLadenApi() {
+    if (MED_MODUS === "live") {
+        try {
+            var res = await fetch(API_BASE + "/queues");
+            if (res.ok) return await res.json();
+        } catch (e) {}
+    }
+    return [];
+}
+
+async function termineLadenApi(datum) {
+    if (MED_MODUS === "live") {
+        try {
+            var url = API_BASE + "/termine";
+            if (datum) url += "?datum=" + datum;
+            var res = await fetch(url);
+            if (res.ok) return await res.json();
+        } catch (e) {}
+    }
+    return dbLaden("termine");
+}
+
+async function voicebotConfigLadenApi() {
+    if (MED_MODUS === "live") {
+        try {
+            var res = await fetch(API_BASE + "/voicebot/config");
+            if (res.ok) return await res.json();
+        } catch (e) {}
+    }
+    return null;
 }
 
 function initAgentenBoard() {
@@ -1581,20 +1681,24 @@ function stopAnrufTimer() {
 
 // ===== Dashboard (rollenbasiert) =====
 
-function initDashboard() {
+async function initDashboard() {
     var container = document.getElementById("dashboard");
     if (!container) return;
 
     var auth = JSON.parse(sessionStorage.getItem("med_guard_auth") || localStorage.getItem("med_guard_auth") || "{}");
     var rolle = (auth.rolle || "admin").toLowerCase();
 
+    // Im Live-Modus: KPIs vom Backend laden
+    var liveKpis = await dashboardKpisLadenApi();
+    var liveAgenten = await agentenLadenApi();
+
     var patienten = dbLaden("patienten");
     var aerzte = dbLaden("aerzte");
     var heute = new Date().toISOString().split("T")[0];
-    var termine = dbLaden("termine").filter(function (t) { return t.datum === heute; });
+    var termine = (MED_MODUS === "live") ? (await termineLadenApi(heute)) : dbLaden("termine").filter(function (t) { return t.datum === heute; });
     var wartezimmer = dbLaden("wartezimmer").filter(function (w) { return w.status !== "fertig"; });
-    var agenten = dbLaden("agenten");
-    var onlineAgenten = agenten.filter(function (a) { return a.status === "online"; });
+    var agenten = (liveAgenten && liveAgenten.length > 0) ? liveAgenten : dbLaden("agenten");
+    var onlineAgenten = agenten.filter(function (a) { return a.status === "online" || a.status === "gespraech"; });
 
     // Rollenbasiertes HTML generieren
     var html = "";
@@ -1613,22 +1717,29 @@ function initDashboard() {
     html += '<div id="dash-admin" class="dash-view">';
     html += '<h2 style="margin-bottom:1rem"><i class="fa-solid fa-chart-pie"></i> Admin Dashboard</h2>';
 
-    // KPI-Zeile
+    // KPI-Zeile (Live oder Demo)
+    var kpiAnrufe = liveKpis ? liveKpis.anrufe_heute : "—";
+    var kpiTermine = liveKpis ? liveKpis.termine_heute : termine.length;
+    var kpiAgenten = liveKpis ? liveKpis.agenten_online : onlineAgenten.length;
+    var kpiQueues = liveKpis ? liveKpis.queues_aktiv : "—";
+    var kpiVoicebot = liveKpis ? (liveKpis.voicebot_aktiv ? "Aktiv" : "Aus") : "Demo";
+
     html += '<div class="stat-grid" style="margin-bottom:1.5rem">' +
-        statCard("fa-users", "bg-primary", patienten.length, "Patienten") +
-        statCard("fa-user-doctor", "bg-success", aerzte.length, "Aerzte") +
-        statCard("fa-calendar-check", "bg-warning", termine.length, "Termine heute") +
-        statCard("fa-couch", "bg-info", wartezimmer.length, "Wartezimmer") +
-        statCard("fa-headset", "bg-primary", onlineAgenten.length + "/" + agenten.length, "Agenten online") +
+        statCard("fa-phone", "bg-primary", kpiAnrufe, "Anrufe heute") +
+        statCard("fa-calendar-check", "bg-warning", kpiTermine, "Termine heute") +
+        statCard("fa-headset", "bg-success", kpiAgenten + "/" + agenten.length, "Agenten online") +
+        statCard("fa-layer-group", "bg-info", kpiQueues, "Queues aktiv") +
+        statCard("fa-robot", "bg-primary", kpiVoicebot, "Voicebot") +
         '</div>';
 
     // Callcenter Live
-    html += '<div class="card" style="margin-bottom:1.5rem"><div style="padding:1rem"><h3 style="margin-bottom:1rem"><i class="fa-solid fa-signal"></i> Callcenter Live</h3>';
+    html += '<div class="card" style="margin-bottom:1.5rem"><div style="padding:1rem"><h3 style="margin-bottom:1rem"><i class="fa-solid fa-signal"></i> Callcenter Live' +
+        (MED_MODUS === "live" ? ' <span style="background:#22c55e;color:#fff;padding:0.1rem 0.5rem;border-radius:4px;font-size:0.7rem;margin-left:0.5rem">LIVE</span>' : '') + '</h3>';
     html += '<div class="stat-grid">' +
-        statCard("fa-phone-volume", "bg-success", "2", "Aktive Gespraeche") +
-        statCard("fa-clock", "bg-warning", "1", "In Warteschleife") +
-        statCard("fa-headset", "bg-primary", onlineAgenten.length, "Agenten frei") +
-        statCard("fa-robot", "bg-info", "3", "Via Voicebot") +
+        statCard("fa-phone-volume", "bg-success", kpiAnrufe, "Anrufe heute") +
+        statCard("fa-clock", "bg-warning", "—", "In Warteschleife") +
+        statCard("fa-headset", "bg-primary", kpiAgenten, "Agenten frei") +
+        statCard("fa-robot", "bg-info", kpiVoicebot, "Voicebot") +
         '</div>';
 
     // Agenten-Status
@@ -2297,9 +2408,16 @@ function callflowSimulieren() {
 
 // ===== Voicebot Konfiguration & Test =====
 
-function initVoicebotSeite() {
+async function initVoicebotSeite() {
     var configForm = document.getElementById("voicebot-config-form");
     if (!configForm) return;
+
+    // Im Live-Modus: Config vom Backend laden
+    var liveConfig = await voicebotConfigLadenApi();
+    if (liveConfig) {
+        var statusEl = document.getElementById("vb-live-status");
+        if (statusEl) statusEl.innerHTML = '<span style="background:#22c55e;color:#fff;padding:0.2rem 0.6rem;border-radius:6px;font-size:0.8rem"><i class="fa-solid fa-circle" style="font-size:0.5rem"></i> Backend verbunden — LLM: ' + escapeHtmlSafe(liveConfig.llm_model) + ' | TTS: ' + escapeHtmlSafe(liveConfig.tts_model) + '</span>';
+    }
 
     // Config speichern
     configForm.addEventListener("submit", function (e) {

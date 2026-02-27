@@ -288,6 +288,18 @@ async def einstellung_setzen(schluessel: str, wert: str, kategorie: str = "allge
     return {"ok": True}
 
 
+# ===== LLM Status (fuer Frontend Modus-Erkennung) =====
+
+@router.get("/llm/status")
+async def llm_status():
+    """LLM-Status — wird vom Frontend genutzt um Demo/Live-Modus zu erkennen."""
+    return {
+        "verfuegbar": True,
+        "modell": settings.llm_model,
+        "provider": settings.llm_provider,
+    }
+
+
 # ===== System =====
 
 @router.get("/system/status")
