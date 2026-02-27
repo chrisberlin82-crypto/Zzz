@@ -331,6 +331,44 @@ async def llm_status():
     }
 
 
+# ===== AI Agent Engineering =====
+
+class AIChatRequest(BaseModel):
+    messages: list
+
+@router.post("/ai-agent/chat")
+async def ai_agent_chat(data: AIChatRequest):
+    """Test-Chat fuer AI Agent Engineering — sendet Nachrichten ans LLM."""
+    from main import app
+    engine = app.state.voicebot
+
+    if not engine.llm or not engine.llm.client:
+        return {"antwort": "LLM nicht verfuegbar. Bitte Ollama starten."}
+
+    import asyncio
+    try:
+        response = await asyncio.wait_for(
+            engine.llm.client.chat(
+                model=settings.llm_model,
+                messages=data.messages,
+                options={
+                    "temperature": 0.7,
+                    "num_predict": 256,
+                    "top_p": 0.9,
+                    "repeat_penalty": 1.1,
+                },
+            ),
+            timeout=30.0,
+        )
+        antwort = response.message.content.strip()
+        antwort = antwort.replace("*", "").replace("#", "").replace("`", "")
+        return {"antwort": antwort}
+    except asyncio.TimeoutError:
+        return {"antwort": "Timeout — LLM hat nicht rechtzeitig geantwortet."}
+    except Exception as e:
+        return {"antwort": f"Fehler: {e}"}
+
+
 # ===== System =====
 
 @router.get("/system/status")

@@ -25,6 +25,7 @@
             <a href="agenten.html"><i class="fa-solid fa-headset nav-icon"></i> Agenten</a>
             <a href="softphone.html"><i class="fa-solid fa-phone nav-icon"></i> Softphone</a>
             <a href="uebersetzung.html"><i class="fa-solid fa-language nav-icon"></i> Uebersetzer</a>
+            <a href="ai-agent.html"><i class="fa-solid fa-microchip nav-icon"></i> AI Agent Engineering</a>
             <a href="benutzer.html"><i class="fa-solid fa-user-gear nav-icon"></i> Benutzer</a>
         </nav>
         <div class="sidebar-footer"><button id="btn-demo-reset" type="button">Demo zuruecksetzen</button></div>
@@ -39,6 +40,22 @@
             </div>
         </header>
         <main>
+            <div class="callflow-verwaltung card" style="margin-bottom:1rem;">
+                <div style="display:flex;gap:1rem;align-items:flex-end;flex-wrap:wrap;">
+                    <div class="form-group" style="margin:0;flex:1;min-width:200px;">
+                        <label for="cf-name">Callflow-Name</label>
+                        <input type="text" id="cf-name" placeholder="z.B. Hauptrufnummer Arztpraxis">
+                    </div>
+                    <div class="form-group" style="margin:0;flex:2;min-width:200px;">
+                        <label for="cf-beschreibung">Beschreibung</label>
+                        <input type="text" id="cf-beschreibung" placeholder="Optionale Beschreibung des Callflows">
+                    </div>
+                    <button id="btn-flow-neu" type="button" class="btn-sm" style="height:36px;"><i class="fa-solid fa-plus"></i> Neu</button>
+                </div>
+            </div>
+            <div id="callflow-liste" class="card" style="margin-bottom:1rem;">
+                <p class="text-muted">Callflows werden geladen...</p>
+            </div>
             <div class="callflow-layout">
                 <div class="callflow-toolbar card">
                     <h3><i class="fa-solid fa-puzzle-piece"></i> Bausteine</h3>

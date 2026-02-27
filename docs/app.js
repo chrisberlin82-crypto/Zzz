@@ -3964,6 +3964,359 @@ function initAuswertungen() {
     allesAktualisieren();
 }
 
+// ===== AI Agent Engineering =====
+
+var aiAgents = [];
+
+function initAiAgentEngineering() {
+    var container = document.getElementById("ai-agent");
+    if (!container) return;
+
+    // Tab-Navigation
+    var tabs = container.querySelectorAll(".ai-tab");
+    tabs.forEach(function (tab) {
+        tab.addEventListener("click", function () {
+            tabs.forEach(function (t) { t.classList.remove("active"); });
+            container.querySelectorAll(".ai-tab-content").forEach(function (c) { c.classList.remove("active"); });
+            tab.classList.add("active");
+            var target = document.getElementById("tab-" + tab.getAttribute("data-tab"));
+            if (target) target.classList.add("active");
+        });
+    });
+
+    // Stimmen laden
+    aiStimmenLaden();
+
+    // Temperatur-Slider
+    var tempSlider = document.getElementById("ab-temperatur");
+    var tempWert = document.getElementById("ab-temp-wert");
+    if (tempSlider && tempWert) {
+        tempSlider.addEventListener("input", function () {
+            tempWert.textContent = tempSlider.value;
+        });
+    }
+
+    // Agent Builder Form
+    var builderForm = document.getElementById("agent-builder-form");
+    if (builderForm) {
+        builderForm.addEventListener("submit", function (e) {
+            e.preventDefault();
+            aiAgentSpeichern();
+        });
+    }
+
+    // Test-Button
+    var testBtn = document.getElementById("ab-testen");
+    if (testBtn) {
+        testBtn.addEventListener("click", function () {
+            // Zu Prompt-Tab wechseln und Chat oeffnen
+            tabs.forEach(function (t) { t.classList.remove("active"); });
+            container.querySelectorAll(".ai-tab-content").forEach(function (c) { c.classList.remove("active"); });
+            var promptTab = container.querySelector('[data-tab="prompts"]');
+            if (promptTab) promptTab.classList.add("active");
+            var promptContent = document.getElementById("tab-prompts");
+            if (promptContent) promptContent.classList.add("active");
+            document.getElementById("pe-chat-input").focus();
+        });
+    }
+
+    // Prompt Engineering: Speichern
+    var peSpeichern = document.getElementById("pe-speichern");
+    if (peSpeichern) {
+        peSpeichern.addEventListener("click", aiPromptSpeichern);
+    }
+
+    // Prompt Engineering: Zuruecksetzen
+    var peZurueck = document.getElementById("pe-zuruecksetzen");
+    if (peZurueck) {
+        peZurueck.addEventListener("click", function () {
+            document.getElementById("pe-system-prompt").value = "Du bist eine freundliche Telefonistin in einer Arztpraxis. Antworte kurz, natuerlich und hilfsbereit. Sprich den Anrufer mit Sie an. Sei professionell aber warm.";
+            document.getElementById("pe-regeln").value = "WICHTIG fuer dein Verhalten am Telefon:\n- Antworte KURZ (1-3 Saetze). Kein Anrufer will lange Monologe.\n- Benutze natuerliche Fuellwoerter: 'Ach so', 'Alles klar', 'Moment'.\n- Stelle eine Frage pro Antwort, nicht mehrere.\n- Wenn du etwas nicht verstehst, frag hoeflich nach.\n- Nenne NIE technische Details (API, Datenbank, etc.).\n- Sprich wie eine echte Person, nicht wie ein Computer.";
+            aiErfolg("pe-erfolg", "Standard-Prompt wiederhergestellt");
+        });
+    }
+
+    // Test-Chat senden
+    var chatSenden = document.getElementById("pe-chat-senden");
+    var chatInput = document.getElementById("pe-chat-input");
+    if (chatSenden && chatInput) {
+        chatSenden.addEventListener("click", function () { aiTestChatSenden(); });
+        chatInput.addEventListener("keydown", function (e) {
+            if (e.key === "Enter") aiTestChatSenden();
+        });
+    }
+
+    // Chat leeren
+    var chatLeeren = document.getElementById("pe-chat-leeren");
+    if (chatLeeren) {
+        chatLeeren.addEventListener("click", function () {
+            var verlauf = document.getElementById("pe-chat-verlauf");
+            if (verlauf) verlauf.innerHTML = "";
+            aiTestVerlauf = [];
+        });
+    }
+
+    // Daten laden
+    aiAgentsLaden();
+    aiVorlagenAnzeigen();
+    aiMonitoringLaden();
+    aiSystemStatusPruefen();
+}
+
+async function aiStimmenLaden() {
+    var select = document.getElementById("ab-stimme");
+    if (!select) return;
+    try {
+        var res = await fetch(API_BASE + "/voicebot/stimmen");
+        var stimmen = await res.json();
+        select.innerHTML = "";
+        stimmen.forEach(function (s) {
+            var opt = document.createElement("option");
+            opt.value = s.id;
+            opt.textContent = s.name + " (" + s.geschlecht + ") — " + s.beschreibung;
+            select.appendChild(opt);
+        });
+    } catch (_) { console.warn("Stimmen laden:", _); }
+}
+
+function aiAgentSpeichern() {
+    var agent = {
+        id: Date.now(),
+        name: document.getElementById("ab-name").value,
+        branche: document.getElementById("ab-branche").value,
+        stimme: document.getElementById("ab-stimme").value,
+        hintergrund: document.getElementById("ab-hintergrund").value,
+        persoenlichkeit: document.getElementById("ab-persoenlichkeit").value,
+        begruessung: document.getElementById("ab-begruessung").value,
+        regeln: document.getElementById("ab-regeln").value,
+        llm_model: document.getElementById("ab-llm-model").value,
+        temperatur: parseFloat(document.getElementById("ab-temperatur").value),
+        skills: {
+            termine: document.getElementById("ab-skill-termine").checked,
+            rezept: document.getElementById("ab-skill-rezept").checked,
+            weiterleitung: document.getElementById("ab-skill-weiterleitung").checked,
+            kb: document.getElementById("ab-skill-kb").checked,
+            rueckruf: document.getElementById("ab-skill-rueckruf").checked,
+            notfall: document.getElementById("ab-skill-notfall").checked,
+        },
+        status: "aktiv",
+        erstellt: new Date().toISOString(),
+    };
+
+    // In localStorage speichern (Demo) oder API
+    var agents = JSON.parse(localStorage.getItem("ai_agents") || "[]");
+    agents.push(agent);
+    localStorage.setItem("ai_agents", JSON.stringify(agents));
+
+    // Auch als Backend-Config speichern versuchen
+    aiAgentZumBackendSenden(agent);
+
+    aiErfolg("ab-erfolg", "AI-Agent '" + escapeHtml(agent.name) + "' gespeichert!");
+    document.getElementById("agent-builder-form").reset();
+    document.getElementById("ab-temp-wert").textContent = "0.7";
+    aiAgentsLaden();
+}
+
+async function aiAgentZumBackendSenden(agent) {
+    try {
+        await fetch(API_BASE + "/einstellungen/ai_agent_" + agent.id + "?wert=" + encodeURIComponent(JSON.stringify(agent)) + "&kategorie=ai_agent", { method: "PUT" });
+    } catch (_) { console.warn("Agent Backend-Sync:", _); }
+}
+
+function aiAgentsLaden() {
+    var agents = JSON.parse(localStorage.getItem("ai_agents") || "[]");
+    aiAgents = agents;
+
+    var tbody = document.querySelector("#ai-agents-tabelle tbody");
+    if (!tbody) return;
+    tbody.innerHTML = "";
+
+    var peSelect = document.getElementById("pe-agent-select");
+    if (peSelect) {
+        peSelect.innerHTML = '<option value="">— Agent waehlen —</option>';
+    }
+
+    agents.forEach(function (a, idx) {
+        var tr = document.createElement("tr");
+        var brancheLabel = BRANCHEN[a.branche] ? BRANCHEN[a.branche].label : a.branche;
+        tr.innerHTML =
+            "<td>" + escapeHtml(a.name) + "</td>" +
+            "<td>" + escapeHtml(brancheLabel) + "</td>" +
+            "<td>" + escapeHtml(a.stimme) + "</td>" +
+            "<td>" + escapeHtml(a.llm_model || "Standard") + "</td>" +
+            '<td><span class="badge badge-gruen">' + escapeHtml(a.status) + "</span></td>" +
+            '<td><button class="btn-text ai-agent-loeschen" data-idx="' + idx + '"><i class="fa-solid fa-trash"></i></button>' +
+            ' <button class="btn-text ai-agent-bearbeiten" data-idx="' + idx + '"><i class="fa-solid fa-pen"></i></button></td>';
+        tbody.appendChild(tr);
+
+        if (peSelect) {
+            var opt = document.createElement("option");
+            opt.value = idx;
+            opt.textContent = a.name;
+            peSelect.appendChild(opt);
+        }
+    });
+
+    // Loeschen-Handler
+    tbody.querySelectorAll(".ai-agent-loeschen").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+            var i = parseInt(btn.getAttribute("data-idx"));
+            agents.splice(i, 1);
+            localStorage.setItem("ai_agents", JSON.stringify(agents));
+            aiAgentsLaden();
+        });
+    });
+
+    // Bearbeiten -> Prompt-Tab fuellen
+    tbody.querySelectorAll(".ai-agent-bearbeiten").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+            var i = parseInt(btn.getAttribute("data-idx"));
+            var a = agents[i];
+            if (!a) return;
+            var pePrompt = document.getElementById("pe-system-prompt");
+            var peKontext = document.getElementById("pe-kontext");
+            var peRegeln = document.getElementById("pe-regeln");
+            if (pePrompt) pePrompt.value = a.persoenlichkeit || "";
+            if (peKontext) peKontext.value = "Branche: " + (BRANCHEN[a.branche] ? BRANCHEN[a.branche].label : a.branche) + "\nBegruessung: " + (a.begruessung || "");
+            if (peRegeln) peRegeln.value = a.regeln || "";
+            // Tab wechseln
+            document.querySelectorAll(".ai-tab").forEach(function (t) { t.classList.remove("active"); });
+            document.querySelectorAll(".ai-tab-content").forEach(function (c) { c.classList.remove("active"); });
+            document.querySelector('[data-tab="prompts"]').classList.add("active");
+            document.getElementById("tab-prompts").classList.add("active");
+        });
+    });
+}
+
+function aiPromptSpeichern() {
+    var prompt = document.getElementById("pe-system-prompt").value;
+    var kontext = document.getElementById("pe-kontext").value;
+    var regeln = document.getElementById("pe-regeln").value;
+
+    localStorage.setItem("ai_custom_prompt", JSON.stringify({ prompt: prompt, kontext: kontext, regeln: regeln }));
+    aiErfolg("pe-erfolg", "Prompt gespeichert!");
+}
+
+var aiTestVerlauf = [];
+
+async function aiTestChatSenden() {
+    var input = document.getElementById("pe-chat-input");
+    var verlauf = document.getElementById("pe-chat-verlauf");
+    if (!input || !verlauf || !input.value.trim()) return;
+
+    var text = input.value.trim();
+    input.value = "";
+
+    // Anrufer-Nachricht anzeigen
+    verlauf.innerHTML += '<div class="ai-chat-msg anrufer"><div class="ai-chat-bubble">' + escapeHtml(text) + '</div></div>';
+    aiTestVerlauf.push({ rolle: "anrufer", text: text });
+    verlauf.scrollTop = verlauf.scrollHeight;
+
+    // An LLM senden
+    var tokenEl = document.getElementById("pe-chat-tokens");
+    var latenzEl = document.getElementById("pe-chat-latenz");
+    var startTime = Date.now();
+
+    try {
+        var systemPrompt = (document.getElementById("pe-system-prompt").value || "") +
+            "\n\n" + (document.getElementById("pe-kontext").value || "") +
+            "\n\n" + (document.getElementById("pe-regeln").value || "");
+
+        var messages = [{ role: "system", content: systemPrompt }];
+        aiTestVerlauf.forEach(function (m) {
+            messages.push({ role: m.rolle === "anrufer" ? "user" : "assistant", content: m.text });
+        });
+
+        var res = await fetch(API_BASE + "/ai-agent/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ messages: messages }),
+        });
+
+        var daten = await res.json();
+        var latenz = Date.now() - startTime;
+
+        var antwort = daten.antwort || daten.text || "Keine Antwort erhalten.";
+        aiTestVerlauf.push({ rolle: "bot", text: antwort });
+
+        verlauf.innerHTML += '<div class="ai-chat-msg bot"><div class="ai-chat-bubble">' + escapeHtml(antwort) + '</div></div>';
+        verlauf.scrollTop = verlauf.scrollHeight;
+
+        if (latenzEl) latenzEl.textContent = "Latenz: " + latenz + " ms";
+        if (tokenEl) tokenEl.textContent = "Tokens: ~" + (antwort.split(" ").length * 2);
+    } catch (err) {
+        console.warn("AI Chat Fehler:", err);
+        verlauf.innerHTML += '<div class="ai-chat-msg bot"><div class="ai-chat-bubble">Fehler: LLM nicht erreichbar. Im Demo-Modus ist der Test-Chat nicht verfuegbar.</div></div>';
+        verlauf.scrollTop = verlauf.scrollHeight;
+    }
+}
+
+function aiVorlagenAnzeigen() {
+    var container = document.getElementById("pe-vorlagen");
+    if (!container) return;
+
+    var vorlagen = [
+        { name: "Arztpraxis Standard", desc: "Freundliche Rezeptionistin, Terminvergabe, Rezeptbestellung", prompt: "Du bist eine freundliche Telefonistin in einer Arztpraxis. Antworte kurz, natuerlich und hilfsbereit. Sprich den Anrufer mit Sie an.", regeln: "- Antworte KURZ (1-3 Saetze)\n- Stelle eine Frage pro Antwort\n- Bei Notfaellen: 112 empfehlen" },
+        { name: "Kanzlei formell", desc: "Formeller Ton, Mandantenannahme, Terminvereinbarung", prompt: "Du bist die Sekretaerin einer Rechtsanwaltskanzlei. Sprich formell und praezise. Notiere Anliegen und biete Rueckruf an.", regeln: "- Keine Rechtsberatung erteilen\n- Immer Rueckrufnummer fragen\n- Dringlichkeit erfassen" },
+        { name: "Werkstatt locker", desc: "Lockerer Umgangston, KFZ-Terminvergabe", prompt: "Du bist der Annahme-Mitarbeiter einer KFZ-Werkstatt. Sprich freundlich und unkompliziert. Duzen ist OK wenn der Kunde duzt.", regeln: "- Fahrzeug und Kennzeichen fragen\n- Terminvorschlag machen\n- Bei Pannen: ADAC empfehlen" },
+        { name: "Minimal (nur weiterleiten)", desc: "Nimmt nur Name und Anliegen auf, leitet weiter", prompt: "Du bist eine automatische Telefonzentrale. Nimm den Namen und das Anliegen des Anrufers auf und sage, dass du einen Mitarbeiter verbindest.", regeln: "- Maximal 2 Fragen\n- Nie inhaltlich antworten\n- Immer weiterleiten" },
+    ];
+
+    container.innerHTML = "";
+    vorlagen.forEach(function (v) {
+        var card = document.createElement("div");
+        card.className = "ai-vorlage-card";
+        card.innerHTML = '<h4><i class="fa-solid fa-file-lines"></i> ' + escapeHtml(v.name) + '</h4><p>' + escapeHtml(v.desc) + '</p>';
+        card.addEventListener("click", function () {
+            document.getElementById("pe-system-prompt").value = v.prompt;
+            document.getElementById("pe-regeln").value = v.regeln;
+            aiErfolg("pe-erfolg", "Vorlage '" + v.name + "' geladen");
+        });
+        container.appendChild(card);
+    });
+}
+
+async function aiMonitoringLaden() {
+    try {
+        var res = await fetch(API_BASE + "/dashboard");
+        var d = await res.json();
+        var el = document.getElementById("mon-gespraeche");
+        if (el) el.textContent = d.anrufe_heute || 0;
+    } catch (_) { console.warn("Monitoring laden:", _); }
+}
+
+async function aiSystemStatusPruefen() {
+    try {
+        var res = await fetch(API_BASE + "/system/status");
+        var d = await res.json();
+
+        var llmDot = document.getElementById("mon-llm-dot");
+        var sttDot = document.getElementById("mon-stt-dot");
+        var ttsDot = document.getElementById("mon-tts-dot");
+        var llmInfo = document.getElementById("mon-llm-info");
+        var sttInfo = document.getElementById("mon-stt-info");
+        var ttsInfo = document.getElementById("mon-tts-info");
+
+        if (llmDot) llmDot.classList.add("online");
+        if (sttDot) sttDot.classList.add("online");
+        if (ttsDot) ttsDot.classList.add("online");
+        if (llmInfo) llmInfo.textContent = d.llm || "—";
+        if (sttInfo) sttInfo.textContent = d.stt || "—";
+        if (ttsInfo) ttsInfo.textContent = d.tts || "—";
+    } catch (_) {
+        console.warn("System-Status:", _);
+    }
+}
+
+function aiErfolg(elementId, text) {
+    var el = document.getElementById(elementId);
+    if (el) {
+        el.textContent = text;
+        el.hidden = false;
+        setTimeout(function () { el.hidden = true; }, 3000);
+    }
+}
+
 // Globale Funktionen fuer onclick-Handler im HTML
 if (typeof window !== "undefined") {
     window.callflowPropsSpeichern = callflowPropsSpeichern;
@@ -4005,6 +4358,7 @@ if (typeof document !== "undefined") {
         initWissensdatenbank();
         initAnsagenGenerator();
         initAuswertungen();
+        initAiAgentEngineering();
         initDemoReset();
 
         // Mobile Sidebar Toggle

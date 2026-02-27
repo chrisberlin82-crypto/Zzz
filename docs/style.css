@@ -1714,3 +1714,186 @@ section + section, .card + .card {
     align-items: center;
     gap: 1rem;
 }
+
+/* ===== AI Agent Engineering ===== */
+.ai-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid var(--border);
+    padding-bottom: 0;
+}
+.ai-tab {
+    padding: 0.75rem 1.25rem;
+    border: none;
+    background: none;
+    color: var(--text-light);
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.ai-tab:hover { color: var(--primary); }
+.ai-tab.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+}
+.ai-tab-content { display: none; }
+.ai-tab-content.active { display: block; }
+
+.ai-skills-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 0.75rem;
+}
+.ai-skill-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 0.9rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+}
+.ai-skill-toggle:hover { border-color: var(--primary); }
+.ai-skill-toggle input:checked + i { color: var(--primary); }
+
+.ai-code-editor {
+    font-family: "Fira Code", "Consolas", monospace;
+    font-size: 0.85rem;
+    background: #1e293b;
+    color: #e2e8f0;
+    border: 1px solid #334155;
+    border-radius: var(--radius);
+    padding: 1rem;
+    line-height: 1.6;
+    resize: vertical;
+}
+
+.ai-test-chat {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+.ai-chat-verlauf {
+    height: 300px;
+    overflow-y: auto;
+    padding: 1rem;
+    background: #f8fafc;
+}
+.ai-chat-msg {
+    margin-bottom: 0.75rem;
+    display: flex;
+    gap: 0.5rem;
+}
+.ai-chat-msg.anrufer { justify-content: flex-end; }
+.ai-chat-msg .ai-chat-bubble {
+    max-width: 70%;
+    padding: 0.6rem 1rem;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+.ai-chat-msg.bot .ai-chat-bubble {
+    background: var(--primary);
+    color: white;
+    border-bottom-left-radius: 2px;
+}
+.ai-chat-msg.anrufer .ai-chat-bubble {
+    background: #e2e8f0;
+    color: #1e293b;
+    border-bottom-right-radius: 2px;
+}
+.ai-chat-eingabe {
+    display: flex;
+    border-top: 1px solid var(--border);
+}
+.ai-chat-eingabe input {
+    flex: 1;
+    border: none;
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+    outline: none;
+}
+.ai-chat-eingabe button {
+    padding: 0.75rem 1.25rem;
+    border: none;
+    background: var(--primary);
+    color: white;
+    cursor: pointer;
+}
+.ai-chat-meta {
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+    margin-top: 0.75rem;
+    font-size: 0.8rem;
+    color: var(--text-light);
+}
+
+.ai-vorlagen-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1rem;
+}
+.ai-vorlage-card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.ai-vorlage-card:hover {
+    border-color: var(--primary);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.ai-vorlage-card h4 { margin: 0 0 0.5rem; font-size: 0.95rem; }
+.ai-vorlage-card p { margin: 0; font-size: 0.8rem; color: var(--text-light); }
+
+.ai-stat-grid {
+    grid-template-columns: repeat(4, 1fr);
+}
+@media (max-width: 768px) {
+    .ai-stat-grid { grid-template-columns: repeat(2, 1fr); }
+    .ai-tabs { flex-wrap: wrap; }
+    .ai-skills-grid { grid-template-columns: 1fr 1fr; }
+}
+
+.ai-transkript {
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem;
+    max-height: 400px;
+    overflow-y: auto;
+    font-size: 0.9rem;
+    line-height: 1.6;
+}
+.ai-transkript-leer { color: var(--text-light); text-align: center; }
+.ai-transkript .anrufer { color: #0f172a; }
+.ai-transkript .bot { color: var(--primary); }
+
+.ai-system-status { display: flex; flex-direction: column; gap: 0.75rem; }
+.ai-status-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border);
+}
+.ai-status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #94a3b8;
+}
+.ai-status-dot.online { background: var(--success); }
+.ai-status-dot.offline { background: var(--danger); }
+.ai-status-detail { margin-left: auto; font-size: 0.8rem; color: var(--text-light); }
