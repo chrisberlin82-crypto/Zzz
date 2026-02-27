@@ -136,7 +136,7 @@ function guardAbmelden() {
 }
 
 // Rollen-Konfiguration: Wer darf was sehen
-var ALLE_SEITEN = ["index.html","patienten.html","aerzte.html","termine.html","wartezimmer.html","wissensdatenbank.html","ansagen.html","auswertung.html","agenten.html","softphone.html","voicebot.html","callflow.html","uebersetzung.html","standort.html","benutzer.html"];
+var ALLE_SEITEN = ["index.html","patienten.html","aerzte.html","termine.html","wartezimmer.html","wissensdatenbank.html","ansagen.html","auswertung.html","agenten.html","softphone.html","voicebot.html","flow-editor.html","uebersetzung.html","standort.html","benutzer.html"];
 var ROLLEN = {
     admin:           { label: "Admin",           icon: "fa-user-gear",   farbe: "#dc2626", seiten: ALLE_SEITEN },
     standortleitung: { label: "Standortleitung", icon: "fa-building",    farbe: "#7c3aed", seiten: ALLE_SEITEN },
