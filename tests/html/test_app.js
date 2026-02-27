@@ -1092,5 +1092,219 @@ await asyncTest("stopAnrufTimer ohne laufenden Timer", async function () {
 
 console.log("  2 Tests bestanden");
 
+// --- Standort/ACD: Konstanten ---
+
+console.log("\n=== WOCHENTAGE & ACD_MODUS_LABEL ===");
+
+test("WOCHENTAGE hat 7 Eintraege", function () {
+    assert.strictEqual(app.WOCHENTAGE.length, 7);
+});
+
+test("WOCHENTAGE Montag bis Sonntag", function () {
+    assert.strictEqual(app.WOCHENTAGE[0], "Montag");
+    assert.strictEqual(app.WOCHENTAGE[6], "Sonntag");
+});
+
+test("ACD_MODUS_LABEL hat 3 Modi", function () {
+    assert.strictEqual(Object.keys(app.ACD_MODUS_LABEL).length, 3);
+    assert.ok(app.ACD_MODUS_LABEL.alle_annehmen);
+    assert.ok(app.ACD_MODUS_LABEL.klingeln_dann_bot);
+    assert.ok(app.ACD_MODUS_LABEL.bot_direkt);
+});
+
+console.log("  3 Tests bestanden");
+
+// --- standardZeitplan ---
+
+console.log("\n=== standardZeitplan ===");
+
+test("standardZeitplan hat 7 Tage", function () {
+    var plan = app.standardZeitplan();
+    assert.strictEqual(plan.length, 7);
+});
+
+test("Mo-Fr aktiv, Sa-So inaktiv", function () {
+    var plan = app.standardZeitplan();
+    for (var i = 0; i < 5; i++) assert.strictEqual(plan[i].aktiv, true);
+    assert.strictEqual(plan[5].aktiv, false);
+    assert.strictEqual(plan[6].aktiv, false);
+});
+
+test("Oeffnungszeiten 08:00-18:00", function () {
+    var plan = app.standardZeitplan();
+    plan.forEach(function (t) { assert.strictEqual(t.von, "08:00"); assert.strictEqual(t.bis, "18:00"); });
+});
+
+test("Mittagspause 12:00-13:00 bot_direkt", function () {
+    var plan = app.standardZeitplan();
+    plan.forEach(function (t) { assert.strictEqual(t.pause_von, "12:00"); assert.strictEqual(t.pause_bis, "13:00"); assert.strictEqual(t.pause_modus, "bot_direkt"); });
+});
+
+test("Standard-Modus klingeln_dann_bot", function () {
+    var plan = app.standardZeitplan();
+    plan.forEach(function (t) { assert.strictEqual(t.modus, "klingeln_dann_bot"); });
+});
+
+console.log("  5 Tests bestanden");
+
+// --- ACD-Config ---
+
+console.log("\n=== ACD-Config ===");
+
+await asyncTest("acdConfigSpeichern und Laden", async function () {
+    resetStorage();
+    app.acdConfigSpeichern({ modus: "bot_direkt", klingelanzahl: 5, klingel_timeout: 20, verteilung: "rundlauf" });
+    var c = app.acdConfigLaden();
+    assert.strictEqual(c.modus, "bot_direkt");
+    assert.strictEqual(c.klingelanzahl, 5);
+    assert.strictEqual(c.klingel_timeout, 20);
+    assert.strictEqual(c.verteilung, "rundlauf");
+});
+
+await asyncTest("acdConfigLaden ohne Daten gibt null", async function () {
+    resetStorage();
+    assert.strictEqual(app.acdConfigLaden(), null);
+});
+
+await asyncTest("acdConfigLaden ungueltig gibt null", async function () {
+    resetStorage();
+    localStorage.setItem("med_acd_config", "kaputt{");
+    assert.strictEqual(app.acdConfigLaden(), null);
+});
+
+console.log("  3 Tests bestanden");
+
+// --- Zeitplan ---
+
+console.log("\n=== Zeitplan ===");
+
+await asyncTest("zeitplanSpeichern und Laden", async function () {
+    resetStorage();
+    var plan = app.standardZeitplan();
+    plan[0].modus = "bot_direkt";
+    app.zeitplanSpeichern(plan);
+    var g = app.zeitplanLaden();
+    assert.strictEqual(g[0].modus, "bot_direkt");
+    assert.strictEqual(g.length, 7);
+});
+
+await asyncTest("zeitplanLaden ohne Daten gibt Standard", async function () {
+    resetStorage();
+    var plan = app.zeitplanLaden();
+    assert.strictEqual(plan.length, 7);
+    assert.strictEqual(plan[0].aktiv, true);
+    assert.strictEqual(plan[5].aktiv, false);
+});
+
+console.log("  2 Tests bestanden");
+
+// --- Standortleitung CRUD ---
+
+console.log("\n=== Standortleitung CRUD ===");
+
+await asyncTest("standortleitungLaden leer", async function () {
+    resetStorage();
+    assert.strictEqual(app.standortleitungLaden().length, 0);
+});
+
+await asyncTest("standortleitungSpeichernApi erstellt Eintrag", async function () {
+    resetStorage();
+    var erg = app.standortleitungSpeichernApi({ name: "Dr. Gross", rolle: "standortleitung", nebenstelle: "300", sip_passwort: "sl300", warteschlange: "alle" });
+    assert.strictEqual(erg.id, 1);
+    assert.strictEqual(erg.name, "Dr. Gross");
+    assert.strictEqual(erg.status, "offline");
+    assert.strictEqual(app.standortleitungLaden().length, 1);
+});
+
+await asyncTest("standortleitungSpeichernApi aufsteigende IDs", async function () {
+    var erg = app.standortleitungSpeichernApi({ name: "Weber", rolle: "teamleiter", nebenstelle: "301", sip_passwort: "tl301", warteschlange: "rezeption" });
+    assert.strictEqual(erg.id, 2);
+    assert.strictEqual(app.standortleitungLaden().length, 2);
+});
+
+await asyncTest("standortleitungAktualisierenApi aendert Daten", async function () {
+    app.standortleitungAktualisierenApi(1, { name: "Dr. Sabine Gross" });
+    assert.strictEqual(app.standortleitungLaden()[0].name, "Dr. Sabine Gross");
+});
+
+await asyncTest("standortleitungStatusSetzen online", async function () {
+    app.standortleitungStatusSetzen(1, "online");
+    assert.strictEqual(app.standortleitungLaden()[0].status, "online");
+});
+
+await asyncTest("standortleitungStatusSetzen pause", async function () {
+    app.standortleitungStatusSetzen(1, "pause");
+    assert.strictEqual(app.standortleitungLaden()[0].status, "pause");
+});
+
+await asyncTest("standortleitungStatusSetzen offline", async function () {
+    app.standortleitungStatusSetzen(1, "offline");
+    assert.strictEqual(app.standortleitungLaden()[0].status, "offline");
+});
+
+await asyncTest("standortleitungLoeschenApi entfernt Eintrag", async function () {
+    app.standortleitungLoeschenApi(2);
+    var liste = app.standortleitungLaden();
+    assert.strictEqual(liste.length, 1);
+    assert.strictEqual(liste[0].name, "Dr. Sabine Gross");
+});
+
+await asyncTest("standortleitungLoeschenApi alle entfernen", async function () {
+    app.standortleitungLoeschenApi(1);
+    assert.strictEqual(app.standortleitungLaden().length, 0);
+});
+
+console.log("  9 Tests bestanden");
+
+// --- ACD Live-Modus Ermittlung ---
+
+console.log("\n=== ACD Live-Modus ===");
+
+await asyncTest("aktuellenAcdModusErmitteln ohne Config", async function () {
+    resetStorage();
+    var a = app.aktuellenAcdModusErmitteln();
+    assert.ok(a.modus);
+    assert.ok(a.quelle);
+});
+
+await asyncTest("aktuellenAcdModusErmitteln inaktiver Tag nutzt Standard", async function () {
+    resetStorage();
+    app.acdConfigSpeichern({ modus: "alle_annehmen" });
+    var plan = app.standardZeitplan();
+    plan.forEach(function (t) { t.aktiv = false; });
+    app.zeitplanSpeichern(plan);
+    var a = app.aktuellenAcdModusErmitteln();
+    assert.strictEqual(a.modus, "alle_annehmen");
+    assert.ok(a.quelle.includes("inaktiv"));
+});
+
+await asyncTest("aktuellenAcdModusErmitteln aktiver Tag nutzt Zeitplan", async function () {
+    resetStorage();
+    app.acdConfigSpeichern({ modus: "alle_annehmen" });
+    var plan = app.standardZeitplan();
+    plan.forEach(function (t) { t.aktiv = true; t.von = "00:00"; t.bis = "23:59"; t.modus = "bot_direkt"; t.pause_von = ""; t.pause_bis = ""; });
+    app.zeitplanSpeichern(plan);
+    var a = app.aktuellenAcdModusErmitteln();
+    assert.strictEqual(a.modus, "bot_direkt");
+});
+
+await asyncTest("aktuellenAcdModusErmitteln Pause-Modus", async function () {
+    resetStorage();
+    app.acdConfigSpeichern({ modus: "alle_annehmen" });
+    var jetzt = new Date();
+    var hh = ("0" + jetzt.getHours()).slice(-2);
+    var mm = ("0" + jetzt.getMinutes()).slice(-2);
+    var nMm = (parseInt(mm) + 2) % 60;
+    var nHh = nMm < parseInt(mm) ? ("0" + (parseInt(hh) + 1) % 24).slice(-2) : hh;
+    var plan = app.standardZeitplan();
+    plan.forEach(function (t) { t.aktiv = true; t.von = "00:00"; t.bis = "23:59"; t.modus = "klingeln_dann_bot"; t.pause_von = hh + ":" + mm; t.pause_bis = nHh + ":" + ("0" + nMm).slice(-2); t.pause_modus = "bot_direkt"; });
+    app.zeitplanSpeichern(plan);
+    var a = app.aktuellenAcdModusErmitteln();
+    assert.strictEqual(a.modus, "bot_direkt");
+    assert.ok(a.quelle.includes("Pause"));
+});
+
+console.log("  4 Tests bestanden");
+
 console.log("\n=== Alle " + bestanden + " JS-Tests bestanden ===");
 })();

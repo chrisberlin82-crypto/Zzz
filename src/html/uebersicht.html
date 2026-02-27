@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MedReception – Projektübersicht</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 50%, #f8fafc 100%); min-height: 100vh; padding: 32px 24px; }
+
+/* ── Header ── */
+.page-header { text-align: center; margin-bottom: 36px; }
+.logo { width: 48px; height: 48px; background: #2563eb; border-radius: 14px; display: inline-flex; align-items: center; justify-content: center; color: white; font-weight: 800; font-size: 20px; margin-bottom: 12px; box-shadow: 0 4px 16px rgba(37,99,235,.3); }
+.page-header h1 { font-size: 24px; font-weight: 800; color: #0f172a; }
+.page-header p  { font-size: 13px; color: #64748b; margin-top: 4px; }
+
+/* ── Controls ── */
+.controls { display: flex; justify-content: center; gap: 8px; margin-bottom: 28px; }
+.ctrl-btn { padding: 7px 16px; border-radius: 8px; font-size: 12px; font-weight: 600; border: 1.5px solid #e2e8f0; background: white; color: #475569; cursor: pointer; font-family: 'Inter', sans-serif; transition: all .12s; }
+.ctrl-btn:hover { background: #eff6ff; border-color: #93c5fd; color: #1d4ed8; }
+
+/* ── Tree wrapper ── */
+.tree { max-width: 680px; margin: 0 auto; }
+.tree-root-label { font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 16px; padding-left: 4px; }
+
+/* ── Section Headers (Level 0) ── */
+.sec-head {
+display: flex; align-items: center; gap: 12px;
+border-radius: 13px; padding: 13px 16px; margin-bottom: 6px;
+cursor: pointer; user-select: none; transition: all .15s;
+box-shadow: 0 3px 12px rgba(0,0,0,.08);
+}
+.sec-head.blue   { background: linear-gradient(135deg, #1e40af, #2563eb); }
+.sec-head.purple { background: linear-gradient(135deg, #5b21b6, #7c3aed); }
+.sec-head.teal   { background: linear-gradient(135deg, #0f766e, #0d9488); }
+.sec-head.green  { background: linear-gradient(135deg, #15803d, #16a34a); }
+.sec-head.indigo { background: linear-gradient(135deg, #3730a3, #4f46e5); }
+.sec-head:hover  { opacity: .92; transform: translateY(-1px); }
+
+.sec-icon { width: 36px; height: 36px; background: rgba(255,255,255,.2); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+.sec-title { flex: 1; }
+.sec-title h2 { font-size: 14px; font-weight: 800; color: white; }
+.sec-title p  { font-size: 11px; color: rgba(255,255,255,.65); margin-top: 1px; }
+.sec-chevron { color: rgba(255,255,255,.7); font-size: 14px; transition: transform .2s; }
+.sec-chevron.open { transform: rotate(90deg); }
+
+/* ── Branch lines ── */
+.branch { padding-left: 20px; border-left: 2px solid #e2e8f0; margin-left: 18px; margin-bottom: 6px; overflow: hidden; }
+.branch.hidden { display: none; }
+.sub-branch { padding-left: 18px; border-left: 2px solid #f1f5f9; margin-left: 16px; overflow: hidden; }
+.sub-branch.hidden { display: none; }
+
+/* ── Node cards ── */
+.node {
+position: relative; display: flex; align-items: center; gap: 10px;
+background: white; border: 1.5px solid #e5e7eb; border-radius: 10px;
+padding: 10px 14px; margin: 6px 0; text-decoration: none;
+transition: all .13s; cursor: pointer; color: inherit;
+}
+.node::before { content: ''; position: absolute; left: -20px; top: 50%; width: 18px; height: 2px; background: #e2e8f0; }
+.node:hover { border-color: #93c5fd; box-shadow: 0 3px 12px rgba(37,99,235,.1); transform: translateX(3px); }
+.node.sub { background: #f8fafc; padding: 8px 12px; border-radius: 9px; }
+.node.sub::before { background: #f1f5f9; }
+.node.sub:hover { border-color: #a5f3fc; box-shadow: 0 2px 8px rgba(13,148,136,.08); }
+
+.node-icon { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+.ni-blue   { background: #dbeafe; }
+.ni-purple { background: #ede9fe; }
+.ni-teal   { background: #ccfbf1; }
+.ni-green  { background: #dcfce7; }
+.ni-orange { background: #ffedd5; }
+.ni-gray   { background: #f1f5f9; }
+.ni-indigo { background: #e0e7ff; }
+
+.node-body { flex: 1; min-width: 0; }
+.node-title { font-size: 13px; font-weight: 700; color: #1e293b; }
+.node-desc  { font-size: 11px; color: #64748b; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.node-badge { padding: 2px 9px; border-radius: 999px; font-size: 10px; font-weight: 700; flex-shrink: 0; }
+.nb-blue   { background: #dbeafe; color: #1d4ed8; }
+.nb-purple { background: #ede9fe; color: #6d28d9; }
+.nb-teal   { background: #ccfbf1; color: #0f766e; }
+.nb-green  { background: #dcfce7; color: #15803d; }
+.nb-orange { background: #ffedd5; color: #c2410c; }
+.nb-indigo { background: #e0e7ff; color: #3730a3; }
+
+.node-arrow { color: #cbd5e1; font-size: 13px; flex-shrink: 0; transition: all .13s; }
+.node:hover .node-arrow { color: #2563eb; transform: translateX(2px); }
+
+/* Toggle chevron for expandable nodes */
+.toggle-icon { color: #94a3b8; font-size: 12px; flex-shrink: 0; transition: transform .2s; margin-right: -2px; }
+.toggle-icon.open { transform: rotate(90deg); }
+
+.divider { height: 2px; background: linear-gradient(to right, transparent, #e2e8f0, transparent); margin: 24px 0; }
+
+/* Sub-section head (Standortleitung inside TL) */
+.sub-sec-head {
+position: relative;
+display: flex; align-items: center; gap: 10px;
+border-radius: 11px; padding: 10px 14px; margin: 8px 0 4px;
+cursor: pointer; user-select: none;
+background: linear-gradient(135deg, #0f766e, #0d9488);
+box-shadow: 0 2px 8px rgba(13,148,136,.15);
+transition: all .13s;
+}
+.sub-sec-head::before { content: ''; position: absolute; left: -20px; top: 50%; width: 18px; height: 2px; background: #e2e8f0; }
+.sub-sec-head:hover { opacity: .9; transform: translateX(2px); }
+.sub-sec-head .sec-icon { width: 30px; height: 30px; font-size: 15px; }
+.sub-sec-head .sec-title h2 { font-size: 13px; }
+.sub-sec-head .sec-title p  { font-size: 10px; }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div class="logo">M</div>
+  <h1>MedReception</h1>
+  <p>Projektübersicht — alle Dashboards &amp; Funktionen</p>
+</div>
+
+<div class="controls">
+  <button class="ctrl-btn" onclick="expandAll()">▼ Alle aufklappen</button>
+  <button class="ctrl-btn" onclick="collapseAll()">▲ Alle zuklappen</button>
+  <button class="ctrl-btn" onclick="location.href='admin-dashboard.html'">→ Admin Dashboard</button>
+  <button class="ctrl-btn" onclick="sessionStorage.removeItem('mr_guard_session');location.href='index.html'">🔓 Abmelden</button>
+</div>
+
+<div class="tree">
+  <div class="tree-root-label">Übersicht</div>
+
+  <!-- ══════════ ADMIN ══════════ -->
+
+  <div class="sec-head blue" onclick="toggle('admin')">
+    <div class="sec-icon">🛡️</div>
+    <div class="sec-title"><h2>Admin Dashboard</h2><p>Vollzugriff · Systemverwaltung · Alle Standorte</p></div>
+    <span class="sec-chevron open" id="chv-admin">›</span>
+  </div>
+  <div class="branch" id="branch-admin">
+
+    <!-- Übersicht -->
+    <div class="node" onclick="toggle('admin-overview'); event.stopPropagation()">
+      <div class="node-icon ni-blue">📊</div>
+      <div class="node-body"><div class="node-title">Übersicht</div><div class="node-desc">Live-KPIs · Callcenter Echtzeit · Agenten-Status</div></div>
+      <span class="node-badge nb-blue">Tab 1</span>
+      <span class="toggle-icon open" id="chv-admin-overview">›</span>
+    </div>
+    <div class="sub-branch" id="branch-admin-overview">
+      <a class="node sub" href="admin-dashboard.html"><div class="node-icon ni-gray">📞</div><div class="node-body"><div class="node-title">Tages-KPIs</div><div class="node-desc">Anrufe · Angenommen · Verpasst · Ø Wartezeit · Termine</div></div><span class="node-arrow">›</span></a>
+      <a class="node sub" href="admin-dashboard.html"><div class="node-icon ni-gray">📡</div><div class="node-body"><div class="node-title">Callcenter Live</div><div class="node-desc">Aktive Gespräche · Warteschleife · Agenten frei · Voicebot</div></div><span class="node-arrow">›</span></a>
+      <a class="node sub" href="admin-dashboard.html"><div class="node-icon ni-gray">👤</div><div class="node-body"><div class="node-title">Agenten-Status</div><div class="node-desc">Live-Status aller Agenten · Extension · Anrufe heute</div></div><span class="node-arrow">›</span></a>
+    </div>
+
+    <!-- ACD -->
+    <div class="node" onclick="toggle('admin-acd'); event.stopPropagation()">
+      <div class="node-icon ni-orange">📞</div>
+      <div class="node-body"><div class="node-title">ACD Einstellungen</div><div class="node-desc">Queues · Ring-Strategie · IVR-Menü · Öffnungszeiten</div></div>
+      <span class="node-badge nb-orange">Tab 2</span>
+      <span class="toggle-icon open" id="chv-admin-acd">›</span>
+    </div>
+    <div class="sub-branch" id="branch-admin-acd">
+      <a class="node sub" href="admin-dashboard.html"><div class="node-icon ni-gray">🗂</div><div class="node-body"><div class="node-title">Warteschlangen (Queues)</div><div class="node-desc">Allgemein · Notfall · Rezept · Agenten-Zuweisung</div></div><span class="node-arrow">›</span></a>
+      <a class="node sub" href="admin-dashboard.html"><div class="node-icon ni-gray">⚙️</div><div class="node-body"><div class="node-title">Queue-Einstellungen</div><div class="node-desc">Ring-Strategie · Timeout · Max. Wartezeit · Musik</div></div><span class="node-arrow">›</span></a>
+      <a class="node sub" href="admin-dashboard.html"><div class="node-icon ni-gray">↗️</div><div class="node-body"><div class="node-title">Overflow & Weiterleitung</div><div class="node-desc">Rückruf · Voicebot · Externe Nummer · Ansagen</div></div><span class="node-arrow">›</span></a>
+      <a class="node sub" href="admin-dashboard.html"><div class="node-icon ni-gray">🎛</div><div class="node-body"><div class="node-title">IVR-Menü</div><div class="node-desc">Tastenbelegung 1–9 · Zielrufnummer je Taste</div></div><span class="node-arrow">›</span></a>
+      <a class="node sub" href="admin-dashboard.html"><div class="node-icon ni-gray">🕐</div><div class="node-body"><div class="node-title">Öffnungszeiten & Ansagen</div><div class="node-desc">Geschäftstage · Feiertage · Außerhalb-Ansage</div></div><span class="node-arrow">›</span></a>
+    </div>
+
+    <!-- Asterisk -->
+    <div class="node" onclick="toggle('admin-sip'); event.stopPropagation()">
+      <div class="node-icon ni-blue">🔧</div>
+      <div class="node-body"><div class="node-title">Asterisk / SIP</div><div class="node-desc">Trunks · Extensions · Konsole · Anrufprotokoll</div></div>
+      <span class="node-badge nb-blue">Tab 3</span>
+      <span class="toggle-icon open" id="chv-admin-sip">›</span>
+    </div>
+    <div class="sub-branch" id="branch-admin-sip">
+      <a class="node sub" href="admin-dashboard.html"><div class="node-icon ni-gray">📡</div><div class="node-body"><div class="node-title">SIP Trunks</div><div class="node-desc">Status OK/Offline · Trunk hinzufügen</div></div><span class="node-arrow">›</span></a>
+      <a class="node sub" href="admin-dashboard.html"><div class="node-icon ni-gray">☎️</div><div class="node-body"><div class="node-title">Extensions</div><div class="node-desc">Agenten · Echtzeit-Status · Neu anlegen</div></div><span class="node-arrow">›</span></a>
+      <a class="node sub" href="admin-dashboard.html"><div class="node-icon ni-gray">📋</div><div class="node-body"><div class="node-title">Anrufprotokoll & Konsole</div><div class="node-desc">CDR · Asterisk CLI · Reload</div></div><span class="node-arrow">›</span></a>
+    </div>
+
+    <!-- Auswertung & Kosten -->
+    <div class="node" onclick="toggle('admin-ausw'); event.stopPropagation()">
+      <div class="node-icon ni-blue">📈</div>
+      <div class="node-body"><div class="node-title">Auswertung & Kosten</div><div class="node-desc">KPI Übersicht · Kosten & Erlöse · Agenten & Lohn · Hotlines · Tarife</div></div>
+      <span class="node-badge nb-blue">Tab 4</span>
+      <span class="toggle-icon open" id="chv-admin-ausw">›</span>
+    </div>
+    <div class="sub-branch" id="branch-admin-ausw">
+      <a class="node sub" href="admin-dashboard.html"><div class="node-icon ni-gray">📊</div><div class="node-body"><div class="node-title">KPI Übersicht</div><div class="node-desc">Service Level · Abandon Rate · AHT · First Call Resolution</div></div><span class="node-arrow">›</span></a>
+      <a class="node sub" href="admin-dashboard.html"><div class="node-icon ni-gray">💰</div><div class="node-body"><div class="node-title">Kosten & Erlöse</div><div class="node-desc">Gesamtkosten · Erlöse · Marge · Monatsvergleich</div></div><span class="node-arrow">›</span></a>
+      <a class="node sub" href="admin-dashboard.html"><div class="node-icon ni-gray">👤</div><div class="node-body"><div class="node-title">Agenten & Lohn</div><div class="node-desc">Stunden · Zuschläge · Bruttolohn je Agent</div></div><span class="node-arrow">›</span></a>
+      <a class="node sub" href="admin-dashboard.html"><div class="node-icon ni-gray">📞</div><div class="node-body"><div class="node-title">Hotlines</div><div class="node-desc">Anrufe · SL · Abandon · AHT je Hotline</div></div><span class="node-arrow">›</span></a>
+      <a class="node sub" href="admin-dashboard.html"><div class="node-icon ni-gray">⚙️</div><div class="node-body"><div class="node-title">Stammdaten / Tarife</div><div class="node-desc">Schichtzuschläge · Feiertage · Abrechnungseinstellungen</div></div><span class="node-arrow">›</span></a>
+    </div>
+
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ══════════ TEAMLEITER ══════════ -->
+
+  <div class="sec-head purple" onclick="toggle('tl')">
+    <div class="sec-icon">👤</div>
+    <div class="sec-title"><h2>Teamleiter Dashboard</h2><p>Team-Verwaltung · Live · Clickbot Builder · Agent Board</p></div>
+    <span class="sec-chevron open" id="chv-tl">›</span>
+  </div>
+  <div class="branch" id="branch-tl">
+
+    <a class="node" href="teamleiter.html"><div class="node-icon ni-purple">📡</div><div class="node-body"><div class="node-title">Live-Auslastung</div><div class="node-desc">Hotlines & Agenten auf die Sekunde · Echtzeit-KPIs</div></div><span class="node-badge nb-purple">Tab 1</span><span class="node-arrow">›</span></a>
+    <a class="node" href="teamleiter.html"><div class="node-icon ni-purple">📈</div><div class="node-body"><div class="node-title">KPI & Berichte</div><div class="node-desc">Service Level · Abandon Rate · AHT · Hotline & Agenten KPIs</div></div><span class="node-badge nb-purple">Tab 2</span><span class="node-arrow">›</span></a>
+    <a class="node" href="teamleiter.html"><div class="node-icon ni-purple">👥</div><div class="node-body"><div class="node-title">Agenten verwalten</div><div class="node-desc">Anlegen · Queues & Skill-Gruppen zuweisen</div></div><span class="node-badge nb-purple">Tab 3</span><span class="node-arrow">›</span></a>
+    <a class="node" href="teamleiter.html"><div class="node-icon ni-purple">🤖</div><div class="node-body"><div class="node-title">Clickbot Builder</div><div class="node-desc">No-Code Flow-Editor · Klick-Vorgaben für Agenten</div></div><span class="node-badge nb-purple">Tab 4</span><span class="node-arrow">›</span></a>
+    <a class="node" href="teamleiter.html"><div class="node-icon ni-purple">📍</div><div class="node-body"><div class="node-title">Standort & Wissensdatenbank</div><div class="node-desc">Standortdaten · Öffnungszeiten · KB je Projekt</div></div><span class="node-badge nb-purple">Tab 5</span><span class="node-arrow">›</span></a>
+    <a class="node" href="teamleiter.html"><div class="node-icon ni-purple">✉️</div><div class="node-body"><div class="node-title">Nachrichten-Übersicht</div><div class="node-desc">Alle versendeten Infos · Status · weitergegebene Daten</div></div><span class="node-badge nb-purple">Tab 6</span><span class="node-arrow">›</span></a>
+    <a class="node" href="teamleiter.html"><div class="node-icon ni-purple">🔍</div><div class="node-body"><div class="node-title">Anruf-Suche</div><div class="node-desc">Nummer → vollst. Zeitstrahl von Eingang bis Auflegen</div></div><span class="node-badge nb-purple">Tab 7</span><span class="node-arrow">›</span></a>
+
+    <!-- Standortleitung sub-section -->
+    <div class="sub-sec-head" onclick="toggle('sl'); event.stopPropagation()">
+      <div class="sec-icon">🏢</div>
+      <div class="sec-title"><h2>Standortleitung Dashboard</h2><p>Kopie TL · gefiltert auf eigenen Standort/Projekt</p></div>
+      <span class="sec-chevron open" id="chv-sl">›</span>
+    </div>
+    <div class="sub-branch" id="branch-sl">
+      <a class="node sub" href="standortleitung.html"><div class="node-icon ni-teal">📡</div><div class="node-body"><div class="node-title">Live-Auslastung (Standort)</div><div class="node-desc">Nur eigene Hotlines & Agenten</div></div><span class="node-badge nb-teal">Tab 1</span><span class="node-arrow">›</span></a>
+      <a class="node sub" href="standortleitung.html"><div class="node-icon ni-teal">📈</div><div class="node-body"><div class="node-title">KPI Berichte (Standort)</div><div class="node-desc">Gefiltert auf eigenes Projekt</div></div><span class="node-badge nb-teal">Tab 2</span><span class="node-arrow">›</span></a>
+      <a class="node sub" href="standortleitung.html"><div class="node-icon ni-teal">📬</div><div class="node-body"><div class="node-title">Postfach</div><div class="node-desc">Eingehende Nachrichten · Bearbeiten · Status · Löschen</div></div><span class="node-badge nb-teal">Tab 3</span><span class="node-arrow">›</span></a>
+      <a class="node sub" href="standortleitung.html"><div class="node-icon ni-teal">👥</div><div class="node-body"><div class="node-title">Agenten (nur lesen)</div><div class="node-desc">Queue & Skill-Zuweisung am Standort</div></div><span class="node-badge nb-teal">Tab 4</span><span class="node-arrow">›</span></a>
+      <a class="node sub" href="standortleitung.html"><div class="node-icon ni-teal">🤖</div><div class="node-body"><div class="node-title">Clickbot Builder</div><div class="node-desc">Eigene Flows für den Standort</div></div><span class="node-badge nb-teal">Tab 5</span><span class="node-arrow">›</span></a>
+      <a class="node sub" href="standortleitung.html"><div class="node-icon ni-teal">📍</div><div class="node-body"><div class="node-title">Standort & Wissensdatenbank</div><div class="node-desc">Eigene Standortdaten & KB-Artikel</div></div><span class="node-badge nb-teal">Tab 6</span><span class="node-arrow">›</span></a>
+      <a class="node sub" href="standortleitung.html"><div class="node-icon ni-teal">🔍</div><div class="node-body"><div class="node-title">Anruf-Suche (Standort)</div><div class="node-desc">Zeitstrahl · nur eigene Anrufe</div></div><span class="node-badge nb-teal">Tab 7</span><span class="node-arrow">›</span></a>
+    </div>
+
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ══════════ FLOW EDITOR ══════════ -->
+
+  <div class="sec-head indigo" onclick="toggle('flow')">
+    <div class="sec-icon">🧠</div>
+    <div class="sec-title"><h2>Flow Editor</h2><p>Visueller Voicebot & Clickbot Editor · Drag & Drop</p></div>
+    <span class="sec-chevron open" id="chv-flow">›</span>
+  </div>
+  <div class="branch" id="branch-flow">
+    <a class="node" href="flow-editor.html"><div class="node-icon ni-indigo">🤖</div><div class="node-body"><div class="node-title">Voicebot Modus</div><div class="node-desc">Begrüßung · Abfrage · TTS · Weiterleitung · Bedingung · API</div></div><span class="node-badge nb-indigo">Modus 1</span><span class="node-arrow">›</span></a>
+    <a class="node" href="flow-editor.html"><div class="node-icon ni-indigo">👤</div><div class="node-body"><div class="node-title">Clickbot Modus</div><div class="node-desc">Frage · Antwort · Aktion · Notiz · Kalender · Weiterleitung</div></div><span class="node-badge nb-indigo">Modus 2</span><span class="node-arrow">›</span></a>
+    <a class="node" href="flow-editor.html"><div class="node-icon ni-indigo">📚</div><div class="node-body"><div class="node-title">Wissensdatenbank</div><div class="node-desc">Kategorien · FAQ · Antworten · Flow-Referenzen</div></div><span class="node-badge nb-indigo">Panel</span><span class="node-arrow">›</span></a>
+    <a class="node" href="flow-editor.html"><div class="node-icon ni-indigo">👁</div><div class="node-body"><div class="node-title">Live-Vorschau</div><div class="node-desc">Smartphone-Preview des aktuellen Flows</div></div><span class="node-badge nb-indigo">Panel</span><span class="node-arrow">›</span></a>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ══════════ AGENTEN ══════════ -->
+
+  <div class="sec-head green" onclick="toggle('agent')">
+    <div class="sec-icon">🎧</div>
+    <div class="sec-title"><h2>Agenten Dashboard</h2><p>Agent Board · Klickbot · Kalender · Status-Steuerung</p></div>
+    <span class="sec-chevron open" id="chv-agent">›</span>
+  </div>
+  <div class="branch" id="branch-agent">
+    <a class="node" href="agent-board.html"><div class="node-icon ni-green">📞</div><div class="node-body"><div class="node-title">Agent Board</div><div class="node-desc">Anruf annehmen/ablehnen · Caller-Info · Projekt-ID</div></div><span class="node-badge nb-green">Board</span><span class="node-arrow">›</span></a>
+    <a class="node" href="agent-board.html"><div class="node-icon ni-green">🎛</div><div class="node-body"><div class="node-title">Klickbot — Klickvorgabe & Freitext</div><div class="node-desc">Vordefinierte Antworten · Tab Klickvorgabe / Freitext</div></div><span class="node-arrow">›</span></a>
+    <a class="node" href="agent-board.html"><div class="node-icon ni-green">📅</div><div class="node-body"><div class="node-title">Terminbuchung im Gesprächsverlauf</div><div class="node-desc">Kalender direkt im Chat · Datum · Uhrzeit · Bestätigung</div></div><span class="node-arrow">›</span></a>
+    <a class="node" href="agent-board.html"><div class="node-icon ni-green">🔢</div><div class="node-body"><div class="node-title">Telefon-Tastenfeld & Durchstellen</div><div class="node-desc">1–9 · * · 0 · # · Schnellwahl · Weiterleiten</div></div><span class="node-arrow">›</span></a>
+    <a class="node" href="agent-board.html"><div class="node-icon ni-green">📊</div><div class="node-body"><div class="node-title">Agenten-Statistik</div><div class="node-desc">Eingegangen · Angenommen · Verpasst · Ø Dauer · Online-Zeit</div></div><span class="node-arrow">›</span></a>
+    <a class="node" href="agent-board.html"><div class="node-icon ni-green">🏷</div><div class="node-body"><div class="node-title">Status-Steuerung</div><div class="node-desc">Im Gespräch · Pause · AZU · Meeting · @Chris</div></div><span class="node-arrow">›</span></a>
+    <a class="node" href="agent-board.html"><div class="node-icon ni-green">✉️</div><div class="node-body"><div class="node-title">Post-Call Mail</div><div class="node-desc">Anruf-Info nach Gespräch automatisch an Praxis-Mail</div></div><span class="node-arrow">›</span></a>
+  </div>
+
+</div>
+
+<script>
+  function toggle(id) {
+    const branch = document.getElementById('branch-' + id);
+    const chv    = document.getElementById('chv-' + id);
+    if (!branch) return;
+    const isHidden = branch.classList.contains('hidden');
+    branch.classList.toggle('hidden', !isHidden);
+    if (chv) {
+      chv.classList.toggle('open', isHidden);
+      chv.style.transform = isHidden ? 'rotate(90deg)' : '';
+    }
+  }
+
+  function expandAll() {
+    document.querySelectorAll('.branch, .sub-branch').forEach(el => el.classList.remove('hidden'));
+    document.querySelectorAll('.sec-chevron, .toggle-icon').forEach(el => {
+      el.classList.add('open');
+      el.style.transform = 'rotate(90deg)';
+    });
+  }
+
+  function collapseAll() {
+    document.querySelectorAll('.branch, .sub-branch').forEach(el => el.classList.add('hidden'));
+    document.querySelectorAll('.sec-chevron, .toggle-icon').forEach(el => {
+      el.classList.remove('open');
+      el.style.transform = '';
+    });
+  }
+</script>
+
+</body>
+</html>

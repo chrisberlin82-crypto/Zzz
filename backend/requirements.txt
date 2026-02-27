@@ -1,0 +1,20 @@
+fastapi==0.115.0
+uvicorn[standard]==0.30.0
+websockets==12.0
+python-multipart==0.0.9
+pydantic==2.9.0
+pydantic-settings==2.5.0
+httpx==0.27.0
+sqlalchemy==2.0.35
+aiosqlite==0.20.0
+panoramisk==1.4
+faster-whisper==1.0.3
+requests>=2.31.0
+# piper-tts wird als Standalone-Binary installiert (nicht als pip-Paket)
+ollama==0.3.3
+pydub==0.25.1
+numpy==1.26.4
+soundfile==0.12.1
+jinja2==3.1.4
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
