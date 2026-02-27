@@ -161,7 +161,7 @@
         var ZUTRITTS_CODE = "MedReception2025!";
 
         if (sessionStorage.getItem("med_portal_ok")) {
-            window.location.href = "index.html";
+            window.location.href = "uebersicht.html";
             return;
         }
 
@@ -179,7 +179,7 @@
                 statusEl.textContent = "Zugang gewaehrt";
                 statusEl.className = "portal-status ok";
                 sessionStorage.setItem("med_portal_ok", "1");
-                setTimeout(function() { window.location.href = "index.html"; }, 600);
+                setTimeout(function() { window.location.href = "uebersicht.html"; }, 600);
             } else {
                 eingabe.classList.add("fehler");
                 statusEl.textContent = "Zugangscode falsch";
