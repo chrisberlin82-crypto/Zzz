@@ -3818,11 +3818,7 @@ if (typeof window !== "undefined") {
 if (typeof document !== "undefined") {
     document.addEventListener("DOMContentLoaded", function () {
         // Guard: Auth-Check deaktiviert (Direktzugriff)
-        var istGuardSeite = window.location.pathname.indexOf("guard.html") !== -1;
-        if (!istGuardSeite) {
-            // guardPruefen() deaktiviert - kein Portal/Login noetig
-            guardInfoAnzeigen();
-        }
+        // Alle Seiten sichtbar, keine Rolle noetig
 
         brancheLaden();
         brancheAnwenden();
