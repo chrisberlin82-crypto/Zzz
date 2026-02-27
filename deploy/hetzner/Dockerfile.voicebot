@@ -24,9 +24,9 @@ COPY docs/ /app/docs/
 
 # Audio-Verzeichnisse + Standard-Hintergrundgeraeusche
 RUN mkdir -p /app/audio/hintergrund /app/audio/ansagen /app/data /app/logs && \
-    sox -n /app/audio/hintergrund/buero.wav synth 60 brownnoise vol 0.02 && \
-    sox -n /app/audio/hintergrund/praxis.wav synth 60 brownnoise vol 0.015 && \
-    sox -n /app/audio/hintergrund/ruhig.wav synth 60 brownnoise vol 0.005
+    sox -n -r 16000 -e signed-integer -b 16 -c 1 /app/audio/hintergrund/buero.wav synth 60 brownnoise vol 0.02 && \
+    sox -n -r 16000 -e signed-integer -b 16 -c 1 /app/audio/hintergrund/praxis.wav synth 60 brownnoise vol 0.015 && \
+    sox -n -r 16000 -e signed-integer -b 16 -c 1 /app/audio/hintergrund/ruhig.wav synth 60 brownnoise vol 0.005
 
 EXPOSE 8000
 
