@@ -41,10 +41,14 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
-# [3/5] Dateien hochladen per SCP
+# [3/5] Dateien hochladen per SCP (NUR Code, KEINE Daten)
 Write-Host "[3/5] Lade Projekt hoch..." -ForegroundColor Green
 
-# Wichtige Verzeichnisse und Dateien einzeln hochladen
+# .env sichern bevor wir deploy/hetzner ueberschreiben
+Write-Host "       Sichere .env..." -ForegroundColor Gray
+ssh $SshHost "if [ -f $RemoteDir/deploy/hetzner/.env ]; then cp $RemoteDir/deploy/hetzner/.env /tmp/.env.backup; echo 'gesichert'; fi"
+
+# NUR Code-Dateien hochladen - KEINE .env, KEINE Datenbanken
 $uploadItems = @(
     @{ Local = "$ProjectDir\src";                  Remote = "$RemoteDir/src" },
     @{ Local = "$ProjectDir\pyproject.toml";       Remote = "$RemoteDir/pyproject.toml" },
@@ -57,6 +61,9 @@ foreach ($item in $uploadItems) {
         scp -r $item.Local "${SshHost}:$($item.Remote)" 2>$null
     }
 }
+
+# .env wiederherstellen
+ssh $SshHost "if [ ! -f $RemoteDir/deploy/hetzner/.env ] && [ -f /tmp/.env.backup ]; then cp /tmp/.env.backup $RemoteDir/deploy/hetzner/.env; echo '.env wiederhergestellt'; fi"
 
 # [4/5] .env pruefen
 Write-Host "[4/5] Pruefe .env..." -ForegroundColor Green

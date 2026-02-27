@@ -39,3 +39,8 @@ services:
 
 volumes:
   app_daten:
+    # WICHTIG: Niemals "docker compose down -v" ausfuehren!
+    # Das loescht alle Patientendaten und die Datenbank.
+    # Nur "docker compose down" (ohne -v) verwenden.
+    # Backup: bash /opt/medrezeption/deploy/hetzner/backup.sh
+    external: false

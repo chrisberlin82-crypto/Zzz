@@ -47,8 +47,30 @@ systemctl stop apache2 2>/dev/null || true
 systemctl disable apache2 2>/dev/null || true
 fuser -k 80/tcp 2>/dev/null || true
 
-# [3] Projekt klonen oder aktualisieren
-echo "[3/5] Lade Projekt von GitHub..."
+# [3] Server-Daten sichern BEVOR Code aktualisiert wird
+echo "[3/6] Sichere Server-Daten..."
+BACKUP_DIR="/opt/medrezeption-backup/$(date +%Y%m%d-%H%M%S)"
+mkdir -p "$BACKUP_DIR"
+
+# .env sichern
+if [ -f "$REMOTE_DIR/deploy/hetzner/.env" ]; then
+    cp "$REMOTE_DIR/deploy/hetzner/.env" "$BACKUP_DIR/.env"
+    echo "       .env gesichert."
+fi
+
+# Datenbank sichern (aus Docker-Volume)
+if docker volume inspect hetzner_app_daten &>/dev/null; then
+    docker run --rm -v hetzner_app_daten:/data -v "$BACKUP_DIR":/backup alpine \
+        sh -c "cp -a /data/. /backup/daten/ 2>/dev/null || true"
+    echo "       Datenbank gesichert nach $BACKUP_DIR/daten/"
+fi
+
+# Letzte 5 Backups behalten, aeltere loeschen
+ls -dt /opt/medrezeption-backup/*/ 2>/dev/null | tail -n +6 | xargs rm -rf 2>/dev/null || true
+echo "       Backup: $BACKUP_DIR"
+
+# [4] Projekt klonen oder aktualisieren
+echo "[4/6] Lade Projekt von GitHub..."
 if [ -d "$REMOTE_DIR/.git" ]; then
     cd "$REMOTE_DIR"
     git fetch origin "$BRANCH"
@@ -56,25 +78,19 @@ if [ -d "$REMOTE_DIR/.git" ]; then
     git reset --hard "origin/$BRANCH"
     echo "       Projekt aktualisiert."
 else
-    # Bestehende Dateien sichern (.env)
-    ENV_BACKUP=""
-    if [ -f "$REMOTE_DIR/deploy/hetzner/.env" ]; then
-        ENV_BACKUP=$(cat "$REMOTE_DIR/deploy/hetzner/.env")
-    fi
-
     rm -rf "$REMOTE_DIR"
     git clone -b "$BRANCH" "$REPO_URL" "$REMOTE_DIR"
-
-    # .env wiederherstellen
-    if [ -n "$ENV_BACKUP" ]; then
-        echo "$ENV_BACKUP" > "$REMOTE_DIR/deploy/hetzner/.env"
-        echo "       .env wiederhergestellt."
-    fi
     echo "       Projekt geklont."
 fi
 
-# [4] .env pruefen
-echo "[4/5] Pruefe .env..."
+# .env aus Backup wiederherstellen
+if [ -f "$BACKUP_DIR/.env" ]; then
+    cp "$BACKUP_DIR/.env" "$REMOTE_DIR/deploy/hetzner/.env"
+    echo "       .env wiederhergestellt."
+fi
+
+# [5] .env pruefen
+echo "[5/6] Pruefe .env..."
 cd "$REMOTE_DIR/deploy/hetzner"
 if [ ! -f .env ]; then
     cp .env.beispiel .env
@@ -84,8 +100,8 @@ if [ ! -f .env ]; then
     echo ""
 fi
 
-# [5] Container starten
-echo "[5/5] Starte Container..."
+# [6] Container starten
+echo "[6/6] Starte Container..."
 docker compose down 2>/dev/null || true
 fuser -k 80/tcp 2>/dev/null || true
 docker compose build --no-cache

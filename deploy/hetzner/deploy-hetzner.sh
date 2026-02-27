@@ -49,9 +49,28 @@ ssh "$SSH_HOST" "mkdir -p $REMOTE_DIR/deploy/hetzner"
 
 # [3] Dateien hochladen
 echo "[3/5] Lade Projekt hoch..."
+# Sicherstellen: Server-Daten NIEMALS ueberschreiben
+ssh "$SSH_HOST" "
+    if [ -f $REMOTE_DIR/deploy/hetzner/.env ]; then
+        cp $REMOTE_DIR/deploy/hetzner/.env /tmp/.env.backup
+        echo '.env gesichert.'
+    fi
+"
+
 rsync -avz --exclude='.git' --exclude='node_modules' --exclude='__pycache__' \
     --exclude='.env' --exclude='*.sqlite' --exclude='*.db' \
+    --exclude='*.db-wal' --exclude='*.db-shm' \
+    --exclude='*.sqlite-wal' --exclude='*.sqlite-shm' \
+    --exclude='daten/' \
     "$PROJECT_DIR/" "$SSH_HOST:$REMOTE_DIR/"
+
+# .env wiederherstellen falls rsync sie versehentlich geloescht hat
+ssh "$SSH_HOST" "
+    if [ ! -f $REMOTE_DIR/deploy/hetzner/.env ] && [ -f /tmp/.env.backup ]; then
+        cp /tmp/.env.backup $REMOTE_DIR/deploy/hetzner/.env
+        echo '.env wiederhergestellt.'
+    fi
+"
 
 # [4] .env pruefen
 echo "[4/5] Pruefe .env..."
