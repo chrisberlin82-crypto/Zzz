@@ -592,9 +592,13 @@ section + section, .card + .card {
 }
 
 .agent-karte .agent-status-punkt.online { background: var(--success); }
-.agent-karte .agent-status-punkt.offline { background: var(--danger); }
+.agent-karte .agent-status-punkt.offline { background: #94a3b8; }
 .agent-karte .agent-status-punkt.pause { background: var(--warning); }
 .agent-karte .agent-status-punkt.besetzt { background: var(--info); }
+.agent-karte .agent-status-punkt.im_gespraech { background: var(--info); box-shadow: 0 0 0 3px rgba(6,182,212,0.25); }
+.agent-karte .agent-status-punkt.azu { background: #dc2626; }
+.agent-karte .agent-status-punkt.meeting { background: #7c3aed; }
+.agent-karte .agent-status-punkt.at_chris { background: #0369a1; }
 
 .agent-karte h3 {
     margin-bottom: 0.25rem;
@@ -621,10 +625,18 @@ section + section, .card + .card {
 
 .agent-karte .agent-aktionen .btn-online { background: var(--success); }
 .agent-karte .agent-aktionen .btn-online:hover { background: #16a34a; }
+.agent-karte .agent-aktionen .btn-im_gespraech { background: var(--info); }
+.agent-karte .agent-aktionen .btn-im_gespraech:hover { background: #0891b2; }
 .agent-karte .agent-aktionen .btn-pause { background: var(--warning); color: #000; }
 .agent-karte .agent-aktionen .btn-pause:hover { background: #d97706; }
-.agent-karte .agent-aktionen .btn-offline { background: var(--danger); }
-.agent-karte .agent-aktionen .btn-offline:hover { background: #dc2626; }
+.agent-karte .agent-aktionen .btn-azu { background: #dc2626; }
+.agent-karte .agent-aktionen .btn-azu:hover { background: #b91c1c; }
+.agent-karte .agent-aktionen .btn-meeting { background: #7c3aed; }
+.agent-karte .agent-aktionen .btn-meeting:hover { background: #6d28d9; }
+.agent-karte .agent-aktionen .btn-at_chris { background: #0369a1; }
+.agent-karte .agent-aktionen .btn-at_chris:hover { background: #075985; }
+.agent-karte .agent-aktionen .btn-offline { background: #94a3b8; }
+.agent-karte .agent-aktionen .btn-offline:hover { background: #64748b; }
 
 /* ===== Anruf Karten ===== */
 
@@ -1660,4 +1672,45 @@ section + section, .card + .card {
         width: 100px;
         font-size: 0.75rem;
     }
+}
+
+/* ===== Dashboard Rollen-Buttons ===== */
+.dashboard-rolle-btn {
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius);
+    border: 2px solid var(--border);
+    background: var(--card);
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.dashboard-rolle-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+.dashboard-rolle-btn.aktiv {
+    border-color: var(--primary);
+    background: var(--primary);
+    color: #fff;
+}
+
+/* ===== Wissensdatenbank + Ansagen Styles ===== */
+.kb-artikel-card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    background: var(--card);
+}
+.ans-liste-item {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    background: var(--card);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
 }

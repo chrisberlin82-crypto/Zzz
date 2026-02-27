@@ -8,7 +8,7 @@ class Datenbank
 {
     private \PDO $pdo;
 
-    public function __construct(string $dbPfad = null)
+    public function __construct(?string $dbPfad = null)
     {
         $pfad = $dbPfad ?? dirname(__DIR__, 2) . '/daten/zzz.db';
         $verzeichnis = dirname($pfad);

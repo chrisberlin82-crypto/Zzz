@@ -23,7 +23,7 @@ class Rechner
 
     public function dividieren(float $a, float $b): float
     {
-        if ($b == 0) {
+        if ($b === 0.0) {
             throw new \InvalidArgumentException('Division durch Null ist nicht erlaubt');
         }
         return $a / $b;

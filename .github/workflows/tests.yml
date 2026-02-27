@@ -16,7 +16,7 @@ jobs:
         with:
           python-version: "3.11"
       - name: Install dependencies
-        run: pip install flask pytest pytest-cov
+        run: pip install flask pytest pytest-cov jsonschema
       - name: Run Python tests
         run: python -m pytest tests/python/ tests/asterisk/ -v --tb=short
 

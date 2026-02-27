@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MED Rezeption - Ansagen Generator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-logo"><h2>MED Rezeption</h2><small>Praxisverwaltung</small></div>
+        <nav class="sidebar-nav">
+            <a href="dashboard.html"><i class="fa-solid fa-chart-pie nav-icon"></i> Dashboard</a>
+            <a href="patienten.html"><i class="fa-solid fa-users nav-icon"></i> Patienten</a>
+            <a href="aerzte.html"><i class="fa-solid fa-user-doctor nav-icon"></i> Aerzte</a>
+            <a href="termine.html"><i class="fa-solid fa-calendar-days nav-icon"></i> Termine</a>
+            <a href="wartezimmer.html"><i class="fa-solid fa-couch nav-icon"></i> Wartezimmer</a>
+            <a href="wissensdatenbank.html"><i class="fa-solid fa-book nav-icon"></i> Wissensdatenbank</a>
+            <a href="ansagen.html" class="active"><i class="fa-solid fa-tower-broadcast nav-icon"></i> Ansagen Generator</a>
+            <a href="auswertung.html"><i class="fa-solid fa-chart-line nav-icon"></i> Auswertungen</a>
+            <a href="standort.html"><i class="fa-solid fa-building nav-icon"></i> Standort &amp; ACD</a>
+            <a href="callflow.html"><i class="fa-solid fa-diagram-project nav-icon"></i> Callflow Editor</a>
+            <a href="voicebot.html"><i class="fa-solid fa-robot nav-icon"></i> Voicebot</a>
+            <a href="agenten.html"><i class="fa-solid fa-headset nav-icon"></i> Agenten</a>
+            <a href="softphone.html"><i class="fa-solid fa-phone nav-icon"></i> Softphone</a>
+            <a href="uebersetzung.html"><i class="fa-solid fa-language nav-icon"></i> Uebersetzer</a>
+            <a href="benutzer.html"><i class="fa-solid fa-user-gear nav-icon"></i> Benutzer</a>
+        </nav>
+        <div class="sidebar-footer"><button id="btn-demo-reset" type="button">Demo zuruecksetzen</button></div>
+    </aside>
+    <div class="main-wrapper">
+        <header class="topbar">
+            <button id="menu-toggle" type="button"><i class="fa-solid fa-bars"></i></button>
+            <h1><i class="fa-solid fa-tower-broadcast"></i> Ansagen Generator</h1>
+            <div class="topbar-right">Demo-Modus</div>
+        </header>
+        <main>
+            <!-- Statistik -->
+            <div class="stat-grid" style="margin-bottom:1.5rem">
+                <div class="stat-card">
+                    <div class="stat-icon bg-primary"><i class="fa-solid fa-volume-high"></i></div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="ans-stat-gesamt">0</div>
+                        <div class="stat-label">Ansagen</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon bg-success"><i class="fa-solid fa-circle-check"></i></div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="ans-stat-aktiv">0</div>
+                        <div class="stat-label">Aktiv</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon bg-warning"><i class="fa-solid fa-language"></i></div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="ans-stat-sprachen">3</div>
+                        <div class="stat-label">Sprachen</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon bg-info"><i class="fa-solid fa-microphone"></i></div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="ans-stat-stimmen">6</div>
+                        <div class="stat-label">KI-Stimmen</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Generator -->
+            <div class="card" style="margin-bottom:1.5rem">
+                <h2><i class="fa-solid fa-wand-magic-sparkles"></i> Ansage erstellen</h2>
+                <form id="ans-formular" style="margin-top:1rem">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+                        <div class="form-group">
+                            <label for="ans-typ">Ansage-Typ</label>
+                            <select id="ans-typ">
+                                <option value="begruessung">Begruessung</option>
+                                <option value="warteschleife">Warteschleife</option>
+                                <option value="abwesenheit">Abwesenheit / AB</option>
+                                <option value="oeffnungszeiten">Oeffnungszeiten</option>
+                                <option value="notfall">Notfall-Hinweis</option>
+                                <option value="feiertag">Feiertags-Ansage</option>
+                                <option value="weiterleitung">Weiterleitung</option>
+                                <option value="ivr_menue">IVR-Menue (Auswahl)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="ans-name">Name der Ansage</label>
+                            <input type="text" id="ans-name" placeholder="z.B. Begruessung Hauptnummer">
+                        </div>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-top:1rem">
+                        <div class="form-group">
+                            <label for="ans-sprache">Sprache</label>
+                            <select id="ans-sprache">
+                                <option value="de">Deutsch</option>
+                                <option value="en">Englisch</option>
+                                <option value="tr">Tuerkisch</option>
+                                <option value="ar">Arabisch</option>
+                                <option value="ru">Russisch</option>
+                                <option value="fr">Franzoesisch</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="ans-stimme">KI-Stimme</label>
+                            <select id="ans-stimme">
+                                <option value="anna">Anna (weiblich, freundlich)</option>
+                                <option value="thomas">Thomas (maennlich, sachlich)</option>
+                                <option value="sophie">Sophie (weiblich, warm)</option>
+                                <option value="markus">Markus (maennlich, professionell)</option>
+                                <option value="lena">Lena (weiblich, jung)</option>
+                                <option value="oliver">Oliver (maennlich, ruhig)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="ans-tempo">Sprechtempo</label>
+                            <select id="ans-tempo">
+                                <option value="langsam">Langsam</option>
+                                <option value="normal" selected>Normal</option>
+                                <option value="schnell">Schnell</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Vorlagen-Buttons -->
+                    <div style="margin-top:1rem">
+                        <label style="font-weight:600;margin-bottom:0.5rem;display:block"><i class="fa-solid fa-clipboard-list"></i> Schnell-Vorlagen:</label>
+                        <div style="display:flex;flex-wrap:wrap;gap:0.5rem" id="ans-vorlagen">
+                            <button type="button" class="ans-vorlage-btn" data-vorlage="begruessung_standard" style="padding:0.4rem 0.8rem;border-radius:6px;font-size:0.8rem;background:var(--bg);border:1px solid var(--border);cursor:pointer"><i class="fa-solid fa-hand-wave"></i> Standard-Begruessung</button>
+                            <button type="button" class="ans-vorlage-btn" data-vorlage="warteschleife_standard" style="padding:0.4rem 0.8rem;border-radius:6px;font-size:0.8rem;background:var(--bg);border:1px solid var(--border);cursor:pointer"><i class="fa-solid fa-clock"></i> Warteschleife</button>
+                            <button type="button" class="ans-vorlage-btn" data-vorlage="ab_standard" style="padding:0.4rem 0.8rem;border-radius:6px;font-size:0.8rem;background:var(--bg);border:1px solid var(--border);cursor:pointer"><i class="fa-solid fa-voicemail"></i> Anrufbeantworter</button>
+                            <button type="button" class="ans-vorlage-btn" data-vorlage="oeffnungszeiten_standard" style="padding:0.4rem 0.8rem;border-radius:6px;font-size:0.8rem;background:var(--bg);border:1px solid var(--border);cursor:pointer"><i class="fa-solid fa-clock"></i> Oeffnungszeiten</button>
+                            <button type="button" class="ans-vorlage-btn" data-vorlage="notfall_standard" style="padding:0.4rem 0.8rem;border-radius:6px;font-size:0.8rem;background:var(--bg);border:1px solid var(--border);cursor:pointer"><i class="fa-solid fa-triangle-exclamation"></i> Notfall</button>
+                            <button type="button" class="ans-vorlage-btn" data-vorlage="ivr_menue" style="padding:0.4rem 0.8rem;border-radius:6px;font-size:0.8rem;background:var(--bg);border:1px solid var(--border);cursor:pointer"><i class="fa-solid fa-list-ol"></i> IVR-Menue</button>
+                            <button type="button" class="ans-vorlage-btn" data-vorlage="feiertag_standard" style="padding:0.4rem 0.8rem;border-radius:6px;font-size:0.8rem;background:var(--bg);border:1px solid var(--border);cursor:pointer"><i class="fa-solid fa-tree"></i> Feiertag</button>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-top:1rem">
+                        <label for="ans-text">Ansagetext</label>
+                        <textarea id="ans-text" rows="5" placeholder="Geben Sie den Ansagetext ein oder waehlen Sie eine Vorlage..." required style="font-size:0.95rem;line-height:1.6"></textarea>
+                        <small style="color:var(--text-muted)">Variablen: {praxis_name}, {oeffnungszeiten}, {notfall_nummer}, {datum}</small>
+                    </div>
+
+                    <!-- Audio-Vorschau -->
+                    <div id="ans-vorschau-bereich" style="margin-top:1rem;padding:1rem;background:var(--bg);border-radius:8px" hidden>
+                        <div style="display:flex;align-items:center;gap:1rem">
+                            <button type="button" id="btn-ans-play" style="width:48px;height:48px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;border:none;cursor:pointer">
+                                <i class="fa-solid fa-play" style="color:#fff;font-size:1.2rem" id="ans-play-icon"></i>
+                            </button>
+                            <div style="flex:1">
+                                <div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden">
+                                    <div id="ans-progress" style="height:100%;width:0%;background:var(--primary);border-radius:2px;transition:width 0.1s"></div>
+                                </div>
+                                <div style="display:flex;justify-content:space-between;margin-top:0.3rem;font-size:0.75rem;color:var(--text-muted)">
+                                    <span id="ans-zeit-aktuell">0:00</span>
+                                    <span id="ans-zeit-gesamt">0:00</span>
+                                </div>
+                            </div>
+                            <span id="ans-stimme-label" style="font-size:0.8rem;color:var(--text-muted)"></span>
+                        </div>
+                    </div>
+
+                    <div style="display:flex;gap:0.5rem;margin-top:1rem">
+                        <button type="button" id="btn-ans-generieren" class="btn-primary"><i class="fa-solid fa-wand-magic-sparkles"></i> KI-Text generieren</button>
+                        <button type="button" id="btn-ans-vorhoeren" style="background:var(--info)"><i class="fa-solid fa-volume-high"></i> Vorhoeren</button>
+                        <button type="submit" style="background:var(--success)"><i class="fa-solid fa-save"></i> Ansage speichern</button>
+                    </div>
+                    <div id="ans-erfolg" class="ergebnis" hidden></div>
+                </form>
+            </div>
+
+            <!-- Gespeicherte Ansagen -->
+            <div class="card">
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                    <h2><i class="fa-solid fa-list"></i> Gespeicherte Ansagen</h2>
+                    <div style="display:flex;gap:0.5rem">
+                        <select id="ans-filter-typ" style="font-size:0.85rem;padding:0.3rem 0.6rem">
+                            <option value="">Alle Typen</option>
+                            <option value="begruessung">Begruessung</option>
+                            <option value="warteschleife">Warteschleife</option>
+                            <option value="abwesenheit">Abwesenheit</option>
+                            <option value="oeffnungszeiten">Oeffnungszeiten</option>
+                            <option value="notfall">Notfall</option>
+                            <option value="ivr_menue">IVR-Menue</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="ans-liste" style="margin-top:1rem"></div>
+            </div>
+        </main>
+    </div>
+    <button id="chat-toggle" type="button"><i class="fa-solid fa-comment-dots"></i></button>
+    <div id="chat-fenster">
+        <div class="chat-header"><span><i class="fa-solid fa-robot"></i> Praxis-Assistent</span><button id="chat-schliessen" type="button"><i class="fa-solid fa-xmark"></i></button></div>
+        <div id="chat-nachrichten"></div>
+        <div class="chat-eingabe">
+            <input id="chat-input" type="text" placeholder="Frage stellen oder sprechen...">
+            <button id="chat-mikrofon" type="button" title="Sprechen"><i class="fa-solid fa-microphone"></i></button>
+            <button id="chat-senden" type="button"><i class="fa-solid fa-paper-plane"></i></button>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>

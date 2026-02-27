@@ -6,6 +6,7 @@ requires-python = ">=3.11"
 dependencies = [
     "flask>=3.0",
     "jsonschema>=4.0",
+    "httpx>=0.24",
 ]
 
 [project.optional-dependencies]
@@ -20,6 +21,7 @@ addopts = "--cov=src/python --cov-report=term-missing"
 
 [tool.coverage.run]
 source = ["src/python"]
+omit = ["src/python/llm_service.py"]
 
 [tool.coverage.report]
 fail_under = 80

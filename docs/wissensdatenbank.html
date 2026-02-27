@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MED Rezeption - Wissensdatenbank</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-logo"><h2>MED Rezeption</h2><small>Praxisverwaltung</small></div>
+        <nav class="sidebar-nav">
+            <a href="dashboard.html"><i class="fa-solid fa-chart-pie nav-icon"></i> Dashboard</a>
+            <a href="patienten.html"><i class="fa-solid fa-users nav-icon"></i> Patienten</a>
+            <a href="aerzte.html"><i class="fa-solid fa-user-doctor nav-icon"></i> Aerzte</a>
+            <a href="termine.html"><i class="fa-solid fa-calendar-days nav-icon"></i> Termine</a>
+            <a href="wartezimmer.html"><i class="fa-solid fa-couch nav-icon"></i> Wartezimmer</a>
+            <a href="wissensdatenbank.html" class="active"><i class="fa-solid fa-book nav-icon"></i> Wissensdatenbank</a>
+            <a href="ansagen.html"><i class="fa-solid fa-tower-broadcast nav-icon"></i> Ansagen Generator</a>
+            <a href="auswertung.html"><i class="fa-solid fa-chart-line nav-icon"></i> Auswertungen</a>
+            <a href="standort.html"><i class="fa-solid fa-building nav-icon"></i> Standort &amp; ACD</a>
+            <a href="callflow.html"><i class="fa-solid fa-diagram-project nav-icon"></i> Callflow Editor</a>
+            <a href="voicebot.html"><i class="fa-solid fa-robot nav-icon"></i> Voicebot</a>
+            <a href="agenten.html"><i class="fa-solid fa-headset nav-icon"></i> Agenten</a>
+            <a href="softphone.html"><i class="fa-solid fa-phone nav-icon"></i> Softphone</a>
+            <a href="uebersetzung.html"><i class="fa-solid fa-language nav-icon"></i> Uebersetzer</a>
+            <a href="benutzer.html"><i class="fa-solid fa-user-gear nav-icon"></i> Benutzer</a>
+        </nav>
+        <div class="sidebar-footer"><button id="btn-demo-reset" type="button">Demo zuruecksetzen</button></div>
+    </aside>
+    <div class="main-wrapper">
+        <header class="topbar">
+            <button id="menu-toggle" type="button"><i class="fa-solid fa-bars"></i></button>
+            <h1><i class="fa-solid fa-book"></i> Wissensdatenbank</h1>
+            <div class="topbar-right">Demo-Modus</div>
+        </header>
+        <main>
+            <!-- Suche + Filter -->
+            <div class="card" style="margin-bottom:1.5rem">
+                <div style="display:flex;gap:1rem;align-items:center;flex-wrap:wrap">
+                    <div style="flex:1;min-width:200px;position:relative">
+                        <i class="fa-solid fa-magnifying-glass" style="position:absolute;left:0.8rem;top:50%;transform:translateY(-50%);color:var(--text-muted)"></i>
+                        <input type="text" id="kb-suche" placeholder="Wissensdatenbank durchsuchen..." style="padding-left:2.2rem;width:100%">
+                    </div>
+                    <select id="kb-kategorie-filter" style="min-width:160px">
+                        <option value="">Alle Kategorien</option>
+                        <option value="telefonie">Telefonie &amp; ACD</option>
+                        <option value="patienten">Patienten</option>
+                        <option value="termine">Termine</option>
+                        <option value="abrechnung">Abrechnung</option>
+                        <option value="praxisablauf">Praxisablauf</option>
+                        <option value="notfall">Notfall</option>
+                        <option value="technik">Technik</option>
+                    </select>
+                    <button type="button" id="btn-kb-neu" class="btn-primary"><i class="fa-solid fa-plus"></i> Neuer Artikel</button>
+                </div>
+            </div>
+
+            <!-- Statistik-Leiste -->
+            <div class="stat-grid" style="margin-bottom:1.5rem">
+                <div class="stat-card">
+                    <div class="stat-icon bg-primary"><i class="fa-solid fa-file-lines"></i></div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="kb-stat-artikel">0</div>
+                        <div class="stat-label">Artikel</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon bg-success"><i class="fa-solid fa-folder"></i></div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="kb-stat-kategorien">0</div>
+                        <div class="stat-label">Kategorien</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon bg-warning"><i class="fa-solid fa-eye"></i></div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="kb-stat-aufrufe">0</div>
+                        <div class="stat-label">Aufrufe (30 Tage)</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon bg-info"><i class="fa-solid fa-robot"></i></div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="kb-stat-bot">0</div>
+                        <div class="stat-label">Bot-Antworten</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Artikel-Formular (hidden) -->
+            <div class="card" id="kb-formular-bereich" hidden style="margin-bottom:1.5rem">
+                <h2 id="kb-formular-titel"><i class="fa-solid fa-pen"></i> Neuen Artikel erstellen</h2>
+                <form id="kb-formular" style="display:flex;flex-direction:column;gap:1rem;margin-top:1rem">
+                    <div class="form-group">
+                        <label for="kb-titel">Titel</label>
+                        <input type="text" id="kb-titel" placeholder="z.B. Wie stelle ich den Voicebot ein?" required>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+                        <div class="form-group">
+                            <label for="kb-kat">Kategorie</label>
+                            <select id="kb-kat" required>
+                                <option value="telefonie">Telefonie &amp; ACD</option>
+                                <option value="patienten">Patienten</option>
+                                <option value="termine">Termine</option>
+                                <option value="abrechnung">Abrechnung</option>
+                                <option value="praxisablauf">Praxisablauf</option>
+                                <option value="notfall">Notfall</option>
+                                <option value="technik">Technik</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="kb-tags">Tags (kommagetrennt)</label>
+                            <input type="text" id="kb-tags" placeholder="z.B. voicebot, einrichtung, telefon">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="kb-inhalt">Inhalt</label>
+                        <textarea id="kb-inhalt" rows="8" placeholder="Artikelinhalt eingeben... Markdown wird unterstuetzt." required style="font-family:monospace;font-size:0.9rem"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="kb-bot-antwort">Bot-Kurzantwort (fuer KI-Assistent)</label>
+                        <textarea id="kb-bot-antwort" rows="3" placeholder="Kurze Antwort die der Voicebot/Chat-Bot geben soll..."></textarea>
+                    </div>
+                    <div style="display:flex;gap:0.5rem">
+                        <button type="submit" class="btn-primary"><i class="fa-solid fa-save"></i> Speichern</button>
+                        <button type="button" id="btn-kb-abbrechen" style="background:var(--text-muted)"><i class="fa-solid fa-xmark"></i> Abbrechen</button>
+                    </div>
+                    <div id="kb-erfolg" class="ergebnis" hidden></div>
+                </form>
+            </div>
+
+            <!-- Artikel-Liste -->
+            <div class="card">
+                <h2><i class="fa-solid fa-list"></i> Artikel</h2>
+                <div id="kb-artikel-liste" style="margin-top:1rem"></div>
+            </div>
+        </main>
+    </div>
+    <button id="chat-toggle" type="button"><i class="fa-solid fa-comment-dots"></i></button>
+    <div id="chat-fenster">
+        <div class="chat-header"><span><i class="fa-solid fa-robot"></i> Praxis-Assistent</span><button id="chat-schliessen" type="button"><i class="fa-solid fa-xmark"></i></button></div>
+        <div id="chat-nachrichten"></div>
+        <div class="chat-eingabe">
+            <input id="chat-input" type="text" placeholder="Frage stellen oder sprechen...">
+            <button id="chat-mikrofon" type="button" title="Sprechen"><i class="fa-solid fa-microphone"></i></button>
+            <button id="chat-senden" type="button"><i class="fa-solid fa-paper-plane"></i></button>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
