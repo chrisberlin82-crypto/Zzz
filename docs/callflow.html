@@ -3,786 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Callflow Editor</title>
+    <title>MED Rezeption - Callflow Editor</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: #0f172a;
-            color: #e2e8f0;
-            min-height: 100vh;
-        }
-
-        /* --- Header --- */
-        .cf-header {
-            background: #1e293b;
-            border-bottom: 1px solid #334155;
-            padding: 0.75rem 1.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-        .cf-header h1 {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: #f1f5f9;
-        }
-        .cf-header h1 i { color: #0891b2; margin-right: 0.5rem; }
-        .cf-header-actions { display: flex; gap: 0.5rem; }
-        .cf-header-actions button {
-            background: #334155;
-            color: #e2e8f0;
-            border: 1px solid #475569;
-            padding: 0.4rem 0.8rem;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.8rem;
-            transition: background 0.15s;
-        }
-        .cf-header-actions button:hover { background: #475569; }
-        .cf-header-actions .btn-sim {
-            background: #065f46;
-            border-color: #059669;
-            color: #a7f3d0;
-        }
-        .cf-header-actions .btn-sim:hover { background: #047857; }
-
-        /* --- Layout --- */
-        .cf-layout {
-            display: flex;
-            min-height: calc(100vh - 53px);
-        }
-
-        /* --- Baustein-Sidebar --- */
-        .cf-sidebar {
-            width: 220px;
-            background: #1e293b;
-            border-right: 1px solid #334155;
-            padding: 1rem;
-            flex-shrink: 0;
-        }
-        .cf-sidebar h3 {
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            color: #64748b;
-            margin-bottom: 0.75rem;
-        }
-        .cf-sidebar-btn {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            width: 100%;
-            background: #0f172a;
-            color: #cbd5e1;
-            border: 1px solid #334155;
-            padding: 0.5rem 0.65rem;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.8rem;
-            margin-bottom: 0.4rem;
-            transition: border-color 0.15s, background 0.15s;
-        }
-        .cf-sidebar-btn:hover {
-            border-color: #0891b2;
-            background: rgba(8,145,178,0.08);
-        }
-        .cf-sidebar-btn i { width: 18px; text-align: center; }
-        .cf-sidebar-btn.typ-ansage i { color: #38bdf8; }
-        .cf-sidebar-btn.typ-dtmf i { color: #a78bfa; }
-        .cf-sidebar-btn.typ-voicebot i { color: #34d399; }
-        .cf-sidebar-btn.typ-warteschlange i { color: #fb923c; }
-        .cf-sidebar-btn.typ-transfer i { color: #f472b6; }
-        .cf-sidebar-btn.typ-bedingung i { color: #fbbf24; }
-        .cf-sidebar-btn.typ-aufnahme i { color: #f87171; }
-        .cf-sidebar-btn.typ-ende i { color: #94a3b8; }
-
-        /* --- Canvas --- */
-        .cf-canvas {
-            flex: 1;
-            padding: 1.5rem;
-            overflow-y: auto;
-        }
-        .cf-canvas-inner {
-            max-width: 700px;
-            margin: 0 auto;
-        }
-        .cf-empty {
-            text-align: center;
-            padding: 4rem 2rem;
-            color: #475569;
-        }
-        .cf-empty i { font-size: 3rem; margin-bottom: 1rem; display: block; }
-
-        /* --- Block --- */
-        .cf-block {
-            background: #1e293b;
-            border: 1px solid #334155;
-            border-radius: 10px;
-            margin-bottom: 0.75rem;
-            overflow: hidden;
-            transition: border-color 0.15s, box-shadow 0.15s;
-        }
-        .cf-block:hover {
-            border-color: #475569;
-        }
-        .cf-block:focus-within {
-            border-color: #0891b2;
-            box-shadow: 0 0 0 2px rgba(8,145,178,0.2);
-        }
-        .cf-block-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0.5rem 0.75rem;
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            border-bottom: 1px solid #334155;
-        }
-        .cf-block-header-left {
-            display: flex;
-            align-items: center;
-            gap: 0.4rem;
-        }
-        .cf-block-header-actions {
-            display: flex;
-            gap: 0.25rem;
-        }
-        .cf-block-header-actions button {
-            background: none;
-            border: none;
-            color: #475569;
-            cursor: pointer;
-            padding: 0.15rem 0.3rem;
-            border-radius: 3px;
-            font-size: 0.7rem;
-            transition: color 0.15s, background 0.15s;
-        }
-        .cf-block-header-actions button:hover {
-            color: #e2e8f0;
-            background: rgba(255,255,255,0.08);
-        }
-        .cf-block-header-actions .btn-del:hover { color: #f87171; }
-
-        /* Block Typ-Farben */
-        .cf-block.typ-start .cf-block-header { background: rgba(34,211,238,0.1); color: #22d3ee; }
-        .cf-block.typ-ansage .cf-block-header { background: rgba(56,189,248,0.1); color: #38bdf8; }
-        .cf-block.typ-dtmf .cf-block-header { background: rgba(167,139,250,0.1); color: #a78bfa; }
-        .cf-block.typ-voicebot .cf-block-header { background: rgba(52,211,153,0.1); color: #34d399; }
-        .cf-block.typ-warteschlange .cf-block-header { background: rgba(251,146,60,0.1); color: #fb923c; }
-        .cf-block.typ-transfer .cf-block-header { background: rgba(244,114,182,0.1); color: #f472b6; }
-        .cf-block.typ-bedingung .cf-block-header { background: rgba(251,191,36,0.1); color: #fbbf24; }
-        .cf-block.typ-aufnahme .cf-block-header { background: rgba(248,113,113,0.1); color: #f87171; }
-        .cf-block.typ-ende .cf-block-header { background: rgba(148,163,184,0.1); color: #94a3b8; }
-
-        /* Block Body */
-        .cf-block-body {
-            padding: 0.75rem;
-        }
-        .cf-field {
-            margin-bottom: 0.5rem;
-        }
-        .cf-field:last-child { margin-bottom: 0; }
-        .cf-field label {
-            display: block;
-            font-size: 0.65rem;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: #64748b;
-            margin-bottom: 0.2rem;
-        }
-        .cf-field input,
-        .cf-field textarea,
-        .cf-field select {
-            width: 100%;
-            background: #0f172a;
-            border: 1px solid #334155;
-            color: #e2e8f0;
-            padding: 0.4rem 0.5rem;
-            border-radius: 5px;
-            font-size: 0.8rem;
-            font-family: inherit;
-            outline: none;
-            transition: border-color 0.15s;
-        }
-        .cf-field input:focus,
-        .cf-field textarea:focus,
-        .cf-field select:focus {
-            border-color: #0891b2;
-        }
-        .cf-field textarea {
-            resize: vertical;
-            min-height: 48px;
-        }
-        .cf-field-row {
-            display: flex;
-            gap: 0.5rem;
-        }
-        .cf-field-row .cf-field { flex: 1; }
-
-        /* DTMF Optionen */
-        .cf-dtmf-opt {
-            display: flex;
-            align-items: center;
-            gap: 0.4rem;
-            margin-bottom: 0.3rem;
-            font-size: 0.8rem;
-        }
-        .cf-dtmf-opt .taste {
-            background: #334155;
-            color: #a78bfa;
-            font-weight: 700;
-            width: 28px;
-            height: 28px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 5px;
-            font-size: 0.75rem;
-            flex-shrink: 0;
-        }
-        .cf-dtmf-opt input {
-            flex: 1;
-            background: #0f172a;
-            border: 1px solid #334155;
-            color: #e2e8f0;
-            padding: 0.3rem 0.5rem;
-            border-radius: 5px;
-            font-size: 0.78rem;
-            outline: none;
-        }
-        .cf-dtmf-opt input:focus { border-color: #0891b2; }
-        .cf-dtmf-opt .btn-opt-del {
-            background: none;
-            border: none;
-            color: #475569;
-            cursor: pointer;
-            padding: 0.2rem;
-            font-size: 0.7rem;
-        }
-        .cf-dtmf-opt .btn-opt-del:hover { color: #f87171; }
-        .cf-add-opt {
-            background: none;
-            border: 1px dashed #334155;
-            color: #64748b;
-            padding: 0.3rem;
-            width: 100%;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 0.75rem;
-            margin-top: 0.3rem;
-            transition: border-color 0.15s, color 0.15s;
-        }
-        .cf-add-opt:hover { border-color: #a78bfa; color: #a78bfa; }
-
-        /* Nummern-Badge */
-        .cf-block-nr {
-            font-size: 0.6rem;
-            background: rgba(255,255,255,0.1);
-            width: 18px;
-            height: 18px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            flex-shrink: 0;
-        }
-
-        /* --- Simulation --- */
-        .cf-sim {
-            display: none;
-            background: #1e293b;
-            border: 1px solid #334155;
-            border-radius: 10px;
-            margin-bottom: 1rem;
-            overflow: hidden;
-        }
-        .cf-sim.aktiv { display: block; }
-        .cf-sim-header {
-            background: rgba(5,150,105,0.1);
-            color: #34d399;
-            padding: 0.5rem 0.75rem;
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        .cf-sim-body {
-            padding: 0.75rem;
-            max-height: 300px;
-            overflow-y: auto;
-            font-family: 'Courier New', monospace;
-            font-size: 0.78rem;
-            line-height: 1.6;
-        }
-        .sim-system { color: #64748b; }
-        .sim-audio { color: #38bdf8; }
-        .sim-eingabe { color: #a78bfa; }
-        .sim-aktion { color: #34d399; }
-
-        /* --- Responsive --- */
-        @media (max-width: 768px) {
-            .cf-sidebar { display: none; }
-            .cf-mobile-add {
-                display: flex !important;
-                gap: 0.4rem;
-                flex-wrap: wrap;
-                margin-bottom: 1rem;
-            }
-            .cf-mobile-add button {
-                background: #1e293b;
-                border: 1px solid #334155;
-                color: #cbd5e1;
-                padding: 0.4rem 0.6rem;
-                border-radius: 6px;
-                font-size: 0.75rem;
-                cursor: pointer;
-            }
-        }
-        .cf-mobile-add { display: none; }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-<div class="cf-header">
-    <h1><i class="fa-solid fa-diagram-project"></i> Callflow Editor</h1>
-    <div class="cf-header-actions">
-        <button type="button" id="btn-speichern"><i class="fa-solid fa-floppy-disk"></i> Speichern</button>
-        <button type="button" id="btn-sim" class="btn-sim"><i class="fa-solid fa-play"></i> Simulieren</button>
-    </div>
-</div>
-
-<div class="cf-layout">
-    <div class="cf-sidebar">
-        <h3>Bausteine hinzufuegen</h3>
-        <button class="cf-sidebar-btn typ-ansage" data-typ="ansage" type="button"><i class="fa-solid fa-volume-high"></i> Ansage</button>
-        <button class="cf-sidebar-btn typ-dtmf" data-typ="dtmf" type="button"><i class="fa-solid fa-hashtag"></i> DTMF-Menue</button>
-        <button class="cf-sidebar-btn typ-voicebot" data-typ="voicebot" type="button"><i class="fa-solid fa-robot"></i> Voicebot</button>
-        <button class="cf-sidebar-btn typ-warteschlange" data-typ="warteschlange" type="button"><i class="fa-solid fa-users-line"></i> Warteschlange</button>
-        <button class="cf-sidebar-btn typ-transfer" data-typ="transfer" type="button"><i class="fa-solid fa-right-left"></i> Transfer</button>
-        <button class="cf-sidebar-btn typ-bedingung" data-typ="bedingung" type="button"><i class="fa-solid fa-code-branch"></i> Bedingung</button>
-        <button class="cf-sidebar-btn typ-aufnahme" data-typ="aufnahme" type="button"><i class="fa-solid fa-microphone"></i> Aufnahme</button>
-        <button class="cf-sidebar-btn typ-ende" data-typ="ende" type="button"><i class="fa-solid fa-phone-slash"></i> Auflegen</button>
-    </div>
-
-    <div class="cf-canvas">
-        <div class="cf-canvas-inner">
-            <!-- Mobile: Bausteine als Buttons -->
-            <div class="cf-mobile-add" id="mobile-add">
-                <button data-typ="ansage" type="button"><i class="fa-solid fa-volume-high"></i> Ansage</button>
-                <button data-typ="dtmf" type="button"><i class="fa-solid fa-hashtag"></i> DTMF</button>
-                <button data-typ="voicebot" type="button"><i class="fa-solid fa-robot"></i> Voicebot</button>
-                <button data-typ="warteschlange" type="button"><i class="fa-solid fa-users-line"></i> Queue</button>
-                <button data-typ="transfer" type="button"><i class="fa-solid fa-right-left"></i> Transfer</button>
-                <button data-typ="bedingung" type="button"><i class="fa-solid fa-code-branch"></i> Bedingung</button>
-                <button data-typ="aufnahme" type="button"><i class="fa-solid fa-microphone"></i> Aufnahme</button>
-                <button data-typ="ende" type="button"><i class="fa-solid fa-phone-slash"></i> Ende</button>
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-logo"><h2>MED Rezeption</h2><small>Praxisverwaltung</small></div>
+        <nav class="sidebar-nav">
+            <a href="dashboard.html"><i class="fa-solid fa-chart-pie nav-icon"></i> Dashboard</a>
+            <a href="patienten.html"><i class="fa-solid fa-users nav-icon"></i> Patienten</a>
+            <a href="aerzte.html"><i class="fa-solid fa-user-doctor nav-icon"></i> Aerzte</a>
+            <a href="termine.html"><i class="fa-solid fa-calendar-days nav-icon"></i> Termine</a>
+            <a href="wartezimmer.html"><i class="fa-solid fa-couch nav-icon"></i> Wartezimmer</a>
+            <a href="wissensdatenbank.html"><i class="fa-solid fa-book nav-icon"></i> Wissensdatenbank</a>
+            <a href="ansagen.html"><i class="fa-solid fa-tower-broadcast nav-icon"></i> Ansagen Generator</a>
+            <a href="auswertung.html"><i class="fa-solid fa-chart-line nav-icon"></i> Auswertungen</a>
+            <a href="standort.html"><i class="fa-solid fa-building nav-icon"></i> Standort &amp; ACD</a>
+            <a href="callflow.html" class="active"><i class="fa-solid fa-diagram-project nav-icon"></i> Callflow Editor</a>
+            <a href="voicebot.html"><i class="fa-solid fa-robot nav-icon"></i> Voicebot</a>
+            <a href="agenten.html"><i class="fa-solid fa-headset nav-icon"></i> Agenten</a>
+            <a href="softphone.html"><i class="fa-solid fa-phone nav-icon"></i> Softphone</a>
+            <a href="uebersetzung.html"><i class="fa-solid fa-language nav-icon"></i> Uebersetzer</a>
+            <a href="benutzer.html"><i class="fa-solid fa-user-gear nav-icon"></i> Benutzer</a>
+        </nav>
+        <div class="sidebar-footer"><button id="btn-demo-reset" type="button">Demo zuruecksetzen</button></div>
+    </aside>
+    <div class="main-wrapper">
+        <header class="topbar">
+            <button id="menu-toggle" type="button"><i class="fa-solid fa-bars"></i></button>
+            <h1><i class="fa-solid fa-diagram-project"></i> Callflow Editor</h1>
+            <div class="topbar-right">
+                <button id="btn-flow-speichern" type="button" class="btn-sm"><i class="fa-solid fa-floppy-disk"></i> Speichern</button>
+                <button id="btn-flow-simulieren" type="button" class="btn-sm btn-success-sm"><i class="fa-solid fa-play"></i> Simulieren</button>
             </div>
-
-            <!-- Simulation -->
-            <div class="cf-sim" id="sim-box">
-                <div class="cf-sim-header">
-                    <span><i class="fa-solid fa-play-circle"></i> Simulation</span>
-                    <button type="button" id="btn-sim-stop" style="background:none;border:none;color:#94a3b8;cursor:pointer;font-size:0.8rem;"><i class="fa-solid fa-xmark"></i></button>
+        </header>
+        <main>
+            <div class="callflow-layout">
+                <div class="callflow-toolbar card">
+                    <h3><i class="fa-solid fa-puzzle-piece"></i> Bausteine</h3>
+                    <div class="callflow-baustein-liste">
+                        <button class="callflow-baustein" data-typ="ansage" type="button"><i class="fa-solid fa-volume-high"></i> Ansage</button>
+                        <button class="callflow-baustein" data-typ="dtmf" type="button"><i class="fa-solid fa-dial-pad fa-hashtag"></i> DTMF-Menue</button>
+                        <button class="callflow-baustein" data-typ="voicebot" type="button"><i class="fa-solid fa-robot"></i> Voicebot</button>
+                        <button class="callflow-baustein" data-typ="warteschlange" type="button"><i class="fa-solid fa-users-line"></i> Warteschlange</button>
+                        <button class="callflow-baustein" data-typ="transfer" type="button"><i class="fa-solid fa-phone-arrow-right fa-right-left"></i> Transfer</button>
+                        <button class="callflow-baustein" data-typ="bedingung" type="button"><i class="fa-solid fa-code-branch"></i> Bedingung</button>
+                        <button class="callflow-baustein" data-typ="aufnahme" type="button"><i class="fa-solid fa-microphone"></i> Aufnahme</button>
+                        <button class="callflow-baustein" data-typ="ende" type="button"><i class="fa-solid fa-phone-slash"></i> Auflegen</button>
+                    </div>
                 </div>
-                <div class="cf-sim-body" id="sim-ablauf"></div>
+                <div class="callflow-canvas card" id="callflow-canvas">
+                    <div class="callflow-flow" id="callflow-flow">
+                        <!-- Nodes werden per JS geladen -->
+                    </div>
+                </div>
+                <div class="callflow-properties card" id="callflow-properties">
+                    <h3><i class="fa-solid fa-sliders"></i> Eigenschaften</h3>
+                    <div id="callflow-props-inhalt">
+                        <p class="text-muted">Klicken Sie auf einen Baustein um ihn zu bearbeiten.</p>
+                    </div>
+                </div>
             </div>
-
-            <!-- Bloecke -->
-            <div id="cf-bloecke"></div>
-
-            <div class="cf-empty" id="cf-leer">
-                <i class="fa-solid fa-diagram-project"></i>
-                Klicken Sie links auf einen Baustein um den Callflow zu erstellen.
+            <div id="callflow-simulation" class="card" hidden>
+                <h2><i class="fa-solid fa-play-circle"></i> Simulation</h2>
+                <div id="simulation-ablauf"></div>
+                <div class="button-gruppe">
+                    <button id="btn-sim-schritt" type="button"><i class="fa-solid fa-forward-step"></i> Naechster Schritt</button>
+                    <button id="btn-sim-dtmf" type="button"><i class="fa-solid fa-hashtag"></i> DTMF Eingabe</button>
+                    <button id="btn-sim-stop" type="button" class="btn-secondary"><i class="fa-solid fa-stop"></i> Stopp</button>
+                </div>
             </div>
+        </main>
+    </div>
+    <button id="chat-toggle" type="button"><i class="fa-solid fa-comment-dots"></i></button>
+    <div id="chat-fenster">
+        <div class="chat-header"><span><i class="fa-solid fa-robot"></i> Praxis-Assistent</span><button id="chat-schliessen" type="button"><i class="fa-solid fa-xmark"></i></button></div>
+        <div id="chat-nachrichten"></div>
+        <div class="chat-eingabe">
+            <input id="chat-input" type="text" placeholder="Frage stellen oder sprechen...">
+            <button id="chat-mikrofon" type="button" title="Sprechen"><i class="fa-solid fa-microphone"></i></button>
+            <button id="chat-senden" type="button"><i class="fa-solid fa-paper-plane"></i></button>
         </div>
     </div>
-</div>
-
-<script>
-(function() {
-    // --- Daten ---
-    var bloecke = [];
-    var nextId = 1;
-
-    var typInfo = {
-        start:          { icon: "fa-play",        name: "Start" },
-        ansage:         { icon: "fa-volume-high",  name: "Ansage" },
-        dtmf:           { icon: "fa-hashtag",      name: "DTMF-Menue" },
-        voicebot:       { icon: "fa-robot",        name: "Voicebot" },
-        warteschlange:  { icon: "fa-users-line",   name: "Warteschlange" },
-        transfer:       { icon: "fa-right-left",   name: "Transfer" },
-        bedingung:      { icon: "fa-code-branch",  name: "Bedingung" },
-        aufnahme:       { icon: "fa-microphone",   name: "Aufnahme" },
-        ende:           { icon: "fa-phone-slash",  name: "Auflegen" }
-    };
-
-    // --- Demo-Daten ---
-    function demoDatenLaden() {
-        bloecke = [
-            { id: 1, typ: "start", label: "Eingehender Anruf", config: { quelle: "SIP-Trunk" } },
-            { id: 2, typ: "ansage", label: "Willkommen", config: { text: "Willkommen bei der Arztpraxis. Bitte waehlen Sie eine Option.", datei: "willkommen.wav" } },
-            { id: 3, typ: "dtmf", label: "Hauptmenue", config: { text: "Bitte waehlen Sie:", timeout: 8, optionen: [
-                { taste: "1", label: "Terminvergabe" },
-                { taste: "2", label: "Rezeptbestellung" },
-                { taste: "3", label: "Rezeption" },
-                { taste: "0", label: "Warteschlange" }
-            ] } },
-            { id: 4, typ: "voicebot", label: "Termin-Dialog", config: { dialog: "termin", beschreibung: "Automatische Terminvergabe per Sprache" } },
-            { id: 5, typ: "voicebot", label: "Rezept-Dialog", config: { dialog: "rezept", beschreibung: "Rezeptbestellung per Versicherungsnummer" } },
-            { id: 6, typ: "transfer", label: "Rezeption", config: { nebenstelle: "100", timeout: 30 } },
-            { id: 7, typ: "warteschlange", label: "Warteschlange", config: { queue: "rezeption", ansage: "bitte-warten.wav", maxWait: 120 } },
-            { id: 8, typ: "ende", label: "Auflegen", config: {} }
-        ];
-        nextId = 9;
-    }
-
-    // Gespeicherte Daten laden
-    try {
-        var saved = localStorage.getItem("cf_bloecke_v2");
-        if (saved) {
-            bloecke = JSON.parse(saved);
-            var maxId = 0;
-            for (var i = 0; i < bloecke.length; i++) { if (bloecke[i].id > maxId) maxId = bloecke[i].id; }
-            nextId = maxId + 1;
-        } else {
-            demoDatenLaden();
-        }
-    } catch(e) { demoDatenLaden(); }
-
-    // --- Rendern ---
-    function rendern() {
-        var container = document.getElementById("cf-bloecke");
-        var leer = document.getElementById("cf-leer");
-        container.innerHTML = "";
-
-        if (bloecke.length === 0) {
-            leer.style.display = "";
-            return;
-        }
-        leer.style.display = "none";
-
-        for (var i = 0; i < bloecke.length; i++) {
-            container.appendChild(blockErstellen(bloecke[i], i));
-        }
-    }
-
-    function esc(s) {
-        var d = document.createElement("div");
-        d.textContent = s || "";
-        return d.innerHTML;
-    }
-
-    function blockErstellen(block, idx) {
-        var div = document.createElement("div");
-        div.className = "cf-block typ-" + block.typ;
-        div.setAttribute("data-id", block.id);
-
-        var info = typInfo[block.typ] || { icon: "fa-circle", name: block.typ };
-
-        // Header
-        var headerHtml = '<div class="cf-block-header">';
-        headerHtml += '<div class="cf-block-header-left">';
-        headerHtml += '<span class="cf-block-nr">' + (idx + 1) + '</span>';
-        headerHtml += '<i class="fa-solid ' + info.icon + '"></i> ' + esc(info.name);
-        headerHtml += '</div>';
-        headerHtml += '<div class="cf-block-header-actions">';
-        if (idx > 0) headerHtml += '<button type="button" class="btn-up" title="Hoch"><i class="fa-solid fa-chevron-up"></i></button>';
-        if (idx < bloecke.length - 1) headerHtml += '<button type="button" class="btn-down" title="Runter"><i class="fa-solid fa-chevron-down"></i></button>';
-        if (block.typ !== "start") headerHtml += '<button type="button" class="btn-del" title="Loeschen"><i class="fa-solid fa-trash"></i></button>';
-        headerHtml += '</div></div>';
-
-        // Body
-        var bodyHtml = '<div class="cf-block-body">';
-        bodyHtml += '<div class="cf-field"><label>Bezeichnung</label><input type="text" class="cf-input" data-feld="label" value="' + esc(block.label) + '"></div>';
-
-        if (block.typ === "start") {
-            bodyHtml += '<div class="cf-field"><label>Quelle</label><input type="text" class="cf-input" data-feld="config.quelle" value="' + esc(block.config.quelle || "") + '"></div>';
-        }
-        else if (block.typ === "ansage") {
-            bodyHtml += '<div class="cf-field"><label>Ansagetext</label><textarea class="cf-input" data-feld="config.text" rows="2">' + esc(block.config.text || "") + '</textarea></div>';
-            bodyHtml += '<div class="cf-field"><label>Audio-Datei</label><input type="text" class="cf-input" data-feld="config.datei" value="' + esc(block.config.datei || "") + '" placeholder="z.B. willkommen.wav"></div>';
-        }
-        else if (block.typ === "dtmf") {
-            bodyHtml += '<div class="cf-field"><label>Ansage</label><textarea class="cf-input" data-feld="config.text" rows="2">' + esc(block.config.text || "") + '</textarea></div>';
-            bodyHtml += '<div class="cf-field-row"><div class="cf-field"><label>Timeout (Sek.)</label><input type="number" class="cf-input" data-feld="config.timeout" value="' + (block.config.timeout || 5) + '"></div><div class="cf-field"></div></div>';
-            bodyHtml += '<div class="cf-field"><label>Optionen</label><div class="cf-dtmf-liste" data-block-id="' + block.id + '">';
-            var opts = block.config.optionen || [];
-            for (var o = 0; o < opts.length; o++) {
-                bodyHtml += '<div class="cf-dtmf-opt"><span class="taste">' + esc(opts[o].taste) + '</span>';
-                bodyHtml += '<input type="text" data-opt-idx="' + o + '" value="' + esc(opts[o].label) + '">';
-                bodyHtml += '<button type="button" class="btn-opt-del" data-opt-idx="' + o + '"><i class="fa-solid fa-xmark"></i></button></div>';
-            }
-            bodyHtml += '</div>';
-            var naechsteTaste = opts.length > 0 ? "" : "1";
-            if (opts.length > 0) {
-                var letzte = opts[opts.length - 1].taste;
-                if (letzte === "0") naechsteTaste = "*";
-                else if (letzte === "*") naechsteTaste = "#";
-                else naechsteTaste = String(parseInt(letzte) + 1);
-                if (parseInt(naechsteTaste) > 9) naechsteTaste = "0";
-            }
-            bodyHtml += '<button type="button" class="cf-add-opt" data-block-id="' + block.id + '" data-next-taste="' + naechsteTaste + '"><i class="fa-solid fa-plus"></i> Option hinzufuegen</button></div>';
-        }
-        else if (block.typ === "voicebot") {
-            bodyHtml += '<div class="cf-field"><label>Dialog-Typ</label><select class="cf-input" data-feld="config.dialog"><option value="termin"' + (block.config.dialog === "termin" ? " selected" : "") + '>Terminvergabe</option><option value="rezept"' + (block.config.dialog === "rezept" ? " selected" : "") + '>Rezeptbestellung</option><option value="info"' + (block.config.dialog === "info" ? " selected" : "") + '>Information</option><option value="custom"' + (block.config.dialog === "custom" ? " selected" : "") + '>Benutzerdefiniert</option></select></div>';
-            bodyHtml += '<div class="cf-field"><label>Beschreibung</label><input type="text" class="cf-input" data-feld="config.beschreibung" value="' + esc(block.config.beschreibung || "") + '"></div>';
-        }
-        else if (block.typ === "transfer") {
-            bodyHtml += '<div class="cf-field-row"><div class="cf-field"><label>Nebenstelle</label><input type="text" class="cf-input" data-feld="config.nebenstelle" value="' + esc(block.config.nebenstelle || "") + '" placeholder="z.B. 100"></div>';
-            bodyHtml += '<div class="cf-field"><label>Timeout (Sek.)</label><input type="number" class="cf-input" data-feld="config.timeout" value="' + (block.config.timeout || 30) + '"></div></div>';
-        }
-        else if (block.typ === "warteschlange") {
-            bodyHtml += '<div class="cf-field-row"><div class="cf-field"><label>Queue</label><input type="text" class="cf-input" data-feld="config.queue" value="' + esc(block.config.queue || "") + '" placeholder="z.B. rezeption"></div>';
-            bodyHtml += '<div class="cf-field"><label>Max. Wartezeit (Sek.)</label><input type="number" class="cf-input" data-feld="config.maxWait" value="' + (block.config.maxWait || 120) + '"></div></div>';
-            bodyHtml += '<div class="cf-field"><label>Wartemusik / Ansage</label><input type="text" class="cf-input" data-feld="config.ansage" value="' + esc(block.config.ansage || "") + '" placeholder="z.B. bitte-warten.wav"></div>';
-        }
-        else if (block.typ === "bedingung") {
-            bodyHtml += '<div class="cf-field"><label>Bedingung</label><input type="text" class="cf-input" data-feld="config.bedingung" value="' + esc(block.config.bedingung || "") + '" placeholder="z.B. Uhrzeit > 18:00"></div>';
-            bodyHtml += '<div class="cf-field"><label>Wenn wahr</label><input type="text" class="cf-input" data-feld="config.wahr" value="' + esc(block.config.wahr || "") + '" placeholder="z.B. Transfer Nachtschicht"></div>';
-            bodyHtml += '<div class="cf-field"><label>Wenn falsch</label><input type="text" class="cf-input" data-feld="config.falsch" value="' + esc(block.config.falsch || "") + '" placeholder="z.B. Weiter im Flow"></div>';
-        }
-        else if (block.typ === "aufnahme") {
-            bodyHtml += '<div class="cf-field"><label>Ansage vor Aufnahme</label><input type="text" class="cf-input" data-feld="config.ansage" value="' + esc(block.config.ansage || "") + '" placeholder="Bitte sprechen Sie nach dem Ton"></div>';
-            bodyHtml += '<div class="cf-field"><label>Max. Dauer (Sek.)</label><input type="number" class="cf-input" data-feld="config.maxDauer" value="' + (block.config.maxDauer || 60) + '"></div>';
-        }
-        // ende hat keine extra Felder
-
-        bodyHtml += '</div>';
-
-        div.innerHTML = headerHtml + bodyHtml;
-
-        // Events: Hoch/Runter/Loeschen
-        var btnUp = div.querySelector(".btn-up");
-        var btnDown = div.querySelector(".btn-down");
-        var btnDel = div.querySelector(".btn-del");
-
-        if (btnUp) btnUp.addEventListener("click", function() {
-            if (idx > 0) {
-                datenSammeln();
-                var tmp = bloecke[idx];
-                bloecke[idx] = bloecke[idx - 1];
-                bloecke[idx - 1] = tmp;
-                rendern();
-            }
-        });
-        if (btnDown) btnDown.addEventListener("click", function() {
-            if (idx < bloecke.length - 1) {
-                datenSammeln();
-                var tmp = bloecke[idx];
-                bloecke[idx] = bloecke[idx + 1];
-                bloecke[idx + 1] = tmp;
-                rendern();
-            }
-        });
-        if (btnDel) btnDel.addEventListener("click", function() {
-            datenSammeln();
-            bloecke.splice(idx, 1);
-            rendern();
-        });
-
-        // DTMF: Option loeschen
-        var optDelBtns = div.querySelectorAll(".btn-opt-del");
-        for (var d = 0; d < optDelBtns.length; d++) {
-            optDelBtns[d].addEventListener("click", (function(oi) {
-                return function() {
-                    datenSammeln();
-                    block.config.optionen.splice(oi, 1);
-                    rendern();
-                };
-            })(parseInt(optDelBtns[d].getAttribute("data-opt-idx")));
-        }
-
-        // DTMF: Option hinzufuegen
-        var addOptBtn = div.querySelector(".cf-add-opt");
-        if (addOptBtn) {
-            addOptBtn.addEventListener("click", function() {
-                datenSammeln();
-                var taste = this.getAttribute("data-next-taste") || "*";
-                if (!block.config.optionen) block.config.optionen = [];
-                block.config.optionen.push({ taste: taste, label: "" });
-                rendern();
-                // Fokus auf neues Input
-                setTimeout(function() {
-                    var inputs = document.querySelectorAll('.cf-dtmf-liste[data-block-id="' + block.id + '"] input');
-                    if (inputs.length > 0) inputs[inputs.length - 1].focus();
-                }, 50);
-            });
-        }
-
-        return div;
-    }
-
-    // --- Daten aus DOM sammeln ---
-    function datenSammeln() {
-        var blockEls = document.querySelectorAll(".cf-block");
-        for (var i = 0; i < blockEls.length; i++) {
-            var id = parseInt(blockEls[i].getAttribute("data-id"));
-            var block = null;
-            for (var j = 0; j < bloecke.length; j++) {
-                if (bloecke[j].id === id) { block = bloecke[j]; break; }
-            }
-            if (!block) continue;
-
-            // Einfache Felder
-            var inputs = blockEls[i].querySelectorAll(".cf-input");
-            for (var k = 0; k < inputs.length; k++) {
-                var feld = inputs[k].getAttribute("data-feld");
-                if (!feld) continue;
-                var val = inputs[k].value;
-                if (feld.indexOf("config.") === 0) {
-                    var key = feld.replace("config.", "");
-                    if (inputs[k].type === "number") val = parseInt(val) || 0;
-                    block.config[key] = val;
-                } else {
-                    block[feld] = val;
-                }
-            }
-
-            // DTMF Optionen
-            if (block.typ === "dtmf") {
-                var optInputs = blockEls[i].querySelectorAll('.cf-dtmf-opt input');
-                for (var oi = 0; oi < optInputs.length; oi++) {
-                    var optIdx = parseInt(optInputs[oi].getAttribute("data-opt-idx"));
-                    if (block.config.optionen && block.config.optionen[optIdx]) {
-                        block.config.optionen[optIdx].label = optInputs[oi].value;
-                    }
-                }
-            }
-        }
-    }
-
-    // --- Block hinzufuegen ---
-    function blockHinzufuegen(typ) {
-        datenSammeln();
-        var conf = {};
-        if (typ === "ansage") conf = { text: "", datei: "" };
-        else if (typ === "dtmf") conf = { text: "", timeout: 5, optionen: [] };
-        else if (typ === "voicebot") conf = { dialog: "termin", beschreibung: "" };
-        else if (typ === "transfer") conf = { nebenstelle: "", timeout: 30 };
-        else if (typ === "warteschlange") conf = { queue: "", ansage: "", maxWait: 120 };
-        else if (typ === "bedingung") conf = { bedingung: "", wahr: "", falsch: "" };
-        else if (typ === "aufnahme") conf = { ansage: "", maxDauer: 60 };
-
-        bloecke.push({
-            id: nextId++,
-            typ: typ,
-            label: (typInfo[typ] ? typInfo[typ].name : typ) + " (neu)",
-            config: conf
-        });
-        rendern();
-
-        // Zum neuen Block scrollen
-        setTimeout(function() {
-            var blocks = document.querySelectorAll(".cf-block");
-            if (blocks.length > 0) blocks[blocks.length - 1].scrollIntoView({ behavior: "smooth", block: "center" });
-        }, 50);
-    }
-
-    // --- Events: Sidebar ---
-    var sidebarBtns = document.querySelectorAll(".cf-sidebar-btn");
-    for (var s = 0; s < sidebarBtns.length; s++) {
-        sidebarBtns[s].addEventListener("click", function() {
-            blockHinzufuegen(this.getAttribute("data-typ"));
-        });
-    }
-
-    // --- Events: Mobile ---
-    var mobileBtns = document.querySelectorAll("#mobile-add button");
-    for (var m = 0; m < mobileBtns.length; m++) {
-        mobileBtns[m].addEventListener("click", function() {
-            blockHinzufuegen(this.getAttribute("data-typ"));
-        });
-    }
-
-    // --- Speichern ---
-    document.getElementById("btn-speichern").addEventListener("click", function() {
-        datenSammeln();
-        localStorage.setItem("cf_bloecke_v2", JSON.stringify(bloecke));
-        var btn = this;
-        btn.innerHTML = '<i class="fa-solid fa-check"></i> Gespeichert';
-        btn.style.borderColor = "#059669";
-        btn.style.color = "#34d399";
-        setTimeout(function() {
-            btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Speichern';
-            btn.style.borderColor = "";
-            btn.style.color = "";
-        }, 1500);
-    });
-
-    // --- Simulation ---
-    document.getElementById("btn-sim").addEventListener("click", function() {
-        datenSammeln();
-        var simBox = document.getElementById("sim-box");
-        var ablauf = document.getElementById("sim-ablauf");
-        simBox.classList.add("aktiv");
-        ablauf.innerHTML = "";
-
-        var zeilen = [];
-        for (var i = 0; i < bloecke.length; i++) {
-            var b = bloecke[i];
-            if (b.typ === "start") {
-                zeilen.push({ cls: "sim-system", text: "[SYSTEM] Eingehender Anruf - Quelle: " + (b.config.quelle || "SIP") });
-                zeilen.push({ cls: "sim-system", text: "[SYSTEM] Kanal geoeffnet, Sprache: de" });
-            } else if (b.typ === "ansage") {
-                if (b.config.datei) zeilen.push({ cls: "sim-audio", text: "[AUDIO] Abspielen: " + b.config.datei });
-                if (b.config.text) zeilen.push({ cls: "sim-audio", text: '[AUDIO] "' + b.config.text + '"' });
-            } else if (b.typ === "dtmf") {
-                if (b.config.text) zeilen.push({ cls: "sim-audio", text: '[AUDIO] "' + b.config.text + '"' });
-                zeilen.push({ cls: "sim-system", text: "[SYSTEM] Warte auf DTMF-Eingabe... (Timeout: " + (b.config.timeout || 5) + "s)" });
-                var opts = b.config.optionen || [];
-                if (opts.length > 0) {
-                    zeilen.push({ cls: "sim-eingabe", text: "[DTMF] Eingabe: " + opts[0].taste });
-                    zeilen.push({ cls: "sim-aktion", text: "[AKTION] Gewaehlt: " + (opts[0].label || "Option " + opts[0].taste) });
-                }
-            } else if (b.typ === "voicebot") {
-                zeilen.push({ cls: "sim-aktion", text: "[VOICEBOT] Dialog gestartet: " + (b.config.dialog || "custom") });
-                if (b.config.beschreibung) zeilen.push({ cls: "sim-aktion", text: "[VOICEBOT] " + b.config.beschreibung });
-            } else if (b.typ === "transfer") {
-                zeilen.push({ cls: "sim-aktion", text: "[TRANSFER] Verbinde mit Nebenstelle " + (b.config.nebenstelle || "???") + " (Timeout: " + (b.config.timeout || 30) + "s)" });
-            } else if (b.typ === "warteschlange") {
-                zeilen.push({ cls: "sim-aktion", text: "[QUEUE] Eingereiht in: " + (b.config.queue || "default") });
-                if (b.config.ansage) zeilen.push({ cls: "sim-audio", text: "[AUDIO] Wartemusik: " + b.config.ansage });
-            } else if (b.typ === "bedingung") {
-                zeilen.push({ cls: "sim-system", text: "[BEDINGUNG] Pruefe: " + (b.config.bedingung || "?") });
-                zeilen.push({ cls: "sim-aktion", text: "[ERGEBNIS] Wahr -> " + (b.config.wahr || "weiter") });
-            } else if (b.typ === "aufnahme") {
-                zeilen.push({ cls: "sim-aktion", text: "[AUFNAHME] Starte Aufnahme (max " + (b.config.maxDauer || 60) + "s)" });
-            } else if (b.typ === "ende") {
-                zeilen.push({ cls: "sim-system", text: "[SYSTEM] Anruf beendet" });
-            }
-        }
-
-        var idx = 0;
-        function naechste() {
-            if (idx >= zeilen.length) return;
-            var div = document.createElement("div");
-            div.className = zeilen[idx].cls;
-            div.textContent = zeilen[idx].text;
-            ablauf.appendChild(div);
-            ablauf.scrollTop = ablauf.scrollHeight;
-            idx++;
-            setTimeout(naechste, 500);
-        }
-        naechste();
-    });
-
-    document.getElementById("btn-sim-stop").addEventListener("click", function() {
-        document.getElementById("sim-box").classList.remove("aktiv");
-    });
-
-    // --- Init ---
-    rendern();
-})();
-</script>
+    <script src="app.js"></script>
 </body>
 </html>
