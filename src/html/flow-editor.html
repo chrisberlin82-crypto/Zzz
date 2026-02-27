@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flow Editor – MedReception</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:#f1f5f9;height:100vh;display:flex;flex-direction:column;overflow:hidden;color:#1e293b}
+/* ── Top Bar ── */
+.topbar{height:52px;background:white;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;padding:0 16px;gap:10px;flex-shrink:0;box-shadow:0 1px 4px rgba(0,0,0,.05)}
+.tb-logo{width:30px;height:30px;background:#2563eb;border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:14px;flex-shrink:0}
+.tb-name{font-size:14px;font-weight:800;color:#1e293b}
+.tb-div{width:1px;height:22px;background:#e2e8f0}
+/* Mode Switcher — the BIG distinction */
+.main-mode{display:flex;background:#f1f5f9;border:2px solid #e2e8f0;border-radius:11px;padding:3px;gap:2px}
+.mm-btn{padding:6px 18px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;border:none;font-family:'Inter',sans-serif;transition:all .13s;display:flex;align-items:center;gap:6px;color:#64748b;background:transparent}
+.mm-btn.vb{color:#0369a1}
+.mm-btn.cb{color:#6d28d9}
+.mm-btn.active-vb{background:linear-gradient(135deg,#0ea5e9,#0369a1);color:white;box-shadow:0 2px 8px rgba(3,105,161,.3)}
+.mm-btn.active-cb{background:linear-gradient(135deg,#8b5cf6,#6d28d9);color:white;box-shadow:0 2px 8px rgba(109,40,217,.3)}
+.flow-sel{padding:6px 12px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;font-weight:600;font-family:'Inter',sans-serif;color:#1e293b;background:white;cursor:pointer;outline:none}
+.flow-sel:hover{border-color:#2563eb}
+.badge-ok{padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700;background:#dcfce7;color:#15803d;border:1px solid #bbf7d0}
+.tb-spacer{flex:1}
+.tb-btn{padding:7px 16px;border-radius:9px;font-size:12px;font-weight:700;cursor:pointer;border:none;font-family:'Inter',sans-serif}
+.tb-btn.p{background:#2563eb;color:white}
+.tb-btn.s{background:white;color:#475569;border:1.5px solid #e2e8f0}
+.tb-btn:hover{opacity:.87}
+/* ── Workspace ── */
+.workspace{flex:1;display:flex;overflow:hidden}
+/* ── Palette ── */
+.palette{width:210px;background:white;border-right:1px solid #e2e8f0;display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+.pal-mode-banner{padding:10px 12px;font-size:11px;font-weight:700;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;gap:7px}
+.pal-group{font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:1.2px;padding:10px 14px 4px}
+.chip{display:flex;align-items:center;gap:8px;padding:8px 12px;margin:2px 8px;border-radius:9px;cursor:grab;border:1.5px solid #e5e7eb;background:#f8fafc;transition:all .13s;user-select:none}
+.chip:hover{border-color:#93c5fd;background:#eff6ff;transform:translateX(2px);box-shadow:0 2px 8px rgba(37,99,235,.08)}
+.chip:active{cursor:grabbing}
+.cdot{width:8px;height:8px;border-radius:3px;flex-shrink:0}
+.clbl{font-size:12px;font-weight:600;color:#1e293b}
+.csub{font-size:10px;color:#94a3b8;margin-top:1px}
+/* ── Canvas ── */
+.canvas-wrap{flex:1;position:relative;overflow:hidden;background-color:#f8fafc;background-image:radial-gradient(#cbd5e1 1px,transparent 1px);background-size:22px 22px}
+.connections{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1}
+svg.connections path{fill:none;stroke-width:2.5;stroke-linecap:round}
+/* ── Nodes ── */
+.node{position:absolute;background:white;border:2px solid #e2e8f0;border-radius:14px;min-width:215px;max-width:255px;cursor:grab;z-index:10;box-shadow:0 2px 8px rgba(0,0,0,.05);transition:box-shadow .13s,border-color .13s;user-select:none}
+.node:hover{border-color:#93c5fd;box-shadow:0 4px 18px rgba(37,99,235,.1)}
+.node.sel{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.15)}
+.node:active{cursor:grabbing}
+.nh{display:flex;align-items:center;gap:8px;padding:9px 11px 8px;border-bottom:1px solid #f1f5f9;border-radius:12px 12px 0 0}
+.ni{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.nt{font-size:12px;font-weight:700;color:#1e293b;flex:1}
+.nb{padding:2px 7px;border-radius:5px;font-size:9px;font-weight:700}
+.nbody{padding:9px 11px}
+.ntext{font-size:11px;color:#475569;line-height:1.5;margin-bottom:4px}
+/* Who-banner inside node */
+.who{display:flex;align-items:center;gap:5px;font-size:9px;font-weight:700;padding:4px 8px;border-radius:6px;margin-bottom:5px}
+.who.vb{background:#e0f2fe;color:#0369a1}
+.who.cb{background:#ede9fe;color:#6d28d9}
+.npills{display:flex;flex-direction:column;gap:4px;margin-top:6px}
+.npill{display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:7px;border:1px solid #e2e8f0;background:#f8fafc;font-size:10px;color:#374151;cursor:pointer}
+.npill:hover{border-color:#2563eb;background:#eff6ff}
+.pdot{width:6px;height:6px;border-radius:2px;flex-shrink:0}
+.parr{margin-left:auto;color:#94a3b8;font-size:10px}
+/* Transfer node highlight */
+.n-transfer-to-agent{border-color:#fbbf24!important}
+.n-transfer-to-agent .nh{background:#fffbeb}
+/* KB result chip */
+.kb-chip{background:#ecfdf5;border:1px solid #6ee7b7;border-radius:6px;padding:4px 8px;font-size:10px;color:#047857;margin-top:5px}
+/* Ports */
+.port-out{position:absolute;right:-8px;width:15px;height:15px;border-radius:50%;border:2px solid #cbd5e1;background:white;cursor:crosshair;z-index:20;transition:all .12s}
+.port-out:hover{background:#2563eb;border-color:#2563eb;transform:scale(1.3)}
+.port-in{position:absolute;left:-8px;width:15px;height:15px;border-radius:50%;border:2px solid #cbd5e1;background:white;top:50%;transform:translateY(-50%);z-index:20}
+/* Node color sets */
+.n-s{border-color:#86efac}.n-s .nh{background:#f0fdf4}
+.n-e{border-color:#fca5a5}.n-e .nh{background:#fef2f2}
+.n-q{border-color:#93c5fd}.n-q .nh{background:#eff6ff}
+.n-a{border-color:#c4b5fd}.n-a .nh{background:#f5f3ff}
+.n-act{border-color:#fdba74}.n-act .nh{background:#fff7ed}
+.n-tr{border-color:#fbbf24}.n-tr .nh{background:#fffbeb}
+.n-kb{border-color:#6ee7b7}.n-kb .nh{background:#ecfdf5}
+.n-cond{border-color:#fde68a}.n-cond .nh{background:#fffbeb}
+.n-cl{border-color:#c4b5fd}.n-cl .nh{background:#f5f3ff}
+/* ── Right Props ── */
+.props{width:255px;background:white;border-left:1px solid #e2e8f0;flex-shrink:0;display:flex;flex-direction:column;overflow-y:auto}
+.ph{padding:12px 14px;border-bottom:1px solid #f1f5f9;font-size:12px;font-weight:700;background:#f8fafc}
+.ps{padding:11px 14px;border-bottom:1px solid #f1f5f9}
+.pl{font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px}
+.pi,.psel,.pta{width:100%;padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;font-family:'Inter',sans-serif;color:#1e293b;background:white;outline:none;margin-bottom:8px}
+.pta{min-height:64px;resize:vertical}
+.pi:focus,.psel:focus,.pta:focus{border-color:#2563eb}
+.tog-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.tog-lbl{font-size:12px;color:#374151}
+.mtog{width:34px;height:18px;background:#d1d5db;border-radius:9px;position:relative;cursor:pointer;transition:background .15s;flex-shrink:0}
+.mtog.on{background:#2563eb}
+.mtog::after{content:'';position:absolute;width:12px;height:12px;background:white;border-radius:50%;top:3px;left:3px;transition:left .15s}
+.mtog.on::after{left:19px}
+.kwtag{display:inline-block;padding:3px 9px;border-radius:6px;font-size:10px;font-weight:600;cursor:pointer;background:#dbeafe;color:#1d4ed8;margin:2px}
+.popt{display:flex;align-items:center;gap:6px;padding:5px 8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:7px;margin-bottom:4px}
+.popt input{flex:1;background:transparent;border:none;font-size:11px;color:#1e293b;font-family:'Inter',sans-serif;outline:none}
+.popt-del{color:#9ca3af;cursor:pointer;font-size:14px}
+.popt-del:hover{color:#ef4444}
+.padd{width:100%;padding:6px;border:1.5px dashed #d1d5db;border-radius:8px;font-size:11px;color:#94a3b8;background:transparent;cursor:pointer;font-family:'Inter',sans-serif}
+.padd:hover{border-color:#2563eb;color:#2563eb}
+/* ── Status ── */
+.statusbar{height:27px;background:white;border-top:1px solid #e2e8f0;display:flex;align-items:center;padding:0 14px;gap:16px;font-size:11px;color:#94a3b8;flex-shrink:0}
+.sdot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:4px}
+/* Zoom */
+.zoom-c{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);display:flex;gap:2px;background:white;border:1px solid #e2e8f0;border-radius:10px;padding:3px;z-index:40;box-shadow:0 2px 8px rgba(0,0,0,.07)}
+.zb{width:30px;height:28px;border-radius:7px;border:none;background:transparent;color:#64748b;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center}
+.zb:hover{background:#f1f5f9}
+.zv{padding:0 10px;font-size:11px;font-weight:700;color:#64748b;display:flex;align-items:center}
+/* ── KB Panel ── */
+#kb-panel{display:none;position:absolute;inset:0;background:white;z-index:50;flex-direction:column}
+#kb-panel.open{display:flex}
+.kbtop{height:48px;background:#f8fafc;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;padding:0 16px;gap:10px;flex-shrink:0}
+.kbbody{flex:1;display:flex;overflow:hidden}
+.kbside{width:230px;border-right:1px solid #e2e8f0;overflow-y:auto}
+.kbcat{display:flex;align-items:center;gap:7px;padding:9px 14px;font-size:12px;font-weight:600;cursor:pointer;border-left:3px solid transparent;color:#64748b}
+.kbcat:hover{background:#f8fafc}
+.kbcat.active{border-left-color:#2563eb;color:#2563eb;background:#eff6ff}
+.kbcnt{margin-left:auto;font-size:10px;font-weight:700;background:#f1f5f9;color:#94a3b8;padding:1px 7px;border-radius:999px}
+.kbmain{flex:1;overflow-y:auto;padding:16px;background:#f8fafc}
+.kbart{background:white;border:1.5px solid #e2e8f0;border-radius:12px;margin-bottom:8px;overflow:hidden}
+.kbah{display:flex;align-items:center;gap:8px;padding:11px 14px;cursor:pointer}
+.kbah:hover{background:#f8fafc}
+.kbatitle{font-size:13px;font-weight:700;color:#1e293b;flex:1}
+.kbtag{padding:2px 8px;border-radius:5px;font-size:10px;font-weight:600}
+.kbab{padding:0 14px 12px;display:none}
+.kbab.open{display:block}
+.kbq{font-size:11px;font-weight:700;color:#374151;margin:10px 0 3px}
+.kba{font-size:11px;color:#475569;line-height:1.5;padding-left:10px;border-left:2px solid #e2e8f0}
+.kb-flow-ref{margin-top:8px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:7px;padding:6px 10px;font-size:10px;color:#1d4ed8}
+.kb-used-in{margin-top:4px;background:#ecfdf5;border:1px solid #6ee7b7;border-radius:7px;padding:6px 10px;font-size:10px;color:#047857}
+</style>
+</head>
+<body>
+<!-- Top Bar -->
+<div class="topbar">
+  <button onclick="location.href='uebersicht.html'" style="padding:5px 12px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;font-size:12px;font-weight:600;color:#475569;cursor:pointer;font-family:'Inter',sans-serif">🗺</button>
+  <div class="tb-logo">M</div>
+  <div class="tb-name">Flow Editor</div>
+  <div class="tb-div"></div>
+  <!-- Main Mode Switch -->
+  <div class="main-mode">
+    <button class="mm-btn vb active-vb" id="mmvb" onclick="switchMainMode('vb')">🤖 Voicebot</button>
+    <button class="mm-btn cb" id="mmcb" onclick="switchMainMode('cb')">👤 Clickbot</button>
+  </div>
+  <div class="tb-div"></div>
+  <!-- Flow selector (changes per mode) -->
+  <select class="flow-sel" id="flow-sel">
+    <option>Voicebot — Allgemein</option>
+    <option>Voicebot — Notfall</option>
+    <option>Voicebot — Rezept</option>
+    <option value="new">+ Neuer Voicebot-Flow</option>
+  </select>
+  <span class="badge-ok">● Gespeichert</span>
+  <div class="tb-spacer"></div>
+  <button class="tb-btn s" onclick="openKB()">📚 Wissensdatenbank</button>
+  <button class="tb-btn s" onclick="togglePrev()">▶ Vorschau</button>
+  <button class="tb-btn p">✓ Veröffentlichen</button>
+</div>
+<div class="workspace">
+  <!-- Palette -->
+  <div class="palette" id="palette">
+    <!-- VB palette -->
+    <div id="pal-vb">
+      <div class="pal-mode-banner" style="background:#e0f2fe;color:#0369a1">🤖 Voicebot-Bausteine<br><span style="font-size:9px;font-weight:500;margin-top:2px;display:block">Nimmt Anruf selbstständig entgegen</span></div>
+      <div class="pal-group">Gesprächssteuerung</div>
+      <div class="chip" draggable="true" data-type="vb-start"  ondragstart="ds(event)"><div class="cdot" style="background:#22c55e"></div><div><div class="clbl">Anruf eingehend</div><div class="csub">Gespräch startet</div></div></div>
+      <div class="chip" draggable="true" data-type="vb-greet"  ondragstart="ds(event)"><div class="cdot" style="background:#7c3aed"></div><div><div class="clbl">Begrüßung sprechen</div><div class="csub">TTS-Ansage</div></div></div>
+      <div class="chip" draggable="true" data-type="vb-listen" ondragstart="ds(event)"><div class="cdot" style="background:#0369a1"></div><div><div class="clbl">Zuhören / Fragen</div><div class="csub">STT aktiv, Anrufer spricht</div></div></div>
+      <div class="chip" draggable="true" data-type="vb-say"    ondragstart="ds(event)"><div class="cdot" style="background:#7c3aed"></div><div><div class="clbl">Antwort sprechen</div><div class="csub">Voicebot spricht TTS</div></div></div>
+      <div class="chip" draggable="true" data-type="vb-cond"   ondragstart="ds(event)"><div class="cdot" style="background:#f59e0b"></div><div><div class="clbl">Bedingung / Weiche</div><div class="csub">Flow verzweigen</div></div></div>
+      <div class="chip" draggable="true" data-type="vb-kb"     ondragstart="ds(event)"><div class="cdot" style="background:#10b981"></div><div><div class="clbl">KB nachschlagen</div><div class="csub">Antwort aus Wissensbasis</div></div></div>
+      <div class="pal-group">Aktionen</div>
+      <div class="chip" draggable="true" data-type="vb-termin" ondragstart="ds(event)"><div class="cdot" style="background:#f97316"></div><div><div class="clbl">Termin buchen</div><div class="csub">Kalender abfragen + buchen</div></div></div>
+      <div class="chip" draggable="true" data-type="vb-ticket" ondragstart="ds(event)"><div class="cdot" style="background:#f97316"></div><div><div class="clbl">Ticket erstellen</div><div class="csub">Anliegen erfassen</div></div></div>
+      <div class="chip" draggable="true" data-type="vb-mail"   ondragstart="ds(event)"><div class="cdot" style="background:#7c3aed"></div><div><div class="clbl">Mail / SMS senden</div><div class="csub">Automatische Zusammenfassung</div></div></div>
+      <div class="chip" draggable="true" data-type="vb-input"  ondragstart="ds(event)"><div class="cdot" style="background:#0369a1"></div><div><div class="clbl">Daten erfassen</div><div class="csub">Name, Geb.-Datum…</div></div></div>
+      <div class="pal-group" style="color:#d97706">⚡ Übergabe an Agent</div>
+      <div class="chip" draggable="true" data-type="vb-transfer" ondragstart="ds(event)" style="border-color:#fde68a;background:#fffbeb">
+        <div class="cdot" style="background:#f59e0b"></div>
+        <div><div class="clbl" style="color:#92400e">An Agent weiterleiten</div><div class="csub">Mit Gesprächs-Kontext</div></div>
+      </div>
+      <div class="chip" draggable="true" data-type="vb-queue"   ondragstart="ds(event)" style="border-color:#fde68a;background:#fffbeb">
+        <div class="cdot" style="background:#f59e0b"></div>
+        <div><div class="clbl" style="color:#92400e">In Queue einreihen</div><div class="csub">Warten auf freien Agenten</div></div>
+      </div>
+      <div class="pal-group">Ende</div>
+      <div class="chip" draggable="true" data-type="vb-end" ondragstart="ds(event)"><div class="cdot" style="background:#ef4444"></div><div><div class="clbl">Gespräch beenden</div><div class="csub">Verabschiedung + Auflegen</div></div></div>
+    </div>
+    <!-- CB palette (hidden) -->
+    <div id="pal-cb" style="display:none">
+      <div class="pal-mode-banner" style="background:#ede9fe;color:#6d28d9">👤 Clickbot-Bausteine<br><span style="font-size:9px;font-weight:500;margin-top:2px;display:block">Hilft dem Agenten während des Gesprächs</span></div>
+      <div class="pal-group">Navigation</div>
+      <div class="chip" draggable="true" data-type="cb-start"  ondragstart="ds(event)"><div class="cdot" style="background:#22c55e"></div><div><div class="clbl">Agent nimmt Anruf an</div><div class="csub">Clickbot startet</div></div></div>
+      <div class="chip" draggable="true" data-type="cb-end"    ondragstart="ds(event)"><div class="cdot" style="background:#ef4444"></div><div><div class="clbl">Ende / Ticket schließen</div><div class="csub">Clickbot abschließen</div></div></div>
+      <div class="chip" draggable="true" data-type="cb-q"      ondragstart="ds(event)"><div class="cdot" style="background:#6d28d9"></div><div><div class="clbl">Klick-Vorgabe</div><div class="csub">Agent klickt Antwort</div></div></div>
+      <div class="chip" draggable="true" data-type="cb-info"   ondragstart="ds(event)"><div class="cdot" style="background:#7c3aed"></div><div><div class="clbl">Info anzeigen</div><div class="csub">Text / KB-Auszug</div></div></div>
+      <div class="chip" draggable="true" data-type="cb-cond"   ondragstart="ds(event)"><div class="cdot" style="background:#f59e0b"></div><div><div class="clbl">Bedingung</div><div class="csub">Verzweigung nach Antwort</div></div></div>
+      <div class="pal-group">Aktionen</div>
+      <div class="chip" draggable="true" data-type="cb-termin" ondragstart="ds(event)"><div class="cdot" style="background:#f97316"></div><div><div class="clbl">Termin buchen</div><div class="csub">Kalender öffnen</div></div></div>
+      <div class="chip" draggable="true" data-type="cb-ticket" ondragstart="ds(event)"><div class="cdot" style="background:#f97316"></div><div><div class="clbl">Ticket erstellen</div><div class="csub">Anliegen erfassen</div></div></div>
+      <div class="chip" draggable="true" data-type="cb-rezept" ondragstart="ds(event)"><div class="cdot" style="background:#f97316"></div><div><div class="clbl">Rezept erfassen</div><div class="csub">Medikament + Patient</div></div></div>
+      <div class="chip" draggable="true" data-type="cb-mail"   ondragstart="ds(event)"><div class="cdot" style="background:#7c3aed"></div><div><div class="clbl">Mail senden</div><div class="csub">Zusammenfassung abschicken</div></div></div>
+      <div class="chip" draggable="true" data-type="cb-kb"     ondragstart="ds(event)"><div class="cdot" style="background:#10b981"></div><div><div class="clbl">KB einblenden</div><div class="csub">Passende Artikel anzeigen</div></div></div>
+      <div class="chip" draggable="true" data-type="cb-transfer" ondragstart="ds(event)"><div class="cdot" style="background:#06b6d4"></div><div><div class="clbl">Weiterleiten</div><div class="csub">Durchstellen an Ext./Queue</div></div></div>
+    </div>
+  </div>
+  <!-- Canvas -->
+  <div class="canvas-wrap" id="cw"
+    ondragover="event.preventDefault()"
+    ondrop="dropN(event)"
+    onmousedown="cwMD(event)"
+    onmousemove="cwMM(event)"
+    onmouseup="cwMU()">
+    <svg class="connections" id="svgc"></svg>
+    <!-- ── VOICEBOT DEMO FLOW ── -->
+    <div id="vb-canvas">
+      <div class="node n-s sel" id="vn1" style="left:30px;top:50px" onmousedown="nMD(event,'vn1')">
+        <div class="port-in"></div>
+        <div class="nh"><div class="ni" style="background:#dcfce7">📞</div><div class="nt">Anruf eingehend</div><span class="nb" style="background:#dcfce7;color:#15803d">START</span></div>
+        <div class="nbody"><div class="who vb">🤖 Voicebot übernimmt alleine</div><div class="ntext">Anruf geht ein · Voicebot startet automatisch</div></div>
+        <div class="port-out" style="top:50%"></div>
+      </div>
+      <div class="node n-a" id="vn2" style="left:300px;top:30px" onmousedown="nMD(event,'vn2')">
+        <div class="port-in"></div>
+        <div class="nh"><div class="ni" style="background:#f5f3ff">💬</div><div class="nt">Begrüßung</div><span class="nb" style="background:#f5f3ff;color:#7c3aed">ANSAGE</span></div>
+        <div class="nbody"><div class="who vb">🤖 Voicebot spricht</div><div class="ntext">„Guten Tag, Praxis Dr. Schmidt, was kann ich für Sie tun?"</div></div>
+        <div class="port-out" style="top:50%"></div>
+      </div>
+      <div class="node n-q" id="vn3" style="left:300px;top:185px" onmousedown="nMD(event,'vn3')">
+        <div class="port-in"></div>
+        <div class="nh"><div class="ni" style="background:#eff6ff">🎙</div><div class="nt">Anliegen zuhören</div><span class="nb" style="background:#eff6ff;color:#0369a1">STT</span></div>
+        <div class="nbody">
+          <div class="who vb">🤖 Voicebot hört zu</div>
+          <div class="ntext">Spracherkennung aktiv · Anrufer spricht frei</div>
+          <div class="npills">
+            <div class="npill"><div class="pdot" style="background:#0369a1"></div>„Termin" / „Termin buchen"<span class="parr">→</span></div>
+            <div class="npill"><div class="pdot" style="background:#10b981"></div>„Rezept" / „Medikament"<span class="parr">→</span></div>
+            <div class="npill"><div class="pdot" style="background:#ef4444"></div>„Notfall" / „dringend"<span class="parr">→</span></div>
+            <div class="npill"><div class="pdot" style="background:#f59e0b"></div>Kein Match → KB / Agent<span class="parr">→</span></div>
+          </div>
+        </div>
+        <div class="port-out" style="top:65%"></div>
+      </div>
+      <div class="node n-act" id="vn4" style="left:590px;top:80px" onmousedown="nMD(event,'vn4')">
+        <div class="port-in"></div>
+        <div class="nh"><div class="ni" style="background:#fff7ed">📅</div><div class="nt">Termin buchen</div><span class="nb" style="background:#fff7ed;color:#ea580c">AKTION</span></div>
+        <div class="nbody"><div class="who vb">🤖 Voicebot fragt + bucht</div><div class="ntext">„Für wann darf ich einen Termin eintragen?" Kalender automatisch abfragen + bestätigen</div></div>
+        <div class="port-out" style="top:50%"></div>
+      </div>
+      <div class="node n-act" id="vn5" style="left:590px;top:260px" onmousedown="nMD(event,'vn5')">
+        <div class="port-in"></div>
+        <div class="nh"><div class="ni" style="background:#fff7ed">💊</div><div class="nt">Rezept aufnehmen</div><span class="nb" style="background:#fff7ed;color:#ea580c">AKTION</span></div>
+        <div class="nbody"><div class="who vb">🤖 Voicebot fragt ab</div><div class="ntext">„Welches Medikament?" · „Für wen?" · Daten erfassen + Ticket erstellen</div></div>
+        <div class="port-out" style="top:50%"></div>
+      </div>
+      <div class="node n-kb" id="vn6" style="left:590px;top:420px" onmousedown="nMD(event,'vn6')">
+        <div class="port-in"></div>
+        <div class="nh"><div class="ni" style="background:#ecfdf5">📚</div><div class="nt">KB nachschlagen</div><span class="nb" style="background:#ecfdf5;color:#059669">KB</span></div>
+        <div class="nbody"><div class="who vb">🤖 Voicebot antwortet aus KB</div><div class="ntext">Keine Flow-Option passt → KB durchsuchen → Antwort vorlesen</div><div class="kb-chip">📄 Öffnungszeiten · Parken · Infos</div></div>
+        <div class="port-out" style="top:50%"></div>
+      </div>
+      <div class="node n-tr" id="vn7" style="left:590px;top:570px" onmousedown="nMD(event,'vn7')">
+        <div class="port-in"></div>
+        <div class="nh"><div class="ni" style="background:#fffbeb">🔀</div><div class="nt">An Agent weiterleiten</div><span class="nb" style="background:#fef3c7;color:#92400e">ÜBERGABE</span></div>
+        <div class="nbody">
+          <div class="who vb" style="background:#fef3c7;color:#92400e">⚡ Voicebot → Agent</div>
+          <div class="ntext">Voicebot erkennt: komplexes Anliegen / Patient wünscht Agent</div>
+          <div style="margin-top:7px;background:#fffbeb;border:1px solid #fde68a;border-radius:7px;padding:6px 8px;font-size:10px;color:#92400e">Gesprächs-Kontext wird übergeben:<br>Anliegen · Gesprochenes · Erfasste Daten → Clickbot des Agenten startet automatisch</div>
+        </div>
+        <div class="port-out" style="top:50%"></div>
+      </div>
+      <div class="node n-a" id="vn8" style="left:880px;top:130px" onmousedown="nMD(event,'vn8')">
+        <div class="port-in"></div>
+        <div class="nh"><div class="ni" style="background:#f5f3ff">✉️</div><div class="nt">Zusammenfassung senden</div><span class="nb" style="background:#f5f3ff;color:#7c3aed">MAIL</span></div>
+        <div class="nbody"><div class="who vb">🤖 Voicebot versendet</div><div class="ntext">Mail an Praxis mit allen erfassten Daten · automatisch</div></div>
+        <div class="port-out" style="top:50%"></div>
+      </div>
+      <div class="node n-e" id="vn9" style="left:1120px;top:150px" onmousedown="nMD(event,'vn9')">
+        <div class="port-in"></div>
+        <div class="nh"><div class="ni" style="background:#fef2f2">🔴</div><div class="nt">Gespräch beenden</div><span class="nb" style="background:#fef2f2;color:#ef4444">ENDE</span></div>
+        <div class="nbody"><div class="who vb">🤖 Voicebot verabschiedet</div><div class="ntext">„Auf Wiederhören und einen schönen Tag!" · Auflegen</div></div>
+      </div>
+    </div>
+    <!-- ── CLICKBOT DEMO FLOW (hidden) ── -->
+    <div id="cb-canvas" style="display:none">
+      <div class="node n-s sel" id="cn1" style="left:30px;top:80px" onmousedown="nMD(event,'cn1')">
+        <div class="port-in"></div>
+        <div class="nh"><div class="ni" style="background:#dcfce7">👤</div><div class="nt">Agent nimmt Anruf an</div><span class="nb" style="background:#dcfce7;color:#15803d">START</span></div>
+        <div class="nbody"><div class="who cb">👤 Agent führt Gespräch</div><div class="ntext">Clickbot startet · Voicebot-Kontext ggf. bereits vorhanden</div></div>
+        <div class="port-out" style="top:50%"></div>
+      </div>
+      <div class="node n-cl" id="cn2" style="left:290px;top:60px" onmousedown="nMD(event,'cn2')">
+        <div class="port-in"></div>
+        <div class="nh"><div class="ni" style="background:#ede9fe">🖱</div><div class="nt">Anliegen wählen</div><span class="nb" style="background:#ede9fe;color:#6d28d9">KLICK</span></div>
+        <div class="nbody">
+          <div class="who cb">👤 Agent klickt Vorgabe</div>
+          <div class="ntext">Was ist das Anliegen des Patienten?</div>
+          <div class="npills">
+            <div class="npill"><div class="pdot" style="background:#0369a1"></div>Termin buchen<span class="parr">→</span></div>
+            <div class="npill"><div class="pdot" style="background:#10b981"></div>Rezept anfragen<span class="parr">→</span></div>
+            <div class="npill"><div class="pdot" style="background:#ef4444"></div>Notfall<span class="parr">→</span></div>
+            <div class="npill"><div class="pdot" style="background:#f59e0b"></div>Überweisung<span class="parr">→</span></div>
+            <div class="npill"><div class="pdot" style="background:#94a3b8"></div>Sonstiges<span class="parr">→</span></div>
+          </div>
+        </div>
+        <div class="port-out" style="top:60%"></div>
+      </div>
+      <div class="node n-act" id="cn3" style="left:570px;top:50px" onmousedown="nMD(event,'cn3')">
+        <div class="port-in"></div>
+        <div class="nh"><div class="ni" style="background:#fff7ed">📅</div><div class="nt">Termin buchen</div><span class="nb" style="background:#fff7ed;color:#ea580c">AKTION</span></div>
+        <div class="nbody"><div class="who cb">👤 Agent bucht im Kalender</div><div class="ntext">Kalender öffnet sich im Chat · Agent wählt Termin</div></div>
+        <div class="port-out" style="top:50%"></div>
+      </div>
+      <div class="node n-act" id="cn4" style="left:570px;top:230px" onmousedown="nMD(event,'cn4')">
+        <div class="port-in"></div>
+        <div class="nh"><div class="ni" style="background:#fff7ed">💊</div><div class="nt">Rezept erfassen</div><span class="nb" style="background:#fff7ed;color:#ea580c">AKTION</span></div>
+        <div class="nbody"><div class="who cb">👤 Agent klickt Formular</div><div class="ntext">Medikament · Patient · Menge · Wiederholung</div></div>
+        <div class="port-out" style="top:50%"></div>
+      </div>
+      <div class="node n-kb" id="cn5" style="left:570px;top:390px" onmousedown="nMD(event,'cn5')">
+        <div class="port-in"></div>
+        <div class="nh"><div class="ni" style="background:#ecfdf5">📚</div><div class="nt">KB-Vorschlag einblenden</div><span class="nb" style="background:#ecfdf5;color:#059669">KB</span></div>
+        <div class="nbody"><div class="who cb">👤 Agent sieht KB-Treffer</div><div class="ntext">Passende Artikel werden dem Agenten angezeigt</div><div class="kb-chip">📄 Artikel vorschlagen ohne Vorlesen</div></div>
+        <div class="port-out" style="top:50%"></div>
+      </div>
+      <div class="node n-a" id="cn6" style="left:840px;top:140px" onmousedown="nMD(event,'cn6')">
+        <div class="port-in"></div>
+        <div class="nh"><div class="ni" style="background:#f5f3ff">✉️</div><div class="nt">Mail senden</div><span class="nb" style="background:#f5f3ff;color:#7c3aed">MAIL</span></div>
+        <div class="nbody"><div class="who cb">👤 Agent bestätigt + sendet</div><div class="ntext">Mail-Vorschau · Agent klickt Senden</div></div>
+        <div class="port-out" style="top:50%"></div>
+      </div>
+      <div class="node n-e" id="cn7" style="left:1060px;top:155px" onmousedown="nMD(event,'cn7')">
+        <div class="port-in"></div>
+        <div class="nh"><div class="ni" style="background:#fef2f2">🔴</div><div class="nt">Ticket schließen</div><span class="nb" style="background:#fef2f2;color:#ef4444">ENDE</span></div>
+        <div class="nbody"><div class="who cb">👤 Agent schließt Ticket</div><div class="ntext">Status: Erledigt · Gespräch beendet</div></div>
+      </div>
+    </div>
+    <!-- Zoom -->
+    <div class="zoom-c">
+      <button class="zb" onclick="dz(-0.1)">−</button>
+      <span class="zv" id="zv">100%</span>
+      <button class="zb" onclick="dz(0.1)">+</button>
+      <button class="zb" onclick="rz()">⊙</button>
+    </div>
+    <!-- KB Panel -->
+    <div id="kb-panel">
+      <div class="kbtop">
+        <button onclick="closeKB()" style="padding:5px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;color:#475569;background:white">← Zurück zum Editor</button>
+        <span style="font-size:14px;font-weight:800;color:#1e293b;margin-left:4px">📚 Wissensdatenbank</span>
+        <div style="flex:1"></div>
+        <input placeholder="Artikel suchen…" style="padding:7px 14px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:12px;font-family:'Inter',sans-serif;outline:none;width:240px">
+        <button style="padding:7px 16px;background:#2563eb;color:white;border:none;border-radius:9px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif">+ Neuer Artikel</button>
+      </div>
+      <div class="kbbody">
+        <div class="kbside">
+          <div style="padding:10px 14px 4px;font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:1px">Kategorien</div>
+          <div class="kbcat active" onclick="setKBC(this)">📋 Alle Artikel <span class="kbcnt">18</span></div>
+          <div class="kbcat" onclick="setKBC(this)">📅 Termine & Öffnungszeiten <span class="kbcnt">5</span></div>
+          <div class="kbcat" onclick="setKBC(this)">💊 Rezept & Medikamente <span class="kbcnt">4</span></div>
+          <div class="kbcat" onclick="setKBC(this)">🏥 Praxis-Infos <span class="kbcnt">3</span></div>
+          <div class="kbcat" onclick="setKBC(this)">🚗 Anfahrt & Parken <span class="kbcnt">2</span></div>
+          <div class="kbcat" onclick="setKBC(this)">💶 Abrechnung <span class="kbcnt">2</span></div>
+          <div class="kbcat" onclick="setKBC(this)">🔴 Notfall <span class="kbcnt">2</span></div>
+          <div style="padding:12px 14px 4px;margin-top:8px;font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:1px">Nutzung</div>
+          <div style="padding:5px 14px;font-size:11px;color:#374151"><span class="sdot" style="background:#22c55e"></span>12 aktiv im Voicebot</div>
+          <div style="padding:5px 14px;font-size:11px;color:#374151"><span class="sdot" style="background:#6d28d9"></span>14 aktiv im Clickbot</div>
+          <div style="padding:5px 14px;font-size:11px;color:#374151"><span class="sdot" style="background:#f59e0b"></span>3 Entwurf</div>
+        </div>
+        <div class="kbmain">
+          <div class="kbart">
+            <div class="kbah" onclick="togKBA(this)">
+              <span style="font-size:16px">📅</span>
+              <div class="kbatitle">Öffnungszeiten Praxis Dr. Schmidt</div>
+              <div style="display:flex;gap:4px">
+                <span class="kbtag" style="background:#dcfce7;color:#15803d">🤖 Voicebot</span>
+                <span class="kbtag" style="background:#ede9fe;color:#6d28d9">👤 Clickbot</span>
+              </div>
+              <span style="margin-left:8px;color:#94a3b8;font-size:13px">›</span>
+            </div>
+            <div class="kbab">
+              <div class="kbq">❓ Wann hat die Praxis geöffnet?</div>
+              <div class="kba">Mo–Fr 08:00–18:00 Uhr. Samstag 09:00–12:00 Uhr nur nach Vereinbarung.</div>
+              <div class="kbq">❓ Was tun außerhalb der Öffnungszeiten?</div>
+              <div class="kba">Ärztlicher Bereitschaftsdienst 116 117. Notfälle: 112.</div>
+              <div class="kb-flow-ref">🤖 Voicebot: Flow „Allgemein" → Block KB Nachschlagen</div>
+              <div class="kb-used-in">👤 Clickbot: Flow „Allgemein" → Block KB-Vorschlag einblenden</div>
+              <div style="display:flex;gap:6px;margin-top:10px">
+                <button style="padding:5px 12px;border:1.5px solid #e2e8f0;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;background:white">✏ Bearbeiten</button>
+                <button style="padding:5px 12px;border:1.5px solid #e2e8f0;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;background:white">🔗 In Flow einsetzen</button>
+                <button style="padding:5px 12px;border:1.5px solid #fca5a5;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;color:#ef4444;background:white">🗑</button>
+              </div>
+            </div>
+          </div>
+          <div class="kbart">
+            <div class="kbah" onclick="togKBA(this)">
+              <span style="font-size:16px">💊</span>
+              <div class="kbatitle">Rezept — Voraussetzungen & Ablauf</div>
+              <div style="display:flex;gap:4px"><span class="kbtag" style="background:#dcfce7;color:#15803d">🤖 Voicebot</span><span class="kbtag" style="background:#ede9fe;color:#6d28d9">👤 Clickbot</span></div>
+              <span style="margin-left:8px;color:#94a3b8;font-size:13px">›</span>
+            </div>
+          </div>
+          <div class="kbart">
+            <div class="kbah" onclick="togKBA(this)">
+              <span style="font-size:16px">🚗</span>
+              <div class="kbatitle">Anfahrt & Parkmöglichkeiten</div>
+              <div style="display:flex;gap:4px"><span class="kbtag" style="background:#dcfce7;color:#15803d">🤖 Voicebot</span></div>
+              <span style="margin-left:8px;color:#94a3b8;font-size:13px">›</span>
+            </div>
+          </div>
+          <div class="kbart" style="border-color:#fde68a">
+            <div class="kbah" onclick="togKBA(this)">
+              <span style="font-size:16px">💶</span>
+              <div class="kbatitle">Selbstzahler & Privatabrechnung</div>
+              <div style="display:flex;gap:4px"><span class="kbtag" style="background:#fef3c7;color:#92400e">Entwurf</span></div>
+              <span style="margin-left:8px;color:#94a3b8;font-size:13px">›</span>
+            </div>
+          </div>
+          <!-- New article -->
+          <div style="background:white;border:2px dashed #d1d5db;border-radius:12px;padding:16px;margin-top:4px">
+            <div style="font-size:12px;font-weight:700;color:#374151;margin-bottom:12px">+ Neuen Artikel erstellen</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+              <div><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Titel</div><input style="width:100%;padding:8px 12px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:12px;font-family:'Inter',sans-serif;outline:none" placeholder="Artikel-Titel…"></div>
+              <div><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Kategorie</div><select style="width:100%;padding:8px 12px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:12px;font-family:'Inter',sans-serif;outline:none;background:white"><option>Termine</option><option>Rezept</option><option>Praxis-Info</option><option>Notfall</option></select></div>
+            </div>
+            <div style="margin-bottom:10px"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Frage (die ein Anrufer stellen könnte)</div><input style="width:100%;padding:8px 12px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:12px;font-family:'Inter',sans-serif;outline:none" placeholder="z.B. Wann hat die Praxis geöffnet?"></div>
+            <div style="margin-bottom:10px"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Antwort</div><textarea style="width:100%;padding:8px 12px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:12px;font-family:'Inter',sans-serif;outline:none;min-height:68px;resize:vertical" placeholder="Antwort-Text…"></textarea></div>
+            <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+              <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer"><input type="checkbox" checked style="accent-color:#0369a1"> 🤖 Voicebot vorlesen</label>
+              <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer"><input type="checkbox" checked style="accent-color:#6d28d9"> 👤 Clickbot anzeigen</label>
+              <div style="flex:1"></div>
+              <button style="padding:7px 14px;background:#f1f5f9;border:none;border-radius:9px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;color:#475569">Entwurf</button>
+              <button style="padding:7px 18px;background:#2563eb;color:white;border:none;border-radius:9px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif">✓ Speichern</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Right Properties Panel -->
+  <div class="props" id="props-panel">
+    <div class="ph" id="props-head">⚙️ Block-Eigenschaften</div>
+    <!-- VB properties (default) -->
+    <div id="props-vb">
+      <div class="ps"><div class="pl">Block-Name</div><input class="pi" value="Anliegen zuhören"><div class="pl">STT Engine</div><select class="psel"><option>Azure Speech de-DE (empfohlen)</option><option>Whisper OpenAI large-v3</option><option>Google STT de-DE</option><option>Whisper lokal</option></select></div>
+      <div class="ps">
+        <div class="pl">TTS — Voicebot spricht</div>
+        <textarea class="pta">Was ist der Grund Ihres Anrufs? Sie können zum Beispiel sagen: Termin, Rezept oder Notfall.</textarea>
+        <div class="pl">TTS Stimme</div>
+        <select class="psel"><option>Azure Neural — de-DE-KatjaNeural</option><option>Azure Neural — de-DE-ConradNeural</option><option>ElevenLabs — Domi</option><option>OpenAI TTS — Nova</option></select>
+      </div>
+      <div class="ps">
+        <div class="pl">🎙 Erkannte Schlüsselwörter</div>
+        <div style="margin-bottom:8px"><span class="kwtag">Termin</span><span class="kwtag">Termin buchen</span><span class="kwtag" style="background:#dcfce7;color:#15803d">Rezept</span><span class="kwtag" style="background:#fef2f2;color:#ef4444">Notfall</span><span class="kwtag" style="background:#f1f5f9;color:#64748b">+ Wort</span></div>
+        <div class="pl">Fallback bei keinem Match</div>
+        <select class="psel" style="margin-bottom:8px"><option>KB befragen → vorlesen</option><option>Nochmals fragen (max 2×)</option><option>An Agent weiterleiten</option></select>
+        <div class="pl">Timeout (Sek)</div><input class="pi" type="number" value="8">
+      </div>
+      <div class="ps">
+        <div class="pl">📚 KB Verknüpfung</div>
+        <div class="tog-row"><div class="tog-lbl">KB bei Sonstiges befragen</div><div class="mtog on" onclick="this.classList.toggle('on')"></div></div>
+        <select class="psel"><option>Alle aktiven Artikel</option><option>Termine & Öffnungszeiten</option><option>Rezept & Medikamente</option></select>
+        <div style="background:#ecfdf5;border:1px solid #6ee7b7;border-radius:8px;padding:7px 10px;font-size:11px;color:#047857;margin-top:4px">🤖 Kein Szenario erkannt → Voicebot sucht KB und liest Antwort vor</div>
+      </div>
+    </div>
+    <!-- CB properties (hidden) -->
+    <div id="props-cb" style="display:none">
+      <div class="ps"><div class="pl">Block-Name</div><input class="pi" value="Anliegen wählen"></div>
+      <div class="ps">
+        <div class="pl">👤 Titel für Agent</div><input class="pi" value="Was ist das Anliegen?">
+        <div class="pl">Antwort-Optionen (Klickvorgaben)</div>
+        <div class="popt"><span>📅</span><input value="Termin buchen"><span class="popt-del">×</span></div>
+        <div class="popt"><span>💊</span><input value="Rezeptanfrage"><span class="popt-del">×</span></div>
+        <div class="popt"><span>🔴</span><input value="Notfall"><span class="popt-del">×</span></div>
+        <div class="popt"><span>📄</span><input value="Überweisung"><span class="popt-del">×</span></div>
+        <button class="padd">+ Option hinzufügen</button>
+      </div>
+      <div class="ps">
+        <div class="pl">📚 KB Verknüpfung</div>
+        <div class="tog-row"><div class="tog-lbl">KB-Vorschläge einblenden</div><div class="mtog on" onclick="this.classList.toggle('on')"></div></div>
+        <select class="psel"><option>Alle aktiven Artikel</option><option>Nur Termine</option><option>Nur Rezept</option></select>
+        <div style="background:#ede9fe;border:1px solid #c4b5fd;border-radius:8px;padding:7px 10px;font-size:11px;color:#5b21b6;margin-top:4px">👤 Passende KB-Artikel werden dem Agenten angezeigt — er liest sie selbst vor</div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Status Bar -->
+<div class="statusbar">
+  <span id="sb-mode"><span class="sdot" style="background:#0369a1"></span>Voicebot-Modus</span>
+  <span><span class="sdot" style="background:#22c55e"></span>9 Blöcke</span>
+  <span><span class="sdot" style="background:#22c55e"></span>Flow valide</span>
+  <span><span class="sdot" style="background:#22c55e"></span>KB: 12 Artikel verknüpft</span>
+  <span style="margin-left:auto">Praxis Dr. Schmidt · v1.6</span>
+</div>
+<!-- Preview -->
+<div id="prev" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(3px)">
+  <div style="background:white;border-radius:18px;width:860px;max-height:86vh;overflow-y:auto;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.2)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div style="font-size:15px;font-weight:800">▶ Voicebot Flow — Praxis Dr. Schmidt / Allgemein</div>
+      <button onclick="togglePrev()" style="padding:6px 14px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif">✕ Schließen</button>
+    </div>
+    <div style="background:#0f172a;border-radius:14px;padding:16px;font-family:'Inter',monospace">
+      <div style="font-size:11px;color:#64748b;margin-bottom:12px">// Voicebot Gesprächsverlauf — simuliert</div>
+      <div style="margin-bottom:10px"><span style="color:#22c55e;font-size:11px">📞 Anruf eingehend</span><span style="color:#475569;font-size:10px;margin-left:8px">+49 89 123 456 789 · Max Mustermann</span></div>
+      <div style="background:#1e293b;border-radius:8px;padding:8px 12px;margin-bottom:6px;font-size:11px"><span style="color:#0ea5e9">🤖 Voicebot: </span><span style="color:#e2e8f0;font-style:italic">„Guten Tag, Praxis Dr. Schmidt, was kann ich für Sie tun?"</span></div>
+      <div style="background:#334155;border-radius:8px;padding:8px 12px;margin-bottom:6px;font-size:11px"><span style="color:#94a3b8">🎙 Patient: </span><span style="color:#f1f5f9">"Ich bräuchte gerne einen Termin."</span></div>
+      <div style="font-size:10px;color:#10b981;margin-bottom:4px">✓ Erkannt → Termin buchen</div>
+      <div style="background:#1e293b;border-radius:8px;padding:8px 12px;margin-bottom:6px;font-size:11px"><span style="color:#0ea5e9">🤖 Voicebot: </span><span style="color:#e2e8f0;font-style:italic">„Für wann darf ich einen Termin eintragen? Wir hätten Donnerstag um 14:30 oder Freitag um 09:00 Uhr."</span></div>
+      <div style="background:#334155;border-radius:8px;padding:8px 12px;margin-bottom:6px;font-size:11px"><span style="color:#94a3b8">🎙 Patient: </span><span style="color:#f1f5f9">"Können Sie mich lieber mit jemandem verbinden?"</span></div>
+      <div style="font-size:10px;color:#f59e0b;margin-bottom:4px">⚡ Patient wünscht Agent → Übergabe-Block ausgelöst</div>
+      <div style="background:#1e293b;border-radius:8px;padding:8px 12px;margin-bottom:6px;font-size:11px"><span style="color:#0ea5e9">🤖 Voicebot: </span><span style="color:#e2e8f0;font-style:italic">„Natürlich, ich verbinde Sie gleich. Einen kurzen Moment bitte."</span></div>
+      <div style="background:#1e2535;border:1px solid #f59e0b;border-radius:8px;padding:8px 12px;margin-bottom:6px;font-size:10px;color:#fde68a">🔀 Übergabe an Agent · Mitgegeben: Anliegen=Termin · Name=Max Mustermann · Clickbot startet automatisch mit Termin-Flow</div>
+      <div style="font-size:10px;color:#64748b">// Agent übernimmt · Clickbot zeigt Termin-Formular · Voicebot-Session endet</div>
+    </div>
+  </div>
+</div>
+<script>
+let curMode = 'vb', dragging = null, dox = 0, doy = 0, dragType = null, kbOpen = false;
+const VB_CONNS = [
+  {f:'vn1',t:'vn2',fy:.5,ty:.5,c:'#22c55e'},
+  {f:'vn2',t:'vn3',fy:.5,ty:.5,c:'#7c3aed'},
+  {f:'vn3',t:'vn4',fy:.25,ty:.5,c:'#0369a1'},
+  {f:'vn3',t:'vn5',fy:.5,ty:.5,c:'#10b981'},
+  {f:'vn3',t:'vn6',fy:.7,ty:.5,c:'#f59e0b'},
+  {f:'vn3',t:'vn7',fy:.88,ty:.5,c:'#ef4444'},
+  {f:'vn4',t:'vn8',fy:.5,ty:.35,c:'#f97316'},
+  {f:'vn5',t:'vn8',fy:.5,ty:.5,c:'#f97316'},
+  {f:'vn8',t:'vn9',fy:.5,ty:.5,c:'#7c3aed'},
+];
+const CB_CONNS = [
+  {f:'cn1',t:'cn2',fy:.5,ty:.5,c:'#22c55e'},
+  {f:'cn2',t:'cn3',fy:.25,ty:.5,c:'#0369a1'},
+  {f:'cn2',t:'cn4',fy:.5,ty:.5,c:'#10b981'},
+  {f:'cn2',t:'cn5',fy:.75,ty:.5,c:'#f59e0b'},
+  {f:'cn3',t:'cn6',fy:.5,ty:.35,c:'#f97316'},
+  {f:'cn4',t:'cn6',fy:.5,ty:.5,c:'#f97316'},
+  {f:'cn5',t:'cn6',fy:.5,ty:.65,c:'#10b981'},
+  {f:'cn6',t:'cn7',fy:.5,ty:.5,c:'#7c3aed'},
+];
+function drawConns() {
+  const svg = document.getElementById('svgc');
+  const wr  = document.getElementById('cw').getBoundingClientRect();
+  svg.innerHTML = '';
+  const CONNS = curMode === 'vb' ? VB_CONNS : CB_CONNS;
+  CONNS.forEach(c => {
+    const f = document.getElementById(c.f);
+    const t = document.getElementById(c.t);
+    if (!f || !t || f.parentElement.style.display === 'none' || t.parentElement.style.display === 'none') return;
+    const fr = f.getBoundingClientRect(), tr = t.getBoundingClientRect();
+    const x1 = fr.right - wr.left, y1 = fr.top - wr.top + fr.height * c.fy;
+    const x2 = tr.left  - wr.left, y2 = tr.top  - wr.top + tr.height * c.ty;
+    const cx = (x1+x2)/2;
+    const p = document.createElementNS('http://www.w3.org/2000/svg','path');
+    p.setAttribute('d', `M${x1},${y1} C${cx},${y1} ${cx},${y2} ${x2},${y2}`);
+    p.setAttribute('stroke', c.c); p.setAttribute('opacity','0.6'); svg.appendChild(p);
+    const a = document.createElementNS('http://www.w3.org/2000/svg','polygon');
+    a.setAttribute('points', `${x2},${y2} ${x2-9},${y2-4} ${x2-9},${y2+4}`);
+    a.setAttribute('fill', c.c); a.setAttribute('opacity','0.8'); svg.appendChild(a);
+  });
+}
+function switchMainMode(m) {
+  curMode = m;
+  document.getElementById('mmvb').className = 'mm-btn vb' + (m==='vb' ? ' active-vb' : '');
+  document.getElementById('mmcb').className = 'mm-btn cb' + (m==='cb' ? ' active-cb' : '');
+  document.getElementById('pal-vb').style.display = m==='vb' ? 'block' : 'none';
+  document.getElementById('pal-cb').style.display = m==='cb' ? 'block' : 'none';
+  document.getElementById('vb-canvas').style.display = m==='vb' ? 'block' : 'none';
+  document.getElementById('cb-canvas').style.display = m==='cb' ? 'block' : 'none';
+  document.getElementById('props-vb').style.display = m==='vb' ? 'block' : 'none';
+  document.getElementById('props-cb').style.display = m==='cb' ? 'block' : 'none';
+  document.getElementById('props-head').textContent = m==='vb' ? '⚙️ Voicebot Block' : '⚙️ Clickbot Block';
+  document.getElementById('sb-mode').innerHTML = m==='vb'
+    ? '<span class="sdot" style="background:#0369a1"></span>Voicebot-Modus'
+    : '<span class="sdot" style="background:#6d28d9"></span>Clickbot-Modus';
+  const sel = document.getElementById('flow-sel');
+  sel.innerHTML = m==='vb'
+    ? '<option>Voicebot — Allgemein</option><option>Voicebot — Notfall</option><option>Voicebot — Rezept</option><option value="new">+ Neuer Voicebot-Flow</option>'
+    : '<option>Clickbot — Allgemein</option><option>Clickbot — Rezept</option><option>Clickbot — Überweisung</option><option value="new">+ Neuer Clickbot-Flow</option>';
+  setTimeout(drawConns, 80);
+}
+function nMD(e, id) {
+  if (e.target.classList.contains('port-out')) return;
+  e.stopPropagation();
+  const n = document.getElementById(id);
+  document.querySelectorAll('.node').forEach(x => x.classList.remove('sel'));
+  n.classList.add('sel');
+  dragging = n; dox = e.clientX - n.offsetLeft; doy = e.clientY - n.offsetTop;
+}
+function cwMD(e) { if (!['cw','svgc'].some(c => e.target.id===c || e.target.classList.contains(c))) return; document.querySelectorAll('.node').forEach(x => x.classList.remove('sel')); }
+function cwMM(e) { if (!dragging) return; dragging.style.left = (e.clientX-dox)+'px'; dragging.style.top = (e.clientY-doy)+'px'; drawConns(); }
+function cwMU() { dragging = null; }
+window.addEventListener('mouseup', cwMU);
+function ds(e) { dragType = e.currentTarget.dataset.type; }
+function dropN(e) {
+  if (!dragType || kbOpen) return;
+  const wr = document.getElementById('cw').getBoundingClientRect();
+  addN(dragType, e.clientX - wr.left - 107, e.clientY - wr.top - 40);
+  dragType = null;
+}
+let nc = 50;
+function addN(type, x, y) {
+  const id = 'nn'+(++nc);
+  const parent = curMode==='vb' ? document.getElementById('vb-canvas') : document.getElementById('cb-canvas');
+  const isVB = type.startsWith('vb-');
+  const isCB = type.startsWith('cb-');
+  const map = {
+    'vb-start':   {cls:'n-s',  icon:'📞',title:'Anruf eingehend',      badge:'START',   bc:'#dcfce7',tc:'#15803d'},
+    'vb-end':     {cls:'n-e',  icon:'🔴',title:'Ende',                badge:'ENDE',    bc:'#fef2f2',tc:'#ef4444'},
+    'vb-greet':   {cls:'n-a',  icon:'💬',title:'Begrüßung',           badge:'ANSAGE',  bc:'#f5f3ff',tc:'#7c3aed'},
+    'vb-listen':  {cls:'n-q',  icon:'🎙',title:'Zuhören',             badge:'STT',     bc:'#eff6ff',tc:'#0369a1'},
+    'vb-say':     {cls:'n-a',  icon:'🔊',title:'Antwort sprechen',    badge:'TTS',     bc:'#f5f3ff',tc:'#7c3aed'},
+    'vb-cond':    {cls:'n-cond',icon:'⚡',title:'Bedingung',          badge:'WEICHE',  bc:'#fffbeb',tc:'#d97706'},
+    'vb-kb':      {cls:'n-kb', icon:'📚',title:'KB nachschlagen',     badge:'KB',      bc:'#ecfdf5',tc:'#059669'},
+    'vb-termin':  {cls:'n-act',icon:'📅',title:'Termin buchen',       badge:'AKTION',  bc:'#fff7ed',tc:'#ea580c'},
+    'vb-ticket':  {cls:'n-act',icon:'🎫',title:'Ticket erstellen',    badge:'AKTION',  bc:'#fff7ed',tc:'#ea580c'},
+    'vb-mail':    {cls:'n-a',  icon:'✉️',title:'Mail senden',         badge:'MAIL',    bc:'#f5f3ff',tc:'#7c3aed'},
+    'vb-input':   {cls:'n-q',  icon:'⌨️',title:'Daten erfassen',      badge:'INPUT',   bc:'#eff6ff',tc:'#0369a1'},
+    'vb-transfer':{cls:'n-tr', icon:'🔀',title:'An Agent weiterleiten',badge:'ÜBERGABE',bc:'#fef3c7',tc:'#92400e'},
+    'vb-queue':   {cls:'n-tr', icon:'⏳',title:'In Queue einreihen',   badge:'QUEUE',   bc:'#fef3c7',tc:'#92400e'},
+    'cb-start':   {cls:'n-s',  icon:'👤',title:'Agent nimmt an',      badge:'START',   bc:'#dcfce7',tc:'#15803d'},
+    'cb-end':     {cls:'n-e',  icon:'🔴',title:'Ticket schließen',    badge:'ENDE',    bc:'#fef2f2',tc:'#ef4444'},
+    'cb-q':       {cls:'n-cl', icon:'🖱',title:'Klick-Vorgabe',       badge:'KLICK',   bc:'#ede9fe',tc:'#6d28d9'},
+    'cb-info':    {cls:'n-a',  icon:'💬',title:'Info anzeigen',       badge:'INFO',    bc:'#f5f3ff',tc:'#7c3aed'},
+    'cb-cond':    {cls:'n-cond',icon:'⚡',title:'Bedingung',          badge:'WEICHE',  bc:'#fffbeb',tc:'#d97706'},
+    'cb-termin':  {cls:'n-act',icon:'📅',title:'Termin buchen',       badge:'AKTION',  bc:'#fff7ed',tc:'#ea580c'},
+    'cb-ticket':  {cls:'n-act',icon:'🎫',title:'Ticket erstellen',    badge:'AKTION',  bc:'#fff7ed',tc:'#ea580c'},
+    'cb-rezept':  {cls:'n-act',icon:'💊',title:'Rezept erfassen',     badge:'AKTION',  bc:'#fff7ed',tc:'#ea580c'},
+    'cb-mail':    {cls:'n-a',  icon:'✉️',title:'Mail senden',         badge:'MAIL',    bc:'#f5f3ff',tc:'#7c3aed'},
+    'cb-kb':      {cls:'n-kb', icon:'📚',title:'KB einblenden',       badge:'KB',      bc:'#ecfdf5',tc:'#059669'},
+    'cb-transfer':{cls:'n-q',  icon:'↗️',title:'Weiterleiten',        badge:'TRANSFER',bc:'#ecfeff',tc:'#0891b2'},
+  };
+  const c = map[type] || map['vb-say'];
+  const who = isVB ? `<div class="who vb">🤖 Voicebot</div>` : `<div class="who cb">👤 Agent</div>`;
+  const el = document.createElement('div');
+  el.className = `node ${c.cls}`; el.id = id;
+  el.style.cssText = `left:${x}px;top:${y}px`;
+  el.innerHTML = `<div class="port-in"></div><div class="nh"><div class="ni" style="background:${c.bc}">${c.icon}</div><div class="nt">${c.title}</div><span class="nb" style="background:${c.bc};color:${c.tc}">${c.badge}</span></div><div class="nbody">${who}<div class="ntext">Konfigurieren…</div></div><div class="port-out" style="top:50%"></div>`;
+  el.onmousedown = (e) => nMD(e, id);
+  parent.appendChild(el);
+}
+let zl = 1;
+function dz(d) { zl = Math.max(.4, Math.min(2, zl+d)); document.getElementById('zv').textContent = Math.round(zl*100)+'%'; }
+function rz()  { zl = 1; document.getElementById('zv').textContent = '100%'; }
+function openKB()  { kbOpen = true;  document.getElementById('kb-panel').classList.add('open'); }
+function closeKB() { kbOpen = false; document.getElementById('kb-panel').classList.remove('open'); }
+function setKBC(el){ document.querySelectorAll('.kbcat').forEach(c => c.classList.remove('active')); el.classList.add('active'); }
+function togKBA(h) { const b = h.nextElementSibling; if (b && b.classList.contains('kbab')) b.classList.toggle('open'); }
+function togglePrev(){ const m = document.getElementById('prev'); m.style.display = m.style.display==='flex'?'none':'flex'; }
+setTimeout(drawConns, 150);
+window.addEventListener('resize', drawConns);
+</script>
+</body>
+</html>

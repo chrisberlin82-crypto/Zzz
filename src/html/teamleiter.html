@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Teamleiter Dashboard – MedReception</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: #f8fafc; display: flex; height: 100vh; overflow: hidden; }
+  /* Sidebar */
+  .sidebar { width: 220px; background: white; border-right: 1px solid #e5e7eb; padding: 16px 12px; flex-shrink: 0; overflow-y: auto; }
+  .sidebar-logo { display: flex; align-items: center; gap: 10px; padding: 8px 10px; margin-bottom: 8px; }
+  .sidebar-logo .icon { width: 32px; height: 32px; background: #7c3aed; border-radius: 9px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 14px; }
+  .sidebar-logo span { font-weight: 700; font-size: 14px; color: #111827; }
+  .role-badge { margin: 0 10px 16px; padding: 5px 10px; background: #f5f3ff; border: 1px solid #ddd6fe; border-radius: 8px; font-size: 11px; font-weight: 600; color: #7c3aed; text-align: center; }
+  .nav-group { font-size: 10px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; padding: 0 10px; margin: 12px 0 5px; }
+  .nav-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 9px; font-size: 12px; font-weight: 500; color: #6b7280; cursor: pointer; margin-bottom: 2px; }
+  .nav-item.active { background: #f5f3ff; color: #7c3aed; }
+  .nav-item:hover:not(.active) { background: #f9fafb; color: #374151; }
+  /* Main */
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .main-header { background: white; border-bottom: 1px solid #e5e7eb; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+  .main-header h1 { font-size: 18px; font-weight: 700; color: #111827; }
+  .live-badge { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #15803d; font-weight: 600; background: #dcfce7; padding: 4px 10px; border-radius: 999px; }
+  .live-dot { width: 7px; height: 7px; background: #22c55e; border-radius: 50%; animation: blink 1.2s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+  /* Tabs */
+  .tabs-bar { background: white; border-bottom: 1px solid #e5e7eb; padding: 0 24px; display: flex; gap: 0; flex-shrink: 0; overflow-x: auto; }
+  .tab { padding: 12px 16px; font-size: 12px; font-weight: 600; color: #6b7280; cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; }
+  .tab.active { color: #7c3aed; border-bottom-color: #7c3aed; }
+  .tab:hover:not(.active) { color: #374151; }
+  /* Content */
+  .content { flex: 1; overflow-y: auto; padding: 20px 24px; }
+  /* Generische Cards */
+  .card { background: white; border-radius: 12px; border: 1px solid #e5e7eb; margin-bottom: 16px; }
+  .card-header { padding: 13px 18px; border-bottom: 1px solid #f3f4f6; display: flex; justify-content: space-between; align-items: center; }
+  .card-header h2 { font-size: 13px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 6px; }
+  .card-body { padding: 16px 18px; }
+  .btn { padding: 7px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; border: none; cursor: pointer; font-family: 'Inter', sans-serif; }
+  .btn.primary  { background: #7c3aed; color: white; }
+  .btn.blue     { background: #2563eb; color: white; }
+  .btn.green    { background: #16a34a; color: white; }
+  .btn.secondary{ background: #f1f5f9; color: #475569; border: 1.5px solid #e2e8f0; }
+  .btn.sm       { padding: 5px 10px; font-size: 11px; }
+  .btn:hover    { opacity: .85; }
+  /* KPI Reihe */
+  .kpi-row { display: grid; gap: 12px; margin-bottom: 16px; }
+  .kpi-row.cols-5 { grid-template-columns: repeat(5,1fr); }
+  .kpi-row.cols-4 { grid-template-columns: repeat(4,1fr); }
+  .kpi-row.cols-3 { grid-template-columns: repeat(3,1fr); }
+  .kpi { background: white; border-radius: 11px; border: 1px solid #e5e7eb; padding: 14px 16px; }
+  .kpi-label { font-size: 10px; color: #6b7280; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; }
+  .kpi-value { font-size: 24px; font-weight: 800; color: #111827; }
+  .kpi-sub { font-size: 10px; color: #9ca3af; margin-top: 3px; }
+  .kpi-trend { font-size: 10px; font-weight: 600; margin-top: 4px; }
+  .kpi-trend.up{color:#15803d} .kpi-trend.down{color:#dc2626} .kpi-trend.warn{color:#ea580c}
+  /* Agenten-Tabelle */
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { padding: 9px 12px; text-align: left; font-size: 10px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: .5px; border-bottom: 1px solid #e5e7eb; background: #f9fafb; }
+  td { padding: 10px 12px; border-bottom: 1px solid #f3f4f6; vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #fafafa; }
+  .status-pill { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+  .status-pill.active  { background: #dcfce7; color: #15803d; }
+  .status-pill.busy    { background: #ffedd5; color: #ea580c; }
+  .status-pill.pause   { background: #fef3c7; color: #d97706; }
+  .status-pill.offline { background: #f1f5f9; color: #9ca3af; }
+  .avatar { width: 28px; height: 28px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 11px; color: white; }
+  /* Hotline Live */
+  .hotline-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f3f4f6; }
+  .hotline-row:last-child { border-bottom: none; }
+  .hotline-name { font-size: 13px; font-weight: 600; color: #1e293b; min-width: 160px; }
+  .hotline-num  { font-size: 11px; color: #6b7280; }
+  .bar-wrap { flex: 1; background: #f1f5f9; border-radius: 999px; height: 8px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 999px; transition: width .5s; }
+  .bar-fill.low  { background: #22c55e; }
+  .bar-fill.mid  { background: #f59e0b; }
+  .bar-fill.high { background: #ef4444; }
+  .bar-pct { font-size: 12px; font-weight: 700; min-width: 36px; text-align: right; }
+  .hotline-stats { display: flex; gap: 14px; font-size: 11px; color: #6b7280; }
+  .hotline-stat-val { font-weight: 700; color: #1e293b; }
+  /* Nachrichten */
+  .msg-row { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f3f4f6; }
+  .msg-row:last-child { border-bottom: none; }
+  .msg-icon { font-size: 18px; flex-shrink: 0; margin-top: 2px; }
+  .msg-body { flex: 1; }
+  .msg-title { font-size: 12px; font-weight: 600; color: #1e293b; }
+  .msg-detail { font-size: 11px; color: #6b7280; margin-top: 2px; line-height: 1.5; }
+  .msg-badge { display: inline-flex; padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 600; margin-top: 4px; }
+  .msg-badge.sent     { background: #dcfce7; color: #15803d; }
+  .msg-badge.pending  { background: #fef3c7; color: #92400e; }
+  .msg-badge.failed   { background: #fef2f2; color: #dc2626; }
+  .msg-time { font-size: 10px; color: #9ca3af; flex-shrink: 0; margin-top: 3px; }
+  /* Clickbot Builder */
+  .flow-canvas { background: #f8fafc; border: 1.5px dashed #e2e8f0; border-radius: 12px; padding: 20px; min-height: 200px; }
+  .flow-node { background: white; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 10px 14px; display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 500; cursor: grab; margin: 6px; }
+  .flow-node.start    { border-color: #22c55e; background: #f0fdf4; color: #15803d; }
+  .flow-node.question { border-color: #2563eb; background: #eff6ff; color: #1d4ed8; }
+  .flow-node.answer   { border-color: #7c3aed; background: #f5f3ff; color: #6d28d9; }
+  .flow-node.action   { border-color: #ea580c; background: #fff7ed; color: #c2410c; }
+  .flow-node.end      { border-color: #6b7280; background: #f9fafb; color: #374151; }
+  .flow-arrow { display: inline-block; margin: 0 4px; color: #9ca3af; font-size: 16px; }
+  .node-palette { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 12px; }
+  .palette-item { padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 600; cursor: pointer; border: 1.5px solid; }
+  /* Anruf-Suche */
+  .search-bar { display: flex; gap: 8px; margin-bottom: 16px; }
+  .search-input { flex: 1; padding: 10px 14px; border: 1.5px solid #e2e8f0; border-radius: 10px; font-size: 13px; font-family: 'Inter', sans-serif; outline: none; }
+  .search-input:focus { border-color: #7c3aed; }
+  .call-timeline { position: relative; padding-left: 24px; }
+  .call-timeline::before { content: ''; position: absolute; left: 8px; top: 0; bottom: 0; width: 2px; background: #e2e8f0; }
+  .tl-event { position: relative; margin-bottom: 14px; }
+  .tl-dot { position: absolute; left: -20px; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; top: 3px; }
+  .tl-dot.green  { background: #22c55e; }
+  .tl-dot.blue   { background: #2563eb; }
+  .tl-dot.orange { background: #f97316; }
+  .tl-dot.red    { background: #ef4444; }
+  .tl-dot.gray   { background: #9ca3af; }
+  .tl-time  { font-size: 10px; color: #9ca3af; margin-bottom: 2px; }
+  .tl-title { font-size: 12px; font-weight: 600; color: #1e293b; }
+  .tl-detail{ font-size: 11px; color: #6b7280; margin-top: 2px; }
+  /* Form */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .form-row { margin-bottom: 12px; }
+  .form-label { font-size: 11px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 5px; }
+  .form-input, .form-select, .form-textarea { width: 100%; padding: 8px 12px; border: 1.5px solid #e2e8f0; border-radius: 9px; font-size: 13px; font-family: 'Inter', sans-serif; color: #1e293b; outline: none; background: white; }
+  .form-textarea { min-height: 80px; resize: vertical; }
+  .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: #7c3aed; }
+  /* Skill-Tags */
+  .skill-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+  .skill-tag { padding: 4px 10px; border-radius: 7px; font-size: 11px; font-weight: 600; cursor: pointer; }
+  .skill-tag.on  { background: #dbeafe; color: #1d4ed8; }
+  .skill-tag.off { background: #f1f5f9; color: #9ca3af; border: 1px dashed #d1d5db; }
+  .skill-tag:hover { opacity: .8; }
+  /* Section title */
+  .section-title { font-size: 12px; font-weight: 700; color: #374151; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+</style>
+</head>
+<body>
+<!-- Sidebar -->
+<div class="sidebar">
+  <div class="sidebar-logo" onclick="location.href='uebersicht.html'" style="cursor:pointer"><div class="icon">TL</div><span>MedReception</span></div>
+  <div class="role-badge">👤 Teamleiter-Ansicht</div>
+  <div class="nav-group">Mein Board</div>
+  <div class="nav-item" onclick="location.href='uebersicht.html'" style="cursor:pointer">🗺 Projektübersicht</div>
+  <div class="nav-item active" onclick="showTab('live')">📊 TL Dashboard</div>
+  <div class="nav-item" onclick="location.href='agent-board.html'" style="cursor:pointer">📞 Agent Board</div>
+  <div class="nav-group">Team</div>
+  <div class="nav-item" onclick="showTab('agents')">👥 Agenten verwalten</div>
+  <div class="nav-item" onclick="showTab('agents')">🗂 Queues & Skills</div>
+  <div class="nav-group">Konfiguration</div>
+  <div class="nav-item" onclick="showTab('clickbot')">🤖 Clickbot Builder</div>
+  <div class="nav-item" onclick="showTab('standort')">📍 Standort-Info</div>
+  <div class="nav-item" onclick="location.href='flow-editor.html'" style="cursor:pointer">🧠 Flow Editor</div>
+  <div class="nav-group">Auswertung</div>
+  <div class="nav-item" onclick="showTab('live')">📡 Live-Auslastung</div>
+  <div class="nav-item" onclick="showTab('kpi')">📈 KPI Berichte</div>
+  <div class="nav-item" onclick="showTab('messages')">✉️ Nachrichten</div>
+  <div class="nav-item" onclick="showTab('search')">🔍 Anruf-Suche</div>
+  <div class="nav-group">Navigation</div>
+  <div class="nav-item" onclick="location.href='admin-dashboard.html'" style="cursor:pointer">📊 Admin Dashboard</div>
+  <div class="nav-item" onclick="location.href='standortleitung.html'" style="cursor:pointer">📍 Standortleitung</div>
+  <div class="nav-item" onclick="sessionStorage.removeItem('mr_guard_session');location.href='index.html'" style="cursor:pointer">🔓 Abmelden</div>
+</div>
+<!-- Main -->
+<div class="main">
+  <div class="main-header">
+    <h1>Teamleiter Dashboard</h1>
+    <div style="display:flex;gap:10px;align-items:center">
+      <div class="live-badge"><span class="live-dot"></span> Live · 08:34 Uhr</div>
+      <button class="btn blue" style="font-size:12px">📞 Agent Board öffnen</button>
+    </div>
+  </div>
+  <div class="tabs-bar">
+    <div class="tab active"    onclick="showTab('live')">📡 Live-Auslastung</div>
+    <div class="tab"           onclick="showTab('board')">📞 Agent Board</div>
+    <div class="tab"           onclick="showTab('kpi')">📈 KPI & Berichte</div>
+    <div class="tab"           onclick="showTab('agents')">👥 Agenten</div>
+    <div class="tab"           onclick="showTab('clickbot')">🤖 Clickbot Builder</div>
+    <div class="tab"           onclick="showTab('standort')">📍 Standort & KB</div>
+    <div class="tab"           onclick="showTab('messages')">✉️ Nachrichten</div>
+    <div class="tab"           onclick="showTab('search')">🔍 Anruf-Suche</div>
+  </div>
+  <div class="content">
+    <!-- ═══ TAB: LIVE ═══ -->
+    <div id="tab-live">
+      <div class="kpi-row cols-5">
+        <div class="kpi"><div class="kpi-label">Aktive Gespräche</div><div class="kpi-value" style="color:#2563eb">2</div><div class="kpi-sub">gerade jetzt</div></div>
+        <div class="kpi"><div class="kpi-label">In Warteschleife</div><div class="kpi-value" style="color:#ea580c">1</div><div class="kpi-sub">wartet 0:23 min</div></div>
+        <div class="kpi"><div class="kpi-label">Agenten frei</div><div class="kpi-value" style="color:#15803d">3</div><div class="kpi-sub">von 6 online</div></div>
+        <div class="kpi"><div class="kpi-label">Anrufe heute</div><div class="kpi-value">24</div><div class="kpi-sub">↑ +3 letzte Stunde</div></div>
+        <div class="kpi"><div class="kpi-label">Ø Wartezeit</div><div class="kpi-value">0:42</div><div class="kpi-sub">Minuten</div></div>
+      </div>
+      <!-- Hotline Auslastung -->
+      <div class="card">
+        <div class="card-header"><h2>📡 Hotline Auslastung — Live</h2><div class="live-badge" style="font-size:10px"><span class="live-dot"></span> Echtzeit</div></div>
+        <div class="card-body">
+          <div class="hotline-row">
+            <div><div class="hotline-name">Allgemein</div><div class="hotline-num">+49 89 1234-0 · Ext. 200</div></div>
+            <div class="bar-wrap"><div class="bar-fill high" style="width:85%"></div></div>
+            <div class="bar-pct" style="color:#ef4444">85%</div>
+            <div class="hotline-stats"><span><span class="hotline-stat-val">2</span> aktiv</span><span><span class="hotline-stat-val">1</span> warten</span><span><span class="hotline-stat-val">14</span> heute</span></div>
+          </div>
+          <div class="hotline-row">
+            <div><div class="hotline-name">Notfall</div><div class="hotline-num">+49 89 1234-1 · Ext. 201</div></div>
+            <div class="bar-wrap"><div class="bar-fill low" style="width:20%"></div></div>
+            <div class="bar-pct" style="color:#15803d">20%</div>
+            <div class="hotline-stats"><span><span class="hotline-stat-val">0</span> aktiv</span><span><span class="hotline-stat-val">0</span> warten</span><span><span class="hotline-stat-val">3</span> heute</span></div>
+          </div>
+          <div class="hotline-row">
+            <div><div class="hotline-name">Rezept & Überweisung</div><div class="hotline-num">+49 89 1234-2 · Ext. 202</div></div>
+            <div class="bar-wrap"><div class="bar-fill mid" style="width:55%"></div></div>
+            <div class="bar-pct" style="color:#f59e0b">55%</div>
+            <div class="hotline-stats"><span><span class="hotline-stat-val">1</span> aktiv</span><span><span class="hotline-stat-val">0</span> warten</span><span><span class="hotline-stat-val">7</span> heute</span></div>
+          </div>
+        </div>
+      </div>
+      <!-- Agenten Live -->
+      <div class="card">
+        <div class="card-header"><h2>👤 Agenten Live-Status</h2><div class="live-badge" style="font-size:10px"><span class="live-dot"></span> auf die Sekunde</div></div>
+        <div class="card-body" style="padding:0">
+          <table>
+            <thead><tr><th>Agent</th><th>Status</th><th>Hotline</th><th>Gesprächsdauer</th><th>Anrufe heute</th><th>Angenommen</th><th>Verpasst</th><th>Ø Dauer</th><th>Login seit</th></tr></thead>
+            <tbody>
+              <tr><td><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="background:#2563eb">DS</div>Dr. Schmidt</div></td><td><span class="status-pill busy">🔴 Im Gespräch</span></td><td>Allgemein</td><td style="font-weight:700;color:#ea580c">3:24</td><td>8</td><td style="color:#15803d;font-weight:600">7</td><td style="color:#dc2626;font-weight:600">1</td><td>4:12</td><td>07:45</td></tr>
+              <tr><td><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="background:#16a34a">AW</div>Anna Weber</div></td><td><span class="status-pill active">🟢 Verfügbar</span></td><td>—</td><td>—</td><td>6</td><td style="color:#15803d;font-weight:600">6</td><td style="color:#dc2626;font-weight:600">0</td><td>3:50</td><td>07:58</td></tr>
+              <tr><td><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="background:#7c3aed">CM</div>Chris Müller</div></td><td><span class="status-pill pause">⏸ Pause</span></td><td>—</td><td>Pause: 0:08</td><td>4</td><td style="color:#15803d;font-weight:600">4</td><td style="color:#dc2626;font-weight:600">0</td><td>2:55</td><td>08:00</td></tr>
+              <tr><td><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="background:#ea580c">LK</div>Laura Klein</div></td><td><span class="status-pill busy">🔴 Im Gespräch</span></td><td>Rezept</td><td style="font-weight:700;color:#ea580c">1:12</td><td>3</td><td style="color:#15803d;font-weight:600">3</td><td style="color:#dc2626;font-weight:600">0</td><td>3:10</td><td>08:15</td></tr>
+              <tr><td><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="background:#0369a1">TH</div>Tom Huber</div></td><td><span class="status-pill active">🟢 Verfügbar</span></td><td>—</td><td>—</td><td>0</td><td style="color:#15803d;font-weight:600">0</td><td style="color:#dc2626;font-weight:600">0</td><td>—</td><td>08:20</td></tr>
+              <tr><td><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="background:#6366f1">🤖</div>Voicebot</div></td><td><span class="status-pill active">🟢 Aktiv</span></td><td>Allgemein</td><td>—</td><td>14</td><td style="color:#15803d;font-weight:600">14</td><td style="color:#dc2626;font-weight:600">0</td><td>1:20</td><td>00:00</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <!-- ═══ TAB: KPI ═══ -->
+    <div id="tab-kpi" style="display:none">
+      <div class="kpi-row cols-4">
+        <div class="kpi"><div class="kpi-label">Service Level (heute)</div><div class="kpi-value" style="color:#15803d">87.5%</div><div class="kpi-sub">Ziel: 80%</div><div class="kpi-trend up">↑ über Ziel</div></div>
+        <div class="kpi"><div class="kpi-label">Abandon Rate</div><div class="kpi-value" style="color:#ea580c">12.5%</div><div class="kpi-sub">3 verpasst</div><div class="kpi-trend down">↑ über Ziel</div></div>
+        <div class="kpi"><div class="kpi-label">Ø Bearbeitungszeit</div><div class="kpi-value">3:42</div><div class="kpi-sub">AHT</div><div class="kpi-trend up">↓ besser als gestern</div></div>
+        <div class="kpi"><div class="kpi-label">Ø Wartezeit (ASA)</div><div class="kpi-value">0:42</div><div class="kpi-sub">Sekunden</div><div class="kpi-trend up">↓ gut</div></div>
+      </div>
+      <!-- Hotline KPIs -->
+      <div class="card">
+        <div class="card-header"><h2>📞 Hotline KPIs — Heute</h2></div>
+        <div class="card-body" style="padding:0">
+          <table>
+            <thead><tr><th>Hotline</th><th>Eingehend</th><th>Angenommen</th><th>Verpasst</th><th>Abandon %</th><th>Ø Wartezeit</th><th>Ø Dauer</th><th>Voicebot</th></tr></thead>
+            <tbody>
+              <tr><td style="font-weight:600">Allgemein</td><td>14</td><td style="color:#15803d;font-weight:600">12</td><td style="color:#dc2626;font-weight:600">2</td><td style="color:#ea580c">14.3%</td><td>0:55</td><td>4:12</td><td>8</td></tr>
+              <tr><td style="font-weight:600">Notfall</td><td>3</td><td style="color:#15803d;font-weight:600">3</td><td style="color:#dc2626;font-weight:600">0</td><td style="color:#15803d">0%</td><td>0:12</td><td>6:30</td><td>0</td></tr>
+              <tr><td style="font-weight:600">Rezept</td><td>7</td><td style="color:#15803d;font-weight:600">6</td><td style="color:#dc2626;font-weight:600">1</td><td style="color:#ea580c">14.3%</td><td>0:38</td><td>2:45</td><td>6</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <!-- Agenten KPIs -->
+      <div class="card">
+        <div class="card-header"><h2>👤 Agenten KPIs — Heute</h2></div>
+        <div class="card-body" style="padding:0">
+          <table>
+            <thead><tr><th>Agent</th><th>Anrufe</th><th>Angenommen</th><th>Verpasst</th><th>Ø Dauer</th><th>Pausenzeit</th><th>Online seit</th><th>Auslastung</th></tr></thead>
+            <tbody>
+              <tr><td><div style="display:flex;align-items:center;gap:7px"><div class="avatar" style="background:#2563eb;width:22px;height:22px;font-size:9px">DS</div>Dr. Schmidt</div></td><td>8</td><td style="color:#15803d;font-weight:600">7</td><td style="color:#dc2626">1</td><td>4:12</td><td>0:00</td><td>07:45</td><td><div style="background:#dbeafe;border-radius:999px;height:6px"><div style="background:#2563eb;width:78%;height:6px;border-radius:999px"></div></div><span style="font-size:10px;color:#2563eb;font-weight:700">78%</span></td></tr>
+              <tr><td><div style="display:flex;align-items:center;gap:7px"><div class="avatar" style="background:#16a34a;width:22px;height:22px;font-size:9px">AW</div>Anna Weber</div></td><td>6</td><td style="color:#15803d;font-weight:600">6</td><td style="color:#dc2626">0</td><td>3:50</td><td>0:10</td><td>07:58</td><td><div style="background:#dcfce7;border-radius:999px;height:6px"><div style="background:#16a34a;width:65%;height:6px;border-radius:999px"></div></div><span style="font-size:10px;color:#16a34a;font-weight:700">65%</span></td></tr>
+              <tr><td><div style="display:flex;align-items:center;gap:7px"><div class="avatar" style="background:#7c3aed;width:22px;height:22px;font-size:9px">CM</div>Chris Müller</div></td><td>4</td><td style="color:#15803d;font-weight:600">4</td><td style="color:#dc2626">0</td><td>2:55</td><td>0:22</td><td>08:00</td><td><div style="background:#f5f3ff;border-radius:999px;height:6px"><div style="background:#7c3aed;width:45%;height:6px;border-radius:999px"></div></div><span style="font-size:10px;color:#7c3aed;font-weight:700">45%</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <!-- ═══ TAB: AGENTEN ═══ -->
+    <div id="tab-agents" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <div class="section-title" style="margin:0">👥 Agenten verwalten</div>
+        <button class="btn primary">+ Neuer Agent</button>
+      </div>
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-header"><h2>Agenten-Liste</h2></div>
+        <div class="card-body" style="padding:0">
+          <table>
+            <thead><tr><th>Name</th><th>Extension</th><th>E-Mail</th><th>Queues / Skills</th><th>Status</th><th>Aktion</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="background:#2563eb">DS</div>Dr. Schmidt</div></td>
+                <td>101</td><td><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="83e7adf0e0ebeeeae7f7c3f3f1e2fbeaf0ade7e6">[email&#160;protected]</a></td>
+                <td><div class="skill-tags"><span class="skill-tag on">Allgemein</span><span class="skill-tag on">Notfall</span></div></td>
+                <td><span class="status-pill busy">Im Gespräch</span></td>
+                <td><button class="btn secondary sm">Bearbeiten</button></td>
+              </tr>
+              <tr>
+                <td><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="background:#16a34a">AW</div>Anna Weber</div></td>
+                <td>102</td><td><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="12733c6577707760526260736a7b613c7677">[email&#160;protected]</a></td>
+                <td><div class="skill-tags"><span class="skill-tag on">Allgemein</span><span class="skill-tag on">Rezept</span><span class="skill-tag off">Notfall</span></div></td>
+                <td><span class="status-pill active">Verfügbar</span></td>
+                <td><button class="btn secondary sm">Bearbeiten</button></td>
+              </tr>
+              <tr>
+                <td><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="background:#7c3aed">CM</div>Chris Müller</div></td>
+                <td>103</td><td><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="4724692a32222b2b2235073735263f2e34692322">[email&#160;protected]</a></td>
+                <td><div class="skill-tags"><span class="skill-tag on">Allgemein</span><span class="skill-tag off">Rezept</span><span class="skill-tag off">Notfall</span></div></td>
+                <td><span class="status-pill pause">Pause</span></td>
+                <td><button class="btn secondary sm">Bearbeiten</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <!-- Neuer Agent Form -->
+      <div class="card">
+        <div class="card-header"><h2>➕ Neuen Agenten anlegen</h2></div>
+        <div class="card-body">
+          <div class="form-grid">
+            <div><div class="form-label">Vorname</div><input class="form-input" placeholder="Max"></div>
+            <div><div class="form-label">Nachname</div><input class="form-input" placeholder="Mustermann"></div>
+            <div><div class="form-label">E-Mail</div><input class="form-input" type="email" placeholder="max@praxis.de"></div>
+            <div><div class="form-label">Extension</div><input class="form-input" type="number" placeholder="106"></div>
+          </div>
+          <div class="form-row" style="margin-top:8px">
+            <div class="form-label">Queues / Skill-Gruppen zuweisen</div>
+            <div class="skill-tags" style="margin-top:6px">
+              <span class="skill-tag on" onclick="this.classList.toggle('on');this.classList.toggle('off')">Allgemein</span>
+              <span class="skill-tag off" onclick="this.classList.toggle('on');this.classList.toggle('off')">Notfall</span>
+              <span class="skill-tag off" onclick="this.classList.toggle('on');this.classList.toggle('off')">Rezept & Überweisung</span>
+              <span class="skill-tag off" onclick="this.classList.toggle('on');this.classList.toggle('off')">Voicebot-Overflow</span>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:14px">
+            <button class="btn primary">Agent anlegen</button>
+            <button class="btn secondary">Abbrechen</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- ═══ TAB: CLICKBOT ═══ -->
+    <div id="tab-clickbot" style="display:none">
+      <div class="card">
+        <div class="card-header"><h2>🤖 Clickbot Flow Builder — No-Code</h2><div style="display:flex;gap:6px"><button class="btn green sm">▶ Veröffentlichen</button><button class="btn secondary sm">Vorschau</button></div></div>
+        <div class="card-body">
+          <div class="form-row">
+            <div class="form-label">Projekt / Hotline</div>
+            <select class="form-select"><option>Praxis Dr. Schmidt — Allgemein</option><option>Notfall-Hotline</option><option>Rezept & Überweisung</option></select>
+          </div>
+          <!-- Palette -->
+          <div class="form-label" style="margin-bottom:8px">Bausteine (klicken zum Hinzufügen)</div>
+          <div class="node-palette">
+            <span class="palette-item" style="background:#f0fdf4;border-color:#22c55e;color:#15803d">🟢 Start</span>
+            <span class="palette-item" style="background:#eff6ff;border-color:#2563eb;color:#1d4ed8">❓ Frage stellen</span>
+            <span class="palette-item" style="background:#f5f3ff;border-color:#7c3aed;color:#6d28d9">💬 Antwort-Option</span>
+            <span class="palette-item" style="background:#fff7ed;border-color:#ea580c;color:#c2410c">⚡ Aktion</span>
+            <span class="palette-item" style="background:#f9fafb;border-color:#6b7280;color:#374151">🔴 Ende</span>
+          </div>
+          <!-- Flow Canvas -->
+          <div class="flow-canvas">
+            <div style="margin-bottom:10px;font-size:11px;color:#9ca3af">Flow-Vorschau: Begrüßungs-Szenario</div>
+            <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px">
+              <div class="flow-node start">🟢 Anruf eingehend</div>
+              <span class="flow-arrow">→</span>
+              <div class="flow-node question">❓ „Wie kann ich helfen?"</div>
+            </div>
+            <div style="margin:8px 0 8px 40px;display:flex;gap:6px;flex-wrap:wrap">
+              <div class="flow-node answer">💬 Termin</div>
+              <span class="flow-arrow">→</span>
+              <div class="flow-node action">⚡ Kalender öffnen</div>
+              <span style="margin:0 8px;color:#e2e8f0">|</span>
+              <div class="flow-node answer">💬 Rezept</div>
+              <span class="flow-arrow">→</span>
+              <div class="flow-node action">⚡ Ticket erstellen</div>
+              <span style="margin:0 8px;color:#e2e8f0">|</span>
+              <div class="flow-node answer">💬 Sonstiges</div>
+              <span class="flow-arrow">→</span>
+              <div class="flow-node question">❓ „Beschreiben Sie bitte…"</div>
+            </div>
+            <div style="margin-left:40px;display:flex;align-items:center;gap:4px">
+              <div class="flow-node action">⚡ Mail senden</div>
+              <span class="flow-arrow">→</span>
+              <div class="flow-node end">🔴 Gespräch beenden</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:12px">
+            <button class="btn primary">Speichern</button>
+            <button class="btn secondary">+ Schritt hinzufügen</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- ═══ TAB: STANDORT ═══ -->
+    <div id="tab-standort" style="display:none">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="card">
+          <div class="card-header"><h2>📍 Standort-Informationen</h2></div>
+          <div class="card-body">
+            <div class="form-row"><div class="form-label">Praxisname</div><input class="form-input" value="Praxis Dr. Schmidt"></div>
+            <div class="form-row"><div class="form-label">Adresse</div><input class="form-input" value="Musterstraße 12, 80331 München"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+              <div><div class="form-label">Telefon</div><input class="form-input" value="+49 89 123456"></div>
+              <div><div class="form-label">Fax</div><input class="form-input" value="+49 89 123457"></div>
+            </div>
+            <div class="form-row"><div class="form-label">E-Mail (Benachrichtigungen)</div><input class="form-input" type="email" value="praxis@dr-schmidt.de"></div>
+            <div class="form-row"><div class="form-label">Webseite</div><input class="form-input" value="www.praxis-schmidt.de"></div>
+            <div class="form-row"><div class="form-label">Fachbereich</div><select class="form-select"><option>Allgemeinmedizin</option><option>Innere Medizin</option><option>Chirurgie</option></select></div>
+            <div class="form-label" style="margin-bottom:8px">Öffnungszeiten</div>
+            <div style="display:grid;grid-template-columns:auto 1fr 1fr;gap:6px;align-items:center;font-size:12px;margin-bottom:12px">
+              <span style="color:#374151;font-weight:500">Mo–Di, Do</span>
+              <input class="form-input" value="08:00" type="time" style="font-size:12px">
+              <input class="form-input" value="18:00" type="time" style="font-size:12px">
+              <span style="color:#374151;font-weight:500">Mi, Fr</span>
+              <input class="form-input" value="08:00" type="time" style="font-size:12px">
+              <input class="form-input" value="13:00" type="time" style="font-size:12px">
+            </div>
+            <button class="btn primary">Speichern</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h2>📚 Wissensdatenbank — je Projekt</h2><button class="btn primary sm">+ Artikel</button></div>
+          <div class="card-body">
+            <div class="form-row">
+              <div class="form-label">Projekt / Hotline</div>
+              <select class="form-select"><option>Praxis Dr. Schmidt</option><option>Notfall-Hotline</option></select>
+            </div>
+            <div style="margin-bottom:10px">
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f3f4f6"><span style="font-size:12px;font-weight:500">Öffnungszeiten FAQ</span><button class="btn secondary sm">Bearbeiten</button></div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f3f4f6"><span style="font-size:12px;font-weight:500">Rezept anfragen — Ablauf</span><button class="btn secondary sm">Bearbeiten</button></div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f3f4f6"><span style="font-size:12px;font-weight:500">Notfall-Richtlinien</span><button class="btn secondary sm">Bearbeiten</button></div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0"><span style="font-size:12px;font-weight:500">Überweisung Prozess</span><button class="btn secondary sm">Bearbeiten</button></div>
+            </div>
+            <div class="form-row"><div class="form-label">Neuer Artikel</div><input class="form-input" placeholder="Titel…"></div>
+            <div class="form-row"><textarea class="form-textarea" placeholder="Inhalt des Artikels…"></textarea></div>
+            <button class="btn primary">Artikel speichern</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- ═══ TAB: NACHRICHTEN ═══ -->
+    <div id="tab-messages" style="display:none">
+      <div class="kpi-row cols-3" style="margin-bottom:14px">
+        <div class="kpi"><div class="kpi-label">Gesendet heute</div><div class="kpi-value" style="color:#15803d">18</div></div>
+        <div class="kpi"><div class="kpi-label">Ausstehend</div><div class="kpi-value" style="color:#ea580c">2</div></div>
+        <div class="kpi"><div class="kpi-label">Fehlgeschlagen</div><div class="kpi-value" style="color:#dc2626">1</div></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h2>✉️ Alle versendeten Nachrichten</h2><input style="padding:6px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;outline:none" placeholder="Suchen…"></div>
+        <div class="card-body">
+          <div class="msg-row">
+            <div class="msg-icon">📧</div>
+            <div class="msg-body">
+              <div class="msg-title">Terminbestätigung — Max Mustermann</div>
+              <div class="msg-detail">An: <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="ef828e97c1829a9c9b8a9d828e8181af88828e8683c18c8082">[email&#160;protected]</a> · Termin: 24.02.2026 · 14:30 Uhr · Dr. Schmidt<br>Weitergegeben: Datum, Uhrzeit, Arzt, Adresse, Hinweise</div>
+              <span class="msg-badge sent">✓ Gesendet</span>
+            </div>
+            <div class="msg-time">08:34</div>
+          </div>
+          <div class="msg-row">
+            <div class="msg-icon">📧</div>
+            <div class="msg-body">
+              <div class="msg-title">Anrufzusammenfassung — Praxis Dr. Schmidt</div>
+              <div class="msg-detail">An: <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="740406150c1d073410065907171c191d10005a1011">[email&#160;protected]</a> · Patient: Maria Müller · Anliegen: Rezeptanfrage<br>Weitergegeben: Anrufzeit, Dauer, Anliegen, Bearbeiter, Ticketnummer #1042</div>
+              <span class="msg-badge sent">✓ Gesendet</span>
+            </div>
+            <div class="msg-time">08:12</div>
+          </div>
+          <div class="msg-row">
+            <div class="msg-icon">💬</div>
+            <div class="msg-body">
+              <div class="msg-title">SMS Rückrufbestätigung — +49 176 12345678</div>
+              <div class="msg-detail">Rückruf angefragt für: 13:00 Uhr · Agent: Anna Weber<br>Weitergegeben: Rückrufzeit, Grund, Ticketnummer</div>
+              <span class="msg-badge pending">⏳ Ausstehend</span>
+            </div>
+            <div class="msg-time">07:55</div>
+          </div>
+          <div class="msg-row">
+            <div class="msg-icon">📧</div>
+            <div class="msg-body">
+              <div class="msg-title">Überweisung-Info — Thomas Schmidt</div>
+              <div class="msg-detail">An: <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="1c68326f7f74717578685c79717d7570327879">[email&#160;protected]</a> · Facharzt: Dr. Meier · Fachbereich: Kardiologie<br>Weitergegeben: Überweisung-Details, nächste Schritte</div>
+              <span class="msg-badge failed">✗ Fehlgeschlagen</span>
+            </div>
+            <div class="msg-time">07:30</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- ═══ TAB: ANRUF-SUCHE ═══ -->
+    <div id="tab-search" style="display:none">
+      <div class="card">
+        <div class="card-header"><h2>🔍 Anruf-Suche nach Nummer</h2></div>
+        <div class="card-body">
+          <div class="search-bar">
+            <input class="search-input" placeholder="Rufnummer eingeben z.B. +49 89 123456…" id="callSearchInput">
+            <button class="btn primary" onclick="showCallResult()">Suchen</button>
+          </div>
+          <div id="call-result" style="display:none">
+            <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;gap:16px;align-items:center">
+              <div style="font-size:20px">📞</div>
+              <div>
+                <div style="font-size:14px;font-weight:700;color:#1e293b">+49 89 123 456 789 — Max Mustermann</div>
+                <div style="font-size:11px;color:#6b7280;margin-top:2px">6 Anrufe gesamt · letzter Anruf heute 08:32 · Praxis Dr. Schmidt</div>
+              </div>
+              <div style="margin-left:auto;display:flex;gap:6px">
+                <span class="status-pill active">Bekannter Patient</span>
+              </div>
+            </div>
+            <div class="section-title">Letzter Anruf — Vollständiger Verlauf</div>
+            <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px 16px 16px 32px;margin-bottom:16px">
+              <div class="call-timeline">
+                <div class="tl-event"><div class="tl-dot green"></div><div class="tl-time">08:32:04</div><div class="tl-title">Anruf eingegangen</div><div class="tl-detail">Nummer: +49 89 123 456 789 · Hotline: Allgemein · IVR gestartet</div></div>
+                <div class="tl-event"><div class="tl-dot blue"></div><div class="tl-time">08:32:12</div><div class="tl-title">IVR: Taste 1 gedrückt</div><div class="tl-detail">Auswahl: Termin buchen → Weitergeleitet an Queue: Allgemein</div></div>
+                <div class="tl-event"><div class="tl-dot orange"></div><div class="tl-time">08:32:18</div><div class="tl-title">In Warteschleife</div><div class="tl-detail">Wartezeit: 0:24 min · Position: 1</div></div>
+                <div class="tl-event"><div class="tl-dot blue"></div><div class="tl-time">08:32:42</div><div class="tl-title">Angenommen — Dr. Schmidt (Ext. 101)</div><div class="tl-detail">Verbindungszeit: 0:00 · Agent: Dr. Schmidt</div></div>
+                <div class="tl-event"><div class="tl-dot blue"></div><div class="tl-time">08:33:10</div><div class="tl-title">Klickbot: Begrüßung gesendet</div><div class="tl-detail">„Guten Morgen! Praxis Dr. Schmidt, wie kann ich helfen?"</div></div>
+                <div class="tl-event"><div class="tl-dot blue"></div><div class="tl-time">08:33:45</div><div class="tl-title">Ticket erstellt</div><div class="tl-detail">Ticket #1042 · Typ: Terminanfrage · Priorität: Normal</div></div>
+                <div class="tl-event"><div class="tl-dot blue"></div><div class="tl-time">08:35:22</div><div class="tl-title">Termin gebucht</div><div class="tl-detail">24.02.2026 · 14:30 Uhr · Dr. Schmidt · Bestätigung per Mail gesendet</div></div>
+                <div class="tl-event"><div class="tl-dot red"></div><div class="tl-time">08:36:04</div><div class="tl-title">Gespräch beendet — aufgelegt durch: Patient</div><div class="tl-detail">Gesprächsdauer: 3:22 min · Agent: Dr. Schmidt · Status: Gelöst</div></div>
+              </div>
+            </div>
+            <div class="section-title">Alle Anrufe dieser Nummer</div>
+            <table style="font-size:12px">
+              <thead><tr><th>Datum</th><th>Uhrzeit</th><th>Hotline</th><th>Dauer</th><th>Agent</th><th>Anliegen</th><th>Aufgelegt durch</th><th>Status</th></tr></thead>
+              <tbody>
+                <tr><td>22.02.2026</td><td>08:32</td><td>Allgemein</td><td>3:22</td><td>Dr. Schmidt</td><td>Termin</td><td>Patient</td><td><span class="status-pill active" style="font-size:10px">Gelöst</span></td></tr>
+                <tr><td>18.02.2026</td><td>10:15</td><td>Rezept</td><td>2:10</td><td>Anna Weber</td><td>Rezept</td><td>Agent</td><td><span class="status-pill active" style="font-size:10px">Gelöst</span></td></tr>
+                <tr><td>10.02.2026</td><td>09:00</td><td>Allgemein</td><td>0:00</td><td>—</td><td>—</td><td>—</td><td><span class="status-pill offline" style="font-size:10px">Verpasst</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- ═══ TAB: AGENT BOARD ═══ -->
+    <div id="tab-board" style="display:none;height:calc(100vh - 130px);overflow:hidden">
+      <style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: #f1f5f9; display: flex; height: 100vh; overflow: hidden; }
+  /* ── Linke Spalte ── */
+  .left { width: 260px; background: white; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; flex-shrink: 0; padding: 14px; overflow-y: auto; }
+  .caller-info { margin-bottom: 12px; }
+  .project-name { font-size: 14px; font-weight: 700; color: #1e293b; }
+  .caller-number { font-size: 13px; color: #2563eb; font-weight: 600; margin-top: 3px; }
+  .project-id { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+  .section-label { font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 7px; margin-top: 12px; }
+  .status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 4px; }
+  .status-btn { padding: 7px 6px; border-radius: 8px; font-size: 11px; font-weight: 600; border: 1.5px solid transparent; cursor: pointer; text-align: center; }
+  .status-btn.active  { background: #dcfce7; border-color: #86efac; color: #15803d; }
+  .status-btn.pause   { background: #fef3c7; border-color: #fcd34d; color: #92400e; }
+  .status-btn.azu     { background: #fee2e2; border-color: #fca5a5; color: #dc2626; }
+  .status-btn.meeting { background: #ede9fe; border-color: #c4b5fd; color: #6d28d9; }
+  .status-btn.chris   { background: #e0f2fe; border-color: #7dd3fc; color: #0369a1; }
+  .call-actions { display: flex; gap: 8px; margin-top: 12px; margin-bottom: 12px; }
+  .btn-accept  { flex: 1; padding: 9px; background: #dcfce7; color: #15803d; border: none; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; }
+  .btn-decline { flex: 1; padding: 9px; background: #fef2f2; color: #dc2626; border: none; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; }
+  .dialpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 12px; }
+  .key { padding: 10px 6px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 15px; font-weight: 700; color: #1e293b; cursor: pointer; text-align: center; user-select: none; }
+  .key sub { display: block; font-size: 8px; font-weight: 400; color: #94a3b8; letter-spacing: 1px; }
+  .key:hover { background: #eff6ff; border-color: #93c5fd; color: #1d4ed8; }
+  .key.special { font-size: 18px; color: #64748b; }
+  .btn-transfer { width: 100%; padding: 9px; background: #eff6ff; border: 1.5px solid #bfdbfe; border-radius: 10px; font-size: 13px; font-weight: 600; color: #1d4ed8; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 12px; }
+  .stats { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 12px; }
+  .stat-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px solid #f1f5f9; }
+  .stat-row:last-child { border-bottom: none; }
+  .stat-label { font-size: 11px; color: #64748b; }
+  .stat-value { font-size: 12px; font-weight: 700; color: #1e293b; }
+  .stat-value.green { color: #15803d; }
+  .stat-value.red   { color: #dc2626; }
+  .stat-value.blue  { color: #2563eb; }
+  /* ── Rechte Spalte ── */
+  .right { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .action-bar { background: white; border-bottom: 1px solid #e2e8f0; padding: 10px 20px; display: flex; gap: 8px; flex-shrink: 0; flex-wrap: wrap; }
+  .action-btn { padding: 7px 18px; border-radius: 9px; font-size: 13px; font-weight: 600; border: none; cursor: pointer; }
+  .action-btn.termin    { background: #dbeafe; color: #1d4ed8; }
+  .action-btn.rezept    { background: #dcfce7; color: #15803d; }
+  .action-btn.sonstig   { background: #f3f4f6; color: #475569; }
+  .action-btn.ueberweis { background: #fef3c7; color: #92400e; }
+  .action-btn:hover { opacity: .8; }
+  .mail-notice { background: #f0fdf4; border-bottom: 1px solid #bbf7d0; padding: 7px 20px; font-size: 11px; color: #15803d; font-weight: 500; display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  /* Chat */
+  .chat { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; background: #f8fafc; }
+  .msg { display: flex; }
+  .msg.agent   { justify-content: flex-end; }
+  .msg.patient { justify-content: flex-start; }
+  .msg.system  { justify-content: center; }
+  .bubble { max-width: 400px; padding: 9px 14px; border-radius: 16px; font-size: 13px; line-height: 1.5; }
+  .bubble.agent   { background: #2563eb; color: white; border-radius: 16px 16px 4px 16px; }
+  .bubble.patient { background: white; border: 1px solid #e2e8f0; color: #1e293b; border-radius: 16px 16px 16px 4px; }
+  .bubble.system  { background: #e2e8f0; color: #64748b; font-size: 11px; padding: 3px 12px; border-radius: 999px; }
+  .bubble-time { font-size: 10px; margin-top: 4px; opacity: .5; }
+  /* ── Kalender-Karte im Chat ── */
+  .cal-card {
+    background: white; border: 1.5px solid #bfdbfe; border-radius: 16px;
+    overflow: hidden; width: 100%; max-width: 480px; box-shadow: 0 2px 12px rgba(37,99,235,.08);
+  }
+  .cal-header {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    padding: 12px 16px; display: flex; align-items: center; justify-content: space-between;
+  }
+  .cal-header h3 { color: white; font-size: 14px; font-weight: 700; }
+  .cal-header p  { color: rgba(255,255,255,.7); font-size: 11px; margin-top: 2px; }
+  .cal-nav { display: flex; align-items: center; gap: 8px; }
+  .cal-nav button { background: rgba(255,255,255,.2); border: none; color: white; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+  .cal-nav span   { color: white; font-size: 13px; font-weight: 600; }
+  /* Kalender-Grid */
+  .cal-grid { padding: 12px 16px; }
+  .cal-days-header { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; margin-bottom: 6px; }
+  .cal-day-name { text-align: center; font-size: 10px; font-weight: 600; color: #94a3b8; padding: 4px 0; }
+  .cal-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+  .cal-day {
+    aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+    border-radius: 8px; font-size: 12px; font-weight: 500; cursor: pointer; color: #374151;
+    transition: all .12s;
+  }
+  .cal-day:hover { background: #eff6ff; color: #1d4ed8; }
+  .cal-day.empty { cursor: default; }
+  .cal-day.today { background: #dbeafe; color: #1d4ed8; font-weight: 700; }
+  .cal-day.selected { background: #2563eb; color: white; font-weight: 700; }
+  .cal-day.has-slots { position: relative; }
+  .cal-day.has-slots::after { content: ''; position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%); width: 4px; height: 4px; background: #22c55e; border-radius: 50%; }
+  .cal-day.has-slots.selected::after { background: rgba(255,255,255,.7); }
+  .cal-day.no-slots { color: #d1d5db; cursor: not-allowed; }
+  /* Zeitslots */
+  .cal-slots { padding: 0 16px 12px; }
+  .slots-label { font-size: 11px; font-weight: 600; color: #64748b; margin-bottom: 8px; }
+  .slots-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .slot {
+    padding: 8px 4px; text-align: center; background: #f0fdf4; border: 1.5px solid #86efac;
+    border-radius: 9px; font-size: 12px; font-weight: 600; color: #15803d; cursor: pointer; transition: all .12s;
+  }
+  .slot:hover { background: #dcfce7; }
+  .slot.selected { background: #15803d; color: white; border-color: #15803d; }
+  .slot.busy { background: #f9fafb; border-color: #e5e7eb; color: #9ca3af; cursor: not-allowed; text-decoration: line-through; }
+  /* Buchungs-Bestätigung */
+  .cal-confirm { padding: 12px 16px; border-top: 1px solid #f1f5f9; display: flex; gap: 8px; align-items: center; }
+  .confirm-info { flex: 1; font-size: 12px; color: #374151; }
+  .confirm-info strong { color: #1e293b; font-size: 13px; }
+  .btn-book { padding: 9px 20px; background: #2563eb; color: white; border: none; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+  .btn-book:hover { background: #1d4ed8; }
+  .btn-cancel-cal { padding: 9px 14px; background: #f1f5f9; color: #64748b; border: none; border-radius: 10px; font-size: 13px; cursor: pointer; }
+  /* Gebuchte Bestätigung */
+  .booked-confirm {
+    background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 14px;
+    padding: 14px 18px; display: flex; align-items: center; gap: 12px; max-width: 480px;
+  }
+  .booked-icon { font-size: 28px; }
+  .booked-text h4 { font-size: 14px; font-weight: 700; color: #15803d; }
+  .booked-text p  { font-size: 12px; color: #16a34a; margin-top: 3px; }
+  /* Antwort-Bereich */
+  .answer-area { background: white; border-top: 1px solid #e2e8f0; flex-shrink: 0; }
+  .answer-tabs { display: flex; border-bottom: 1px solid #f1f5f9; }
+  .answer-tab { flex: 1; padding: 10px; font-size: 12px; font-weight: 600; text-align: center; cursor: pointer; color: #94a3b8; border-bottom: 2px solid transparent; }
+  .answer-tab.active { color: #2563eb; border-bottom-color: #2563eb; }
+  .click-panel { padding: 12px 20px; display: flex; flex-direction: column; gap: 8px; }
+  .click-question { font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px; }
+  .click-options { display: flex; flex-wrap: wrap; gap: 7px; }
+  .click-opt { padding: 8px 16px; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 10px; font-size: 13px; font-weight: 500; color: #334155; cursor: pointer; transition: all .12s; }
+  .click-opt:hover { background: #eff6ff; border-color: #93c5fd; color: #1d4ed8; }
+  .click-opt.selected { background: #dbeafe; border-color: #2563eb; color: #1d4ed8; }
+  .text-panel { padding: 12px 20px; display: flex; gap: 8px; }
+  .text-panel input { flex: 1; padding: 10px 14px; border: 1.5px solid #cbd5e1; border-radius: 10px; font-size: 13px; font-family: 'Inter', sans-serif; outline: none; }
+  .text-panel input:focus { border-color: #2563eb; }
+  .send-btn { padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; }
+      </style>
+      <div style="height:100%;overflow:hidden">
+<!-- Linke Spalte -->
+<div class="left">
+  <div class="caller-info">
+    <div class="project-name">Praxis Dr. Schmidt</div>
+    <div class="caller-number">📞 +49 89 123 456 789</div>
+    <div class="project-id">Max Mustermann · PRX-2024 · #1042</div>
+  </div>
+  <div class="section-label">Status</div>
+  <div class="status-grid">
+    <button class="status-btn active">🟢 Im Gespräch</button>
+    <button class="status-btn pause">⏸ Pause</button>
+    <button class="status-btn azu">🔴 AZU</button>
+    <button class="status-btn meeting">📅 Meeting</button>
+  </div>
+  <div style="margin-bottom:4px">
+    <button class="status-btn chris" style="width:100%;padding:7px">👤 @Chris</button>
+  </div>
+  <div class="call-actions">
+    <button class="btn-accept">📞 Annehmen</button>
+    <button class="btn-decline">✕ Ablehnen</button>
+  </div>
+  <div class="section-label">Tastenfeld</div>
+  <div class="dialpad">
+    <div class="key">1<sub></sub></div>
+    <div class="key">2<sub>ABC</sub></div>
+    <div class="key">3<sub>DEF</sub></div>
+    <div class="key">4<sub>GHI</sub></div>
+    <div class="key">5<sub>JKL</sub></div>
+    <div class="key">6<sub>MNO</sub></div>
+    <div class="key">7<sub>PQRS</sub></div>
+    <div class="key">8<sub>TUV</sub></div>
+    <div class="key">9<sub>WXYZ</sub></div>
+    <div class="key special">*</div>
+    <div class="key">0<sub>+</sub></div>
+    <div class="key special">#</div>
+  </div>
+  <button class="btn-transfer">↗ Durchstellen</button>
+  <div class="section-label">Agenten-Statistik</div>
+  <div class="stats">
+    <div class="stat-row"><span class="stat-label">Eingegangen</span><span class="stat-value blue">24</span></div>
+    <div class="stat-row"><span class="stat-label">Angenommen</span><span class="stat-value green">21</span></div>
+    <div class="stat-row"><span class="stat-label">Verpasst</span><span class="stat-value red">3</span></div>
+    <div class="stat-row"><span class="stat-label">Ø Gesprächsdauer</span><span class="stat-value">3:42 min</span></div>
+    <div class="stat-row"><span class="stat-label">Heute online</span><span class="stat-value">6h 12min</span></div>
+  </div>
+</div>
+<!-- Rechte Spalte -->
+<div class="right">
+  <div class="action-bar">
+    <button class="action-btn termin" onclick="openCalendar()">📅 Termin</button>
+    <button class="action-btn rezept">💊 Rezept</button>
+    <button class="action-btn sonstig">❓ Sonstig</button>
+    <button class="action-btn ueberweis">📋 Überweisung</button>
+  </div>
+  <div class="mail-notice">
+    ✉️ Nach dem Anruf wird eine Zusammenfassung an <strong style="margin-left:4px"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="6c1c1e0d14051f2c081e411f0f0401050818420809">[email&#160;protected]</a></strong> gesendet
+  </div>
+  <div class="chat" id="chat">
+    <div class="msg system"><div class="bubble system">Anruf eingegangen · 08:32</div></div>
+    <div class="msg agent">
+      <div class="bubble agent">
+        Guten Morgen! Praxis Dr. Schmidt, wie kann ich Ihnen helfen?
+        <div class="bubble-time">08:32</div>
+      </div>
+    </div>
+    <div class="msg patient">
+      <div class="bubble patient">
+        Ich bräuchte gerne einen Termin, möglichst heute noch.
+        <div class="bubble-time">08:33</div>
+      </div>
+    </div>
+    <div class="msg agent">
+      <div class="bubble agent">
+        Ich schaue kurz nach einem freien Termin für Sie!
+        <div class="bubble-time">08:33</div>
+      </div>
+    </div>
+    <!-- Kalender-Karte im Chat -->
+    <div class="msg" style="justify-content:flex-start" id="calendarCard">
+      <div class="cal-card">
+        <div class="cal-header">
+          <div>
+            <h3>📅 Terminbuchung</h3>
+            <p>Wählen Sie Datum und Uhrzeit</p>
+          </div>
+          <div class="cal-nav">
+            <button>‹</button>
+            <span>Feb 2026</span>
+            <button>›</button>
+          </div>
+        </div>
+        <div class="cal-grid">
+          <div class="cal-days-header">
+            <div class="cal-day-name">Mo</div>
+            <div class="cal-day-name">Di</div>
+            <div class="cal-day-name">Mi</div>
+            <div class="cal-day-name">Do</div>
+            <div class="cal-day-name">Fr</div>
+            <div class="cal-day-name">Sa</div>
+            <div class="cal-day-name">So</div>
+          </div>
+          <div class="cal-days">
+            <!-- Feb 2026: 1.=So, 6 leere Zellen vor Tag 1 -->
+            <div class="cal-day empty"></div>
+            <div class="cal-day empty"></div>
+            <div class="cal-day empty"></div>
+            <div class="cal-day empty"></div>
+            <div class="cal-day empty"></div>
+            <div class="cal-day empty"></div>
+            <div class="cal-day no-slots">1</div>
+            <div class="cal-day no-slots">2</div>
+            <div class="cal-day no-slots">3</div>
+            <div class="cal-day no-slots">4</div>
+            <div class="cal-day no-slots">5</div>
+            <div class="cal-day no-slots">6</div>
+            <div class="cal-day no-slots">7</div>
+            <div class="cal-day no-slots">8</div>
+            <div class="cal-day no-slots">9</div>
+            <div class="cal-day no-slots">10</div>
+            <div class="cal-day no-slots">11</div>
+            <div class="cal-day no-slots">12</div>
+            <div class="cal-day no-slots">13</div>
+            <div class="cal-day no-slots">14</div>
+            <div class="cal-day no-slots">15</div>
+            <div class="cal-day no-slots">16</div>
+            <div class="cal-day no-slots">17</div>
+            <div class="cal-day no-slots">18</div>
+            <div class="cal-day no-slots">19</div>
+            <div class="cal-day no-slots">20</div>
+            <div class="cal-day no-slots">21</div>
+            <div class="cal-day no-slots">22</div>
+            <div class="cal-day today selected" onclick="ab_selectDay(this)">23</div>
+            <div class="cal-day has-slots" onclick="ab_selectDay(this)">24</div>
+            <div class="cal-day has-slots" onclick="ab_selectDay(this)">25</div>
+            <div class="cal-day has-slots" onclick="ab_selectDay(this)">26</div>
+            <div class="cal-day has-slots" onclick="ab_selectDay(this)">27</div>
+            <div class="cal-day no-slots">28</div>
+          </div>
+        </div>
+        <div class="cal-slots" id="slotsArea">
+          <div class="slots-label">Freie Zeiten am 23. Februar:</div>
+          <div class="slots-grid">
+            <div class="slot" onclick="ab_selectSlot(this)">08:30</div>
+            <div class="slot" onclick="ab_selectSlot(this)">09:00</div>
+            <div class="slot busy">09:30</div>
+            <div class="slot" onclick="ab_selectSlot(this)">10:00</div>
+            <div class="slot busy">10:30</div>
+            <div class="slot" onclick="ab_selectSlot(this)">11:00</div>
+            <div class="slot" onclick="ab_selectSlot(this)">14:00</div>
+            <div class="slot selected" onclick="ab_selectSlot(this)">14:30</div>
+          </div>
+        </div>
+        <div class="cal-confirm">
+          <div class="confirm-info">
+            <strong>23. Feb · 14:30 Uhr</strong><br>
+            Dr. Schmidt · 20 Min · Max Mustermann
+          </div>
+          <button class="btn-cancel-cal" onclick="closeCalendar()">Abbrechen</button>
+          <button class="btn-book" onclick="ab_bookAppointment()">✓ Jetzt buchen</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Antwort-Bereich -->
+  <div class="answer-area">
+    <div class="answer-tabs">
+      <div class="answer-tab active" onclick="ab_showTab('click', this)">🖱 Klickvorgabe</div>
+      <div class="answer-tab" onclick="ab_showTab('text', this)">⌨️ Freitext</div>
+    </div>
+    <div class="click-panel" id="tab-click">
+      <div class="click-question">Wie dringend ist der Termin?</div>
+      <div class="click-options">
+        <div class="click-opt" onclick="selectOpt(this)">Heute noch</div>
+        <div class="click-opt" onclick="selectOpt(this)">Morgen früh</div>
+        <div class="click-opt" onclick="selectOpt(this)">Diese Woche</div>
+        <div class="click-opt" onclick="selectOpt(this)">Flexibel</div>
+        <div class="click-opt" onclick="selectOpt(this)">Notfall</div>
+      </div>
+    </div>
+    <div class="text-panel" id="tab-text" style="display:none">
+      <input placeholder="Antwort eingeben…">
+      <button class="send-btn">Senden</button>
+    </div>
+  </div>
+</div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  const TABS = ['live','kpi','agents','clickbot','standort','messages','search','board'];
+  function showTab(t) {
+    TABS.forEach(id => {
+      const el = document.getElementById('tab-' + id);
+      if (el) el.style.display = id === t ? 'block' : 'none';
+    });
+    document.querySelectorAll('.tab').forEach((el, i) => {
+      el.classList.toggle('active', TABS[i] === t);
+    });
+  }
+  function showCallResult() {
+    const el = document.getElementById('call-result');
+    if (el) el.style.display = 'block';
+  }
+  // Agent Board functions (prefixed to avoid conflicts)
+  function ab_showTab(tab, el) {
+    document.querySelectorAll('.answer-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('tab-click').style.display = tab === 'click' ? 'flex' : 'none';
+    document.getElementById('tab-text').style.display  = tab === 'text'  ? 'flex' : 'none';
+  }
+  function selectOpt(el) {
+    document.querySelectorAll('.click-opt').forEach(o => o.classList.remove('selected'));
+    el.classList.add('selected');
+  }
+  function openCalendar() {
+    document.getElementById('calendarCard').style.display = 'flex';
+    const chat = document.getElementById('chat');
+    chat.scrollTop = chat.scrollHeight;
+  }
+  function closeCalendar() {
+    document.getElementById('calendarCard').style.display = 'none';
+  }
+  function ab_selectDay(el) {
+    document.querySelectorAll('.cal-day').forEach(d => d.classList.remove('selected'));
+    el.classList.add('selected');
+  }
+  function ab_selectSlot(el) {
+    if (el.classList.contains('busy')) return;
+    document.querySelectorAll('.slot').forEach(s => s.classList.remove('selected'));
+    el.classList.add('selected');
+  }
+  function ab_bookAppointment() {
+    const card = document.getElementById('calendarCard');
+    card.innerHTML = `
+      <div class="booked-confirm">
+        <div class="booked-icon">✅</div>
+        <div class="booked-text">
+          <h4>Termin gebucht!</h4>
+          <p>23. Februar 2026 · 14:30 Uhr · Dr. Schmidt<br>Bestätigung wird an praxis@dr-schmidt.de gesendet</p>
+        </div>
+      </div>`;
+    const chat = document.getElementById('chat');
+    chat.scrollTop = chat.scrollHeight;
+  }
+  setInterval(() => {
+    const now = new Date();
+    const t = now.getHours() + ':' + String(now.getMinutes()).padStart(2,'0') + ' Uhr';
+    document.querySelectorAll('.live-badge').forEach(el => {
+      if (el.querySelector('.live-dot')) el.lastChild.textContent = ' Live · ' + t;
+    });
+  }, 30000);
+</script>
+</body>
+</html>
