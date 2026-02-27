@@ -25,11 +25,22 @@ echo "Host:   $SSH_HOST"
 echo "Remote: $REMOTE_DIR"
 echo ""
 
-# [1] System-Nginx stoppen falls aktiv (Port-80-Konflikt vermeiden)
-echo "[1/5] Stoppe System-Nginx falls aktiv..."
+# [1] Port 80 freimachen (System-Nginx, Apache, alte Container)
+echo "[1/5] Mache Port 80 frei..."
 ssh "$SSH_HOST" "
     systemctl stop nginx 2>/dev/null || true
     systemctl disable nginx 2>/dev/null || true
+    systemctl stop apache2 2>/dev/null || true
+    systemctl disable apache2 2>/dev/null || true
+    cd $REMOTE_DIR/deploy/hetzner 2>/dev/null && docker compose down 2>/dev/null || true
+    fuser -k 80/tcp 2>/dev/null || true
+    sleep 1
+    if fuser 80/tcp 2>/dev/null; then
+        echo 'FEHLER: Port 80 ist noch belegt!'
+        fuser -v 80/tcp
+        exit 1
+    fi
+    echo 'Port 80 ist frei.'
 "
 
 # [2] Server vorbereiten
@@ -59,11 +70,19 @@ echo "[5/5] Starte Container..."
 ssh "$SSH_HOST" "
     cd $REMOTE_DIR/deploy/hetzner
     docker compose down 2>/dev/null || true
+    fuser -k 80/tcp 2>/dev/null || true
     docker compose build --no-cache
     docker compose up -d
     echo ''
     echo 'Container-Status:'
     docker compose ps
+    echo ''
+    # Pruefen ob alle Container laufen
+    if docker compose ps --format json | grep -q '\"exited\"'; then
+        echo 'WARNUNG: Nicht alle Container laufen!'
+        docker compose logs --tail=20
+        exit 1
+    fi
 "
 
 echo ""
