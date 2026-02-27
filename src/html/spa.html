@@ -1,3 +1,3104 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MED Rezeption - Komplette Demo</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+:root {
+    --primary: #0891b2;
+    --primary-dark: #0e7490;
+    --sidebar-bg: #0f172a;
+    --sidebar-text: #94a3b8;
+    --sidebar-active: #22d3ee;
+    --success: #22c55e;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --info: #06b6d4;
+    --bg: #f0f9ff;
+    --card: #ffffff;
+    --text: #0f172a;
+    --text-muted: #64748b;
+    --border: #e0f2fe;
+    --radius: 8px;
+}
+
+body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    min-height: 100vh;
+}
+
+/* ===== Sidebar ===== */
+
+.sidebar {
+    width: 240px;
+    background: var(--sidebar-bg);
+    color: var(--sidebar-text);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 100;
+    transition: transform 0.3s;
+}
+
+.sidebar-logo {
+    padding: 1.25rem 1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    text-align: center;
+}
+
+.sidebar-logo h2 {
+    color: #fff;
+    font-size: 1.2rem;
+    margin-bottom: 0.15rem;
+}
+
+.sidebar-logo small {
+    color: var(--sidebar-text);
+    font-size: 0.75rem;
+}
+
+.sidebar-nav {
+    flex: 1;
+    padding: 0.75rem 0;
+    overflow-y: auto;
+}
+
+.sidebar-nav a {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.65rem 1.25rem;
+    color: var(--sidebar-text);
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: all 0.15s;
+    border-left: 3px solid transparent;
+}
+
+.sidebar-nav a:hover {
+    color: #fff;
+    background: rgba(255,255,255,0.06);
+}
+
+.sidebar-nav a.active {
+    color: #fff;
+    background: rgba(59,130,246,0.15);
+    border-left-color: var(--sidebar-active);
+}
+
+.sidebar-nav .nav-icon {
+    font-size: 1.1rem;
+    width: 1.5rem;
+    text-align: center;
+}
+
+.sidebar-footer {
+    padding: 1rem;
+    border-top: 1px solid rgba(255,255,255,0.08);
+}
+
+.sidebar-footer button {
+    width: 100%;
+    padding: 0.5rem;
+    background: rgba(255,255,255,0.08);
+    color: var(--sidebar-text);
+    border: none;
+    border-radius: var(--radius);
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+.sidebar-footer button:hover {
+    background: rgba(255,255,255,0.15);
+    color: #fff;
+}
+
+/* ===== Main Content ===== */
+
+.main-wrapper {
+    flex: 1;
+    margin-left: 240px;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.topbar {
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    padding: 0.75rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+}
+
+.topbar h1 {
+    font-size: 1.25rem;
+    color: var(--text);
+}
+
+.topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+#menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 1.4rem;
+    color: var(--text);
+    cursor: pointer;
+    padding: 0.25rem;
+}
+
+main {
+    flex: 1;
+    padding: 1.5rem;
+}
+
+/* ===== Cards ===== */
+
+.card {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    padding: 1.5rem;
+    margin-bottom: 1.25rem;
+    border: 1px solid var(--border);
+}
+
+.card h2 {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+}
+
+.card h3 {
+    font-size: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+/* ===== Stat Cards (Dashboard) ===== */
+
+.stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+.stat-card .stat-icon {
+    font-size: 1.8rem;
+    margin-bottom: 0.5rem;
+}
+
+.stat-card .stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary);
+    line-height: 1;
+}
+
+.stat-card .stat-label {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    margin-top: 0.25rem;
+}
+
+/* ===== Forms ===== */
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-row {
+    display: flex;
+    gap: 1rem;
+}
+
+.form-row .form-group {
+    flex: 1;
+}
+
+label {
+    display: block;
+    margin-bottom: 0.3rem;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+input, select, textarea {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 0.95rem;
+    font-family: inherit;
+    background: #fff;
+    transition: border-color 0.15s;
+}
+
+input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(8,145,178,0.12);
+}
+
+fieldset {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+legend {
+    font-weight: 600;
+    padding: 0 0.5rem;
+    font-size: 0.9rem;
+}
+
+/* ===== Buttons ===== */
+
+button {
+    padding: 0.55rem 1.25rem;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 0.9rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+button:hover {
+    background: var(--primary-dark);
+}
+
+.button-gruppe {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.btn-secondary {
+    background: #64748b;
+}
+
+.btn-secondary:hover {
+    background: #475569;
+}
+
+#btn-abbrechen, #btn-patient-abbrechen, #btn-arzt-abbrechen,
+#btn-termin-abbrechen, #btn-agent-abbrechen {
+    background: #64748b;
+}
+
+#btn-abbrechen:hover, #btn-patient-abbrechen:hover, #btn-arzt-abbrechen:hover,
+#btn-termin-abbrechen:hover, #btn-agent-abbrechen:hover {
+    background: #475569;
+}
+
+/* ===== Alerts ===== */
+
+.ergebnis, .erfolg-meldung {
+    margin-top: 1rem;
+    padding: 0.75rem 1rem;
+    background: #dcfce7;
+    border: 1px solid #86efac;
+    border-radius: var(--radius);
+    color: #166534;
+    font-size: 0.9rem;
+}
+
+.fehler, .fehler-meldung {
+    margin-top: 1rem;
+    padding: 0.75rem 1rem;
+    background: #fef2f2;
+    border: 1px solid #fca5a5;
+    border-radius: var(--radius);
+    color: #991b1b;
+    font-size: 0.9rem;
+}
+
+/* ===== Tables ===== */
+
+.table-container {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    text-align: left;
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.9rem;
+}
+
+th {
+    background: #f8fafc;
+    font-weight: 600;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+tbody tr:hover {
+    background: #f8fafc;
+}
+
+.aktionen {
+    white-space: nowrap;
+}
+
+/* ===== Action Buttons (Table) ===== */
+
+.btn-bearbeiten, .btn-loeschen {
+    padding: 0.25rem 0.6rem;
+    font-size: 0.8rem;
+    border-radius: 4px;
+}
+
+.btn-bearbeiten {
+    background: #f59e0b;
+    color: #fff;
+}
+
+.btn-bearbeiten:hover {
+    background: #d97706;
+}
+
+.btn-loeschen {
+    background: var(--danger);
+    color: white;
+}
+
+.btn-loeschen:hover {
+    background: #dc2626;
+}
+
+/* ===== Section Layout ===== */
+
+section + section, .card + .card {
+    margin-top: 1.25rem;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.section-header h2 {
+    margin-bottom: 0;
+}
+
+.verlauf-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.verlauf-header .btn-loeschen {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.8rem;
+}
+
+/* ===== Search ===== */
+
+.suche-box {
+    position: relative;
+    margin-bottom: 1rem;
+}
+
+.suche-box input {
+    padding-left: 2.25rem;
+}
+
+.suche-box::before {
+    content: "\1F50D";
+    position: absolute;
+    left: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.85rem;
+}
+
+/* ===== Status Badges ===== */
+
+.status-badge {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.status-geplant { background: #e2e8f0; color: #475569; }
+.status-bestaetigt { background: #dcfce7; color: #166534; }
+.status-abgesagt { background: #fef2f2; color: #991b1b; }
+.status-abgeschlossen { background: #cffafe; color: #155e75; }
+
+.badge {
+    background: var(--primary);
+    color: white;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.badge-rot { background: var(--danger); }
+
+/* ===== Wartezimmer Karten ===== */
+
+.warte-karte {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: box-shadow 0.15s;
+}
+
+.warte-karte:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.warte-karte.wartend {
+    border-left: 4px solid var(--warning);
+}
+
+.warte-karte.aufgerufen {
+    border-left: 4px solid var(--success);
+    background: #f0fdf4;
+}
+
+.warte-info h3 {
+    margin-bottom: 0.25rem;
+    font-size: 1rem;
+}
+
+.warte-info p {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.warte-aktionen {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn-aufrufen {
+    background: var(--success);
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+}
+
+.btn-aufrufen:hover {
+    background: #16a34a;
+}
+
+.btn-fertig {
+    background: var(--info);
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+}
+
+.btn-fertig:hover {
+    background: #0891b2;
+}
+
+.wartezeit {
+    font-weight: 600;
+    color: #92400e;
+}
+
+/* ===== Dashboard Wartezimmer Mini ===== */
+
+.warte-mini {
+    padding: 0.5rem 0.75rem;
+    border-left: 3px solid var(--warning);
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    border-radius: 0 4px 4px 0;
+    background: #fefce8;
+}
+
+.warte-mini.aufgerufen {
+    border-left-color: var(--success);
+    background: #f0fdf4;
+}
+
+/* ===== Agenten Board ===== */
+
+.agenten-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.agent-karte {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem;
+    background: var(--card);
+    transition: box-shadow 0.15s;
+}
+
+.agent-karte:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.agent-karte .agent-status-punkt {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 0.5rem;
+}
+
+.agent-karte .agent-status-punkt.online { background: var(--success); }
+.agent-karte .agent-status-punkt.offline { background: #94a3b8; }
+.agent-karte .agent-status-punkt.pause { background: var(--warning); }
+.agent-karte .agent-status-punkt.besetzt { background: var(--info); }
+.agent-karte .agent-status-punkt.im_gespraech { background: var(--info); box-shadow: 0 0 0 3px rgba(6,182,212,0.25); }
+.agent-karte .agent-status-punkt.azu { background: #dc2626; }
+.agent-karte .agent-status-punkt.meeting { background: #7c3aed; }
+.agent-karte .agent-status-punkt.at_chris { background: #0369a1; }
+
+.agent-karte h3 {
+    margin-bottom: 0.25rem;
+    font-size: 0.95rem;
+}
+
+.agent-karte p {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    margin-bottom: 0.15rem;
+}
+
+.agent-karte .agent-aktionen {
+    display: flex;
+    gap: 0.25rem;
+    margin-top: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.agent-karte .agent-aktionen button {
+    padding: 0.2rem 0.5rem;
+    font-size: 0.75rem;
+}
+
+.agent-karte .agent-aktionen .btn-online { background: var(--success); }
+.agent-karte .agent-aktionen .btn-online:hover { background: #16a34a; }
+.agent-karte .agent-aktionen .btn-im_gespraech { background: var(--info); }
+.agent-karte .agent-aktionen .btn-im_gespraech:hover { background: #0891b2; }
+.agent-karte .agent-aktionen .btn-pause { background: var(--warning); color: #000; }
+.agent-karte .agent-aktionen .btn-pause:hover { background: #d97706; }
+.agent-karte .agent-aktionen .btn-azu { background: #dc2626; }
+.agent-karte .agent-aktionen .btn-azu:hover { background: #b91c1c; }
+.agent-karte .agent-aktionen .btn-meeting { background: #7c3aed; }
+.agent-karte .agent-aktionen .btn-meeting:hover { background: #6d28d9; }
+.agent-karte .agent-aktionen .btn-at_chris { background: #0369a1; }
+.agent-karte .agent-aktionen .btn-at_chris:hover { background: #075985; }
+.agent-karte .agent-aktionen .btn-offline { background: #94a3b8; }
+.agent-karte .agent-aktionen .btn-offline:hover { background: #64748b; }
+
+/* ===== Anruf Karten ===== */
+
+.anruf-karte {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-left: 4px solid var(--info);
+}
+
+.anruf-karte.klingelt {
+    border-left-color: var(--warning);
+    background: #fffbeb;
+}
+
+.anruf-karte.verbunden {
+    border-left-color: var(--success);
+    background: #f0fdf4;
+}
+
+/* ===== Softphone ===== */
+
+.softphone-panel {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    background: var(--card);
+}
+
+.softphone-panel h3 {
+    margin-bottom: 1rem;
+}
+
+.sip-status {
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius);
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+}
+
+.sip-status.online { background: #dcfce7; color: #166534; }
+.sip-status.offline { background: #fef2f2; color: #991b1b; }
+.sip-status.verbindend { background: #fef3c7; color: #92400e; }
+
+.dialpad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    max-width: 250px;
+    margin: 1rem auto;
+}
+
+.dialpad-taste {
+    padding: 0.8rem;
+    font-size: 1.2rem;
+    background: #f8fafc;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.dialpad-taste:hover {
+    background: #e2e8f0;
+}
+
+.anruf-buttons {
+    justify-content: center;
+    margin-top: 1rem;
+}
+
+.btn-anrufen { background: var(--success); padding: 0.6rem 2rem; }
+.btn-anrufen:hover { background: #16a34a; }
+.btn-auflegen { background: var(--danger); padding: 0.6rem 2rem; }
+.btn-auflegen:hover { background: #dc2626; }
+.btn-annehmen { background: var(--success); padding: 0.6rem 2rem; }
+.btn-annehmen:hover { background: #16a34a; }
+
+#anruf-info { text-align: center; }
+#anruf-gegenstelle { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem; }
+#anruf-timer { font-size: 2rem; font-family: 'Courier New', monospace; color: var(--primary); margin-bottom: 0.5rem; }
+#anruf-status-anzeige { color: var(--text-muted); }
+
+/* ===== 404 ===== */
+
+#fehler-seite {
+    text-align: center;
+    padding: 3rem 1rem;
+}
+
+#fehler-seite h2 {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    color: var(--danger);
+}
+
+#fehler-seite p {
+    margin-bottom: 2rem;
+    color: var(--text-muted);
+}
+
+.btn-zurueck {
+    display: inline-block;
+    padding: 0.6rem 1.5rem;
+    background: var(--primary);
+    color: white;
+    text-decoration: none;
+    border-radius: var(--radius);
+}
+
+.btn-zurueck:hover { background: var(--primary-dark); }
+
+#benutzer-suche, #patient-suche {
+    margin-bottom: 0;
+}
+
+/* ===== Chat Widget ===== */
+
+#chat-toggle {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(8,145,178,0.4);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.15s;
+    padding: 0;
+}
+
+#chat-toggle:hover {
+    transform: scale(1.1);
+    background: var(--primary-dark);
+}
+
+#chat-fenster {
+    display: none;
+    flex-direction: column;
+    position: fixed;
+    bottom: 5.5rem;
+    right: 1.5rem;
+    width: 340px;
+    height: 420px;
+    background: var(--card);
+    border-radius: 12px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+    z-index: 1001;
+    border: 1px solid var(--border);
+    overflow: hidden;
+}
+
+.chat-header {
+    background: var(--primary);
+    color: #fff;
+    padding: 0.75rem 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.chat-header button {
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0;
+}
+
+#chat-nachrichten {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.75rem;
+}
+
+.chat-msg {
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 0.5rem;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    max-width: 85%;
+    line-height: 1.4;
+    word-wrap: break-word;
+}
+
+.chat-msg-bot {
+    background: #f1f5f9;
+    color: var(--text);
+    border-bottom-left-radius: 4px;
+}
+
+.chat-msg-user {
+    background: var(--primary);
+    color: #fff;
+    margin-left: auto;
+    border-bottom-right-radius: 4px;
+}
+
+.chat-eingabe {
+    display: flex;
+    border-top: 1px solid var(--border);
+    padding: 0.5rem;
+    gap: 0.5rem;
+}
+
+.chat-eingabe input {
+    flex: 1;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 0.4rem 0.75rem;
+    font-size: 0.85rem;
+}
+
+.chat-eingabe button {
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+}
+
+/* ===== Dashboard Grid ===== */
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+}
+
+/* ===== Responsive ===== */
+
+@media (max-width: 900px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .sidebar {
+        transform: translateX(-100%);
+    }
+
+    .sidebar.open {
+        transform: translateX(0);
+    }
+
+    .main-wrapper {
+        margin-left: 0;
+    }
+
+    #menu-toggle {
+        display: block;
+    }
+
+    main {
+        padding: 1rem;
+    }
+
+    .form-row {
+        flex-direction: column;
+        gap: 0;
+    }
+
+    .stat-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    th, td {
+        padding: 0.4rem;
+        font-size: 0.8rem;
+    }
+
+    .warte-karte {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    #chat-fenster {
+        width: calc(100% - 2rem);
+        right: 1rem;
+        bottom: 5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .stat-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .agenten-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ===== Callflow Editor ===== */
+
+.callflow-layout {
+    display: grid;
+    grid-template-columns: 200px 1fr 280px;
+    gap: 1rem;
+    min-height: 500px;
+}
+
+.callflow-toolbar h3, .callflow-properties h3 {
+    font-size: 0.9rem;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.callflow-baustein-liste {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.callflow-baustein {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    cursor: grab;
+    text-align: left;
+    color: #334155;
+    transition: all 0.15s ease;
+}
+
+.callflow-baustein:hover {
+    background: #e0e7ff;
+    border-color: #818cf8;
+    color: #4338ca;
+    transform: translateX(4px);
+    box-shadow: none;
+}
+
+.callflow-canvas {
+    overflow: auto;
+    background: #f8fafc;
+    background-image: radial-gradient(circle, #e2e8f0 1px, transparent 1px);
+    background-size: 20px 20px;
+    min-height: 500px;
+    position: relative;
+}
+
+.callflow-flow {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1.5rem;
+    gap: 0;
+}
+
+.callflow-node {
+    width: 280px;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    background: #fff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    overflow: hidden;
+}
+
+.callflow-node:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    border-color: #818cf8;
+}
+
+.callflow-node.selected {
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgba(79,70,229,0.15);
+}
+
+.callflow-node-header {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #fff;
+}
+
+.callflow-node-header.typ-start { background: #4f46e5; }
+.callflow-node-header.typ-ansage { background: #0891b2; }
+.callflow-node-header.typ-dtmf { background: #7c3aed; }
+.callflow-node-header.typ-voicebot { background: #059669; }
+.callflow-node-header.typ-warteschlange { background: #d97706; }
+.callflow-node-header.typ-transfer { background: #0891b2; }
+.callflow-node-header.typ-bedingung { background: #dc2626; }
+.callflow-node-header.typ-aufnahme { background: #7c3aed; }
+.callflow-node-header.typ-ende { background: #64748b; }
+
+.callflow-node-body {
+    padding: 0.625rem 0.75rem;
+    font-size: 0.8rem;
+    color: #475569;
+}
+
+.callflow-node-body .node-detail {
+    margin-bottom: 0.25rem;
+}
+
+.callflow-node-body .node-detail small {
+    color: #94a3b8;
+}
+
+.callflow-pfeil {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: #94a3b8;
+    font-size: 1.25rem;
+    padding: 0.25rem 0;
+}
+
+.callflow-pfeil .pfeil-label {
+    font-size: 0.65rem;
+    background: #f1f5f9;
+    padding: 0.1rem 0.5rem;
+    border-radius: 4px;
+    margin-bottom: 0.15rem;
+    color: #64748b;
+    font-weight: 600;
+}
+
+.callflow-zweig {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.callflow-zweig-spalte {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+}
+
+.callflow-add-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #e0e7ff;
+    color: #4f46e5;
+    border: 2px dashed #818cf8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    cursor: pointer;
+    margin: 0.5rem 0;
+    padding: 0;
+}
+
+.callflow-add-btn:hover {
+    background: #4f46e5;
+    color: #fff;
+    border-style: solid;
+    transform: scale(1.1);
+}
+
+#callflow-props-inhalt .form-group { margin-bottom: 0.75rem; }
+
+.text-muted { color: #94a3b8; font-size: 0.85rem; }
+
+.btn-sm {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.8rem;
+}
+
+.btn-success-sm {
+    background: #10b981;
+}
+.btn-success-sm:hover {
+    background: #059669;
+    box-shadow: 0 4px 12px rgba(16,185,129,0.3);
+}
+
+/* ===== Voicebot ===== */
+
+.voicebot-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+}
+
+.status-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.3rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.status-online {
+    color: #059669;
+    background: rgba(16,185,129,0.1);
+}
+
+.status-online i {
+    font-size: 0.5rem;
+    animation: pulse-dot 2s infinite;
+}
+
+@keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
+.voicebot-test-chat {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 1rem;
+    min-height: 200px;
+    max-height: 350px;
+    overflow-y: auto;
+    margin-bottom: 1rem;
+}
+
+.vb-chat-msg {
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 0.5rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    max-width: 80%;
+}
+
+.vb-msg-bot {
+    background: #e0e7ff;
+    color: #3730a3;
+}
+
+.vb-msg-anrufer {
+    background: #dcfce7;
+    color: #166534;
+    margin-left: auto;
+}
+
+.vb-msg-system {
+    background: #fef3c7;
+    color: #92400e;
+    font-style: italic;
+    font-size: 0.8rem;
+    text-align: center;
+    margin: 0 auto;
+}
+
+.voicebot-test-eingabe {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.vb-dtmf-tasten {
+    display: flex;
+    gap: 0.375rem;
+}
+
+.vb-dtmf {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.vb-dtmf:hover {
+    background: #4f46e5;
+    color: #fff;
+    border-color: #4f46e5;
+    transform: scale(1.05);
+}
+
+.voicebot-anruf-eintrag {
+    padding: 0.75rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.voicebot-anruf-eintrag .anruf-info {
+    font-size: 0.85rem;
+}
+
+.voicebot-anruf-eintrag .anruf-info strong {
+    display: block;
+    margin-bottom: 0.15rem;
+}
+
+.voicebot-anruf-eintrag .anruf-ergebnis {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 999px;
+    font-weight: 600;
+}
+
+.ergebnis-termin { background: #dcfce7; color: #166534; }
+.ergebnis-rezept { background: #e0e7ff; color: #3730a3; }
+.ergebnis-transfer { background: #fef3c7; color: #92400e; }
+
+/* ===== Uebersetzer ===== */
+
+.uebersetzer-layout {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+}
+
+.uebersetzer-spalte {
+    flex: 1;
+}
+
+.uebersetzer-mitte {
+    display: flex;
+    align-items: center;
+    padding-top: 2rem;
+}
+
+.uebersetzer-mitte button {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.uebersetzer-ausgabe {
+    background: #f8fafc;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.75rem;
+    min-height: 130px;
+    font-size: 0.9rem;
+    color: #334155;
+    line-height: 1.6;
+}
+
+.phrasen-kategorien {
+    display: flex;
+    gap: 0.375rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+.phrasen-kat {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.75rem;
+    border-radius: 999px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #475569;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.phrasen-kat:hover, .phrasen-kat.active {
+    background: #4f46e5;
+    color: #fff;
+    border-color: #4f46e5;
+    box-shadow: none;
+    transform: none;
+}
+
+.phrasen-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 0.75rem;
+}
+
+.phrase-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.75rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.phrase-card:hover {
+    border-color: #818cf8;
+    background: #f5f3ff;
+}
+
+.phrase-card .phrase-de {
+    font-weight: 600;
+    font-size: 0.85rem;
+    margin-bottom: 0.375rem;
+    color: #0f172a;
+}
+
+.phrase-card .phrase-uebersetzt {
+    font-size: 0.825rem;
+    color: #4f46e5;
+}
+
+.phrase-card .phrase-actions {
+    margin-top: 0.5rem;
+    display: flex;
+    gap: 0.375rem;
+}
+
+.phrase-card .phrase-actions button {
+    padding: 0.2rem 0.5rem;
+    font-size: 0.7rem;
+    border-radius: 6px;
+}
+
+/* ===== Voice Chat (Mikrofon) ===== */
+
+#chat-mikrofon {
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+    flex-shrink: 0;
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+}
+
+#chat-mikrofon:hover {
+    background: #ef4444;
+    color: #fff;
+    border-color: #ef4444;
+    box-shadow: none;
+}
+
+#chat-mikrofon.recording {
+    background: #ef4444;
+    color: #fff;
+    border-color: #ef4444;
+    animation: pulse-recording 1s infinite;
+}
+
+@keyframes pulse-recording {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.4); }
+    50% { box-shadow: 0 0 0 8px rgba(239,68,68,0); }
+}
+
+#btn-ue-mikrofon.recording {
+    background: #ef4444;
+    color: #fff;
+    animation: pulse-recording 1s infinite;
+}
+
+/* ===== Simulation ===== */
+
+#simulation-ablauf {
+    background: #0f172a;
+    color: #a5f3fc;
+    border-radius: 8px;
+    padding: 1rem;
+    font-family: 'Courier New', monospace;
+    font-size: 0.8rem;
+    min-height: 120px;
+    max-height: 300px;
+    overflow-y: auto;
+    margin-bottom: 1rem;
+    line-height: 1.6;
+}
+
+.sim-zeile {
+    margin-bottom: 0.25rem;
+}
+
+.sim-zeile-system { color: #fcd34d; }
+.sim-zeile-audio { color: #a5f3fc; }
+.sim-zeile-eingabe { color: #86efac; }
+.sim-zeile-aktion { color: #c4b5fd; }
+
+/* ===== ACD Modus-Auswahl ===== */
+
+.acd-modus-auswahl {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.acd-modus-karte {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: #fff;
+}
+
+.acd-modus-karte:hover {
+    border-color: #818cf8;
+    background: #f8f7ff;
+}
+
+.acd-modus-karte.selected {
+    border-color: #4f46e5;
+    background: #eef2ff;
+    box-shadow: 0 0 0 3px rgba(79,70,229,0.12);
+}
+
+.acd-modus-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    flex-shrink: 0;
+    background: #f1f5f9;
+    color: #64748b;
+}
+
+.acd-modus-karte.selected .acd-modus-icon {
+    background: #4f46e5;
+    color: #fff;
+}
+
+.acd-modus-karte[data-modus="alle_annehmen"] .acd-modus-icon { background: #dcfce7; color: #16a34a; }
+.acd-modus-karte[data-modus="alle_annehmen"].selected .acd-modus-icon { background: #16a34a; color: #fff; }
+.acd-modus-karte[data-modus="klingeln_dann_bot"] .acd-modus-icon { background: #fef3c7; color: #d97706; }
+.acd-modus-karte[data-modus="klingeln_dann_bot"].selected .acd-modus-icon { background: #d97706; color: #fff; }
+.acd-modus-karte[data-modus="bot_direkt"] .acd-modus-icon { background: #e0e7ff; color: #4f46e5; }
+.acd-modus-karte[data-modus="bot_direkt"].selected .acd-modus-icon { background: #4f46e5; color: #fff; }
+
+.acd-modus-info { flex: 1; }
+.acd-modus-info h3 { font-size: 0.95rem; margin-bottom: 0.2rem; color: var(--text); }
+.acd-modus-info p { font-size: 0.8rem; color: var(--text-muted); line-height: 1.4; }
+
+.acd-modus-check {
+    font-size: 1.3rem;
+    color: #e2e8f0;
+    flex-shrink: 0;
+}
+
+.acd-modus-karte.selected .acd-modus-check { color: #4f46e5; }
+.acd-modus-karte[data-modus="alle_annehmen"].selected .acd-modus-check { color: #16a34a; }
+.acd-modus-karte[data-modus="klingeln_dann_bot"].selected .acd-modus-check { color: #d97706; }
+.acd-modus-karte[data-modus="bot_direkt"].selected .acd-modus-check { color: #4f46e5; }
+
+/* ===== Zeitplan-Tabelle ===== */
+
+.zeitplan-tabelle-wrapper {
+    overflow-x: auto;
+    margin-bottom: 0.5rem;
+}
+
+.zeitplan-tabelle {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.zeitplan-tabelle th {
+    background: #f8fafc;
+    font-weight: 600;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    padding: 0.5rem 0.5rem;
+    text-align: center;
+    border-bottom: 2px solid var(--border);
+}
+
+.zeitplan-tabelle td {
+    padding: 0.5rem 0.4rem;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.85rem;
+}
+
+.zeitplan-tabelle td:first-child {
+    font-weight: 600;
+    text-align: left;
+    padding-left: 0.75rem;
+    white-space: nowrap;
+}
+
+.zeitplan-tabelle input[type="time"] {
+    width: 110px;
+    padding: 0.3rem 0.4rem;
+    font-size: 0.8rem;
+    border-radius: 6px;
+}
+
+.zeitplan-tabelle select {
+    width: 140px;
+    padding: 0.3rem 0.4rem;
+    font-size: 0.8rem;
+    border-radius: 6px;
+}
+
+.zeitplan-tabelle input[type="checkbox"] {
+    width: auto;
+    accent-color: #4f46e5;
+    transform: scale(1.2);
+}
+
+.zeitplan-tag-inaktiv td {
+    opacity: 0.4;
+}
+
+.zeitplan-tag-inaktiv td:first-child,
+.zeitplan-tag-inaktiv td:nth-child(2) {
+    opacity: 1;
+}
+
+/* ===== ACD Live-Status ===== */
+
+.acd-live-status {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.acd-live-box {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem;
+    background: #f8fafc;
+}
+
+.acd-live-box h3 {
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.acd-live-box .live-wert {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.acd-live-modus {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.3rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.acd-live-modus.modus-alle { background: #dcfce7; color: #166534; }
+.acd-live-modus.modus-klingeln { background: #fef3c7; color: #92400e; }
+.acd-live-modus.modus-bot { background: #e0e7ff; color: #3730a3; }
+
+/* ===== Responsive Callflow / Voicebot / Uebersetzer / ACD ===== */
+
+@media (max-width: 900px) {
+    .callflow-layout {
+        grid-template-columns: 1fr;
+    }
+    .callflow-toolbar {
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+    .callflow-baustein-liste {
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+    .callflow-properties {
+        order: -1;
+    }
+    .voicebot-grid {
+        grid-template-columns: 1fr;
+    }
+    .uebersetzer-layout {
+        flex-direction: column;
+    }
+    .uebersetzer-mitte {
+        transform: rotate(90deg);
+        padding: 0;
+        align-self: center;
+    }
+    .acd-live-status {
+        grid-template-columns: 1fr;
+    }
+    .zeitplan-tabelle select,
+    .zeitplan-tabelle input[type="time"] {
+        width: 100px;
+        font-size: 0.75rem;
+    }
+}
+
+/* ===== Dashboard Rollen-Buttons ===== */
+.dashboard-rolle-btn {
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius);
+    border: 2px solid var(--border);
+    background: var(--card);
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.dashboard-rolle-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+.dashboard-rolle-btn.aktiv {
+    border-color: var(--primary);
+    background: var(--primary);
+    color: #fff;
+}
+
+/* ===== Wissensdatenbank + Ansagen Styles ===== */
+.kb-artikel-card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    background: var(--card);
+}
+.ans-liste-item {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    background: var(--card);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+
+/* ===== SPA Styles ===== */
+.spa-page { display: none; }
+.spa-page.active { display: block; }
+.spa-nav-link.active {
+    background: var(--primary) !important;
+    color: #fff !important;
+}
+#spa-guard {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: var(--sidebar-bg);
+}
+#spa-guard.hidden { display: none; }
+.spa-rolle-select {
+    width: 100%;
+    padding: 0.5rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    font-size: 0.85rem;
+    margin: 0.5rem 0;
+}
+    </style>
+</head>
+<body>
+
+<!-- ===== GUARD/LOGIN OVERLAY ===== -->
+<div id="spa-guard">
+<div class="guard-container">
+        <div class="guard-card">
+            <div class="guard-header">
+                <div class="guard-icon"><i class="fa-solid fa-building-shield"></i></div>
+                <h1 id="guard-titel">MED Rezeption</h1>
+                <p id="guard-untertitel">Verwaltungssystem</p>
+            </div>
+            <div class="guard-body">
+                <form id="guard-form">
+                    <div id="guard-fehler" class="guard-fehler" hidden>
+                        <i class="fa-solid fa-circle-exclamation"></i>
+                        <span id="guard-fehler-text">Falsche Zugangsdaten.</span>
+                    </div>
+                    <div class="form-group">
+                        <label for="guard-benutzer"><i class="fa-solid fa-user"></i> Benutzername</label>
+                        <input type="text" id="guard-benutzer" value="admin" autocomplete="username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="guard-passwort"><i class="fa-solid fa-lock"></i> Passwort</label>
+                        <input type="password" id="guard-passwort" value="demo" autocomplete="current-password" required>
+                    </div>
+                    <div class="form-row-inline">
+                        <label><input type="checkbox" id="guard-merken" checked> Angemeldet bleiben</label>
+                    </div>
+                    <button type="submit" class="btn-guard"><i class="fa-solid fa-right-to-bracket"></i> Anmelden</button>
+                </form>
+            </div>
+            <div class="guard-footer">
+                <div class="guard-demo-info">
+                    <strong><i class="fa-solid fa-info-circle"></i> Demo-Zugangsdaten</strong>
+                    <code>admin</code> / <code>teamleitung</code> / <code>standortleitung</code> / <code>agent</code><br>
+                    Passwort: <code>demo</code>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="guard-easter" style="position:fixed;bottom:3rem;left:0;right:0;text-align:center;color:#67e8f9;font-size:0.9rem;font-style:italic;opacity:1;z-index:1;letter-spacing:0.05em;">niemand hat die absicht einen ai agent zu entwickeln</div>
+    <div class="guard-version">MED Rezeption v1.0 MVP</div>
+    <script>
+    (function() {
+        var GUELTIGE_BENUTZER = {
+            "admin":           { passwort: "demo", name: "Administrator",    rolle: "admin" },
+            "teamleitung":     { passwort: "demo", name: "Frank Weber",      rolle: "teamleitung" },
+            "standortleitung": { passwort: "demo", name: "Dr. Sabine Gross", rolle: "standortleitung" },
+            "agent":           { passwort: "demo", name: "Lisa Meier",       rolle: "agent" }
+        };
+
+        // Check ob Portal-Zutrittscode eingegeben wurde
+        if (!sessionStorage.getItem("med_portal_ok")) {
+            window.location.href = "portal.html";
+            return;
+        }
+
+        // Check ob bereits eingeloggt
+        if (sessionStorage.getItem("med_guard_auth") || localStorage.getItem("med_guard_auth")) {
+            window.location.href = "index.html";
+            return;
+        }
+
+        var form = document.getElementById("guard-form");
+        form.addEventListener("submit", function(e) {
+            e.preventDefault();
+            var benutzer = document.getElementById("guard-benutzer").value.trim().toLowerCase();
+            var passwort = document.getElementById("guard-passwort").value;
+            var merken   = document.getElementById("guard-merken").checked;
+            var fehlerEl = document.getElementById("guard-fehler");
+            var fehlerText = document.getElementById("guard-fehler-text");
+
+            var konto = GUELTIGE_BENUTZER[benutzer];
+            if (!konto || konto.passwort !== passwort) {
+                fehlerEl.hidden = false;
+                fehlerText.textContent = "Ungueltiger Benutzername oder Passwort.";
+                document.getElementById("guard-passwort").value = "";
+                document.getElementById("guard-passwort").focus();
+                return;
+            }
+
+            var authData = JSON.stringify({
+                benutzer: benutzer,
+                name: konto.name,
+                rolle: konto.rolle,
+                zeitpunkt: new Date().toISOString()
+            });
+
+            if (merken) {
+                localStorage.setItem("med_guard_auth", authData);
+            } else {
+                sessionStorage.setItem("med_guard_auth", authData);
+            }
+
+            window.location.href = "index.html";
+        });
+    })();
+    </script>
+</div>
+
+<!-- ===== MAIN APP ===== -->
+<aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo"><h2>MED Rezeption</h2><small>Praxisverwaltung</small></div>
+    <div style="padding:0 0.75rem">
+        <label style="font-size:0.7rem;color:var(--sidebar-text);text-transform:uppercase;letter-spacing:1px">Rolle</label>
+        <select class="spa-rolle-select" id="spa-rolle-select" onchange="spaRolleWechseln(this.value)">
+            <option value="admin">Admin</option>
+            <option value="teamleitung">Teamleiter</option>
+            <option value="standortleitung">Standortleitung</option>
+            <option value="agent">Agent</option>
+        </select>
+    </div>
+    <nav class="sidebar-nav" id="spa-nav">
+        <a href="#" class="spa-nav-link" data-page="dashboard"><i class="fa-solid fa-chart-pie nav-icon"></i> Dashboard</a>
+            <a href="#" class="spa-nav-link" data-page="patienten"><i class="fa-solid fa-users nav-icon"></i> Patienten</a>
+            <a href="#" class="spa-nav-link" data-page="aerzte"><i class="fa-solid fa-user-doctor nav-icon"></i> Aerzte</a>
+            <a href="#" class="spa-nav-link" data-page="termine"><i class="fa-solid fa-calendar-days nav-icon"></i> Termine</a>
+            <a href="#" class="spa-nav-link" data-page="wartezimmer"><i class="fa-solid fa-couch nav-icon"></i> Wartezimmer</a>
+            <a href="#" class="spa-nav-link" data-page="wissensdatenbank"><i class="fa-solid fa-book nav-icon"></i> Wissensdatenbank</a>
+            <a href="#" class="spa-nav-link" data-page="ansagen"><i class="fa-solid fa-tower-broadcast nav-icon"></i> Ansagen Generator</a>
+            <a href="#" class="spa-nav-link" data-page="auswertung"><i class="fa-solid fa-chart-line nav-icon"></i> Auswertungen</a>
+            <a href="#" class="spa-nav-link" data-page="standort"><i class="fa-solid fa-building nav-icon"></i> Standort &amp; ACD</a>
+            <a href="#" class="spa-nav-link" data-page="callflow"><i class="fa-solid fa-diagram-project nav-icon"></i> Callflow Editor</a>
+            <a href="#" class="spa-nav-link" data-page="voicebot"><i class="fa-solid fa-robot nav-icon"></i> Voicebot</a>
+            <a href="#" class="spa-nav-link" data-page="agenten"><i class="fa-solid fa-headset nav-icon"></i> Agenten</a>
+            <a href="#" class="spa-nav-link" data-page="softphone"><i class="fa-solid fa-phone nav-icon"></i> Softphone</a>
+            <a href="#" class="spa-nav-link" data-page="uebersetzung"><i class="fa-solid fa-language nav-icon"></i> Uebersetzer</a>
+            <a href="#" class="spa-nav-link" data-page="benutzer"><i class="fa-solid fa-user-gear nav-icon"></i> Benutzer</a>
+    </nav>
+    <div class="sidebar-footer"><button id="btn-demo-reset" type="button">Demo zuruecksetzen</button></div>
+</aside>
+<div class="main-wrapper">
+    <header class="topbar">
+        <button id="menu-toggle" type="button"><i class="fa-solid fa-bars"></i></button>
+        <h1 id="spa-page-title">Dashboard</h1>
+        <div class="topbar-right" id="guard-info-bereich">Demo-Modus</div>
+    </header>
+    <main>
+        <div class="spa-page active" id="spa-dashboard" data-title="Dashboard">
+            <div id="dashboard"><!-- Wird rollenbasiert von app.js befuellt --></div>
+        </div>
+
+        <div class="spa-page" id="spa-patienten" data-title="Patienten">
+            <section id="patient-formular" class="card">
+                <h2 id="patient-formular-titel">Patient anlegen</h2>
+                <form id="patient-form">
+                    <input type="hidden" id="patient-id">
+                    <div class="form-row">
+                        <div class="form-group"><label for="patient-vorname">Vorname</label><input type="text" id="patient-vorname" required></div>
+                        <div class="form-group"><label for="patient-nachname">Nachname</label><input type="text" id="patient-nachname" required></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label for="patient-geburtsdatum">Geburtsdatum</label><input type="date" id="patient-geburtsdatum" required></div>
+                        <div class="form-group"><label for="patient-krankenkasse">Krankenkasse</label><input type="text" id="patient-krankenkasse" required></div>
+                    </div>
+                    <div class="form-group"><label for="patient-versicherungsnummer">Versicherungsnummer</label><input type="text" id="patient-versicherungsnummer" required></div>
+                    <div class="form-row">
+                        <div class="form-group"><label for="patient-telefon">Telefon</label><input type="tel" id="patient-telefon"></div>
+                        <div class="form-group"><label for="patient-email">E-Mail</label><input type="email" id="patient-email"></div>
+                    </div>
+                    <fieldset><legend>Adresse</legend>
+                        <div class="form-group"><label for="patient-strasse">Strasse</label><input type="text" id="patient-strasse"></div>
+                        <div class="form-row">
+                            <div class="form-group"><label for="patient-plz">PLZ</label><input type="text" id="patient-plz" maxlength="5"></div>
+                            <div class="form-group"><label for="patient-stadt">Stadt</label><input type="text" id="patient-stadt"></div>
+                        </div>
+                    </fieldset>
+                    <div class="button-gruppe">
+                        <button type="submit" id="btn-patient-speichern">Speichern</button>
+                        <button type="button" id="btn-patient-abbrechen" hidden>Abbrechen</button>
+                    </div>
+                </form>
+                <div id="patient-erfolg" class="ergebnis" hidden></div>
+                <div id="patient-fehler" class="fehler" hidden></div>
+            </section>
+            <section class="card">
+                <h2>Patientenliste</h2>
+                <div class="suche-box"><input type="text" id="patient-suche" placeholder="Patient suchen..."></div>
+                <div class="table-container">
+                    <table id="patienten-tabelle">
+                        <thead><tr><th>Name</th><th>Geburtsdatum</th><th>Vers.-Nr.</th><th>Krankenkasse</th><th>Telefon</th><th>Aktionen</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <div class="spa-page" id="spa-aerzte" data-title="Aerzte">
+            <section id="arzt-formular" class="card">
+                <h2 id="arzt-formular-titel">Arzt anlegen</h2>
+                <form id="arzt-form">
+                    <input type="hidden" id="arzt-id">
+                    <div class="form-row">
+                        <div class="form-group"><label for="arzt-titel">Titel</label><input type="text" id="arzt-titel" placeholder="Dr. / Prof. Dr."></div>
+                        <div class="form-group"><label for="arzt-fachrichtung">Fachrichtung</label><input type="text" id="arzt-fachrichtung" required></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label for="arzt-vorname">Vorname</label><input type="text" id="arzt-vorname" required></div>
+                        <div class="form-group"><label for="arzt-nachname">Nachname</label><input type="text" id="arzt-nachname" required></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label for="arzt-telefon">Telefon</label><input type="tel" id="arzt-telefon"></div>
+                        <div class="form-group"><label for="arzt-email">E-Mail</label><input type="email" id="arzt-email"></div>
+                    </div>
+                    <div class="button-gruppe">
+                        <button type="submit" id="btn-arzt-speichern">Speichern</button>
+                        <button type="button" id="btn-arzt-abbrechen" hidden>Abbrechen</button>
+                    </div>
+                </form>
+                <div id="arzt-erfolg" class="ergebnis" hidden></div>
+                <div id="arzt-fehler" class="fehler" hidden></div>
+            </section>
+            <section class="card">
+                <h2>Aerzteliste</h2>
+                <div class="table-container">
+                    <table id="aerzte-tabelle">
+                        <thead><tr><th>Name</th><th>Fachrichtung</th><th>Telefon</th><th>E-Mail</th><th>Aktionen</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <div class="spa-page" id="spa-termine" data-title="Termine">
+            <section id="termin-formular" class="card">
+                <h2 id="termin-formular-titel">Termin anlegen</h2>
+                <form id="termin-form">
+                    <input type="hidden" id="termin-id">
+                    <div class="form-row">
+                        <div class="form-group"><label for="termin-patient">Patient</label><select id="termin-patient" required><option value="">-- Patient waehlen --</option></select></div>
+                        <div class="form-group"><label for="termin-arzt">Arzt</label><select id="termin-arzt" required><option value="">-- Arzt waehlen --</option></select></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label for="termin-datum">Datum</label><input type="date" id="termin-datum" required></div>
+                        <div class="form-group"><label for="termin-uhrzeit">Uhrzeit</label><input type="time" id="termin-uhrzeit" required></div>
+                        <div class="form-group"><label for="termin-dauer">Dauer (Min.)</label><input type="number" id="termin-dauer" value="15" min="5" max="120"></div>
+                    </div>
+                    <div class="form-group"><label for="termin-grund">Grund</label><input type="text" id="termin-grund" placeholder="z.B. Vorsorge, Kontrolle..."></div>
+                    <div class="button-gruppe">
+                        <button type="submit" id="btn-termin-speichern">Speichern</button>
+                        <button type="button" id="btn-termin-abbrechen" hidden>Abbrechen</button>
+                    </div>
+                </form>
+                <div id="termin-erfolg" class="ergebnis" hidden></div>
+                <div id="termin-fehler" class="fehler" hidden></div>
+            </section>
+            <section class="card">
+                <div class="section-header">
+                    <h2>Terminliste</h2>
+                    <div class="form-group" style="margin-bottom:0"><input type="date" id="termin-filter-datum" title="Nach Datum filtern"></div>
+                </div>
+                <div class="table-container">
+                    <table id="termine-tabelle">
+                        <thead><tr><th>Datum</th><th>Uhrzeit</th><th>Patient</th><th>Arzt</th><th>Grund</th><th>Status</th><th>Aktionen</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <div class="spa-page" id="spa-wartezimmer" data-title="Wartezimmer">
+            <section class="card">
+                <h2>Patient einchecken</h2>
+                <form id="checkin-form">
+                    <div class="form-row">
+                        <div class="form-group"><label for="checkin-patient">Patient</label><select id="checkin-patient" required><option value="">-- Patient waehlen --</option></select></div>
+                        <div class="form-group"><label for="checkin-termin">Termin</label><select id="checkin-termin"><option value="">-- Ohne Termin --</option></select></div>
+                    </div>
+                    <button type="submit">Einchecken</button>
+                </form>
+                <div id="checkin-erfolg" class="ergebnis" hidden></div>
+                <div id="checkin-fehler" class="fehler" hidden></div>
+            </section>
+            <section class="card">
+                <h2>Wartende Patienten</h2>
+                <div id="wartezimmer-liste"></div>
+            </section>
+        </div>
+
+        <div class="spa-page" id="spa-wissensdatenbank" data-title="Wissensdatenbank">
+            <!-- Suche + Filter -->
+            <div class="card" style="margin-bottom:1.5rem">
+                <div style="display:flex;gap:1rem;align-items:center;flex-wrap:wrap">
+                    <div style="flex:1;min-width:200px;position:relative">
+                        <i class="fa-solid fa-magnifying-glass" style="position:absolute;left:0.8rem;top:50%;transform:translateY(-50%);color:var(--text-muted)"></i>
+                        <input type="text" id="kb-suche" placeholder="Wissensdatenbank durchsuchen..." style="padding-left:2.2rem;width:100%">
+                    </div>
+                    <select id="kb-kategorie-filter" style="min-width:160px">
+                        <option value="">Alle Kategorien</option>
+                        <option value="telefonie">Telefonie &amp; ACD</option>
+                        <option value="patienten">Patienten</option>
+                        <option value="termine">Termine</option>
+                        <option value="abrechnung">Abrechnung</option>
+                        <option value="praxisablauf">Praxisablauf</option>
+                        <option value="notfall">Notfall</option>
+                        <option value="technik">Technik</option>
+                    </select>
+                    <button type="button" id="btn-kb-neu" class="btn-primary"><i class="fa-solid fa-plus"></i> Neuer Artikel</button>
+                </div>
+            </div>
+
+            <!-- Statistik-Leiste -->
+            <div class="stat-grid" style="margin-bottom:1.5rem">
+                <div class="stat-card">
+                    <div class="stat-icon bg-primary"><i class="fa-solid fa-file-lines"></i></div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="kb-stat-artikel">0</div>
+                        <div class="stat-label">Artikel</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon bg-success"><i class="fa-solid fa-folder"></i></div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="kb-stat-kategorien">0</div>
+                        <div class="stat-label">Kategorien</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon bg-warning"><i class="fa-solid fa-eye"></i></div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="kb-stat-aufrufe">0</div>
+                        <div class="stat-label">Aufrufe (30 Tage)</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon bg-info"><i class="fa-solid fa-robot"></i></div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="kb-stat-bot">0</div>
+                        <div class="stat-label">Bot-Antworten</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Artikel-Formular (hidden) -->
+            <div class="card" id="kb-formular-bereich" hidden style="margin-bottom:1.5rem">
+                <h2 id="kb-formular-titel"><i class="fa-solid fa-pen"></i> Neuen Artikel erstellen</h2>
+                <form id="kb-formular" style="display:flex;flex-direction:column;gap:1rem;margin-top:1rem">
+                    <div class="form-group">
+                        <label for="kb-titel">Titel</label>
+                        <input type="text" id="kb-titel" placeholder="z.B. Wie stelle ich den Voicebot ein?" required>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+                        <div class="form-group">
+                            <label for="kb-kat">Kategorie</label>
+                            <select id="kb-kat" required>
+                                <option value="telefonie">Telefonie &amp; ACD</option>
+                                <option value="patienten">Patienten</option>
+                                <option value="termine">Termine</option>
+                                <option value="abrechnung">Abrechnung</option>
+                                <option value="praxisablauf">Praxisablauf</option>
+                                <option value="notfall">Notfall</option>
+                                <option value="technik">Technik</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="kb-tags">Tags (kommagetrennt)</label>
+                            <input type="text" id="kb-tags" placeholder="z.B. voicebot, einrichtung, telefon">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="kb-inhalt">Inhalt</label>
+                        <textarea id="kb-inhalt" rows="8" placeholder="Artikelinhalt eingeben... Markdown wird unterstuetzt." required style="font-family:monospace;font-size:0.9rem"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="kb-bot-antwort">Bot-Kurzantwort (fuer KI-Assistent)</label>
+                        <textarea id="kb-bot-antwort" rows="3" placeholder="Kurze Antwort die der Voicebot/Chat-Bot geben soll..."></textarea>
+                    </div>
+                    <div style="display:flex;gap:0.5rem">
+                        <button type="submit" class="btn-primary"><i class="fa-solid fa-save"></i> Speichern</button>
+                        <button type="button" id="btn-kb-abbrechen" style="background:var(--text-muted)"><i class="fa-solid fa-xmark"></i> Abbrechen</button>
+                    </div>
+                    <div id="kb-erfolg" class="ergebnis" hidden></div>
+                </form>
+            </div>
+
+            <!-- Artikel-Liste -->
+            <div class="card">
+                <h2><i class="fa-solid fa-list"></i> Artikel</h2>
+                <div id="kb-artikel-liste" style="margin-top:1rem"></div>
+            </div>
+        </div>
+
+        <div class="spa-page" id="spa-ansagen" data-title="Ansagen Generator">
+            <!-- Statistik -->
+            <div class="stat-grid" style="margin-bottom:1.5rem">
+                <div class="stat-card">
+                    <div class="stat-icon bg-primary"><i class="fa-solid fa-volume-high"></i></div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="ans-stat-gesamt">0</div>
+                        <div class="stat-label">Ansagen</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon bg-success"><i class="fa-solid fa-circle-check"></i></div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="ans-stat-aktiv">0</div>
+                        <div class="stat-label">Aktiv</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon bg-warning"><i class="fa-solid fa-language"></i></div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="ans-stat-sprachen">3</div>
+                        <div class="stat-label">Sprachen</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon bg-info"><i class="fa-solid fa-microphone"></i></div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="ans-stat-stimmen">6</div>
+                        <div class="stat-label">KI-Stimmen</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Generator -->
+            <div class="card" style="margin-bottom:1.5rem">
+                <h2><i class="fa-solid fa-wand-magic-sparkles"></i> Ansage erstellen</h2>
+                <form id="ans-formular" style="margin-top:1rem">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+                        <div class="form-group">
+                            <label for="ans-typ">Ansage-Typ</label>
+                            <select id="ans-typ">
+                                <option value="begruessung">Begruessung</option>
+                                <option value="warteschleife">Warteschleife</option>
+                                <option value="abwesenheit">Abwesenheit / AB</option>
+                                <option value="oeffnungszeiten">Oeffnungszeiten</option>
+                                <option value="notfall">Notfall-Hinweis</option>
+                                <option value="feiertag">Feiertags-Ansage</option>
+                                <option value="weiterleitung">Weiterleitung</option>
+                                <option value="ivr_menue">IVR-Menue (Auswahl)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="ans-name">Name der Ansage</label>
+                            <input type="text" id="ans-name" placeholder="z.B. Begruessung Hauptnummer">
+                        </div>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-top:1rem">
+                        <div class="form-group">
+                            <label for="ans-sprache">Sprache</label>
+                            <select id="ans-sprache">
+                                <option value="de">Deutsch</option>
+                                <option value="en">Englisch</option>
+                                <option value="tr">Tuerkisch</option>
+                                <option value="ar">Arabisch</option>
+                                <option value="ru">Russisch</option>
+                                <option value="fr">Franzoesisch</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="ans-stimme">KI-Stimme</label>
+                            <select id="ans-stimme">
+                                <option value="anna">Anna (weiblich, freundlich)</option>
+                                <option value="thomas">Thomas (maennlich, sachlich)</option>
+                                <option value="sophie">Sophie (weiblich, warm)</option>
+                                <option value="markus">Markus (maennlich, professionell)</option>
+                                <option value="lena">Lena (weiblich, jung)</option>
+                                <option value="oliver">Oliver (maennlich, ruhig)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="ans-tempo">Sprechtempo</label>
+                            <select id="ans-tempo">
+                                <option value="langsam">Langsam</option>
+                                <option value="normal" selected>Normal</option>
+                                <option value="schnell">Schnell</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Vorlagen-Buttons -->
+                    <div style="margin-top:1rem">
+                        <label style="font-weight:600;margin-bottom:0.5rem;display:block"><i class="fa-solid fa-clipboard-list"></i> Schnell-Vorlagen:</label>
+                        <div style="display:flex;flex-wrap:wrap;gap:0.5rem" id="ans-vorlagen">
+                            <button type="button" class="ans-vorlage-btn" data-vorlage="begruessung_standard" style="padding:0.4rem 0.8rem;border-radius:6px;font-size:0.8rem;background:var(--bg);border:1px solid var(--border);cursor:pointer"><i class="fa-solid fa-hand-wave"></i> Standard-Begruessung</button>
+                            <button type="button" class="ans-vorlage-btn" data-vorlage="warteschleife_standard" style="padding:0.4rem 0.8rem;border-radius:6px;font-size:0.8rem;background:var(--bg);border:1px solid var(--border);cursor:pointer"><i class="fa-solid fa-clock"></i> Warteschleife</button>
+                            <button type="button" class="ans-vorlage-btn" data-vorlage="ab_standard" style="padding:0.4rem 0.8rem;border-radius:6px;font-size:0.8rem;background:var(--bg);border:1px solid var(--border);cursor:pointer"><i class="fa-solid fa-voicemail"></i> Anrufbeantworter</button>
+                            <button type="button" class="ans-vorlage-btn" data-vorlage="oeffnungszeiten_standard" style="padding:0.4rem 0.8rem;border-radius:6px;font-size:0.8rem;background:var(--bg);border:1px solid var(--border);cursor:pointer"><i class="fa-solid fa-clock"></i> Oeffnungszeiten</button>
+                            <button type="button" class="ans-vorlage-btn" data-vorlage="notfall_standard" style="padding:0.4rem 0.8rem;border-radius:6px;font-size:0.8rem;background:var(--bg);border:1px solid var(--border);cursor:pointer"><i class="fa-solid fa-triangle-exclamation"></i> Notfall</button>
+                            <button type="button" class="ans-vorlage-btn" data-vorlage="ivr_menue" style="padding:0.4rem 0.8rem;border-radius:6px;font-size:0.8rem;background:var(--bg);border:1px solid var(--border);cursor:pointer"><i class="fa-solid fa-list-ol"></i> IVR-Menue</button>
+                            <button type="button" class="ans-vorlage-btn" data-vorlage="feiertag_standard" style="padding:0.4rem 0.8rem;border-radius:6px;font-size:0.8rem;background:var(--bg);border:1px solid var(--border);cursor:pointer"><i class="fa-solid fa-tree"></i> Feiertag</button>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-top:1rem">
+                        <label for="ans-text">Ansagetext</label>
+                        <textarea id="ans-text" rows="5" placeholder="Geben Sie den Ansagetext ein oder waehlen Sie eine Vorlage..." required style="font-size:0.95rem;line-height:1.6"></textarea>
+                        <small style="color:var(--text-muted)">Variablen: {praxis_name}, {oeffnungszeiten}, {notfall_nummer}, {datum}</small>
+                    </div>
+
+                    <!-- Audio-Vorschau -->
+                    <div id="ans-vorschau-bereich" style="margin-top:1rem;padding:1rem;background:var(--bg);border-radius:8px" hidden>
+                        <div style="display:flex;align-items:center;gap:1rem">
+                            <button type="button" id="btn-ans-play" style="width:48px;height:48px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;border:none;cursor:pointer">
+                                <i class="fa-solid fa-play" style="color:#fff;font-size:1.2rem" id="ans-play-icon"></i>
+                            </button>
+                            <div style="flex:1">
+                                <div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden">
+                                    <div id="ans-progress" style="height:100%;width:0%;background:var(--primary);border-radius:2px;transition:width 0.1s"></div>
+                                </div>
+                                <div style="display:flex;justify-content:space-between;margin-top:0.3rem;font-size:0.75rem;color:var(--text-muted)">
+                                    <span id="ans-zeit-aktuell">0:00</span>
+                                    <span id="ans-zeit-gesamt">0:00</span>
+                                </div>
+                            </div>
+                            <span id="ans-stimme-label" style="font-size:0.8rem;color:var(--text-muted)"></span>
+                        </div>
+                    </div>
+
+                    <div style="display:flex;gap:0.5rem;margin-top:1rem">
+                        <button type="button" id="btn-ans-generieren" class="btn-primary"><i class="fa-solid fa-wand-magic-sparkles"></i> KI-Text generieren</button>
+                        <button type="button" id="btn-ans-vorhoeren" style="background:var(--info)"><i class="fa-solid fa-volume-high"></i> Vorhoeren</button>
+                        <button type="submit" style="background:var(--success)"><i class="fa-solid fa-save"></i> Ansage speichern</button>
+                    </div>
+                    <div id="ans-erfolg" class="ergebnis" hidden></div>
+                </form>
+            </div>
+
+            <!-- Gespeicherte Ansagen -->
+            <div class="card">
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                    <h2><i class="fa-solid fa-list"></i> Gespeicherte Ansagen</h2>
+                    <div style="display:flex;gap:0.5rem">
+                        <select id="ans-filter-typ" style="font-size:0.85rem;padding:0.3rem 0.6rem">
+                            <option value="">Alle Typen</option>
+                            <option value="begruessung">Begruessung</option>
+                            <option value="warteschleife">Warteschleife</option>
+                            <option value="abwesenheit">Abwesenheit</option>
+                            <option value="oeffnungszeiten">Oeffnungszeiten</option>
+                            <option value="notfall">Notfall</option>
+                            <option value="ivr_menue">IVR-Menue</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="ans-liste" style="margin-top:1rem"></div>
+            </div>
+        </div>
+
+        <div class="spa-page" id="spa-auswertung" data-title="Auswertungen">
+            <!-- Zeitraum-Filter -->
+            <div class="card" style="margin-bottom:1.5rem">
+                <div style="display:flex;gap:1rem;align-items:center;flex-wrap:wrap">
+                    <div class="form-group" style="margin:0">
+                        <label for="aw-zeitraum" style="font-size:0.8rem;margin-bottom:0.25rem">Zeitraum</label>
+                        <select id="aw-zeitraum">
+                            <option value="heute">Heute</option>
+                            <option value="woche" selected>Diese Woche</option>
+                            <option value="monat">Dieser Monat</option>
+                            <option value="quartal">Quartal</option>
+                            <option value="jahr">Dieses Jahr</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin:0">
+                        <label for="aw-von" style="font-size:0.8rem;margin-bottom:0.25rem">Von</label>
+                        <input type="date" id="aw-von">
+                    </div>
+                    <div class="form-group" style="margin:0">
+                        <label for="aw-bis" style="font-size:0.8rem;margin-bottom:0.25rem">Bis</label>
+                        <input type="date" id="aw-bis">
+                    </div>
+                    <div class="form-group" style="margin:0">
+                        <label for="aw-standort" style="font-size:0.8rem;margin-bottom:0.25rem">Standort</label>
+                        <select id="aw-standort">
+                            <option value="">Alle Standorte</option>
+                            <option value="hauptpraxis">Hauptpraxis</option>
+                            <option value="filiale1">Filiale Nord</option>
+                            <option value="filiale2">Filiale Sued</option>
+                        </select>
+                    </div>
+                    <button type="button" id="btn-aw-aktualisieren" class="btn-primary" style="margin-top:auto"><i class="fa-solid fa-rotate"></i> Aktualisieren</button>
+                    <button type="button" id="btn-aw-export" style="margin-top:auto;background:var(--success)"><i class="fa-solid fa-file-csv"></i> CSV Export</button>
+                </div>
+            </div>
+
+            <!-- KPI Uebersicht -->
+            <div class="stat-grid" style="margin-bottom:1.5rem">
+                <div class="stat-card">
+                    <div class="stat-icon bg-primary"><i class="fa-solid fa-phone"></i></div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="aw-anrufe-gesamt">0</div>
+                        <div class="stat-label">Anrufe gesamt</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon bg-success"><i class="fa-solid fa-phone-volume"></i></div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="aw-angenommen">0</div>
+                        <div class="stat-label">Angenommen</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon bg-danger"><i class="fa-solid fa-phone-slash"></i></div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="aw-verpasst">0</div>
+                        <div class="stat-label">Verpasst</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon bg-info"><i class="fa-solid fa-robot"></i></div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="aw-voicebot">0</div>
+                        <div class="stat-label">Voicebot erledigt</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon bg-warning"><i class="fa-solid fa-clock"></i></div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="aw-wartezeit">0s</div>
+                        <div class="stat-label">Avg. Wartezeit</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:#7c3aed"><i class="fa-solid fa-stopwatch"></i></div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="aw-gespraechsdauer">0s</div>
+                        <div class="stat-label">Avg. Gespraechsdauer</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Anrufverlauf Chart (CSS-basiert) -->
+            <div class="card" style="margin-bottom:1.5rem">
+                <h2><i class="fa-solid fa-chart-bar"></i> Anrufverlauf</h2>
+                <div id="aw-chart-anrufe" style="margin-top:1rem;display:flex;align-items:flex-end;gap:4px;height:200px;padding:0 0.5rem;border-bottom:2px solid var(--border)"></div>
+                <div id="aw-chart-labels" style="display:flex;gap:4px;padding:0.5rem 0.5rem 0;font-size:0.7rem;color:var(--text-muted)"></div>
+                <div style="display:flex;gap:1.5rem;margin-top:0.75rem;font-size:0.8rem;color:var(--text-muted)">
+                    <span><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:var(--primary);vertical-align:middle"></span> Angenommen</span>
+                    <span><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:var(--danger);vertical-align:middle"></span> Verpasst</span>
+                    <span><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:var(--info);vertical-align:middle"></span> Voicebot</span>
+                </div>
+            </div>
+
+            <!-- Zwei-Spalten: Agenten-Performance + Kosten -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem">
+                <!-- Agenten-Performance -->
+                <div class="card">
+                    <h2><i class="fa-solid fa-headset"></i> Agenten-Performance</h2>
+                    <table style="width:100%;margin-top:1rem;font-size:0.85rem" id="aw-agenten-tabelle">
+                        <thead>
+                            <tr>
+                                <th>Agent</th>
+                                <th>Anrufe</th>
+                                <th>Avg. Dauer</th>
+                                <th>Erreichbarkeit</th>
+                                <th>Bewertung</th>
+                            </tr>
+                        </thead>
+                        <tbody id="aw-agenten-body"></tbody>
+                    </table>
+                </div>
+
+                <!-- Kosten -->
+                <div class="card">
+                    <h2><i class="fa-solid fa-euro-sign"></i> Kosten &amp; Ersparnis</h2>
+                    <div id="aw-kosten-bereich" style="margin-top:1rem"></div>
+                </div>
+            </div>
+
+            <!-- Zwei-Spalten: Top Anrufgruende + Erreichbarkeit-Verlauf -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem">
+                <!-- Top Anrufgruende -->
+                <div class="card">
+                    <h2><i class="fa-solid fa-list-ol"></i> Top Anrufgruende</h2>
+                    <div id="aw-anrufgruende" style="margin-top:1rem"></div>
+                </div>
+
+                <!-- Erreichbarkeit nach Tageszeit -->
+                <div class="card">
+                    <h2><i class="fa-solid fa-clock"></i> Erreichbarkeit nach Tageszeit</h2>
+                    <div id="aw-tageszeit" style="margin-top:1rem"></div>
+                </div>
+            </div>
+
+            <!-- Einzelverbindungsnachweis -->
+            <div class="card">
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                    <h2><i class="fa-solid fa-list"></i> Einzelverbindungsnachweis (EVN)</h2>
+                    <div style="display:flex;gap:0.5rem">
+                        <input type="text" id="aw-evn-suche" placeholder="Suchen..." style="font-size:0.85rem;width:200px">
+                        <select id="aw-evn-filter" style="font-size:0.85rem">
+                            <option value="">Alle</option>
+                            <option value="angenommen">Angenommen</option>
+                            <option value="verpasst">Verpasst</option>
+                            <option value="voicebot">Voicebot</option>
+                            <option value="weiterleitung">Weiterleitung</option>
+                        </select>
+                    </div>
+                </div>
+                <table style="width:100%;margin-top:1rem;font-size:0.85rem">
+                    <thead>
+                        <tr>
+                            <th>Datum/Zeit</th>
+                            <th>Rufnummer</th>
+                            <th>Richtung</th>
+                            <th>Agent</th>
+                            <th>Dauer</th>
+                            <th>Status</th>
+                            <th>Kosten</th>
+                        </tr>
+                    </thead>
+                    <tbody id="aw-evn-body"></tbody>
+                </table>
+                <div id="aw-evn-paging" style="display:flex;justify-content:space-between;align-items:center;margin-top:1rem;font-size:0.85rem"></div>
+            </div>
+        </div>
+
+        <div class="spa-page" id="spa-standort" data-title="Standort &amp; ACD">
+            <!-- ===== Branchen-Konfiguration ===== -->
+            <section class="card" id="branche-auswahl">
+                <h2><i class="fa-solid fa-briefcase"></i> Branche &amp; Buero-Typ</h2>
+                <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:1rem">Waehlen Sie Ihre Branche. Alle Texte, der KI-Assistent und der Voicebot passen sich automatisch an.</p>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="branche-select">Branche</label>
+                        <select id="branche-select"></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="branche-firmenname">Firmenname (optional)</label>
+                        <input type="text" id="branche-firmenname" placeholder="z.B. Praxis Dr. Mueller, Kanzlei Schmidt, Salon Anna...">
+                    </div>
+                </div>
+                <div id="branche-vorschau" style="background:var(--bg);padding:0.75rem;border-radius:8px;margin:0.5rem 0 1rem"></div>
+                <button type="button" id="btn-branche-speichern"><i class="fa-solid fa-save"></i> Branche speichern</button>
+                <div id="branche-erfolg" class="ergebnis" hidden></div>
+            </section>
+
+            <!-- ===== Standort-Info ===== -->
+            <section class="card">
+                <h2><i class="fa-solid fa-location-dot"></i> Standort-Informationen</h2>
+                <form id="standort-info-form">
+                    <div class="form-row">
+                        <div class="form-group"><label for="standort-name">Standortname</label><input type="text" id="standort-name" value="MED Rezeption Berlin Mitte"></div>
+                        <div class="form-group"><label for="standort-telefon">Hauptnummer</label><input type="tel" id="standort-telefon" value="030-123 456 0"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label for="standort-strasse">Adresse</label><input type="text" id="standort-strasse" value="Friedrichstr. 100, 10117 Berlin"></div>
+                        <div class="form-group"><label for="standort-notfall">Notfall-Nebenstelle</label><input type="text" id="standort-notfall" value="200"></div>
+                    </div>
+                    <button type="submit"><i class="fa-solid fa-save"></i> Standort speichern</button>
+                </form>
+                <div id="standort-info-erfolg" class="ergebnis" hidden></div>
+            </section>
+
+            <!-- ===== ACD Konfiguration ===== -->
+            <section class="card">
+                <h2><i class="fa-solid fa-shuffle"></i> ACD-Anrufverteilung</h2>
+                <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:1rem">Legen Sie fest, wie eingehende Anrufe am Standort verteilt werden. Die Zeitsteuerung unten ueberschreibt den Standard-Modus fuer bestimmte Tage und Uhrzeiten.</p>
+
+                <div class="form-group">
+                    <label><i class="fa-solid fa-sliders"></i> Standard ACD-Modus</label>
+                </div>
+                <div class="acd-modus-auswahl" id="acd-modus-auswahl">
+                    <div class="acd-modus-karte selected" data-modus="alle_annehmen">
+                        <div class="acd-modus-icon"><i class="fa-solid fa-phone-volume"></i></div>
+                        <div class="acd-modus-info">
+                            <h3>Alle Anrufe annehmen</h3>
+                            <p>Anrufe klingeln bei allen verfuegbaren Agenten und Standortleitung. Kein Bot.</p>
+                        </div>
+                        <div class="acd-modus-check"><i class="fa-solid fa-circle-check"></i></div>
+                    </div>
+                    <div class="acd-modus-karte" data-modus="klingeln_dann_bot">
+                        <div class="acd-modus-icon"><i class="fa-solid fa-bell"></i></div>
+                        <div class="acd-modus-info">
+                            <h3>3x Klingeln, dann Bot</h3>
+                            <p>Es klingelt dreimal bei den Agenten. Nimmt niemand ab, uebernimmt der Voicebot.</p>
+                        </div>
+                        <div class="acd-modus-check"><i class="fa-solid fa-circle-check"></i></div>
+                    </div>
+                    <div class="acd-modus-karte" data-modus="bot_direkt">
+                        <div class="acd-modus-icon"><i class="fa-solid fa-robot"></i></div>
+                        <div class="acd-modus-info">
+                            <h3>Bot nimmt direkt an</h3>
+                            <p>Alle Anrufe werden sofort vom Voicebot angenommen und verarbeitet.</p>
+                        </div>
+                        <div class="acd-modus-check"><i class="fa-solid fa-circle-check"></i></div>
+                    </div>
+                </div>
+
+                <div class="form-row" style="margin-top:1rem">
+                    <div class="form-group">
+                        <label for="acd-klingelanzahl">Klingelanzahl (bei "Klingeln dann Bot")</label>
+                        <input type="number" id="acd-klingelanzahl" value="3" min="1" max="10">
+                    </div>
+                    <div class="form-group">
+                        <label for="acd-klingel-timeout">Klingel-Timeout (Sekunden)</label>
+                        <input type="number" id="acd-klingel-timeout" value="15" min="5" max="60">
+                    </div>
+                    <div class="form-group">
+                        <label for="acd-verteilung">Verteilungsstrategie</label>
+                        <select id="acd-verteilung">
+                            <option value="alle_gleichzeitig">Alle gleichzeitig klingeln</option>
+                            <option value="rundlauf">Rundlauf (Round Robin)</option>
+                            <option value="laengste_pause">Laengste Pause zuerst</option>
+                            <option value="wenigste_anrufe">Wenigste Anrufe zuerst</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="button" id="btn-acd-speichern"><i class="fa-solid fa-save"></i> ACD-Modus speichern</button>
+                <div id="acd-modus-erfolg" class="ergebnis" hidden></div>
+            </section>
+
+            <!-- ===== Zeitsteuerung ===== -->
+            <section class="card">
+                <h2><i class="fa-solid fa-clock"></i> Zeitsteuerung (ACD pro Tag &amp; Uhrzeit)</h2>
+                <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:1rem">Definieren Sie fuer jeden Wochentag individuelle ACD-Regeln. Ausserhalb der definierten Zeiten gilt der Standard-Modus.</p>
+
+                <div class="zeitplan-tabelle-wrapper">
+                    <table class="zeitplan-tabelle" id="zeitplan-tabelle">
+                        <thead>
+                            <tr>
+                                <th>Tag</th>
+                                <th>Aktiv</th>
+                                <th>Von</th>
+                                <th>Bis</th>
+                                <th>ACD-Modus</th>
+                                <th>Pause Von</th>
+                                <th>Pause Bis</th>
+                                <th>Pause-Modus</th>
+                            </tr>
+                        </thead>
+                        <tbody id="zeitplan-body">
+                            <!-- Wird per JS generiert -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="button-gruppe" style="margin-top:1rem">
+                    <button type="button" id="btn-zeitplan-speichern"><i class="fa-solid fa-save"></i> Zeitplan speichern</button>
+                    <button type="button" id="btn-zeitplan-reset" class="btn-secondary"><i class="fa-solid fa-rotate-right"></i> Standard wiederherstellen</button>
+                </div>
+                <div id="zeitplan-erfolg" class="ergebnis" hidden></div>
+            </section>
+
+            <!-- ===== Aktueller ACD-Status ===== -->
+            <section class="card">
+                <h2><i class="fa-solid fa-signal"></i> Aktueller ACD-Status (Live)</h2>
+                <div class="acd-live-status" id="acd-live-status">
+                    <!-- Wird per JS generiert -->
+                </div>
+            </section>
+
+            <!-- ===== Standortleitung ===== -->
+            <section class="card">
+                <h2><i class="fa-solid fa-user-tie"></i> Standortleitung &amp; Teamleiter</h2>
+                <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:1rem">Standortleitung und Teamleiter verfuegen ueber die gleichen Telefonfunktionen wie Agenten: Nebenstelle, SIP, Warteschlangen-Zuweisung und Status-Steuerung.</p>
+
+                <form id="standortleitung-form">
+                    <input type="hidden" id="sl-id">
+                    <div class="form-row">
+                        <div class="form-group"><label for="sl-name">Name</label><input type="text" id="sl-name" required></div>
+                        <div class="form-group"><label for="sl-rolle">Rolle</label>
+                            <select id="sl-rolle">
+                                <option value="standortleitung">Standortleitung</option>
+                                <option value="teamleiter">Teamleiter</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label for="sl-nebenstelle">Nebenstelle</label><input type="text" id="sl-nebenstelle" required placeholder="z.B. 300"></div>
+                        <div class="form-group"><label for="sl-sip-passwort">SIP-Passwort</label><input type="password" id="sl-sip-passwort" required></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label for="sl-warteschlange">Warteschlange</label>
+                            <select id="sl-warteschlange">
+                                <option value="rezeption">Rezeption</option>
+                                <option value="terminvergabe">Terminvergabe</option>
+                                <option value="dringend">Dringend</option>
+                                <option value="allgemein">Allgemein</option>
+                                <option value="alle">Alle Warteschlangen</option>
+                            </select>
+                        </div>
+                        <div class="form-group"><label for="sl-telefon">Mobilnummer (optional)</label><input type="tel" id="sl-telefon" placeholder="z.B. 0170-1234567"></div>
+                    </div>
+                    <div class="form-group"><label for="sl-email">E-Mail</label><input type="email" id="sl-email" placeholder="leitung@praxis.de"></div>
+                    <div class="button-gruppe">
+                        <button type="submit" id="btn-sl-speichern">Speichern</button>
+                        <button type="button" id="btn-sl-abbrechen" hidden>Abbrechen</button>
+                    </div>
+                </form>
+                <div id="sl-erfolg" class="ergebnis" hidden></div>
+                <div id="sl-fehler" class="fehler" hidden></div>
+            </section>
+
+            <!-- ===== Standortleitung-Board (wie Agenten) ===== -->
+            <section class="card">
+                <h2>Standortleitung &amp; Teamleiter - Board</h2>
+                <div class="agenten-grid" id="standortleitung-karten">
+                    <!-- Wird per JS generiert -->
+                </div>
+            </section>
+
+            <!-- ===== Statistiken ===== -->
+            <section class="card">
+                <h2><i class="fa-solid fa-chart-bar"></i> ACD-Statistiken (heute)</h2>
+                <div class="stat-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-primary"><i class="fa-solid fa-phone-volume"></i></div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="acd-stat-anrufe">0</div>
+                            <div class="stat-label">Eingehende Anrufe</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon bg-success"><i class="fa-solid fa-phone-flip"></i></div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="acd-stat-angenommen">0</div>
+                            <div class="stat-label">Angenommen</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon bg-info"><i class="fa-solid fa-robot"></i></div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="acd-stat-bot">0</div>
+                            <div class="stat-label">Bot bearbeitet</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon bg-danger"><i class="fa-solid fa-phone-slash"></i></div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="acd-stat-verpasst">0</div>
+                            <div class="stat-label">Verpasst</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon bg-warning"><i class="fa-solid fa-clock"></i></div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="acd-stat-wartezeit">0s</div>
+                            <div class="stat-label">Avg. Wartezeit</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <div class="spa-page" id="spa-callflow" data-title="Callflow Editor">
+            <div class="callflow-layout">
+                <div class="callflow-toolbar card">
+                    <h3><i class="fa-solid fa-puzzle-piece"></i> Bausteine</h3>
+                    <div class="callflow-baustein-liste">
+                        <button class="callflow-baustein" data-typ="ansage" type="button"><i class="fa-solid fa-volume-high"></i> Ansage</button>
+                        <button class="callflow-baustein" data-typ="dtmf" type="button"><i class="fa-solid fa-dial-pad fa-hashtag"></i> DTMF-Menue</button>
+                        <button class="callflow-baustein" data-typ="voicebot" type="button"><i class="fa-solid fa-robot"></i> Voicebot</button>
+                        <button class="callflow-baustein" data-typ="warteschlange" type="button"><i class="fa-solid fa-users-line"></i> Warteschlange</button>
+                        <button class="callflow-baustein" data-typ="transfer" type="button"><i class="fa-solid fa-phone-arrow-right fa-right-left"></i> Transfer</button>
+                        <button class="callflow-baustein" data-typ="bedingung" type="button"><i class="fa-solid fa-code-branch"></i> Bedingung</button>
+                        <button class="callflow-baustein" data-typ="aufnahme" type="button"><i class="fa-solid fa-microphone"></i> Aufnahme</button>
+                        <button class="callflow-baustein" data-typ="ende" type="button"><i class="fa-solid fa-phone-slash"></i> Auflegen</button>
+                    </div>
+                </div>
+                <div class="callflow-canvas card" id="callflow-canvas">
+                    <div class="callflow-flow" id="callflow-flow">
+                        <!-- Nodes werden per JS geladen -->
+                    </div>
+                </div>
+                <div class="callflow-properties card" id="callflow-properties">
+                    <h3><i class="fa-solid fa-sliders"></i> Eigenschaften</h3>
+                    <div id="callflow-props-inhalt">
+                        <p class="text-muted">Klicken Sie auf einen Baustein um ihn zu bearbeiten.</p>
+                    </div>
+                </div>
+            </div>
+            <div id="callflow-simulation" class="card" hidden>
+                <h2><i class="fa-solid fa-play-circle"></i> Simulation</h2>
+                <div id="simulation-ablauf"></div>
+                <div class="button-gruppe">
+                    <button id="btn-sim-schritt" type="button"><i class="fa-solid fa-forward-step"></i> Naechster Schritt</button>
+                    <button id="btn-sim-dtmf" type="button"><i class="fa-solid fa-hashtag"></i> DTMF Eingabe</button>
+                    <button id="btn-sim-stop" type="button" class="btn-secondary"><i class="fa-solid fa-stop"></i> Stopp</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="spa-page" id="spa-voicebot" data-title="Voicebot">
+            <div class="stat-grid">
+                <div class="stat-card">
+                    <div class="stat-icon bg-primary"><i class="fa-solid fa-phone-volume"></i></div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="vb-stat-anrufe">47</div>
+                        <div class="stat-label">Anrufe heute</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon bg-success"><i class="fa-solid fa-calendar-check"></i></div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="vb-stat-termine">12</div>
+                        <div class="stat-label">Termine gebucht</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon bg-info"><i class="fa-solid fa-prescription"></i></div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="vb-stat-rezepte">8</div>
+                        <div class="stat-label">Rezept-Anfragen</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon bg-warning"><i class="fa-solid fa-right-left"></i></div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="vb-stat-transfers">27</div>
+                        <div class="stat-label">Weiterleitungen</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="voicebot-grid">
+                <section class="card">
+                    <h2><i class="fa-solid fa-gear"></i> Voicebot Konfiguration</h2>
+                    <form id="voicebot-config-form">
+                        <div class="form-group">
+                            <label for="vb-begruessung">Begruessung</label>
+                            <textarea id="vb-begruessung" rows="3">Willkommen bei der Arztpraxis MED Rezeption. Druecken Sie 1 fuer Terminvergabe, 2 fuer Rezeptbestellung, 3 fuer die Rezeption.</textarea>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="vb-sprache">Sprache</label>
+                                <select id="vb-sprache">
+                                    <option value="de-DE" selected>Deutsch</option>
+                                    <option value="en-US">English</option>
+                                    <option value="tr-TR">Tuerkisch</option>
+                                    <option value="ar-SA">Arabisch</option>
+                                    <option value="ru-RU">Russisch</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="vb-stimme">Stimme</label>
+                                <select id="vb-stimme">
+                                    <option value="weiblich" selected>Weiblich</option>
+                                    <option value="maennlich">Maennlich</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="vb-max-versuche">Max. Wiederholungen</label>
+                                <input type="number" id="vb-max-versuche" value="2" min="1" max="5">
+                            </div>
+                            <div class="form-group">
+                                <label for="vb-timeout">Timeout (Sek.)</label>
+                                <input type="number" id="vb-timeout" value="8" min="3" max="30">
+                            </div>
+                        </div>
+                        <h3>DTMF-Menue Zuordnung</h3>
+                        <div class="form-group">
+                            <label>Taste 1</label>
+                            <select id="vb-taste1">
+                                <option value="termin" selected>Terminvergabe (Voicebot)</option>
+                                <option value="warteschlange">Warteschlange</option>
+                                <option value="transfer">Transfer zu Nebenstelle</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Taste 2</label>
+                            <select id="vb-taste2">
+                                <option value="rezept" selected>Rezeptbestellung (Voicebot)</option>
+                                <option value="warteschlange">Warteschlange</option>
+                                <option value="transfer">Transfer zu Nebenstelle</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Taste 3</label>
+                            <select id="vb-taste3">
+                                <option value="transfer" selected>Transfer Rezeption</option>
+                                <option value="warteschlange">Warteschlange</option>
+                                <option value="termin">Terminvergabe (Voicebot)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Taste 0</label>
+                            <select id="vb-taste0">
+                                <option value="warteschlange" selected>Warteschlange Rezeption</option>
+                                <option value="transfer">Transfer</option>
+                            </select>
+                        </div>
+                        <div class="button-gruppe">
+                            <button type="submit"><i class="fa-solid fa-save"></i> Konfiguration speichern</button>
+                            <button type="button" id="btn-vb-test" class="btn-success-sm"><i class="fa-solid fa-vial"></i> Voicebot testen</button>
+                        </div>
+                    </form>
+                    <div id="vb-config-erfolg" class="ergebnis" hidden></div>
+                </section>
+
+                <section class="card">
+                    <h2><i class="fa-solid fa-clock-rotate-left"></i> Letzte Voicebot-Anrufe</h2>
+                    <div id="voicebot-anrufe-liste">
+                        <!-- wird per JS geladen -->
+                    </div>
+                </section>
+            </div>
+
+            <section class="card" id="voicebot-test-bereich" hidden>
+                <h2><i class="fa-solid fa-vial"></i> Voicebot Test-Dialog</h2>
+                <div class="voicebot-test-chat" id="vb-test-chat">
+                    <!-- Test-Dialog wird hier gerendert -->
+                </div>
+                <div class="voicebot-test-eingabe">
+                    <div class="vb-dtmf-tasten">
+                        <button type="button" class="vb-dtmf" data-dtmf="1">1</button>
+                        <button type="button" class="vb-dtmf" data-dtmf="2">2</button>
+                        <button type="button" class="vb-dtmf" data-dtmf="3">3</button>
+                        <button type="button" class="vb-dtmf" data-dtmf="0">0</button>
+                    </div>
+                    <button type="button" id="btn-vb-test-reset"><i class="fa-solid fa-rotate-right"></i> Neustart</button>
+                </div>
+            </section>
+        </div>
+
+        <div class="spa-page" id="spa-agenten" data-title="Agenten">
+            <section id="agent-formular" class="card">
+                <h2 id="agent-formular-titel">Agent anlegen</h2>
+                <form id="agent-form">
+                    <input type="hidden" id="agent-id">
+                    <div class="form-row">
+                        <div class="form-group"><label for="agent-name">Name</label><input type="text" id="agent-name" required></div>
+                        <div class="form-group"><label for="agent-nebenstelle">Nebenstelle</label><input type="text" id="agent-nebenstelle" required></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label for="agent-sip-passwort">SIP-Passwort</label><input type="password" id="agent-sip-passwort" required></div>
+                        <div class="form-group"><label for="agent-rolle">Rolle</label><select id="agent-rolle"><option value="rezeption">Rezeption</option><option value="arzt">Arzt</option><option value="verwaltung">Verwaltung</option><option value="teamleiter">Teamleiter</option><option value="standortleitung">Standortleitung</option></select></div>
+                    </div>
+                    <div class="form-group"><label for="agent-warteschlange">Warteschlange</label><select id="agent-warteschlange"><option value="rezeption">Rezeption</option><option value="terminvergabe">Terminvergabe</option><option value="dringend">Dringend</option><option value="allgemein">Allgemein</option></select></div>
+                    <div class="button-gruppe">
+                        <button type="submit" id="btn-agent-speichern">Speichern</button>
+                        <button type="button" id="btn-agent-abbrechen" hidden>Abbrechen</button>
+                    </div>
+                </form>
+                <div id="agent-erfolg" class="ergebnis" hidden></div>
+                <div id="agent-fehler" class="fehler" hidden></div>
+            </section>
+            <section class="card">
+                <h2>Agenten-Board</h2>
+                <div class="agenten-grid" id="agenten-karten"></div>
+            </section>
+            <section class="card">
+                <div class="section-header">
+                    <h2>Aktive Anrufe</h2>
+                    <span class="badge badge-rot" id="anrufe-aktiv-badge">0 aktiv</span>
+                </div>
+                <div id="aktive-anrufe-liste"></div>
+            </section>
+            <section class="card">
+                <h2>Anrufprotokoll</h2>
+                <div class="table-container">
+                    <table id="anrufe-tabelle">
+                        <thead><tr><th>Zeit</th><th>Anrufer</th><th>Agent</th><th>Queue</th><th>Typ</th><th>Status</th><th>Dauer</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <div class="spa-page" id="spa-softphone" data-title="Softphone">
+            <div style="max-width:400px;margin:0 auto">
+                <section class="softphone-panel">
+                    <h3>SIP-Verbindung</h3>
+                    <div id="sip-status" class="sip-status offline">Nicht verbunden</div>
+                    <form id="sip-form">
+                        <div class="form-group"><label for="sip-server">SIP-Server</label><input type="text" id="sip-server" value="sip.praxis-demo.de"></div>
+                        <div class="form-group"><label for="sip-benutzer">Benutzer</label><input type="text" id="sip-benutzer" value="100"></div>
+                        <div class="form-group"><label for="sip-passwort">Passwort</label><input type="password" id="sip-passwort" value="demo123"></div>
+                        <button type="submit" id="btn-sip-verbinden">Verbinden</button>
+                        <button type="button" id="btn-sip-trennen" hidden>Trennen</button>
+                    </form>
+                </section>
+                <section class="softphone-panel">
+                    <h3>Waehlfeld</h3>
+                    <div class="form-group"><input type="text" id="wahlnummer" placeholder="Nummer eingeben..." style="text-align:center;font-size:1.3rem"></div>
+                    <div class="dialpad">
+                        <button type="button" class="dialpad-taste" data-dtmf="1">1</button>
+                        <button type="button" class="dialpad-taste" data-dtmf="2">2</button>
+                        <button type="button" class="dialpad-taste" data-dtmf="3">3</button>
+                        <button type="button" class="dialpad-taste" data-dtmf="4">4</button>
+                        <button type="button" class="dialpad-taste" data-dtmf="5">5</button>
+                        <button type="button" class="dialpad-taste" data-dtmf="6">6</button>
+                        <button type="button" class="dialpad-taste" data-dtmf="7">7</button>
+                        <button type="button" class="dialpad-taste" data-dtmf="8">8</button>
+                        <button type="button" class="dialpad-taste" data-dtmf="9">9</button>
+                        <button type="button" class="dialpad-taste" data-dtmf="*">*</button>
+                        <button type="button" class="dialpad-taste" data-dtmf="0">0</button>
+                        <button type="button" class="dialpad-taste" data-dtmf="#">#</button>
+                    </div>
+                    <div class="button-gruppe anruf-buttons">
+                        <button type="button" id="btn-anrufen" class="btn-anrufen">Anrufen</button>
+                        <button type="button" id="btn-auflegen" class="btn-auflegen" hidden>Auflegen</button>
+                        <button type="button" id="btn-annehmen" class="btn-annehmen" hidden>Annehmen</button>
+                    </div>
+                </section>
+                <section class="softphone-panel" id="anruf-info" hidden>
+                    <div id="anruf-gegenstelle"></div>
+                    <div id="anruf-timer">00:00</div>
+                    <div id="anruf-status-anzeige"></div>
+                </section>
+            </div>
+        </div>
+
+        <div class="spa-page" id="spa-uebersetzung" data-title="Uebersetzer">
+            <section class="card">
+                <h2><i class="fa-solid fa-comments"></i> Echtzeit-Uebersetzung</h2>
+                <div class="uebersetzer-layout">
+                    <div class="uebersetzer-spalte">
+                        <div class="form-group">
+                            <label for="ue-sprache-von">Von</label>
+                            <select id="ue-sprache-von">
+                                <option value="de" selected>Deutsch</option>
+                                <option value="en">Englisch</option>
+                                <option value="tr">Tuerkisch</option>
+                                <option value="ar">Arabisch</option>
+                                <option value="ru">Russisch</option>
+                                <option value="pl">Polnisch</option>
+                            </select>
+                        </div>
+                        <textarea id="ue-eingabe" rows="5" placeholder="Text eingeben oder Mikrofon nutzen..."></textarea>
+                        <div class="button-gruppe">
+                            <button type="button" id="btn-ue-mikrofon"><i class="fa-solid fa-microphone"></i> Sprechen</button>
+                            <button type="button" id="btn-ue-uebersetzen"><i class="fa-solid fa-arrows-rotate"></i> Uebersetzen</button>
+                        </div>
+                    </div>
+                    <div class="uebersetzer-mitte">
+                        <button type="button" id="btn-ue-tauschen" title="Sprachen tauschen"><i class="fa-solid fa-right-left"></i></button>
+                    </div>
+                    <div class="uebersetzer-spalte">
+                        <div class="form-group">
+                            <label for="ue-sprache-nach">Nach</label>
+                            <select id="ue-sprache-nach">
+                                <option value="de">Deutsch</option>
+                                <option value="en" selected>Englisch</option>
+                                <option value="tr">Tuerkisch</option>
+                                <option value="ar">Arabisch</option>
+                                <option value="ru">Russisch</option>
+                                <option value="pl">Polnisch</option>
+                            </select>
+                        </div>
+                        <div id="ue-ausgabe" class="uebersetzer-ausgabe">Uebersetzung erscheint hier...</div>
+                        <div class="button-gruppe">
+                            <button type="button" id="btn-ue-vorlesen"><i class="fa-solid fa-volume-high"></i> Vorlesen</button>
+                            <button type="button" id="btn-ue-kopieren"><i class="fa-solid fa-copy"></i> Kopieren</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="card">
+                <h2><i class="fa-solid fa-book-medical"></i> Medizinische Schnell-Phrasen</h2>
+                <div class="form-group">
+                    <label for="ue-phrasen-sprache">Zielsprache</label>
+                    <select id="ue-phrasen-sprache">
+                        <option value="en">Englisch</option>
+                        <option value="tr">Tuerkisch</option>
+                        <option value="ar">Arabisch</option>
+                        <option value="ru">Russisch</option>
+                        <option value="pl">Polnisch</option>
+                    </select>
+                </div>
+                <div class="phrasen-kategorien">
+                    <button type="button" class="phrasen-kat active" data-kat="begruessung">Begruessung</button>
+                    <button type="button" class="phrasen-kat" data-kat="anamnese">Anamnese</button>
+                    <button type="button" class="phrasen-kat" data-kat="schmerzen">Schmerzen</button>
+                    <button type="button" class="phrasen-kat" data-kat="behandlung">Behandlung</button>
+                    <button type="button" class="phrasen-kat" data-kat="termin">Termin</button>
+                    <button type="button" class="phrasen-kat" data-kat="rezept">Rezept</button>
+                </div>
+                <div id="phrasen-liste" class="phrasen-grid">
+                    <!-- Phrasen werden per JS geladen -->
+                </div>
+            </section>
+
+            <section class="card">
+                <h2><i class="fa-solid fa-clock-rotate-left"></i> Uebersetzungs-Verlauf</h2>
+                <div class="table-container">
+                    <table id="ue-verlauf-tabelle">
+                        <thead><tr><th>Original</th><th>Uebersetzung</th><th>Sprachen</th><th>Zeit</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <div class="spa-page" id="spa-benutzer" data-title="Benutzer">
+            <section id="benutzer-formular" class="card">
+                <h2 id="formular-titel">Benutzer anlegen</h2>
+                <form id="benutzer-form">
+                    <input type="hidden" id="benutzer-id">
+                    <div class="form-row">
+                        <div class="form-group"><label for="name">Name</label><input type="text" id="name" required></div>
+                        <div class="form-group"><label for="email">E-Mail</label><input type="email" id="email" required></div>
+                    </div>
+                    <div class="form-group"><label for="alter">Alter</label><input type="number" id="alter" min="0" max="150" required></div>
+                    <fieldset><legend>Adresse</legend>
+                        <div class="form-group"><label for="strasse">Strasse</label><input type="text" id="strasse"></div>
+                        <div class="form-row">
+                            <div class="form-group"><label for="plz">PLZ</label><input type="text" id="plz" maxlength="5" pattern="[0-9]{5}"></div>
+                            <div class="form-group"><label for="stadt">Stadt</label><input type="text" id="stadt"></div>
+                        </div>
+                    </fieldset>
+                    <div class="button-gruppe">
+                        <button type="submit" id="btn-speichern">Speichern</button>
+                        <button type="button" id="btn-abbrechen" hidden>Abbrechen</button>
+                    </div>
+                </form>
+                <div id="benutzer-erfolg" class="ergebnis" hidden></div>
+                <div id="benutzer-fehler" class="fehler" hidden></div>
+            </section>
+            <section class="card">
+                <h2>Benutzerliste</h2>
+                <div class="suche-box"><input type="text" id="benutzer-suche" placeholder="Benutzer suchen..."></div>
+                <div class="table-container">
+                    <table id="benutzer-tabelle">
+                        <thead><tr><th>ID</th><th>Name</th><th>E-Mail</th><th>Alter</th><th>Stadt</th><th>Aktionen</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </section>
+            <section id="rechner" class="card">
+                <h2>Rechner</h2>
+                <form id="rechner-form">
+                    <div class="form-row">
+                        <div class="form-group"><label for="zahl-a">Zahl A</label><input type="number" id="zahl-a" step="any" required></div>
+                        <div class="form-group"><label for="operation">Operation</label>
+                            <select id="operation" required>
+                                <option value="addieren">+ Addieren</option>
+                                <option value="subtrahieren">- Subtrahieren</option>
+                                <option value="multiplizieren">&times; Multiplizieren</option>
+                                <option value="dividieren">&divide; Dividieren</option>
+                            </select>
+                        </div>
+                        <div class="form-group"><label for="zahl-b">Zahl B</label><input type="number" id="zahl-b" step="any" required></div>
+                    </div>
+                    <button type="submit">Berechnen</button>
+                </form>
+                <div id="ergebnis" class="ergebnis" hidden><strong>Ergebnis:</strong> <span id="ergebnis-wert"></span></div>
+                <div id="fehler" class="fehler" hidden></div>
+                <div style="margin-top:1.5rem">
+                    <div class="verlauf-header"><h3>Verlauf</h3><button id="btn-verlauf-loeschen" class="btn-loeschen" type="button">Loeschen</button></div>
+                    <table id="verlauf-tabelle"><thead><tr><th>Rechnung</th><th>Ergebnis</th><th>Zeit</th></tr></thead><tbody></tbody></table>
+                </div>
+            </section>
+        </div>
+
+    </main>
+</div>
+
+<!-- Chat Widget -->
+<button id="chat-toggle" type="button"><i class="fa-solid fa-comment-dots"></i></button>
+<div id="chat-fenster">
+    <div class="chat-header"><span><i class="fa-solid fa-robot"></i> Praxis-Assistent</span><button id="chat-schliessen" type="button"><i class="fa-solid fa-xmark"></i></button></div>
+    <div id="chat-nachrichten"></div>
+    <div class="chat-eingabe">
+        <input id="chat-input" type="text" placeholder="Frage stellen oder sprechen...">
+        <button id="chat-mikrofon" type="button" title="Sprechen"><i class="fa-solid fa-microphone"></i></button>
+        <button id="chat-senden" type="button"><i class="fa-solid fa-paper-plane"></i></button>
+    </div>
+</div>
+
+<script>
 /** MED Rezeption Frontend-Logik - Demo & Live-Version */
 
 var API_BASE = "/api";
@@ -3859,3 +6960,100 @@ if (typeof document !== "undefined") {
         }
     });
 }
+
+
+// ===== SPA Navigation =====
+var SPA_PAGES = {"dashboard": {"icon": "fa-chart-pie", "label": "Dashboard", "rollen": ["admin", "teamleitung", "standortleitung", "agent"]}, "patienten": {"icon": "fa-users", "label": "Patienten", "rollen": ["admin", "teamleitung", "standortleitung"]}, "aerzte": {"icon": "fa-user-doctor", "label": "Aerzte", "rollen": ["admin", "teamleitung", "standortleitung"]}, "termine": {"icon": "fa-calendar-days", "label": "Termine", "rollen": ["admin", "teamleitung", "standortleitung", "agent"]}, "wartezimmer": {"icon": "fa-couch", "label": "Wartezimmer", "rollen": ["admin", "teamleitung", "standortleitung", "agent"]}, "wissensdatenbank": {"icon": "fa-book", "label": "Wissensdatenbank", "rollen": ["admin", "teamleitung", "standortleitung", "agent"]}, "ansagen": {"icon": "fa-tower-broadcast", "label": "Ansagen Generator", "rollen": ["admin", "teamleitung"]}, "auswertung": {"icon": "fa-chart-line", "label": "Auswertungen", "rollen": ["admin", "teamleitung", "standortleitung"]}, "standort": {"icon": "fa-building", "label": "Standort &amp; ACD", "rollen": ["admin", "teamleitung", "standortleitung"]}, "callflow": {"icon": "fa-diagram-project", "label": "Callflow Editor", "rollen": ["admin", "teamleitung"]}, "voicebot": {"icon": "fa-robot", "label": "Voicebot", "rollen": ["admin", "teamleitung"]}, "agenten": {"icon": "fa-headset", "label": "Agenten", "rollen": ["admin", "teamleitung"]}, "softphone": {"icon": "fa-phone", "label": "Softphone", "rollen": ["admin", "teamleitung", "standortleitung", "agent"]}, "uebersetzung": {"icon": "fa-language", "label": "Uebersetzer", "rollen": ["admin", "teamleitung", "standortleitung", "agent"]}, "benutzer": {"icon": "fa-user-gear", "label": "Benutzer", "rollen": ["admin"]}};
+
+function spaNavigieren(pageId) {
+    document.querySelectorAll(".spa-page").forEach(function (p) { p.classList.remove("active"); });
+    var page = document.getElementById("spa-" + pageId);
+    if (page) page.classList.add("active");
+
+    document.querySelectorAll(".spa-nav-link").forEach(function (l) { l.classList.remove("active"); });
+    document.querySelectorAll('.spa-nav-link[data-page="' + pageId + '"]').forEach(function (l) { l.classList.add("active"); });
+
+    var titel = document.getElementById("spa-page-title");
+    if (titel && page) titel.textContent = page.dataset.title || pageId;
+}
+
+function spaRolleWechseln(rolle) {
+    var nav = document.getElementById("spa-nav");
+    if (!nav) return;
+    nav.innerHTML = "";
+    Object.keys(SPA_PAGES).forEach(function (id) {
+        var p = SPA_PAGES[id];
+        if (p.rollen.indexOf(rolle) !== -1) {
+            var a = document.createElement("a");
+            a.href = "#";
+            a.className = "spa-nav-link";
+            a.dataset.page = id;
+            a.innerHTML = '<i class="fa-solid ' + p.icon + ' nav-icon"></i> ' + p.label;
+            a.addEventListener("click", function (e) { e.preventDefault(); spaNavigieren(id); });
+            nav.appendChild(a);
+        }
+    });
+    // Erste sichtbare Seite aktivieren
+    var ersteSeite = Object.keys(SPA_PAGES).find(function (id) { return SPA_PAGES[id].rollen.indexOf(rolle) !== -1; });
+    if (ersteSeite) spaNavigieren(ersteSeite);
+}
+
+// Nav-Links Event Listener
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll(".spa-nav-link").forEach(function (link) {
+        link.addEventListener("click", function (e) {
+            e.preventDefault();
+            spaNavigieren(this.dataset.page);
+        });
+    });
+
+    // Guard ausblenden wenn auth vorhanden
+    var guard = document.getElementById("spa-guard");
+    var auth = sessionStorage.getItem("med_guard_auth") || localStorage.getItem("med_guard_auth");
+    if (auth && guard) {
+        guard.classList.add("hidden");
+    }
+
+    // Original guardPruefen ueberschreiben damit es nicht redirected
+    if (typeof window.guardPruefen === "function") {
+        var origGuard = window.guardPruefen;
+        window.guardPruefen = function () {
+            var a = sessionStorage.getItem("med_guard_auth") || localStorage.getItem("med_guard_auth");
+            if (!a) {
+                var g = document.getElementById("spa-guard");
+                if (g) g.classList.remove("hidden");
+                return null;
+            }
+            return JSON.parse(a);
+        };
+    }
+
+    // Erste Seite aktiv markieren
+    var ersterLink = document.querySelector(".spa-nav-link");
+    if (ersterLink) ersterLink.classList.add("active");
+});
+
+// Guard Login-Erfolg abfangen - statt redirect, guard ausblenden
+var origGuardLogin = window.guardLoginHandler;
+if (typeof document !== "undefined") {
+    document.addEventListener("DOMContentLoaded", function () {
+        var form = document.getElementById("guard-login-form");
+        if (form) {
+            form.addEventListener("submit", function (e) {
+                // Nach kurzem Delay pruefen ob auth gesetzt
+                setTimeout(function () {
+                    var auth = sessionStorage.getItem("med_guard_auth") || localStorage.getItem("med_guard_auth");
+                    if (auth) {
+                        var guard = document.getElementById("spa-guard");
+                        if (guard) guard.classList.add("hidden");
+                        // Seite neu initialisieren
+                        if (typeof initDashboard === "function") initDashboard();
+                    }
+                }, 500);
+            });
+        }
+    });
+}
+</script>
+</body>
+</html>

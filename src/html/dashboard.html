@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MED Rezeption - Seite nicht gefunden</title>
+    <title>MED Rezeption - Dashboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
@@ -11,13 +11,14 @@
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-logo"><h2>MED Rezeption</h2><small>Praxisverwaltung</small></div>
         <nav class="sidebar-nav">
-            <a href="dashboard.html"><i class="fa-solid fa-chart-pie nav-icon"></i> Dashboard</a>
+            <a href="dashboard.html" class="active"><i class="fa-solid fa-chart-pie nav-icon"></i> Dashboard</a>
             <a href="patienten.html"><i class="fa-solid fa-users nav-icon"></i> Patienten</a>
             <a href="aerzte.html"><i class="fa-solid fa-user-doctor nav-icon"></i> Aerzte</a>
             <a href="termine.html"><i class="fa-solid fa-calendar-days nav-icon"></i> Termine</a>
             <a href="wartezimmer.html"><i class="fa-solid fa-couch nav-icon"></i> Wartezimmer</a>
             <a href="wissensdatenbank.html"><i class="fa-solid fa-book nav-icon"></i> Wissensdatenbank</a>
             <a href="ansagen.html"><i class="fa-solid fa-tower-broadcast nav-icon"></i> Ansagen Generator</a>
+            <a href="auswertung.html"><i class="fa-solid fa-chart-line nav-icon"></i> Auswertungen</a>
             <a href="standort.html"><i class="fa-solid fa-building nav-icon"></i> Standort &amp; ACD</a>
             <a href="callflow.html"><i class="fa-solid fa-diagram-project nav-icon"></i> Callflow Editor</a>
             <a href="voicebot.html"><i class="fa-solid fa-robot nav-icon"></i> Voicebot</a>
@@ -31,16 +32,22 @@
     <div class="main-wrapper">
         <header class="topbar">
             <button id="menu-toggle" type="button"><i class="fa-solid fa-bars"></i></button>
-            <h1>Fehler</h1>
+            <h1 id="dashboard-titel">Dashboard</h1>
             <div class="topbar-right">Demo-Modus</div>
         </header>
-        <main>
-            <div id="fehler-seite" class="card">
-                <h2>404 - Seite nicht gefunden</h2>
-                <p>Die angeforderte Seite existiert leider nicht.</p>
-                <a href="dashboard.html" class="btn-zurueck">Zurueck zum Dashboard</a>
-            </div>
+        <main id="dashboard">
+            <!-- Wird rollenbasiert von app.js befuellt -->
         </main>
+    </div>
+    <button id="chat-toggle" type="button"><i class="fa-solid fa-comment-dots"></i></button>
+    <div id="chat-fenster">
+        <div class="chat-header"><span><i class="fa-solid fa-robot"></i> Praxis-Assistent</span><button id="chat-schliessen" type="button"><i class="fa-solid fa-xmark"></i></button></div>
+        <div id="chat-nachrichten"></div>
+        <div class="chat-eingabe">
+            <input id="chat-input" type="text" placeholder="Frage stellen oder sprechen...">
+            <button id="chat-mikrofon" type="button" title="Sprechen"><i class="fa-solid fa-microphone"></i></button>
+            <button id="chat-senden" type="button"><i class="fa-solid fa-paper-plane"></i></button>
+        </div>
     </div>
     <script src="app.js"></script>
 </body>

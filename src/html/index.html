@@ -15,7 +15,8 @@
     justify-content: center;
     font-family: 'Inter', sans-serif;
     position: relative;
-    overflow: hidden;
+    overflow-x: hidden;
+    padding-bottom: 4rem;
   }
   body::before {
     content: '';
@@ -222,6 +223,23 @@
     to   { transform: scale(1); opacity: 1; }
   }
   .success-overlay p { font-size: 14px; color: #1565c0; font-weight: 500; }
+  .zitat-banner {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(135deg, #0d47a1 0%, #1565c0 50%, #0d47a1 100%);
+    padding: 1.2rem 2rem;
+    text-align: center;
+    color: #fff;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    box-shadow: 0 -4px 24px rgba(13,71,161,0.3);
+    z-index: 50;
+  }
 </style>
 </head>
 <body>
@@ -266,9 +284,12 @@
     </div>
   </div>
 </div>
+<div class="zitat-banner">
+  &bdquo;NIEMAND HAT DIE ABSICHT, AI AGENTS ZU ENTWICKELN.&ldquo;
+</div>
 <script>
   const ACCESS_PASSWORD = 'MedReception2025!';
-  const REDIRECT_URL    = 'uebersicht.html';
+  const REDIRECT_URL    = 'dashboard.html';
   const SESSION_HOURS   = 8;
   const SESSION_KEY     = 'mr_guard_session';
   function checkSession() {
