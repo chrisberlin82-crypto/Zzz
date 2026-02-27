@@ -238,3 +238,111 @@ class TestStatischeDateien:
         resp = client.get("/benutzer.html")
         assert resp.status_code == 200
         assert b"Benutzer anlegen" in resp.data
+
+
+class TestCallflowApi:
+    def test_callflow_liste_leer(self, client):
+        resp = client.get("/api/callflows")
+        assert resp.status_code == 200
+        assert resp.get_json() == []
+
+    def test_callflow_erstellen(self, client):
+        daten = {
+            "name": "Test Callflow",
+            "branche": "arztpraxis",
+            "beschreibung": "Ein Test",
+            "schritte": [
+                {"typ": "start", "label": "Eingehend", "config": {"quelle": "SIP"}},
+                {"typ": "ansage", "label": "Willkommen", "config": {"text": "Hallo"}},
+                {"typ": "ende", "label": "Ende", "config": {}},
+            ],
+        }
+        resp = client.post("/api/callflows", json=daten)
+        assert resp.status_code == 201
+        body = resp.get_json()
+        assert body["callflow"]["name"] == "Test Callflow"
+        assert len(body["callflow"]["schritte"]) == 3
+
+    def test_callflow_erstellen_ohne_name(self, client):
+        resp = client.post("/api/callflows", json={"branche": "arztpraxis"})
+        assert resp.status_code == 422
+
+    def test_callflow_detail(self, client):
+        client.post("/api/callflows", json={
+            "name": "Detail-Test",
+            "schritte": [{"typ": "start", "label": "Start", "config": {}}],
+        })
+        resp = client.get("/api/callflows/1")
+        assert resp.status_code == 200
+        assert resp.get_json()["name"] == "Detail-Test"
+
+    def test_callflow_nicht_gefunden(self, client):
+        resp = client.get("/api/callflows/999")
+        assert resp.status_code == 404
+
+    def test_callflow_aktualisieren(self, client):
+        client.post("/api/callflows", json={
+            "name": "Alt",
+            "schritte": [{"typ": "start", "label": "Start", "config": {}}],
+        })
+        resp = client.put("/api/callflows/1", json={
+            "name": "Neu",
+            "schritte": [
+                {"typ": "start", "label": "Start", "config": {}},
+                {"typ": "ende", "label": "Ende", "config": {}},
+            ],
+        })
+        assert resp.status_code == 200
+        assert resp.get_json()["callflow"]["name"] == "Neu"
+        assert len(resp.get_json()["callflow"]["schritte"]) == 2
+
+    def test_callflow_loeschen(self, client):
+        client.post("/api/callflows", json={
+            "name": "Zum Loeschen",
+            "schritte": [],
+        })
+        resp = client.delete("/api/callflows/1")
+        assert resp.status_code == 200
+        resp2 = client.get("/api/callflows/1")
+        assert resp2.status_code == 404
+
+    def test_callflow_aktivieren(self, client):
+        client.post("/api/callflows", json={
+            "name": "Flow A", "branche": "arztpraxis", "schritte": [],
+        })
+        client.post("/api/callflows", json={
+            "name": "Flow B", "branche": "arztpraxis", "schritte": [],
+        })
+        resp = client.post("/api/callflows/2/aktivieren")
+        assert resp.status_code == 200
+        assert resp.get_json()["callflow"]["aktiv"] is True
+
+        # Flow A sollte jetzt inaktiv sein
+        resp_a = client.get("/api/callflows/1")
+        assert resp_a.get_json()["aktiv"] is False
+
+    def test_callflow_aktiver_branche(self, client):
+        client.post("/api/callflows", json={
+            "name": "Aktiver Flow", "branche": "zahnarzt", "schritte": [],
+        })
+        client.post("/api/callflows/1/aktivieren")
+        resp = client.get("/api/callflows/aktiv/zahnarzt")
+        assert resp.status_code == 200
+        assert resp.get_json()["name"] == "Aktiver Flow"
+
+    def test_callflow_aktiver_branche_nicht_vorhanden(self, client):
+        resp = client.get("/api/callflows/aktiv/friseur")
+        assert resp.status_code == 404
+
+    def test_callflow_liste_nach_branche(self, client):
+        client.post("/api/callflows", json={
+            "name": "Arzt 1", "branche": "arztpraxis", "schritte": [],
+        })
+        client.post("/api/callflows", json={
+            "name": "Zahnarzt 1", "branche": "zahnarzt", "schritte": [],
+        })
+        resp = client.get("/api/callflows?branche=arztpraxis")
+        assert resp.status_code == 200
+        daten = resp.get_json()
+        assert len(daten) == 1
+        assert daten[0]["branche"] == "arztpraxis"

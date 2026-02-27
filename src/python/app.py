@@ -27,6 +27,9 @@ from src.python.datenbank import (
     agent_aktualisieren, agent_loeschen, agent_status_setzen,
     anruf_erstellen, anruf_alle, anruf_nach_id,
     anruf_aktualisieren, anruf_loeschen, anruf_aktive,
+    callflow_erstellen, callflow_alle, callflow_nach_id,
+    callflow_aktualisieren, callflow_loeschen,
+    callflow_aktivieren, callflow_aktiver,
 )
 
 app = Flask(__name__, static_folder=str(Path(__file__).resolve().parent.parent / "html"))
@@ -643,6 +646,85 @@ def api_uebersetzen():
         return jsonify(ergebnis), 500
 
     return jsonify({"uebersetzung": ergebnis["uebersetzung"], "modus": "live"})
+
+
+# --- Callflow API ---
+
+@app.route("/api/callflows", methods=["GET"])
+def api_callflows_liste():
+    """Gibt alle Callflows zurueck, optional nach Branche gefiltert."""
+    branche = request.args.get("branche", "").strip()
+    if branche:
+        aktiver = callflow_aktiver(db(), branche)
+        alle = callflow_alle(db())
+        return jsonify([c for c in alle if c["branche"] == branche])
+    return jsonify(callflow_alle(db()))
+
+
+@app.route("/api/callflows", methods=["POST"])
+def api_callflow_erstellen_route():
+    """Erstellt einen neuen Callflow."""
+    daten = request.get_json()
+    if not daten:
+        return jsonify({"fehler": "Keine Daten erhalten"}), 400
+
+    if not daten.get("name"):
+        return jsonify({"fehler": ["Name ist erforderlich"]}), 422
+
+    callflow = callflow_erstellen(db(), daten)
+    return jsonify({"nachricht": "Callflow gespeichert", "callflow": callflow}), 201
+
+
+@app.route("/api/callflows/<int:callflow_id>", methods=["GET"])
+def api_callflow_detail(callflow_id):
+    """Gibt einen Callflow mit allen Schritten zurueck."""
+    callflow = callflow_nach_id(db(), callflow_id)
+    if not callflow:
+        return jsonify({"fehler": "Callflow nicht gefunden"}), 404
+    return jsonify(callflow)
+
+
+@app.route("/api/callflows/<int:callflow_id>", methods=["PUT"])
+def api_callflow_aktualisieren_route(callflow_id):
+    """Aktualisiert einen bestehenden Callflow."""
+    daten = request.get_json()
+    if not daten:
+        return jsonify({"fehler": "Keine Daten erhalten"}), 400
+
+    callflow = callflow_nach_id(db(), callflow_id)
+    if not callflow:
+        return jsonify({"fehler": "Callflow nicht gefunden"}), 404
+
+    aktualisiert = callflow_aktualisieren(db(), callflow_id, daten)
+    return jsonify({"nachricht": "Callflow aktualisiert", "callflow": aktualisiert})
+
+
+@app.route("/api/callflows/<int:callflow_id>", methods=["DELETE"])
+def api_callflow_loeschen_route(callflow_id):
+    """Loescht einen Callflow."""
+    if callflow_loeschen(db(), callflow_id):
+        return jsonify({"nachricht": "Callflow geloescht"})
+    return jsonify({"fehler": "Callflow nicht gefunden"}), 404
+
+
+@app.route("/api/callflows/<int:callflow_id>/aktivieren", methods=["POST"])
+def api_callflow_aktivieren_route(callflow_id):
+    """Aktiviert einen Callflow (deaktiviert andere der gleichen Branche)."""
+    callflow = callflow_nach_id(db(), callflow_id)
+    if not callflow:
+        return jsonify({"fehler": "Callflow nicht gefunden"}), 404
+
+    aktiviert = callflow_aktivieren(db(), callflow_id, callflow["branche"])
+    return jsonify({"nachricht": "Callflow aktiviert", "callflow": aktiviert})
+
+
+@app.route("/api/callflows/aktiv/<branche>", methods=["GET"])
+def api_callflow_aktiv(branche):
+    """Gibt den aktiven Callflow fuer eine Branche zurueck."""
+    callflow = callflow_aktiver(db(), branche)
+    if not callflow:
+        return jsonify({"fehler": "Kein aktiver Callflow fuer diese Branche"}), 404
+    return jsonify(callflow)
 
 
 if __name__ == "__main__":
