@@ -10,6 +10,7 @@
 #
 # Voraussetzungen auf dem Server:
 #   - Docker + Docker Compose installiert
+#   - Mindestens 8 GB RAM (fuer Ollama LLM)
 # ============================================================
 
 set -e
@@ -26,7 +27,7 @@ echo "Remote: $REMOTE_DIR"
 echo ""
 
 # [1] Port 80 freimachen (System-Nginx, Apache, alte Container)
-echo "[1/5] Mache Port 80 frei..."
+echo "[1/6] Mache Port 80 frei..."
 ssh "$SSH_HOST" "
     systemctl stop nginx 2>/dev/null || true
     systemctl disable nginx 2>/dev/null || true
@@ -44,11 +45,11 @@ ssh "$SSH_HOST" "
 "
 
 # [2] Server vorbereiten
-echo "[2/5] Erstelle Verzeichnisse auf Server..."
+echo "[2/6] Erstelle Verzeichnisse auf Server..."
 ssh "$SSH_HOST" "mkdir -p $REMOTE_DIR/deploy/hetzner"
 
 # [3] Dateien hochladen
-echo "[3/5] Lade Projekt hoch..."
+echo "[3/6] Lade Projekt hoch..."
 # Sicherstellen: Server-Daten NIEMALS ueberschreiben
 ssh "$SSH_HOST" "
     if [ -f $REMOTE_DIR/deploy/hetzner/.env ]; then
@@ -73,7 +74,7 @@ ssh "$SSH_HOST" "
 "
 
 # [4] .env pruefen
-echo "[4/5] Pruefe .env..."
+echo "[4/6] Pruefe .env..."
 ssh "$SSH_HOST" "
     if [ ! -f $REMOTE_DIR/deploy/hetzner/.env ]; then
         cp $REMOTE_DIR/deploy/hetzner/.env.beispiel $REMOTE_DIR/deploy/hetzner/.env
@@ -85,7 +86,7 @@ ssh "$SSH_HOST" "
 "
 
 # [5] Docker starten
-echo "[5/5] Starte Container..."
+echo "[5/6] Starte Container..."
 ssh "$SSH_HOST" "
     cd $REMOTE_DIR/deploy/hetzner
     docker compose down 2>/dev/null || true
@@ -104,12 +105,31 @@ ssh "$SSH_HOST" "
     fi
 "
 
+# [6] Ollama LLM-Modell laden
+echo "[6/6] Lade LLM-Modell (kann beim ersten Mal 5-10 Minuten dauern)..."
+ssh "$SSH_HOST" "
+    cd $REMOTE_DIR/deploy/hetzner
+    echo 'Warte auf Ollama...'
+    sleep 8
+    MODEL=\$(grep MR_LLM_MODEL .env 2>/dev/null | grep -v '^#' | cut -d= -f2 | tr -d ' ')
+    MODEL=\${MODEL:-llama3.1:8b-instruct-q4_K_M}
+    if ! docker compose exec -T ollama ollama list 2>/dev/null | grep -q \"\$MODEL\"; then
+        echo \"Lade Modell: \$MODEL ...\"
+        docker compose exec -T ollama ollama pull \"\$MODEL\"
+    else
+        echo \"Modell bereits vorhanden: \$MODEL\"
+    fi
+"
+
 echo ""
 echo "=== Live-System erfolgreich deployed ==="
 echo ""
-echo "URL:    http://${SSH_HOST#*@}"
-echo "Status: ssh $SSH_HOST 'cd $REMOTE_DIR/deploy/hetzner && docker compose ps'"
-echo "Logs:   ssh $SSH_HOST 'cd $REMOTE_DIR/deploy/hetzner && docker compose logs -f'"
+echo "Frontend:  http://${SSH_HOST#*@}"
+echo "Voicebot:  http://${SSH_HOST#*@}/voicebot-live.html"
+echo ""
+echo "Status:    ssh $SSH_HOST 'cd $REMOTE_DIR/deploy/hetzner && docker compose ps'"
+echo "Logs:      ssh $SSH_HOST 'cd $REMOTE_DIR/deploy/hetzner && docker compose logs -f'"
+echo "Voicebot:  ssh $SSH_HOST 'cd $REMOTE_DIR/deploy/hetzner && docker compose logs -f voicebot'"
 echo ""
 echo "WICHTIG: Falls noch nicht geschehen, API-Key eintragen:"
 echo "  ssh $SSH_HOST 'nano $REMOTE_DIR/deploy/hetzner/.env'"

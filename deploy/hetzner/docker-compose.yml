@@ -4,10 +4,12 @@
 # Verwendung:
 #   1. .env Datei erstellen (siehe .env.beispiel)
 #   2. docker compose up -d
-#   3. http://DEINE-SERVER-IP aufrufen
+#   3. docker compose exec ollama ollama pull llama3.1:8b-instruct-q4_K_M
+#   4. http://DEINE-SERVER-IP aufrufen
 # ============================================================
 
 services:
+  # --- Frontend + REST API (Flask) ---
   web:
     build:
       context: ../..
@@ -27,6 +29,42 @@ services:
       timeout: 10s
       retries: 3
 
+  # --- Voicebot Engine (FastAPI + WebSocket + STT + TTS) ---
+  voicebot:
+    build:
+      context: ../..
+      dockerfile: deploy/hetzner/Dockerfile.voicebot
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - voicebot_daten:/app/data
+      - voicebot_models:/app/models
+    env_file:
+      - .env
+    environment:
+      - MR_LLM_BASE_URL=http://ollama:11434
+      - MR_API_PORT=8000
+      - MR_TTS_MODELS_DIR=/app/models/tts
+      - MR_AUDIO_HINTERGRUND_DIR=/app/audio/hintergrund
+    depends_on:
+      ollama:
+        condition: service_started
+
+  # --- Ollama LLM (lokale KI, DSGVO-konform) ---
+  ollama:
+    image: ollama/ollama:latest
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:11434:11434"
+    volumes:
+      - ollama_daten:/root/.ollama
+    deploy:
+      resources:
+        limits:
+          memory: 8G
+
+  # --- Nginx Reverse Proxy ---
   nginx:
     image: nginx:alpine
     restart: unless-stopped
@@ -36,11 +74,16 @@ services:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       - web
+      - voicebot
 
 volumes:
   app_daten:
     # WICHTIG: Niemals "docker compose down -v" ausfuehren!
     # Das loescht alle Patientendaten und die Datenbank.
-    # Nur "docker compose down" (ohne -v) verwenden.
-    # Backup: bash /opt/medrezeption/deploy/hetzner/backup.sh
+    external: false
+  voicebot_daten:
+    external: false
+  voicebot_models:
+    external: false
+  ollama_daten:
     external: false

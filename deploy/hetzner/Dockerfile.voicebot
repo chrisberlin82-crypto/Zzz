@@ -1,0 +1,50 @@
+# ============================================================
+# MED Rezeption — Voicebot Container
+# FastAPI + Faster-Whisper (STT) + Piper TTS
+# ============================================================
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# System-Abhaengigkeiten fuer Audio-Verarbeitung
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    sqlite3 wget sox libsox-fmt-all ffmpeg curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Piper TTS Binary herunterladen
+RUN mkdir -p /opt/piper && \
+    wget -q -O /tmp/piper.tar.gz \
+    "https://github.com/rhasspy/piper/releases/download/2023.11.14-2/piper_linux_x86_64.tar.gz" && \
+    tar -xzf /tmp/piper.tar.gz -C /opt/ && \
+    rm /tmp/piper.tar.gz && \
+    ln -sf /opt/piper/piper /usr/local/bin/piper
+
+# Piper Deutsche Stimme (Thorsten High)
+RUN mkdir -p /app/models/tts && \
+    wget -q -O /app/models/tts/de_DE-thorsten-high.onnx \
+    "https://huggingface.co/rhasspy/piper-voices/resolve/main/de/de_DE/thorsten/high/de_DE-thorsten-high.onnx" && \
+    wget -q -O /app/models/tts/de_DE-thorsten-high.onnx.json \
+    "https://huggingface.co/rhasspy/piper-voices/resolve/main/de/de_DE/thorsten/high/de_DE-thorsten-high.onnx.json"
+
+# Python-Abhaengigkeiten
+COPY backend/requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Backend-Code
+COPY backend/ ./
+
+# Frontend-Dateien (werden von FastAPI als Static Files ausgeliefert)
+COPY docs/ /app/docs/
+
+# Audio-Verzeichnisse + Standard-Hintergrundgeraeusche
+RUN mkdir -p /app/audio/hintergrund /app/audio/ansagen /app/data /app/logs && \
+    sox -n /app/audio/hintergrund/buero.wav synth 60 brownnoise vol 0.02 && \
+    sox -n /app/audio/hintergrund/praxis.wav synth 60 brownnoise vol 0.015 && \
+    sox -n /app/audio/hintergrund/ruhig.wav synth 60 brownnoise vol 0.005
+
+EXPOSE 8000
+
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
+    CMD curl -sf http://localhost:8000/api/system/status || exit 1
+
+CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
