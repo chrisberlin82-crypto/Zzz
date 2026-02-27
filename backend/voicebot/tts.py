@@ -1,15 +1,18 @@
 """
-TTS — Text-to-Speech mit Piper.
+TTS — Text-to-Speech mit Piper (Standalone-Binary).
 Laeuft komplett lokal auf CPU. DSGVO-konform.
 Erzeugt natuerlich klingende deutsche Sprache.
 Unterstuetzt sofortiges Abbrechen fuer Barge-In.
+
+Piper wird als Binary aufgerufen (kein Python-Paket noetig).
+Download: https://github.com/rhasspy/piper/releases
 """
 import asyncio
 import io
 import logging
+import shutil
 import wave
 from pathlib import Path
-from typing import Optional
 from config import settings
 
 log = logging.getLogger("voicebot.tts")
@@ -17,38 +20,47 @@ log = logging.getLogger("voicebot.tts")
 
 class TTSProcessor:
     def __init__(self):
-        self.voice = None
+        self.piper_bin: str | None = None
+        self.model_path: Path | None = None
+        self._process: asyncio.subprocess.Process | None = None
         self._abgebrochen = False
 
     async def initialize(self):
-        """Piper TTS laden."""
+        """Piper Binary und Modell pruefen."""
         loop = asyncio.get_event_loop()
         await loop.run_in_executor(None, self._laden)
 
     def _laden(self):
-        """Piper Voice-Modell laden."""
-        try:
-            from piper import PiperVoice
-            models_dir = Path(settings.tts_models_dir)
-            models_dir.mkdir(parents=True, exist_ok=True)
+        """Piper Binary und Voice-Modell suchen."""
+        # Binary suchen
+        self.piper_bin = shutil.which("piper")
+        if not self.piper_bin:
+            # Auch in /opt/piper und /usr/local/bin pruefen
+            for pfad in ["/opt/piper/piper", "/usr/local/bin/piper"]:
+                if Path(pfad).exists():
+                    self.piper_bin = pfad
+                    break
 
-            # Modell suchen
-            model_path = models_dir / f"{settings.tts_model}.onnx"
-            config_path = models_dir / f"{settings.tts_model}.onnx.json"
+        if self.piper_bin:
+            log.info("Piper Binary gefunden: %s", self.piper_bin)
+        else:
+            log.warning("Piper Binary nicht gefunden. TTS nicht verfuegbar.")
+            return
 
-            if model_path.exists():
-                self.voice = PiperVoice.load(str(model_path), str(config_path))
-                log.info("Piper TTS geladen: %s", settings.tts_model)
-            else:
-                log.warning(
-                    "TTS-Modell nicht gefunden: %s. "
-                    "Bitte mit install.sh herunterladen.",
-                    model_path,
-                )
-        except ImportError:
-            log.warning("Piper nicht installiert. TTS nicht verfuegbar.")
-        except Exception as e:
-            log.error("TTS Ladefehler: %s", e)
+        # Modell suchen
+        models_dir = Path(settings.tts_models_dir)
+        models_dir.mkdir(parents=True, exist_ok=True)
+        model_path = models_dir / f"{settings.tts_model}.onnx"
+
+        if model_path.exists():
+            self.model_path = model_path
+            log.info("TTS-Modell geladen: %s", settings.tts_model)
+        else:
+            log.warning(
+                "TTS-Modell nicht gefunden: %s. "
+                "Bitte mit install.sh herunterladen.",
+                model_path,
+            )
 
     async def synthetisieren(self, text: str) -> bytes:
         """
@@ -57,55 +69,75 @@ class TTSProcessor:
         """
         self._abgebrochen = False
 
-        if not self.voice:
-            log.warning("TTS nicht verfuegbar — stille zurueckgeben")
-            return self._stille(len(text) * 50)  # ~50ms pro Zeichen
+        if not self.piper_bin or not self.model_path:
+            log.warning("TTS nicht verfuegbar — Stille zurueckgeben")
+            return self._stille(len(text) * 50)
 
-        loop = asyncio.get_event_loop()
-        audio = await loop.run_in_executor(None, self._generieren, text)
-        return audio
-
-    def _generieren(self, text: str) -> bytes:
-        """TTS in separatem Thread ausfuehren."""
         try:
-            # Natuerliche Pausen einfuegen
-            text = self._pausen_einfuegen(text)
-
-            buf = io.BytesIO()
-            with wave.open(buf, "wb") as wf:
-                wf.setnchannels(1)
-                wf.setsampwidth(2)
-                wf.setframerate(settings.tts_sample_rate)
-
-                for audio_chunk in self.voice.synthesize_stream_raw(
-                    text,
-                    speaker_id=settings.tts_speaker_id,
-                    length_scale=1.0 / settings.tts_speed,
-                ):
-                    if self._abgebrochen:
-                        log.info("TTS abgebrochen (Barge-In)")
-                        break
-                    wf.writeframes(audio_chunk)
-
-            return buf.getvalue()
+            audio = await self._generieren(text)
+            return audio
         except Exception as e:
             log.error("TTS Fehler: %s", e)
             return self._stille(1000)
 
+    async def _generieren(self, text: str) -> bytes:
+        """Piper-Binary als Subprocess ausfuehren."""
+        # Natuerliche Pausen einfuegen
+        text = self._pausen_einfuegen(text)
+
+        # Piper aufrufen: echo "text" | piper --model x.onnx --output_raw
+        self._process = await asyncio.create_subprocess_exec(
+            self.piper_bin,
+            "--model", str(self.model_path),
+            "--output_raw",
+            "--length_scale", str(1.0 / settings.tts_speed),
+            "--speaker", str(settings.tts_speaker_id),
+            stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+
+        try:
+            stdout, stderr = await self._process.communicate(
+                input=text.encode("utf-8")
+            )
+        except asyncio.CancelledError:
+            self._process.kill()
+            raise
+
+        if self._abgebrochen:
+            log.info("TTS abgebrochen (Barge-In)")
+            return self._stille(100)
+
+        if self._process.returncode != 0:
+            log.error("Piper Fehler: %s", stderr.decode("utf-8", errors="replace"))
+            return self._stille(1000)
+
+        # Raw PCM → WAV konvertieren
+        buf = io.BytesIO()
+        with wave.open(buf, "wb") as wf:
+            wf.setnchannels(1)
+            wf.setsampwidth(2)
+            wf.setframerate(settings.tts_sample_rate)
+            wf.writeframes(stdout)
+        return buf.getvalue()
+
     def abbrechen(self):
         """TTS sofort stoppen (Barge-In)."""
         self._abgebrochen = True
+        if self._process and self._process.returncode is None:
+            try:
+                self._process.kill()
+            except ProcessLookupError:
+                pass
 
     def _pausen_einfuegen(self, text: str) -> str:
         """
         Natuerliche Sprechpausen einfuegen.
         Piper unterstuetzt SSML-aehnliche Pausen mit '...'.
         """
-        # Kurze Pause nach Punkt
         text = text.replace(". ", "... ")
-        # Kuerzere Pause nach Komma
         text = text.replace(", ", ".. ")
-        # Pause nach Fragezeichen
         text = text.replace("? ", "?... ")
         return text
 

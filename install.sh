@@ -59,7 +59,7 @@ if command -v asterisk &> /dev/null; then
     ok "Asterisk ist bereits installiert: $(asterisk -V)"
 else
     apt-get install -y -qq \
-        asterisk asterisk-core-sounds-de-wav \
+        asterisk \
         asterisk-modules \
         > /dev/null 2>&1
     ok "Asterisk installiert: $(asterisk -V)"
@@ -149,21 +149,39 @@ pip install --upgrade pip wheel setuptools > /dev/null 2>&1
 pip install -r "${REPO_DIR}/backend/requirements.txt" > /dev/null 2>&1
 ok "Python-Umgebung eingerichtet"
 
-# ===== 5. Piper TTS (Deutsche Stimme) =====
+# ===== 5. Piper TTS (Standalone Binary + Deutsche Stimme) =====
 info "5/8 — Piper TTS einrichten..."
 PIPER_DIR="${INSTALL_DIR}/models/tts"
-mkdir -p "${PIPER_DIR}"
+PIPER_BIN_DIR="/opt/piper"
+mkdir -p "${PIPER_DIR}" "${PIPER_BIN_DIR}"
+
+# Piper Binary herunterladen
+if [ ! -f "${PIPER_BIN_DIR}/piper" ]; then
+    info "Lade Piper Binary herunter..."
+    PIPER_VERSION="2023.11.14-2"
+    PIPER_TAR="piper_linux_x86_64.tar.gz"
+    wget -q -O "/tmp/${PIPER_TAR}" \
+        "https://github.com/rhasspy/piper/releases/download/${PIPER_VERSION}/${PIPER_TAR}" || warn "Piper-Download fehlgeschlagen"
+    if [ -f "/tmp/${PIPER_TAR}" ]; then
+        tar -xzf "/tmp/${PIPER_TAR}" -C /opt/
+        rm -f "/tmp/${PIPER_TAR}"
+        ln -sf "${PIPER_BIN_DIR}/piper" /usr/local/bin/piper
+        ok "Piper Binary installiert"
+    fi
+else
+    ok "Piper Binary bereits vorhanden"
+fi
 
 # Thorsten-High Modell herunterladen
 PIPER_MODEL="de_DE-thorsten-high"
-PIPER_URL="https://huggingface.co/rhasspy/piper-voices/resolve/main/de/de_DE/thorsten/high"
+PIPER_VOICE_URL="https://huggingface.co/rhasspy/piper-voices/resolve/main/de/de_DE/thorsten/high"
 
 if [ ! -f "${PIPER_DIR}/${PIPER_MODEL}.onnx" ]; then
     info "Lade Piper-Stimme herunter: ${PIPER_MODEL}..."
     wget -q -O "${PIPER_DIR}/${PIPER_MODEL}.onnx" \
-        "${PIPER_URL}/${PIPER_MODEL}.onnx" || warn "Piper-Modell Download fehlgeschlagen"
+        "${PIPER_VOICE_URL}/${PIPER_MODEL}.onnx" || warn "Piper-Modell Download fehlgeschlagen"
     wget -q -O "${PIPER_DIR}/${PIPER_MODEL}.onnx.json" \
-        "${PIPER_URL}/${PIPER_MODEL}.onnx.json" || warn "Piper-Config Download fehlgeschlagen"
+        "${PIPER_VOICE_URL}/${PIPER_MODEL}.onnx.json" || warn "Piper-Config Download fehlgeschlagen"
     ok "Piper TTS-Modell heruntergeladen"
 else
     ok "Piper TTS-Modell bereits vorhanden"
