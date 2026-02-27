@@ -21,7 +21,13 @@ class LLMProcessor:
             self.client = ollama.AsyncClient(host=settings.llm_base_url)
             # Pruefen ob Modell verfuegbar
             models = await self.client.list()
-            modell_namen = [m.model for m in models.models]
+            # Ollama >=0.4: models is a dict with 'models' key
+            # Ollama <0.4: models is an object with .models attribute
+            if isinstance(models, dict):
+                modell_liste = models.get("models", [])
+                modell_namen = [m.get("model", m.get("name", "")) for m in modell_liste]
+            else:
+                modell_namen = [m.model for m in models.models]
             if settings.llm_model not in modell_namen:
                 log.warning(
                     "LLM-Modell '%s' nicht gefunden. Verfuegbar: %s. "

@@ -474,7 +474,16 @@
             audioContext = new (window.AudioContext || window.webkitAudioContext)();
             SOURCE_RATE = audioContext.sampleRate;
 
-            // Mikrofon anfordern
+            // Mikrofon anfordern (erfordert HTTPS oder localhost)
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                setStatus("getrennt", "HTTPS erforderlich");
+                msgHinzufuegen("system", "Mikrofon-Zugriff erfordert HTTPS. Bitte mit https:// aufrufen oder Chrome-Flag setzen: chrome://flags/#unsafely-treat-insecure-origin-as-secure");
+                btnAnrufen.hidden = false;
+                btnAuflegen.hidden = true;
+                callLabel.textContent = "Anruf starten";
+                brancheSelect.disabled = false;
+                return;
+            }
             navigator.mediaDevices.getUserMedia({ audio: true, video: false })
                 .then(function(stream) {
                     mediaStream = stream;
