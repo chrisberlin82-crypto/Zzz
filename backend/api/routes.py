@@ -242,6 +242,19 @@ async def kb_erstellen(data: KBSchema, db: AsyncSession = Depends(get_db)):
     return artikel.__dict__
 
 
+# ===== Branchen =====
+
+@router.get("/branchen")
+async def branchen_api():
+    """Alle verfuegbaren Branchen fuer den Voicebot."""
+    from branchen import branchen_liste, branche_laden
+    liste = branchen_liste()
+    return [
+        {"key": k, "label": v, "begruessung": branche_laden(k).get("begruessung", "")}
+        for k, v in liste.items()
+    ]
+
+
 # ===== Voicebot Einstellungen =====
 
 @router.get("/voicebot/config")

@@ -45,11 +45,27 @@ BRANCHEN = {
         "mitarbeiter": "Aerzte",
         "mitarbeiter_singular": "Arzt",
         "termin_typ": "Behandlungstermin",
-        "dienste": ["Terminvergabe", "Rezeptbestellung", "Weiterleitung an Rezeption"],
-        "notfall": "Bei Notfaellen rufen Sie sofort 112 an.",
+        "dienste": [
+            "Terminvergabe",
+            "Terminabsage und -verschiebung",
+            "Rezeptbestellung",
+            "Ueberweisungsanfrage",
+            "Befundauskunft",
+            "Rueckrufservice",
+            "Weiterleitung an Rezeption",
+        ],
+        "notfall": "Bei Notfaellen rufen Sie sofort 112 an. Der aerztliche Bereitschaftsdienst ist unter 116 117 erreichbar.",
         "schweigepflicht": "aerztliche Schweigepflicht",
         "spezial_regeln": "Du gibst NIEMALS medizinische Diagnosen oder Behandlungsratschlaege.",
         "fachgebiet_frage": "Fuer welche Fachrichtung moechten Sie einen Termin?",
+        "oeffnungszeiten": "Mo-Fr 08:00-12:00, Mo+Di+Do 14:00-18:00",
+        "begruessung": "Willkommen in unserer Praxis. Wie kann ich Ihnen helfen?",
+        "voicebot_menue": {
+            "1": "Termin vereinbaren oder absagen",
+            "2": "Rezept oder Ueberweisung bestellen",
+            "3": "Befundauskunft",
+            "0": "Weiterleitung an die Rezeption",
+        },
     },
     "zahnarzt": {
         "label": "Zahnarztpraxis",
@@ -61,11 +77,28 @@ BRANCHEN = {
         "mitarbeiter": "Zahnaerzte",
         "mitarbeiter_singular": "Zahnarzt",
         "termin_typ": "Behandlungstermin",
-        "dienste": ["Terminvergabe", "Rezeptbestellung", "Weiterleitung an Rezeption"],
-        "notfall": "Bei zahnmedizinischen Notfaellen rufen Sie 112 an oder kommen Sie direkt.",
+        "dienste": [
+            "Terminvergabe",
+            "Terminabsage und -verschiebung",
+            "Schmerzsprechstunde",
+            "Prophylaxe-Termin",
+            "Kostenvoranschlag anfragen",
+            "Heil- und Kostenplan Status",
+            "Rueckrufservice",
+            "Weiterleitung an Rezeption",
+        ],
+        "notfall": "Bei akuten Zahnschmerzen kommen Sie bitte direkt in unsere Schmerzsprechstunde. Ausserhalb der Sprechzeiten: Zahnaerztlicher Notdienst unter 01805-986700.",
         "schweigepflicht": "aerztliche Schweigepflicht",
         "spezial_regeln": "Du gibst NIEMALS zahnmedizinische Diagnosen oder Behandlungsratschlaege.",
-        "fachgebiet_frage": "Welche Art der Behandlung wuenschen Sie?",
+        "fachgebiet_frage": "Welche Art der Behandlung wuenschen Sie? (Kontrolle, Prophylaxe, Schmerzbehandlung, Zahnersatz, Kieferorthopaedie)",
+        "oeffnungszeiten": "Mo-Fr 08:00-12:00, Mo+Di+Do 14:00-18:00, Mi Nachmittag geschlossen",
+        "begruessung": "Willkommen in unserer Zahnarztpraxis. Wie kann ich Ihnen weiterhelfen?",
+        "voicebot_menue": {
+            "1": "Termin vereinbaren oder absagen",
+            "2": "Schmerzsprechstunde / Notfall",
+            "3": "Prophylaxe-Termin",
+            "0": "Weiterleitung an die Rezeption",
+        },
     },
     "anwalt": {
         "label": "Rechtsanwaltskanzlei",
@@ -77,11 +110,28 @@ BRANCHEN = {
         "mitarbeiter": "Anwaelte",
         "mitarbeiter_singular": "Anwalt",
         "termin_typ": "Beratungstermin",
-        "dienste": ["Terminvergabe", "Dokumentenanfrage", "Weiterleitung an Sekretariat"],
-        "notfall": "",
+        "dienste": [
+            "Erstberatungstermin",
+            "Folgetermin vereinbaren",
+            "Terminabsage und -verschiebung",
+            "Aktenzeichen-Auskunft",
+            "Dokumentenanfrage",
+            "Fristenpruefung",
+            "Rueckrufservice",
+            "Weiterleitung an Sekretariat",
+        ],
+        "notfall": "In dringenden Faellen (z.B. Verhaftung, einstweilige Verfuegung) werden Sie sofort verbunden.",
         "schweigepflicht": "anwaltliche Schweigepflicht",
-        "spezial_regeln": "Du erteilst KEINE Rechtsberatung oder juristische Einschaetzungen.",
-        "fachgebiet_frage": "In welchem Rechtsgebiet benoetigen Sie Beratung?",
+        "spezial_regeln": "Du erteilst KEINE Rechtsberatung oder juristische Einschaetzungen. Verweise bei inhaltlichen Rechtsfragen immer auf einen persoenlichen Beratungstermin.",
+        "fachgebiet_frage": "In welchem Rechtsgebiet benoetigen Sie Beratung? (Arbeitsrecht, Familienrecht, Mietrecht, Strafrecht, Verkehrsrecht, Erbrecht, Handelsrecht)",
+        "oeffnungszeiten": "Mo-Fr 09:00-12:30, Mo-Do 14:00-17:00, Fr Nachmittag geschlossen",
+        "begruessung": "Guten Tag, Sie haben die Kanzlei erreicht. Wie darf ich Ihnen behilflich sein?",
+        "voicebot_menue": {
+            "1": "Termin fuer Erstberatung",
+            "2": "Bestehendes Mandat / Aktenauskunft",
+            "3": "Dokumente einreichen oder anfordern",
+            "0": "Weiterleitung an das Sekretariat",
+        },
     },
     "steuerberater": {
         "label": "Steuerberatungsbuero",
@@ -93,11 +143,28 @@ BRANCHEN = {
         "mitarbeiter": "Steuerberater",
         "mitarbeiter_singular": "Steuerberater",
         "termin_typ": "Beratungstermin",
-        "dienste": ["Terminvergabe", "Dokumentenanfrage", "Weiterleitung an Sachbearbeiter"],
-        "notfall": "",
+        "dienste": [
+            "Beratungstermin vereinbaren",
+            "Terminabsage und -verschiebung",
+            "Unterlagen-Status abfragen",
+            "Steuerbescheid-Rueckfrage",
+            "Belege einreichen",
+            "Fristenauskunft",
+            "Rueckrufservice",
+            "Weiterleitung an Sachbearbeiter",
+        ],
+        "notfall": "Bei drohenden Fristversaeumnissen (z.B. Einspruchsfrist) werden Sie umgehend verbunden.",
         "schweigepflicht": "steuerliche Schweigepflicht",
-        "spezial_regeln": "Du erteilst KEINE Steuerberatung oder steuerliche Einschaetzungen.",
-        "fachgebiet_frage": "Um welche Art der Beratung geht es?",
+        "spezial_regeln": "Du erteilst KEINE Steuerberatung oder steuerliche Einschaetzungen. Verweise bei inhaltlichen Steuerfragen immer auf einen persoenlichen Beratungstermin.",
+        "fachgebiet_frage": "Um welche Art der Beratung geht es? (Einkommensteuer, Umsatzsteuer, Gewerbesteuer, Lohnbuchhaltung, Jahresabschluss, Existenzgruendung)",
+        "oeffnungszeiten": "Mo-Do 08:30-12:30 und 13:30-17:00, Fr 08:30-14:00",
+        "begruessung": "Guten Tag, Sie haben das Steuerberatungsbuero erreicht. Was kann ich fuer Sie tun?",
+        "voicebot_menue": {
+            "1": "Beratungstermin vereinbaren",
+            "2": "Unterlagen-Status / Steuerbescheid",
+            "3": "Belege einreichen",
+            "0": "Weiterleitung an Ihren Sachbearbeiter",
+        },
     },
     "friseur": {
         "label": "Friseursalon",
@@ -109,11 +176,28 @@ BRANCHEN = {
         "mitarbeiter": "Friseure",
         "mitarbeiter_singular": "Friseur",
         "termin_typ": "Termin",
-        "dienste": ["Terminvergabe", "Weiterleitung"],
+        "dienste": [
+            "Terminvergabe",
+            "Terminabsage und -verschiebung",
+            "Preisauskunft",
+            "Produktberatung",
+            "Farbberatung",
+            "Hochzeits- und Event-Styling",
+            "Rueckrufservice",
+            "Weiterleitung an den Salon",
+        ],
         "notfall": "",
         "schweigepflicht": "",
-        "spezial_regeln": "",
-        "fachgebiet_frage": "Welchen Service wuenschen Sie?",
+        "spezial_regeln": "Frage bei der Terminvergabe immer nach dem gewuenschten Stylisten und der Art des Termins (Damen, Herren, Kinder).",
+        "fachgebiet_frage": "Welchen Service wuenschen Sie? (Waschen/Schneiden/Foehnen, Farbe/Straehnen, Dauerwelle, Hochsteckfrisur, Bartpflege)",
+        "oeffnungszeiten": "Di-Fr 09:00-18:00, Sa 08:00-14:00, Mo Ruhetag",
+        "begruessung": "Willkommen in unserem Salon! Wie kann ich Ihnen weiterhelfen?",
+        "voicebot_menue": {
+            "1": "Termin vereinbaren",
+            "2": "Termin absagen oder verschieben",
+            "3": "Preise und Services",
+            "0": "Weiterleitung an den Salon",
+        },
     },
     "werkstatt": {
         "label": "KFZ-Werkstatt",
@@ -125,11 +209,28 @@ BRANCHEN = {
         "mitarbeiter": "Mechaniker",
         "mitarbeiter_singular": "Mechaniker",
         "termin_typ": "Werkstatttermin",
-        "dienste": ["Terminvergabe", "Statusabfrage", "Weiterleitung an Meister"],
-        "notfall": "Bei Pannen: ADAC 0800-5 10 11 12",
+        "dienste": [
+            "Werkstatttermin vereinbaren",
+            "Terminabsage und -verschiebung",
+            "Reparaturstatus abfragen",
+            "Kostenvoranschlag anfragen",
+            "HU/AU-Termin (TUEV)",
+            "Reifenwechsel-Termin",
+            "Pannenhilfe",
+            "Weiterleitung an Meister",
+        ],
+        "notfall": "Bei Pannen: ADAC 0800-5 10 11 12. Bei Unfaellen: Polizei 110, Rettung 112.",
         "schweigepflicht": "",
-        "spezial_regeln": "",
-        "fachgebiet_frage": "Welche Art von Reparatur oder Service benoetigen Sie?",
+        "spezial_regeln": "Frage bei der Terminvergabe immer nach Fahrzeugtyp, Kennzeichen und Kilometerstand.",
+        "fachgebiet_frage": "Welche Art von Reparatur oder Service benoetigen Sie? (Inspektion, Bremsen, Auspuff, Reifen, Oelwechsel, HU/AU, Karosserie)",
+        "oeffnungszeiten": "Mo-Fr 07:30-17:00, Sa 08:00-12:00 (nur mit Termin)",
+        "begruessung": "Willkommen in unserer KFZ-Werkstatt. Was koennen wir fuer Ihr Fahrzeug tun?",
+        "voicebot_menue": {
+            "1": "Werkstatttermin vereinbaren",
+            "2": "Reparaturstatus abfragen",
+            "3": "HU/AU oder Reifenwechsel",
+            "0": "Weiterleitung an den Meister",
+        },
     },
     "tierarzt": {
         "label": "Tierarztpraxis",
@@ -141,11 +242,28 @@ BRANCHEN = {
         "mitarbeiter": "Tieraerzte",
         "mitarbeiter_singular": "Tierarzt",
         "termin_typ": "Behandlungstermin",
-        "dienste": ["Terminvergabe", "Rezeptbestellung", "Weiterleitung an Rezeption"],
-        "notfall": "Bei Tier-Notfaellen kommen Sie bitte sofort vorbei.",
+        "dienste": [
+            "Terminvergabe",
+            "Terminabsage und -verschiebung",
+            "Impftermin",
+            "Rezept- und Futterbestellung",
+            "Notfallsprechstunde",
+            "OP-Termin vereinbaren",
+            "Rueckrufservice",
+            "Weiterleitung an Rezeption",
+        ],
+        "notfall": "Bei Tier-Notfaellen kommen Sie bitte sofort vorbei. Notdienst ausserhalb der Sprechzeiten: Tieraerztlicher Notdienst unter 01805-843737.",
         "schweigepflicht": "",
-        "spezial_regeln": "Du gibst KEINE tiermedizinischen Diagnosen oder Behandlungsratschlaege.",
-        "fachgebiet_frage": "Um welches Tier und welche Art der Behandlung geht es?",
+        "spezial_regeln": "Du gibst KEINE tiermedizinischen Diagnosen oder Behandlungsratschlaege. Frage immer nach Tierart, Rasse und Gewicht.",
+        "fachgebiet_frage": "Um welches Tier und welche Art der Behandlung geht es? (Hund, Katze, Kleintier, Vogel - Impfung, Vorsorge, Erkrankung, Kastration, Zahnsanierung)",
+        "oeffnungszeiten": "Mo-Fr 08:00-12:00, Mo+Di+Do 15:00-18:00, Sa 09:00-12:00 (nur Notfaelle)",
+        "begruessung": "Willkommen in unserer Tierarztpraxis. Wie kann ich Ihnen und Ihrem Tier helfen?",
+        "voicebot_menue": {
+            "1": "Termin vereinbaren oder absagen",
+            "2": "Impftermin oder Vorsorge",
+            "3": "Rezept- oder Futterbestellung",
+            "0": "Weiterleitung an die Rezeption",
+        },
     },
     "allgemein": {
         "label": "Allgemeines Buero",
@@ -157,11 +275,25 @@ BRANCHEN = {
         "mitarbeiter": "Mitarbeiter",
         "mitarbeiter_singular": "Mitarbeiter",
         "termin_typ": "Termin",
-        "dienste": ["Terminvergabe", "Weiterleitung an Empfang"],
+        "dienste": [
+            "Terminvergabe",
+            "Terminabsage und -verschiebung",
+            "Allgemeine Auskunft",
+            "Rueckrufservice",
+            "Weiterleitung an Empfang",
+        ],
         "notfall": "",
         "schweigepflicht": "",
         "spezial_regeln": "",
-        "fachgebiet_frage": "Welche Art von Termin wuenschen Sie?",
+        "fachgebiet_frage": "Welche Art von Termin oder Anfrage haben Sie?",
+        "oeffnungszeiten": "Mo-Fr 09:00-17:00",
+        "begruessung": "Guten Tag, wie kann ich Ihnen weiterhelfen?",
+        "voicebot_menue": {
+            "1": "Termin vereinbaren",
+            "2": "Allgemeine Auskunft",
+            "3": "Rueckrufservice",
+            "0": "Weiterleitung an den Empfang",
+        },
     },
 }
 
@@ -200,6 +332,10 @@ def _system_chat(branche, firmen_name=""):
     if b.get("notfall"):
         notfall = f"\n8. {b['notfall']}"
 
+    oeffnung = ""
+    if b.get("oeffnungszeiten"):
+        oeffnung = f"\n11. Oeffnungszeiten: {b['oeffnungszeiten']}"
+
     return f"""Du bist der digitale {b['assistent']} von "{name}".
 
 STRENGE REGELN - du MUSST dich daran halten:
@@ -209,7 +345,7 @@ STRENGE REGELN - du MUSST dich daran halten:
 4. Du sprichst Deutsch, hoeflich und professionell.
 5. Halte Antworten kurz und praezise (max. 3-4 Saetze).{schweige}{spezial}{notfall}
 9. Du hast Zugriff auf folgende {b['buero_name']}-Daten, die dir als Kontext uebergeben werden.
-10. Verfuegbare Dienste: {dienste}."""
+10. Verfuegbare Dienste: {dienste}.{oeffnung}"""
 
 
 def _system_voicebot(branche, firmen_name=""):
@@ -226,6 +362,15 @@ def _system_voicebot(branche, firmen_name=""):
     if b.get("notfall"):
         notfall = f"\n5. {b['notfall']}"
 
+    oeffnung = ""
+    if b.get("oeffnungszeiten"):
+        oeffnung = f"\n8. Oeffnungszeiten: {b['oeffnungszeiten']}"
+
+    menue = ""
+    if b.get("voicebot_menue"):
+        menue_zeilen = [f"   Taste {t}: {txt}" for t, txt in b["voicebot_menue"].items()]
+        menue = "\n9. DTMF-Hauptmenue:\n" + "\n".join(menue_zeilen)
+
     return f"""Du bist der Telefon-Voicebot von "{name}" ({b['label']}).
 
 STRENGE REGELN:
@@ -233,7 +378,7 @@ STRENGE REGELN:
 2. Du sprichst hoeflich, kurz und klar auf Deutsch.
 3. Du fragst strukturiert nach den relevanten Informationen fuer den gewaehlten Dienst.{spezial}{notfall}
 6. Du kannst DTMF-Eingaben interpretieren und darauf reagieren.
-7. Antworten im JSON-Format: {{"text": "...", "aktion": "weiter|termin_buchen|transfer|warteschlange|ende", "daten": {{}}}}"""
+7. Antworten im JSON-Format: {{"text": "...", "aktion": "weiter|termin_buchen|transfer|warteschlange|ende", "daten": {{}}}}{oeffnung}{menue}"""
 
 
 def _system_uebersetzer(branche, firmen_name=""):

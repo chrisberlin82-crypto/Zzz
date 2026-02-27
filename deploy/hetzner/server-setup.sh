@@ -13,7 +13,12 @@
 #   - Docker installieren (falls noetig)
 #   - Projekt von GitHub klonen/aktualisieren
 #   - System-Nginx deaktivieren
-#   - Docker-Container starten
+#   - Docker-Container starten (web + voicebot + ollama + nginx)
+#   - LLM-Modell herunterladen
+#
+# Voraussetzungen:
+#   - Mindestens 8 GB RAM (fuer Ollama LLM)
+#   - 20 GB freier Speicher
 # ============================================================
 
 set -e
@@ -27,7 +32,7 @@ echo "=== MED Rezeption Server-Setup ==="
 echo ""
 
 # [1] Docker installieren falls noetig
-echo "[1/5] Pruefe Docker..."
+echo "[1/7] Pruefe Docker..."
 if ! command -v docker &>/dev/null; then
     echo "       Installiere Docker..."
     apt-get update
@@ -40,7 +45,7 @@ else
 fi
 
 # [2] System-Webserver deaktivieren
-echo "[2/5] Deaktiviere System-Webserver..."
+echo "[2/7] Deaktiviere System-Webserver..."
 systemctl stop nginx 2>/dev/null || true
 systemctl disable nginx 2>/dev/null || true
 systemctl stop apache2 2>/dev/null || true
@@ -48,7 +53,7 @@ systemctl disable apache2 2>/dev/null || true
 fuser -k 80/tcp 2>/dev/null || true
 
 # [3] Server-Daten sichern BEVOR Code aktualisiert wird
-echo "[3/6] Sichere Server-Daten..."
+echo "[3/7] Sichere Server-Daten..."
 BACKUP_DIR="/opt/medrezeption-backup/$(date +%Y%m%d-%H%M%S)"
 mkdir -p "$BACKUP_DIR"
 
@@ -70,7 +75,7 @@ ls -dt /opt/medrezeption-backup/*/ 2>/dev/null | tail -n +6 | xargs rm -rf 2>/de
 echo "       Backup: $BACKUP_DIR"
 
 # [4] Projekt klonen oder aktualisieren
-echo "[4/6] Lade Projekt von GitHub..."
+echo "[4/7] Lade Projekt von GitHub..."
 if [ -d "$REMOTE_DIR/.git" ]; then
     cd "$REMOTE_DIR"
     git fetch origin "$BRANCH"
@@ -90,7 +95,7 @@ if [ -f "$BACKUP_DIR/.env" ]; then
 fi
 
 # [5] .env pruefen
-echo "[5/6] Pruefe .env..."
+echo "[5/7] Pruefe .env..."
 cd "$REMOTE_DIR/deploy/hetzner"
 if [ ! -f .env ]; then
     cp .env.beispiel .env
@@ -101,11 +106,35 @@ if [ ! -f .env ]; then
 fi
 
 # [6] Container starten
-echo "[6/6] Starte Container..."
+echo "[6/7] Starte Container..."
 docker compose down 2>/dev/null || true
 fuser -k 80/tcp 2>/dev/null || true
 docker compose build --no-cache
 docker compose up -d
+
+# [7] Ollama LLM-Modell laden
+echo "[7/7] Lade LLM-Modell..."
+echo "       Warte auf Ollama..."
+sleep 8
+
+MODEL=$(grep MR_LLM_MODEL .env 2>/dev/null | grep -v '^#' | cut -d= -f2 | tr -d ' ')
+MODEL=${MODEL:-"llama3.1:8b-instruct-q4_K_M"}
+
+for i in 1 2 3 4 5; do
+    if docker compose exec -T ollama ollama list >/dev/null 2>&1; then
+        break
+    fi
+    echo "       Warte noch... (Versuch $i/5)"
+    sleep 5
+done
+
+if ! docker compose exec -T ollama ollama list 2>/dev/null | grep -q "$MODEL"; then
+    echo "       Lade Modell: $MODEL (kann 5-10 Minuten dauern)..."
+    docker compose exec -T ollama ollama pull "$MODEL"
+    echo "       Modell geladen."
+else
+    echo "       Modell bereits vorhanden: $MODEL"
+fi
 
 echo ""
 echo "=== Container-Status ==="
@@ -113,8 +142,10 @@ docker compose ps
 echo ""
 echo "=== MED Rezeption laeuft ==="
 echo ""
-echo "  URL:     http://$(hostname -I | awk '{print $1}')"
-echo "  Logs:    cd $REMOTE_DIR/deploy/hetzner && docker compose logs -f"
-echo "  Stoppen: cd $REMOTE_DIR/deploy/hetzner && docker compose down"
-echo "  Starten: cd $REMOTE_DIR/deploy/hetzner && docker compose up -d"
+echo "  Frontend:  http://$(hostname -I | awk '{print $1}')"
+echo "  Voicebot:  http://$(hostname -I | awk '{print $1}')/voicebot-live.html"
+echo ""
+echo "  Logs:      cd $REMOTE_DIR/deploy/hetzner && docker compose logs -f"
+echo "  Stoppen:   cd $REMOTE_DIR/deploy/hetzner && docker compose down"
+echo "  Starten:   cd $REMOTE_DIR/deploy/hetzner && docker compose up -d"
 echo ""

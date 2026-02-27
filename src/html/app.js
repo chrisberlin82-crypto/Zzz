@@ -2097,6 +2097,8 @@ function sprachAusgabe(text) {
 
 var callflowDaten = [];
 var callflowAusgewaehlt = null;
+var callflowAktuelleId = null;
+var callflowListe = [];
 
 function demoCallflowLaden() {
     if (callflowDaten.length > 0) return;
@@ -2117,11 +2119,166 @@ function demoCallflowLaden() {
     ];
 }
 
+function callflowListeLaden() {
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", API_BASE + "/callflows", true);
+    xhr.onload = function () {
+        if (xhr.status === 200) {
+            try {
+                callflowListe = JSON.parse(xhr.responseText);
+                callflowListeRendern();
+            } catch (e) { /* ignore */ }
+        }
+    };
+    xhr.send();
+}
+
+function callflowListeRendern() {
+    var listeEl = document.getElementById("callflow-liste");
+    if (!listeEl) return;
+    listeEl.innerHTML = "";
+    if (callflowListe.length === 0) {
+        listeEl.innerHTML = '<p class="text-muted">Keine gespeicherten Callflows. Erstellen Sie einen neuen.</p>';
+        return;
+    }
+    for (var i = 0; i < callflowListe.length; i++) {
+        var cf = callflowListe[i];
+        var div = document.createElement("div");
+        div.className = "callflow-liste-eintrag" + (cf.aktiv ? " aktiv" : "") + (callflowAktuelleId === cf.id ? " selected" : "");
+        div.innerHTML = '<div class="cf-liste-info"><strong>' + escapeHtml(cf.name) + '</strong>' +
+            '<small>' + escapeHtml(cf.branche) + ' | ' + (cf.schritte ? cf.schritte.length : 0) + ' Schritte' +
+            (cf.aktiv ? ' | <span class="badge-aktiv">AKTIV</span>' : '') + '</small></div>' +
+            '<div class="cf-liste-btns">' +
+            '<button type="button" class="btn-sm" data-id="' + cf.id + '" data-aktion="laden">Laden</button>' +
+            '<button type="button" class="btn-sm btn-success" data-id="' + cf.id + '" data-aktion="aktivieren"' + (cf.aktiv ? ' disabled' : '') + '>Aktivieren</button>' +
+            '<button type="button" class="btn-sm btn-loeschen" data-id="' + cf.id + '" data-aktion="loeschen">X</button>' +
+            '</div>';
+        listeEl.appendChild(div);
+    }
+    listeEl.querySelectorAll("button[data-aktion]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+            var id = parseInt(this.getAttribute("data-id"));
+            var aktion = this.getAttribute("data-aktion");
+            if (aktion === "laden") callflowVomServerLaden(id);
+            else if (aktion === "aktivieren") callflowAktivieren(id);
+            else if (aktion === "loeschen") callflowVomServerLoeschen(id);
+        });
+    });
+}
+
+function callflowVomServerLaden(id) {
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", API_BASE + "/callflows/" + id, true);
+    xhr.onload = function () {
+        if (xhr.status === 200) {
+            try {
+                var cf = JSON.parse(xhr.responseText);
+                callflowAktuelleId = cf.id;
+                callflowDaten = [];
+                for (var i = 0; i < cf.schritte.length; i++) {
+                    var s = cf.schritte[i];
+                    callflowDaten.push({ id: s.id || (i + 1), typ: s.typ, label: s.label, config: s.config || {} });
+                }
+                if (callflowDaten.length === 0) demoCallflowLaden();
+                callflowRendern();
+                callflowListeRendern();
+                var nameEl = document.getElementById("cf-name");
+                if (nameEl) nameEl.value = cf.name;
+                var descEl = document.getElementById("cf-beschreibung");
+                if (descEl) descEl.value = cf.beschreibung || "";
+            } catch (e) { /* ignore */ }
+        }
+    };
+    xhr.send();
+}
+
+function callflowSpeichern() {
+    var name = "Neuer Callflow";
+    var beschreibung = "";
+    var nameEl = document.getElementById("cf-name");
+    if (nameEl) name = nameEl.value || name;
+    var descEl = document.getElementById("cf-beschreibung");
+    if (descEl) beschreibung = descEl.value || "";
+
+    var schritte = [];
+    for (var i = 0; i < callflowDaten.length; i++) {
+        schritte.push({ typ: callflowDaten[i].typ, label: callflowDaten[i].label, config: callflowDaten[i].config });
+    }
+
+    var payload = { name: name, branche: MED_BRANCHE_KEY || "allgemein", beschreibung: beschreibung, schritte: schritte };
+    var xhr = new XMLHttpRequest();
+
+    if (callflowAktuelleId) {
+        xhr.open("PUT", API_BASE + "/callflows/" + callflowAktuelleId, true);
+    } else {
+        xhr.open("POST", API_BASE + "/callflows", true);
+    }
+    xhr.setRequestHeader("Content-Type", "application/json");
+    xhr.onload = function () {
+        if (xhr.status === 200 || xhr.status === 201) {
+            try {
+                var res = JSON.parse(xhr.responseText);
+                callflowAktuelleId = res.callflow.id;
+                alert("Callflow gespeichert!");
+                callflowListeLaden();
+            } catch (e) { alert("Gespeichert."); }
+        } else {
+            alert("Fehler beim Speichern.");
+        }
+    };
+    xhr.send(JSON.stringify(payload));
+}
+
+function callflowAktivieren(id) {
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", API_BASE + "/callflows/" + id + "/aktivieren", true);
+    xhr.setRequestHeader("Content-Type", "application/json");
+    xhr.onload = function () {
+        if (xhr.status === 200) {
+            callflowListeLaden();
+        } else {
+            alert("Fehler beim Aktivieren.");
+        }
+    };
+    xhr.send();
+}
+
+function callflowVomServerLoeschen(id) {
+    if (!confirm("Callflow wirklich loeschen?")) return;
+    var xhr = new XMLHttpRequest();
+    xhr.open("DELETE", API_BASE + "/callflows/" + id, true);
+    xhr.onload = function () {
+        if (xhr.status === 200) {
+            if (callflowAktuelleId === id) {
+                callflowAktuelleId = null;
+                callflowDaten = [];
+                demoCallflowLaden();
+                callflowRendern();
+            }
+            callflowListeLaden();
+        }
+    };
+    xhr.send();
+}
+
+function callflowNeu() {
+    callflowAktuelleId = null;
+    callflowDaten = [];
+    demoCallflowLaden();
+    callflowRendern();
+    var nameEl = document.getElementById("cf-name");
+    if (nameEl) nameEl.value = "";
+    var descEl = document.getElementById("cf-beschreibung");
+    if (descEl) descEl.value = "";
+    callflowListeRendern();
+}
+
 function initCallflowEditor() {
     var canvas = document.getElementById("callflow-flow");
     if (!canvas) return;
     demoCallflowLaden();
     callflowRendern();
+    callflowListeLaden();
 
     // Baustein-Buttons
     var bausteine = document.querySelectorAll(".callflow-baustein");
@@ -2144,12 +2301,13 @@ function initCallflowEditor() {
         });
     }
 
-    // Speichern
+    // Speichern (Backend statt localStorage)
     var saveBtn = document.getElementById("btn-flow-speichern");
-    if (saveBtn) saveBtn.addEventListener("click", function () {
-        localStorage.setItem("med_callflow", JSON.stringify(callflowDaten));
-        alert("Callflow gespeichert!");
-    });
+    if (saveBtn) saveBtn.addEventListener("click", callflowSpeichern);
+
+    // Neu
+    var neuBtn = document.getElementById("btn-flow-neu");
+    if (neuBtn) neuBtn.addEventListener("click", callflowNeu);
 
     // Simulieren
     var simBtn = document.getElementById("btn-flow-simulieren");

@@ -1,5 +1,6 @@
 """SQLite-Datenbankschicht fuer MED Rezeption."""
 
+import json
 import sqlite3
 from pathlib import Path
 
@@ -125,6 +126,29 @@ def tabellen_erstellen(conn: sqlite3.Connection) -> None:
             notizen TEXT DEFAULT '',
             erstellt_am TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (agent_id) REFERENCES agenten(id)
+        )
+    """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS callflows (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            branche TEXT NOT NULL DEFAULT 'allgemein',
+            beschreibung TEXT DEFAULT '',
+            aktiv INTEGER NOT NULL DEFAULT 0,
+            erstellt_am TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            aktualisiert_am TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS callflow_schritte (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            callflow_id INTEGER NOT NULL,
+            schritt_nr INTEGER NOT NULL,
+            typ TEXT NOT NULL,
+            label TEXT NOT NULL DEFAULT '',
+            config TEXT NOT NULL DEFAULT '{}',
+            erstellt_am TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (callflow_id) REFERENCES callflows(id) ON DELETE CASCADE
         )
     """)
     conn.commit()
@@ -754,6 +778,144 @@ def anruf_aktive(conn: sqlite3.Connection) -> list[dict]:
            ORDER BY a.beginn DESC""",
     ).fetchall()
     return [_anruf_zu_dict(r) for r in rows]
+
+
+# --- Callflows ---
+
+def callflow_erstellen(conn: sqlite3.Connection, daten: dict) -> dict:
+    """Erstellt einen neuen Callflow."""
+    cursor = conn.execute(
+        """INSERT INTO callflows (name, branche, beschreibung, aktiv)
+           VALUES (?, ?, ?, ?)""",
+        (
+            daten["name"],
+            daten.get("branche", "allgemein"),
+            daten.get("beschreibung", ""),
+            1 if daten.get("aktiv") else 0,
+        ),
+    )
+    conn.commit()
+    callflow_id = cursor.lastrowid
+
+    schritte = daten.get("schritte", [])
+    for i, schritt in enumerate(schritte):
+        config_json = json.dumps(schritt.get("config", {}), ensure_ascii=False)
+        conn.execute(
+            """INSERT INTO callflow_schritte (callflow_id, schritt_nr, typ, label, config)
+               VALUES (?, ?, ?, ?, ?)""",
+            (callflow_id, i, schritt.get("typ", "ansage"), schritt.get("label", ""), config_json),
+        )
+    conn.commit()
+    return callflow_nach_id(conn, callflow_id)
+
+
+def callflow_alle(conn: sqlite3.Connection) -> list[dict]:
+    """Gibt alle Callflows zurueck."""
+    rows = conn.execute("SELECT * FROM callflows ORDER BY aktualisiert_am DESC").fetchall()
+    return [_callflow_zu_dict(conn, r) for r in rows]
+
+
+def callflow_nach_id(conn: sqlite3.Connection, callflow_id: int) -> dict | None:
+    """Gibt einen Callflow mit allen Schritten zurueck."""
+    row = conn.execute("SELECT * FROM callflows WHERE id = ?", (callflow_id,)).fetchone()
+    if not row:
+        return None
+    return _callflow_zu_dict(conn, row)
+
+
+def callflow_aktualisieren(conn: sqlite3.Connection, callflow_id: int, daten: dict) -> dict | None:
+    """Aktualisiert einen bestehenden Callflow."""
+    felder = []
+    werte = []
+    for feld, spalte in [
+        ("name", "name"), ("branche", "branche"),
+        ("beschreibung", "beschreibung"),
+    ]:
+        if feld in daten:
+            felder.append(f"{spalte} = ?")
+            werte.append(daten[feld])
+
+    if "aktiv" in daten:
+        felder.append("aktiv = ?")
+        werte.append(1 if daten["aktiv"] else 0)
+
+    felder.append("aktualisiert_am = CURRENT_TIMESTAMP")
+
+    werte.append(callflow_id)
+    conn.execute(f"UPDATE callflows SET {', '.join(felder)} WHERE id = ?", werte)
+
+    if "schritte" in daten:
+        conn.execute("DELETE FROM callflow_schritte WHERE callflow_id = ?", (callflow_id,))
+        for i, schritt in enumerate(daten["schritte"]):
+            config_json = json.dumps(schritt.get("config", {}), ensure_ascii=False)
+            conn.execute(
+                """INSERT INTO callflow_schritte (callflow_id, schritt_nr, typ, label, config)
+                   VALUES (?, ?, ?, ?, ?)""",
+                (callflow_id, i, schritt.get("typ", "ansage"), schritt.get("label", ""), config_json),
+            )
+
+    conn.commit()
+    return callflow_nach_id(conn, callflow_id)
+
+
+def callflow_loeschen(conn: sqlite3.Connection, callflow_id: int) -> bool:
+    """Loescht einen Callflow und alle zugehoerigen Schritte."""
+    conn.execute("DELETE FROM callflow_schritte WHERE callflow_id = ?", (callflow_id,))
+    cursor = conn.execute("DELETE FROM callflows WHERE id = ?", (callflow_id,))
+    conn.commit()
+    return cursor.rowcount > 0
+
+
+def callflow_aktivieren(conn: sqlite3.Connection, callflow_id: int, branche: str) -> dict | None:
+    """Aktiviert einen Callflow und deaktiviert alle anderen der gleichen Branche."""
+    conn.execute("UPDATE callflows SET aktiv = 0 WHERE branche = ?", (branche,))
+    conn.execute(
+        "UPDATE callflows SET aktiv = 1, aktualisiert_am = CURRENT_TIMESTAMP WHERE id = ?",
+        (callflow_id,),
+    )
+    conn.commit()
+    return callflow_nach_id(conn, callflow_id)
+
+
+def callflow_aktiver(conn: sqlite3.Connection, branche: str) -> dict | None:
+    """Gibt den aktiven Callflow fuer eine Branche zurueck."""
+    row = conn.execute(
+        "SELECT * FROM callflows WHERE branche = ? AND aktiv = 1", (branche,)
+    ).fetchone()
+    if not row:
+        return None
+    return _callflow_zu_dict(conn, row)
+
+
+def _callflow_zu_dict(conn: sqlite3.Connection, row: sqlite3.Row) -> dict:
+    """Konvertiert eine Callflow-Zeile zu einem Dict mit Schritten."""
+    schritte_rows = conn.execute(
+        "SELECT * FROM callflow_schritte WHERE callflow_id = ? ORDER BY schritt_nr",
+        (row["id"],),
+    ).fetchall()
+    schritte = []
+    for s in schritte_rows:
+        try:
+            config = json.loads(s["config"])
+        except (json.JSONDecodeError, TypeError):
+            config = {}
+        schritte.append({
+            "id": s["id"],
+            "schritt_nr": s["schritt_nr"],
+            "typ": s["typ"],
+            "label": s["label"],
+            "config": config,
+        })
+    return {
+        "id": row["id"],
+        "name": row["name"],
+        "branche": row["branche"],
+        "beschreibung": row["beschreibung"],
+        "aktiv": bool(row["aktiv"]),
+        "schritte": schritte,
+        "erstellt_am": row["erstellt_am"],
+        "aktualisiert_am": row["aktualisiert_am"],
+    }
 
 
 def _agent_zu_dict(row: sqlite3.Row) -> dict:

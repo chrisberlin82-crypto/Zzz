@@ -7,6 +7,7 @@
 # Voraussetzungen:
 #   - OpenSSH-Client (ab Windows 10 dabei)
 #   - Docker + Docker Compose auf dem Server
+#   - Mindestens 8 GB RAM (fuer Ollama LLM)
 # ============================================================
 
 param(
@@ -26,23 +27,23 @@ Write-Host "Host:   $SshHost"
 Write-Host "Remote: $RemoteDir"
 Write-Host ""
 
-# [1/5] Port 80 freimachen
-Write-Host "[1/5] Mache Port 80 frei..." -ForegroundColor Green
+# [1/6] Port 80 freimachen
+Write-Host "[1/6] Mache Port 80 frei..." -ForegroundColor Green
 ssh $SshHost "systemctl stop nginx 2>/dev/null; systemctl disable nginx 2>/dev/null; systemctl stop apache2 2>/dev/null; systemctl disable apache2 2>/dev/null; cd $RemoteDir/deploy/hetzner 2>/dev/null && docker compose down 2>/dev/null; fuser -k 80/tcp 2>/dev/null; sleep 1; echo 'Port 80 ist frei.'"
 if ($LASTEXITCODE -ne 0) {
     Write-Host "WARNUNG: SSH-Befehl hatte Probleme, fahre trotzdem fort..." -ForegroundColor Yellow
 }
 
-# [2/5] Server vorbereiten
-Write-Host "[2/5] Erstelle Verzeichnisse auf Server..." -ForegroundColor Green
+# [2/6] Server vorbereiten
+Write-Host "[2/6] Erstelle Verzeichnisse auf Server..." -ForegroundColor Green
 ssh $SshHost "mkdir -p $RemoteDir/deploy/hetzner"
 if ($LASTEXITCODE -ne 0) {
     Write-Host "FEHLER: SSH-Verbindung fehlgeschlagen!" -ForegroundColor Red
     exit 1
 }
 
-# [3/5] Dateien hochladen per SCP (NUR Code, KEINE Daten)
-Write-Host "[3/5] Lade Projekt hoch..." -ForegroundColor Green
+# [3/6] Dateien hochladen per SCP (NUR Code, KEINE Daten)
+Write-Host "[3/6] Lade Projekt hoch..." -ForegroundColor Green
 
 # .env sichern bevor wir deploy/hetzner ueberschreiben
 Write-Host "       Sichere .env..." -ForegroundColor Gray
@@ -51,6 +52,8 @@ ssh $SshHost "if [ -f $RemoteDir/deploy/hetzner/.env ]; then cp $RemoteDir/deplo
 # NUR Code-Dateien hochladen - KEINE .env, KEINE Datenbanken
 $uploadItems = @(
     @{ Local = "$ProjectDir\src";                  Remote = "$RemoteDir/src" },
+    @{ Local = "$ProjectDir\backend";              Remote = "$RemoteDir/backend" },
+    @{ Local = "$ProjectDir\docs";                 Remote = "$RemoteDir/docs" },
     @{ Local = "$ProjectDir\pyproject.toml";       Remote = "$RemoteDir/pyproject.toml" },
     @{ Local = "$ProjectDir\deploy\hetzner";       Remote = "$RemoteDir/deploy/hetzner" }
 )
@@ -65,12 +68,12 @@ foreach ($item in $uploadItems) {
 # .env wiederherstellen
 ssh $SshHost "if [ ! -f $RemoteDir/deploy/hetzner/.env ] && [ -f /tmp/.env.backup ]; then cp /tmp/.env.backup $RemoteDir/deploy/hetzner/.env; echo '.env wiederhergestellt'; fi"
 
-# [4/5] .env pruefen
-Write-Host "[4/5] Pruefe .env..." -ForegroundColor Green
+# [4/6] .env pruefen
+Write-Host "[4/6] Pruefe .env..." -ForegroundColor Green
 ssh $SshHost "if [ ! -f $RemoteDir/deploy/hetzner/.env ]; then cp $RemoteDir/deploy/hetzner/.env.beispiel $RemoteDir/deploy/hetzner/.env 2>/dev/null && echo 'ACHTUNG: .env erstellt - API-Key muss noch eingetragen werden!'; else echo '.env existiert bereits.'; fi"
 
-# [5/5] Docker starten
-Write-Host "[5/5] Starte Container..." -ForegroundColor Green
+# [5/6] Docker starten
+Write-Host "[5/6] Starte Container..." -ForegroundColor Green
 ssh $SshHost "cd $RemoteDir/deploy/hetzner && docker compose down 2>/dev/null; fuser -k 80/tcp 2>/dev/null; docker compose build --no-cache && docker compose up -d && echo '' && echo 'Container-Status:' && docker compose ps"
 if ($LASTEXITCODE -ne 0) {
     Write-Host "FEHLER: Docker-Start fehlgeschlagen!" -ForegroundColor Red
@@ -78,13 +81,20 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
+# [6/6] Ollama LLM-Modell laden
+Write-Host "[6/6] Lade LLM-Modell (kann beim ersten Mal 5-10 Minuten dauern)..." -ForegroundColor Green
+ssh $SshHost "cd $RemoteDir/deploy/hetzner && sleep 8 && MODEL=`$(grep MR_LLM_MODEL .env 2>/dev/null | grep -v '^#' | cut -d= -f2 | tr -d ' ') && MODEL=`${MODEL:-llama3.1:8b-instruct-q4_K_M} && docker compose exec -T ollama ollama pull `$MODEL && echo 'Modell geladen.'"
+
 Write-Host ""
 Write-Host "=== Live-System erfolgreich deployed ===" -ForegroundColor Cyan
 Write-Host ""
 $ServerIp = $SshHost -replace '.*@', ''
-Write-Host "  URL:    http://$ServerIp" -ForegroundColor Green
-Write-Host "  Status: ssh $SshHost 'cd $RemoteDir/deploy/hetzner && docker compose ps'"
-Write-Host "  Logs:   ssh $SshHost 'cd $RemoteDir/deploy/hetzner && docker compose logs -f'"
+Write-Host "  Frontend: http://$ServerIp" -ForegroundColor Green
+Write-Host "  Voicebot: http://$ServerIp/voicebot-live.html" -ForegroundColor Green
+Write-Host ""
+Write-Host "  Status:   ssh $SshHost 'cd $RemoteDir/deploy/hetzner && docker compose ps'"
+Write-Host "  Logs:     ssh $SshHost 'cd $RemoteDir/deploy/hetzner && docker compose logs -f'"
+Write-Host "  Voicebot: ssh $SshHost 'cd $RemoteDir/deploy/hetzner && docker compose logs -f voicebot'"
 Write-Host ""
 Write-Host "WICHTIG: Falls noch nicht geschehen, API-Key eintragen:" -ForegroundColor Yellow
 Write-Host "  ssh $SshHost 'nano $RemoteDir/deploy/hetzner/.env'"

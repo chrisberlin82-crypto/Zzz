@@ -7,6 +7,7 @@ import asyncio
 import logging
 from typing import Optional
 from config import settings
+from branchen import branche_laden, voicebot_system_prompt
 
 log = logging.getLogger("voicebot.engine")
 
@@ -51,9 +52,10 @@ class VoicebotEngine:
         self._ready = False
         log.info("Voicebot-Engine heruntergefahren")
 
-    def neue_session(self, kanal_id: str, callflow_id: Optional[int] = None):
+    def neue_session(self, kanal_id: str, branche: str = "arztpraxis",
+                     callflow_id: Optional[int] = None):
         """Erstellt eine neue Gespraechs-Session."""
-        return VoicebotSession(self, kanal_id, callflow_id)
+        return VoicebotSession(self, kanal_id, branche, callflow_id)
 
 
 class VoicebotSession:
@@ -63,9 +65,13 @@ class VoicebotSession:
     Sobald Sprache erkannt wird, wird TTS sofort gestoppt.
     """
 
-    def __init__(self, engine: VoicebotEngine, kanal_id: str, callflow_id: Optional[int] = None):
+    def __init__(self, engine: VoicebotEngine, kanal_id: str,
+                 branche: str = "arztpraxis",
+                 callflow_id: Optional[int] = None):
         self.engine = engine
         self.kanal_id = kanal_id
+        self.branche = branche
+        self.branche_config = branche_laden(branche)
         self.callflow_id = callflow_id
         self.gespraechs_verlauf = []
         self.aktiv = True
@@ -73,12 +79,28 @@ class VoicebotSession:
         self.barge_in_aktiv = True
         self._tts_task: Optional[asyncio.Task] = None
         self._stt_stream_aktiv = False
-        log.info("Neue Session fuer Kanal %s", kanal_id)
+        log.info("Neue Session fuer Kanal %s (Branche: %s)", kanal_id, branche)
 
-    async def starten(self):
+    async def starten(self) -> dict:
         """Session starten — Begruessung abspielen."""
         self.aktiv = True
-        log.info("[%s] Session gestartet", self.kanal_id)
+        log.info("[%s] Session gestartet (Branche: %s)", self.kanal_id, self.branche)
+
+        begruessung = self.branche_config.get(
+            "begruessung",
+            "Guten Tag, wie kann ich Ihnen helfen?"
+        )
+
+        # Begruessung als erste Bot-Nachricht
+        self.gespraechs_verlauf.append({"rolle": "bot", "text": begruessung})
+
+        # TTS: Begruessung synthetisieren
+        audio = await self._sprechen(begruessung)
+
+        return {
+            "text": begruessung,
+            "audio": audio,
+        }
 
     async def audio_empfangen(self, audio_chunk: bytes) -> Optional[dict]:
         """
@@ -185,5 +207,4 @@ class VoicebotSession:
 
     def _callflow_kontext(self) -> str:
         """Callflow-Kontext fuer LLM bereitstellen."""
-        # TODO: Callflow aus DB laden und als Kontext formatieren
-        return ""
+        return voicebot_system_prompt(self.branche)

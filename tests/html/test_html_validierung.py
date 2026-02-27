@@ -102,15 +102,18 @@ class TestIndexHtml:
         assert 'id="rechner-form"' in inhalt
 
     def test_hat_navigation(self):
-        inhalt = (HTML_DIR / "index.html").read_text(encoding="utf-8")
+        # index.html ist jetzt die Login-Seite, Navigation ist auf dashboard.html
+        inhalt = (HTML_DIR / "dashboard.html").read_text(encoding="utf-8")
         assert "<nav" in inhalt
 
     def test_laedt_app_js(self):
-        inhalt = (HTML_DIR / "index.html").read_text(encoding="utf-8")
+        # index.html ist jetzt die Login-Seite, app.js ist auf dashboard.html
+        inhalt = (HTML_DIR / "dashboard.html").read_text(encoding="utf-8")
         assert 'src="app.js"' in inhalt
 
     def test_laedt_style_css(self):
-        inhalt = (HTML_DIR / "index.html").read_text(encoding="utf-8")
+        # index.html ist jetzt die Login-Seite, style.css ist auf dashboard.html
+        inhalt = (HTML_DIR / "dashboard.html").read_text(encoding="utf-8")
         assert 'href="style.css"' in inhalt
 
 
