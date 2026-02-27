@@ -86,7 +86,7 @@ class AudioMixer:
         if hintergrund_typ == "keine" or not self._hintergrund_cache:
             return tts_audio
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         return await loop.run_in_executor(
             None, self._mischen_sync, tts_audio, hintergrund_typ, lautstaerke
         )

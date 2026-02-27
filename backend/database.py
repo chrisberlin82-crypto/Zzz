@@ -3,13 +3,17 @@ Datenbank — SQLAlchemy Async mit SQLite.
 """
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase
-from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, Text, JSON
-from datetime import datetime
+from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, Text, JSON, ForeignKey
+from datetime import datetime, timezone
 
 from config import settings
 
 engine = create_async_engine(settings.db_url, echo=settings.debug)
 SessionLocal = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+
+
+def _utcnow():
+    return datetime.now(timezone.utc)
 
 
 class Base(DeclarativeBase):
@@ -27,13 +31,13 @@ class Anruf(Base):
     status = Column(String(32), default="aktiv")  # aktiv, beendet, verpasst, voicebot
     richtung = Column(String(16), default="eingehend")
     queue = Column(String(64), default="")
-    agent_id = Column(Integer, nullable=True)
+    agent_id = Column(Integer, ForeignKey("agenten.id"), nullable=True)
     voicebot_aktiv = Column(Boolean, default=False)
     dauer_sekunden = Column(Integer, default=0)
     aufnahme_pfad = Column(String(256), default="")
     transkript = Column(Text, default="")
     zusammenfassung = Column(Text, default="")
-    erstellt = Column(DateTime, default=datetime.utcnow)
+    erstellt = Column(DateTime, default=_utcnow)
     beendet = Column(DateTime, nullable=True)
 
 
@@ -49,7 +53,7 @@ class Agent(Base):
     skills = Column(JSON, default=list)
     anrufe_heute = Column(Integer, default=0)
     online_seit = Column(DateTime, nullable=True)
-    erstellt = Column(DateTime, default=datetime.utcnow)
+    erstellt = Column(DateTime, default=_utcnow)
 
 
 class Queue(Base):
@@ -72,8 +76,8 @@ class Callflow(Base):
     modus = Column(String(16), default="voicebot")  # voicebot, clickbot
     bloecke = Column(JSON, default=list)
     aktiv = Column(Boolean, default=True)
-    erstellt = Column(DateTime, default=datetime.utcnow)
-    geaendert = Column(DateTime, default=datetime.utcnow)
+    erstellt = Column(DateTime, default=_utcnow)
+    geaendert = Column(DateTime, default=_utcnow)
 
 
 class Patient(Base):
@@ -85,13 +89,13 @@ class Patient(Base):
     geburtsdatum = Column(String(16), default="")
     versichertennr = Column(String(32), default="")
     notizen = Column(Text, default="")
-    erstellt = Column(DateTime, default=datetime.utcnow)
+    erstellt = Column(DateTime, default=_utcnow)
 
 
 class Termin(Base):
     __tablename__ = "termine"
     id = Column(Integer, primary_key=True, autoincrement=True)
-    patient_id = Column(Integer, nullable=True)
+    patient_id = Column(Integer, ForeignKey("patienten.id"), nullable=True)
     patient_name = Column(String(128))
     arzt = Column(String(128), default="")
     datum = Column(String(16))
@@ -100,7 +104,7 @@ class Termin(Base):
     grund = Column(String(256), default="")
     status = Column(String(32), default="geplant")  # geplant, bestaetigt, abgesagt
     quelle = Column(String(32), default="voicebot")  # voicebot, agent, online
-    erstellt = Column(DateTime, default=datetime.utcnow)
+    erstellt = Column(DateTime, default=_utcnow)
 
 
 class KBArtikel(Base):
@@ -112,7 +116,7 @@ class KBArtikel(Base):
     antwort = Column(Text, default="")
     voicebot_aktiv = Column(Boolean, default=True)
     clickbot_aktiv = Column(Boolean, default=True)
-    erstellt = Column(DateTime, default=datetime.utcnow)
+    erstellt = Column(DateTime, default=_utcnow)
 
 
 class Einstellung(Base):

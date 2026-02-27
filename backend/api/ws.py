@@ -15,6 +15,10 @@ log = logging.getLogger("api.ws")
 agent_verbindungen: dict[str, WebSocket] = {}
 dashboard_verbindungen: list[WebSocket] = []
 
+# Timeouts
+WS_RECEIVE_TIMEOUT = 60  # Sekunden ohne Daten -> Verbindung trennen
+WS_INACTIVITY_TIMEOUT = 300  # 5 Minuten ohne Sprache -> Session beenden
+
 
 @router.websocket("/voicebot/{kanal_id}")
 async def voicebot_stream(ws: WebSocket, kanal_id: str):
@@ -39,13 +43,20 @@ async def voicebot_stream(ws: WebSocket, kanal_id: str):
 
     try:
         while True:
-            data = await ws.receive()
+            try:
+                data = await asyncio.wait_for(
+                    ws.receive(), timeout=WS_RECEIVE_TIMEOUT
+                )
+            except asyncio.TimeoutError:
+                log.warning("[WS] Timeout (kein Datenempfang seit %ds): %s", WS_RECEIVE_TIMEOUT, kanal_id)
+                if session:
+                    await ws.send_json({"typ": "timeout", "grund": "inaktivitaet"})
+                break
 
             if "text" in data:
                 msg = json.loads(data["text"])
 
                 if msg.get("typ") == "start":
-                    # --- Session starten mit Branchen-Auswahl ---
                     branche = msg.get("branche", "arztpraxis")
                     stimme = msg.get("stimme", None)
                     hintergrund = msg.get("hintergrund", None)
@@ -55,7 +66,6 @@ async def voicebot_stream(ws: WebSocket, kanal_id: str):
                     )
                     ergebnis = await session.starten()
 
-                    # Begruessung senden
                     await ws.send_json({
                         "typ": "begruessung",
                         "text": ergebnis["text"],
@@ -66,7 +76,6 @@ async def voicebot_stream(ws: WebSocket, kanal_id: str):
                     continue
 
                 if not session:
-                    # Kein Start empfangen — Session mit Default starten
                     session = engine.neue_session(kanal_id)
                     await session.starten()
 
@@ -89,13 +98,14 @@ async def voicebot_stream(ws: WebSocket, kanal_id: str):
                         session.barge_in_aktiv = msg["barge_in"]
                     await ws.send_json({"typ": "config_ok"})
 
+                elif msg.get("typ") == "ping":
+                    await ws.send_json({"typ": "pong"})
+
             elif "bytes" in data:
                 if not session:
-                    # Auto-Start mit Default-Branche
                     session = engine.neue_session(kanal_id)
                     await session.starten()
 
-                # Audio verarbeiten
                 ergebnis = await session.audio_empfangen(data["bytes"])
                 if ergebnis:
                     await ws.send_json({
@@ -108,10 +118,9 @@ async def voicebot_stream(ws: WebSocket, kanal_id: str):
 
     except WebSocketDisconnect:
         log.info("[WS] Voicebot getrennt: %s", kanal_id)
-        if session:
-            await session.beenden()
     except Exception as e:
         log.error("[WS] Voicebot Fehler: %s — %s", kanal_id, e)
+    finally:
         if session:
             await session.beenden()
 
@@ -131,7 +140,6 @@ async def agent_board(ws: WebSocket, agent_id: str):
             data = await ws.receive_json()
 
             if data.get("typ") == "status":
-                # Agent-Status aendern
                 await broadcast_dashboard({
                     "typ": "agent_status",
                     "agent_id": agent_id,
@@ -139,10 +147,13 @@ async def agent_board(ws: WebSocket, agent_id: str):
                 })
 
             elif data.get("typ") == "clickbot_antwort":
-                # Clickbot-Antwort vom Agenten
                 pass
 
     except WebSocketDisconnect:
+        pass
+    except Exception as e:
+        log.error("[WS] Agent-Board Fehler: %s — %s", agent_id, e)
+    finally:
         agent_verbindungen.pop(agent_id, None)
         log.info("[WS] Agent getrennt: %s", agent_id)
 
@@ -160,7 +171,10 @@ async def dashboard_stream(ws: WebSocket):
         while True:
             await ws.receive_text()  # Keep-alive
     except WebSocketDisconnect:
-        dashboard_verbindungen.remove(ws)
+        pass
+    finally:
+        if ws in dashboard_verbindungen:
+            dashboard_verbindungen.remove(ws)
         log.info("[WS] Dashboard getrennt")
 
 
@@ -170,7 +184,8 @@ async def broadcast_dashboard(nachricht: dict):
         try:
             await ws.send_json(nachricht)
         except Exception:
-            dashboard_verbindungen.remove(ws)
+            if ws in dashboard_verbindungen:
+                dashboard_verbindungen.remove(ws)
 
 
 async def an_agent_senden(agent_id: str, nachricht: dict):

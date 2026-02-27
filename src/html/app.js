@@ -28,7 +28,7 @@ function brancheLaden() {
             MED_FIRMEN_NAME = daten.firmen_name || "";
             MED_BRANCHE = BRANCHEN[MED_BRANCHE_KEY] || BRANCHEN.arztpraxis;
         }
-    } catch (e) {}
+    } catch (e) { console.warn("brancheLaden:", e); }
 }
 
 function brancheSpeichern(key, firmenName) {
@@ -85,11 +85,11 @@ function modusPruefen() {
                         MED_LLM_VERFUEGBAR = true;
                         modusAnzeigeAktualisieren();
                     }
-                } catch (e) {}
+                } catch (e) { console.warn("modusPruefen JSON:", e); }
             }
         };
         xhr.send();
-    } catch (e) {}
+    } catch (e) { console.warn("modusPruefen:", e); }
 }
 
 function modusAnzeigeAktualisieren() {
@@ -162,7 +162,7 @@ function guardInfoAnzeigen() {
 
         // Seitenzugriff pruefen
         rollenSeitePruefen(daten.rolle);
-    } catch (e) {}
+    } catch (e) { console.warn("guardInfoAnzeigen:", e); }
 }
 
 function rollenSidebarAnpassen(rolleKey) {
@@ -477,7 +477,7 @@ function initVerlauf() {
     var btn = document.getElementById("btn-verlauf-loeschen");
     if (btn) {
         btn.addEventListener("click", async function () {
-            try { await verlaufLoeschenApi(); verlaufAktualisieren(); } catch (_) {}
+            try { await verlaufLoeschenApi(); verlaufAktualisieren(); } catch (_) { console.warn("verlaufLoeschen:", _); }
         });
     }
 }
@@ -497,7 +497,7 @@ async function verlaufAktualisieren() {
                 "<td>" + escapeHtml(e.erstellt_am || "") + "</td>";
             tbody.appendChild(tr);
         });
-    } catch (_) {}
+    } catch (_) { console.warn("Fehler:", _); }
 }
 
 // ===== Benutzer-Formular =====
@@ -602,7 +602,7 @@ async function benutzerListeAktualisieren(suche) {
         if (!tbody) return;
         tbody.innerHTML = "";
         benutzer.forEach(function (b) { benutzerZurTabelle(b); });
-    } catch (_) {}
+    } catch (_) { console.warn("Fehler:", _); }
 }
 
 function benutzerZurTabelle(daten) {
@@ -778,7 +778,7 @@ async function patientenListeAktualisieren(suche) {
             });
             tbody.appendChild(tr);
         });
-    } catch (_) {}
+    } catch (_) { console.warn("Fehler:", _); }
 }
 
 // ===== Aerzte API (localStorage) =====
@@ -908,7 +908,7 @@ async function aerzteListeAktualisieren() {
             });
             tbody.appendChild(tr);
         });
-    } catch (_) {}
+    } catch (_) { console.warn("Fehler:", _); }
 }
 
 // ===== Termine API (localStorage) =====
@@ -1019,7 +1019,7 @@ async function terminDropdownsLaden() {
                 sel.appendChild(opt);
             });
         }
-    } catch (_) {}
+    } catch (_) { console.warn("Fehler:", _); }
     try {
         var aerzte = await aerzteLadenApi();
         var sel2 = document.getElementById("termin-arzt");
@@ -1031,7 +1031,7 @@ async function terminDropdownsLaden() {
                 sel2.appendChild(opt);
             });
         }
-    } catch (_) {}
+    } catch (_) { console.warn("Fehler:", _); }
 }
 
 function terminFormZuruecksetzen() {
@@ -1093,7 +1093,7 @@ async function termineListeAktualisieren(datum) {
             });
             tbody.appendChild(tr);
         });
-    } catch (_) {}
+    } catch (_) { console.warn("Fehler:", _); }
 }
 
 // ===== Wartezimmer API (localStorage) =====
@@ -1181,7 +1181,7 @@ async function wartezimmerDropdownsLaden() {
                 sel.appendChild(opt);
             });
         }
-    } catch (_) {}
+    } catch (_) { console.warn("Fehler:", _); }
 }
 
 async function wartezimmerTermineLaden(patientId) {
@@ -1200,7 +1200,7 @@ async function wartezimmerTermineLaden(patientId) {
                 sel.appendChild(opt);
             }
         });
-    } catch (_) {}
+    } catch (_) { console.warn("Fehler:", _); }
 }
 
 function wartezeitBerechnen(ankunftZeit) {
@@ -1247,19 +1247,19 @@ async function wartezimmerAktualisieren() {
 
             var btnAufrufen = karte.querySelector(".btn-aufrufen");
             if (btnAufrufen) btnAufrufen.addEventListener("click", async function () {
-                try { await wartezimmerStatusApi(e.id, "aufgerufen"); wartezimmerAktualisieren(); } catch (_) {}
+                try { await wartezimmerStatusApi(e.id, "aufgerufen"); wartezimmerAktualisieren(); } catch (_) { console.warn("Fehler:", _); }
             });
             var btnFertig = karte.querySelector(".btn-fertig");
             if (btnFertig) btnFertig.addEventListener("click", async function () {
-                try { await wartezimmerStatusApi(e.id, "fertig"); wartezimmerAktualisieren(); } catch (_) {}
+                try { await wartezimmerStatusApi(e.id, "fertig"); wartezimmerAktualisieren(); } catch (_) { console.warn("Fehler:", _); }
             });
             karte.querySelector(".btn-loeschen").addEventListener("click", async function () {
-                try { await wartezimmerEntfernenApi(e.id); wartezimmerAktualisieren(); } catch (_) {}
+                try { await wartezimmerEntfernenApi(e.id); wartezimmerAktualisieren(); } catch (_) { console.warn("Fehler:", _); }
             });
 
             container.appendChild(karte);
         });
-    } catch (_) {}
+    } catch (_) { console.warn("Fehler:", _); }
 }
 
 // ===== Agenten API (localStorage) =====
@@ -1422,7 +1422,7 @@ async function agentenBoardAktualisieren() {
             ["online", "im_gespraech", "pause", "azu", "meeting", "at_chris", "offline"].forEach(function (s) {
                 var btn = karte.querySelector(".btn-" + s);
                 if (btn) btn.addEventListener("click", async function () {
-                    try { await agentStatusSetzenApi(a.id, s); agentenBoardAktualisieren(); } catch (_) {}
+                    try { await agentStatusSetzenApi(a.id, s); agentenBoardAktualisieren(); } catch (_) { console.warn("Fehler:", _); }
                 });
             });
             karte.querySelector(".btn-bearbeiten").addEventListener("click", function () { agentBearbeiten(a); });
@@ -1433,7 +1433,7 @@ async function agentenBoardAktualisieren() {
 
             container.appendChild(karte);
         });
-    } catch (_) {}
+    } catch (_) { console.warn("Fehler:", _); }
 }
 
 async function aktiveAnrufeAktualisieren() {
@@ -1461,7 +1461,7 @@ async function aktiveAnrufeAktualisieren() {
                 '<span class="status-badge status-' + a.status + '">' + escapeHtml(a.status) + '</span>';
             container.appendChild(karte);
         });
-    } catch (_) {}
+    } catch (_) { console.warn("Fehler:", _); }
 }
 
 async function anrufprotokollAktualisieren() {
@@ -1485,7 +1485,7 @@ async function anrufprotokollAktualisieren() {
                 "<td>" + dauerText + "</td>";
             tbody.appendChild(tr);
         });
-    } catch (_) {}
+    } catch (_) { console.warn("Fehler:", _); }
 }
 
 // ===== Softphone =====
@@ -3021,7 +3021,7 @@ function initStandortSeite() {
             if (info.telefon) document.getElementById("standort-telefon").value = info.telefon;
             if (info.strasse) document.getElementById("standort-strasse").value = info.strasse;
             if (info.notfall) document.getElementById("standort-notfall").value = info.notfall;
-        } catch (e) {}
+        } catch (e) { console.warn("standort laden:", e); }
         infoForm.addEventListener("submit", function (e) {
             e.preventDefault();
             localStorage.setItem("med_standort_info", JSON.stringify({ name: document.getElementById("standort-name").value, telefon: document.getElementById("standort-telefon").value, strasse: document.getElementById("standort-strasse").value, notfall: document.getElementById("standort-notfall").value }));

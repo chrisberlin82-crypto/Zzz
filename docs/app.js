@@ -28,7 +28,7 @@ function brancheLaden() {
             MED_FIRMEN_NAME = daten.firmen_name || "";
             MED_BRANCHE = BRANCHEN[MED_BRANCHE_KEY] || BRANCHEN.arztpraxis;
         }
-    } catch (e) {}
+    } catch (e) { console.warn("brancheLaden:", e); }
 }
 
 function brancheSpeichern(key, firmenName) {
@@ -85,11 +85,11 @@ function modusPruefen() {
                         MED_LLM_VERFUEGBAR = true;
                         modusAnzeigeAktualisieren();
                     }
-                } catch (e) {}
+                } catch (e) { console.warn("modusPruefen JSON:", e); }
             }
         };
         xhr.send();
-    } catch (e) {}
+    } catch (e) { console.warn("modusPruefen:", e); }
 }
 
 function modusAnzeigeAktualisieren() {
@@ -162,7 +162,7 @@ function guardInfoAnzeigen() {
 
         // Seitenzugriff pruefen
         rollenSeitePruefen(daten.rolle);
-    } catch (e) {}
+    } catch (e) { console.warn("guardInfoAnzeigen:", e); }
 }
 
 function rollenSidebarAnpassen(rolleKey) {
@@ -477,7 +477,7 @@ function initVerlauf() {
     var btn = document.getElementById("btn-verlauf-loeschen");
     if (btn) {
         btn.addEventListener("click", async function () {
-            try { await verlaufLoeschenApi(); verlaufAktualisieren(); } catch (_) {}
+            try { await verlaufLoeschenApi(); verlaufAktualisieren(); } catch (_) { console.warn("verlaufLoeschen:", _); }
         });
     }
 }
@@ -497,7 +497,7 @@ async function verlaufAktualisieren() {
                 "<td>" + escapeHtml(e.erstellt_am || "") + "</td>";
             tbody.appendChild(tr);
         });
-    } catch (_) {}
+    } catch (_) { console.warn("Fehler:", _); }
 }
 
 // ===== Benutzer-Formular =====
@@ -602,7 +602,7 @@ async function benutzerListeAktualisieren(suche) {
         if (!tbody) return;
         tbody.innerHTML = "";
         benutzer.forEach(function (b) { benutzerZurTabelle(b); });
-    } catch (_) {}
+    } catch (_) { console.warn("Fehler:", _); }
 }
 
 function benutzerZurTabelle(daten) {
@@ -778,7 +778,7 @@ async function patientenListeAktualisieren(suche) {
             });
             tbody.appendChild(tr);
         });
-    } catch (_) {}
+    } catch (_) { console.warn("Fehler:", _); }
 }
 
 // ===== Aerzte API (localStorage) =====
@@ -908,7 +908,7 @@ async function aerzteListeAktualisieren() {
             });
             tbody.appendChild(tr);
         });
-    } catch (_) {}
+    } catch (_) { console.warn("Fehler:", _); }
 }
 
 // ===== Termine API (localStorage) =====
@@ -1019,7 +1019,7 @@ async function terminDropdownsLaden() {
                 sel.appendChild(opt);
             });
         }
-    } catch (_) {}
+    } catch (_) { console.warn("Fehler:", _); }
     try {
         var aerzte = await aerzteLadenApi();
         var sel2 = document.getElementById("termin-arzt");
@@ -1031,7 +1031,7 @@ async function terminDropdownsLaden() {
                 sel2.appendChild(opt);
             });
         }
-    } catch (_) {}
+    } catch (_) { console.warn("Fehler:", _); }
 }
 
 function terminFormZuruecksetzen() {
@@ -1093,7 +1093,7 @@ async function termineListeAktualisieren(datum) {
             });
             tbody.appendChild(tr);
         });
-    } catch (_) {}
+    } catch (_) { console.warn("Fehler:", _); }
 }
 
 // ===== Wartezimmer API (localStorage) =====
@@ -1181,7 +1181,7 @@ async function wartezimmerDropdownsLaden() {
                 sel.appendChild(opt);
             });
         }
-    } catch (_) {}
+    } catch (_) { console.warn("Fehler:", _); }
 }
 
 async function wartezimmerTermineLaden(patientId) {
@@ -1200,7 +1200,7 @@ async function wartezimmerTermineLaden(patientId) {
                 sel.appendChild(opt);
             }
         });
-    } catch (_) {}
+    } catch (_) { console.warn("Fehler:", _); }
 }
 
 function wartezeitBerechnen(ankunftZeit) {
@@ -1247,19 +1247,19 @@ async function wartezimmerAktualisieren() {
 
             var btnAufrufen = karte.querySelector(".btn-aufrufen");
             if (btnAufrufen) btnAufrufen.addEventListener("click", async function () {
-                try { await wartezimmerStatusApi(e.id, "aufgerufen"); wartezimmerAktualisieren(); } catch (_) {}
+                try { await wartezimmerStatusApi(e.id, "aufgerufen"); wartezimmerAktualisieren(); } catch (_) { console.warn("Fehler:", _); }
             });
             var btnFertig = karte.querySelector(".btn-fertig");
             if (btnFertig) btnFertig.addEventListener("click", async function () {
-                try { await wartezimmerStatusApi(e.id, "fertig"); wartezimmerAktualisieren(); } catch (_) {}
+                try { await wartezimmerStatusApi(e.id, "fertig"); wartezimmerAktualisieren(); } catch (_) { console.warn("Fehler:", _); }
             });
             karte.querySelector(".btn-loeschen").addEventListener("click", async function () {
-                try { await wartezimmerEntfernenApi(e.id); wartezimmerAktualisieren(); } catch (_) {}
+                try { await wartezimmerEntfernenApi(e.id); wartezimmerAktualisieren(); } catch (_) { console.warn("Fehler:", _); }
             });
 
             container.appendChild(karte);
         });
-    } catch (_) {}
+    } catch (_) { console.warn("Fehler:", _); }
 }
 
 // ===== Agenten API (localStorage) =====
@@ -1422,7 +1422,7 @@ async function agentenBoardAktualisieren() {
             ["online", "im_gespraech", "pause", "azu", "meeting", "at_chris", "offline"].forEach(function (s) {
                 var btn = karte.querySelector(".btn-" + s);
                 if (btn) btn.addEventListener("click", async function () {
-                    try { await agentStatusSetzenApi(a.id, s); agentenBoardAktualisieren(); } catch (_) {}
+                    try { await agentStatusSetzenApi(a.id, s); agentenBoardAktualisieren(); } catch (_) { console.warn("Fehler:", _); }
                 });
             });
             karte.querySelector(".btn-bearbeiten").addEventListener("click", function () { agentBearbeiten(a); });
@@ -1433,7 +1433,7 @@ async function agentenBoardAktualisieren() {
 
             container.appendChild(karte);
         });
-    } catch (_) {}
+    } catch (_) { console.warn("Fehler:", _); }
 }
 
 async function aktiveAnrufeAktualisieren() {
@@ -1461,7 +1461,7 @@ async function aktiveAnrufeAktualisieren() {
                 '<span class="status-badge status-' + a.status + '">' + escapeHtml(a.status) + '</span>';
             container.appendChild(karte);
         });
-    } catch (_) {}
+    } catch (_) { console.warn("Fehler:", _); }
 }
 
 async function anrufprotokollAktualisieren() {
@@ -1485,7 +1485,7 @@ async function anrufprotokollAktualisieren() {
                 "<td>" + dauerText + "</td>";
             tbody.appendChild(tr);
         });
-    } catch (_) {}
+    } catch (_) { console.warn("Fehler:", _); }
 }
 
 // ===== Softphone =====
@@ -2097,6 +2097,8 @@ function sprachAusgabe(text) {
 
 var callflowDaten = [];
 var callflowAusgewaehlt = null;
+var callflowAktuelleId = null;
+var callflowListe = [];
 
 function demoCallflowLaden() {
     if (callflowDaten.length > 0) return;
@@ -2117,11 +2119,166 @@ function demoCallflowLaden() {
     ];
 }
 
+function callflowListeLaden() {
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", API_BASE + "/callflows", true);
+    xhr.onload = function () {
+        if (xhr.status === 200) {
+            try {
+                callflowListe = JSON.parse(xhr.responseText);
+                callflowListeRendern();
+            } catch (e) { /* ignore */ }
+        }
+    };
+    xhr.send();
+}
+
+function callflowListeRendern() {
+    var listeEl = document.getElementById("callflow-liste");
+    if (!listeEl) return;
+    listeEl.innerHTML = "";
+    if (callflowListe.length === 0) {
+        listeEl.innerHTML = '<p class="text-muted">Keine gespeicherten Callflows. Erstellen Sie einen neuen.</p>';
+        return;
+    }
+    for (var i = 0; i < callflowListe.length; i++) {
+        var cf = callflowListe[i];
+        var div = document.createElement("div");
+        div.className = "callflow-liste-eintrag" + (cf.aktiv ? " aktiv" : "") + (callflowAktuelleId === cf.id ? " selected" : "");
+        div.innerHTML = '<div class="cf-liste-info"><strong>' + escapeHtml(cf.name) + '</strong>' +
+            '<small>' + escapeHtml(cf.branche) + ' | ' + (cf.schritte ? cf.schritte.length : 0) + ' Schritte' +
+            (cf.aktiv ? ' | <span class="badge-aktiv">AKTIV</span>' : '') + '</small></div>' +
+            '<div class="cf-liste-btns">' +
+            '<button type="button" class="btn-sm" data-id="' + cf.id + '" data-aktion="laden">Laden</button>' +
+            '<button type="button" class="btn-sm btn-success" data-id="' + cf.id + '" data-aktion="aktivieren"' + (cf.aktiv ? ' disabled' : '') + '>Aktivieren</button>' +
+            '<button type="button" class="btn-sm btn-loeschen" data-id="' + cf.id + '" data-aktion="loeschen">X</button>' +
+            '</div>';
+        listeEl.appendChild(div);
+    }
+    listeEl.querySelectorAll("button[data-aktion]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+            var id = parseInt(this.getAttribute("data-id"));
+            var aktion = this.getAttribute("data-aktion");
+            if (aktion === "laden") callflowVomServerLaden(id);
+            else if (aktion === "aktivieren") callflowAktivieren(id);
+            else if (aktion === "loeschen") callflowVomServerLoeschen(id);
+        });
+    });
+}
+
+function callflowVomServerLaden(id) {
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", API_BASE + "/callflows/" + id, true);
+    xhr.onload = function () {
+        if (xhr.status === 200) {
+            try {
+                var cf = JSON.parse(xhr.responseText);
+                callflowAktuelleId = cf.id;
+                callflowDaten = [];
+                for (var i = 0; i < cf.schritte.length; i++) {
+                    var s = cf.schritte[i];
+                    callflowDaten.push({ id: s.id || (i + 1), typ: s.typ, label: s.label, config: s.config || {} });
+                }
+                if (callflowDaten.length === 0) demoCallflowLaden();
+                callflowRendern();
+                callflowListeRendern();
+                var nameEl = document.getElementById("cf-name");
+                if (nameEl) nameEl.value = cf.name;
+                var descEl = document.getElementById("cf-beschreibung");
+                if (descEl) descEl.value = cf.beschreibung || "";
+            } catch (e) { /* ignore */ }
+        }
+    };
+    xhr.send();
+}
+
+function callflowSpeichern() {
+    var name = "Neuer Callflow";
+    var beschreibung = "";
+    var nameEl = document.getElementById("cf-name");
+    if (nameEl) name = nameEl.value || name;
+    var descEl = document.getElementById("cf-beschreibung");
+    if (descEl) beschreibung = descEl.value || "";
+
+    var schritte = [];
+    for (var i = 0; i < callflowDaten.length; i++) {
+        schritte.push({ typ: callflowDaten[i].typ, label: callflowDaten[i].label, config: callflowDaten[i].config });
+    }
+
+    var payload = { name: name, branche: MED_BRANCHE_KEY || "allgemein", beschreibung: beschreibung, schritte: schritte };
+    var xhr = new XMLHttpRequest();
+
+    if (callflowAktuelleId) {
+        xhr.open("PUT", API_BASE + "/callflows/" + callflowAktuelleId, true);
+    } else {
+        xhr.open("POST", API_BASE + "/callflows", true);
+    }
+    xhr.setRequestHeader("Content-Type", "application/json");
+    xhr.onload = function () {
+        if (xhr.status === 200 || xhr.status === 201) {
+            try {
+                var res = JSON.parse(xhr.responseText);
+                callflowAktuelleId = res.callflow.id;
+                alert("Callflow gespeichert!");
+                callflowListeLaden();
+            } catch (e) { alert("Gespeichert."); }
+        } else {
+            alert("Fehler beim Speichern.");
+        }
+    };
+    xhr.send(JSON.stringify(payload));
+}
+
+function callflowAktivieren(id) {
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", API_BASE + "/callflows/" + id + "/aktivieren", true);
+    xhr.setRequestHeader("Content-Type", "application/json");
+    xhr.onload = function () {
+        if (xhr.status === 200) {
+            callflowListeLaden();
+        } else {
+            alert("Fehler beim Aktivieren.");
+        }
+    };
+    xhr.send();
+}
+
+function callflowVomServerLoeschen(id) {
+    if (!confirm("Callflow wirklich loeschen?")) return;
+    var xhr = new XMLHttpRequest();
+    xhr.open("DELETE", API_BASE + "/callflows/" + id, true);
+    xhr.onload = function () {
+        if (xhr.status === 200) {
+            if (callflowAktuelleId === id) {
+                callflowAktuelleId = null;
+                callflowDaten = [];
+                demoCallflowLaden();
+                callflowRendern();
+            }
+            callflowListeLaden();
+        }
+    };
+    xhr.send();
+}
+
+function callflowNeu() {
+    callflowAktuelleId = null;
+    callflowDaten = [];
+    demoCallflowLaden();
+    callflowRendern();
+    var nameEl = document.getElementById("cf-name");
+    if (nameEl) nameEl.value = "";
+    var descEl = document.getElementById("cf-beschreibung");
+    if (descEl) descEl.value = "";
+    callflowListeRendern();
+}
+
 function initCallflowEditor() {
     var canvas = document.getElementById("callflow-flow");
     if (!canvas) return;
     demoCallflowLaden();
     callflowRendern();
+    callflowListeLaden();
 
     // Baustein-Buttons
     var bausteine = document.querySelectorAll(".callflow-baustein");
@@ -2144,12 +2301,13 @@ function initCallflowEditor() {
         });
     }
 
-    // Speichern
+    // Speichern (Backend statt localStorage)
     var saveBtn = document.getElementById("btn-flow-speichern");
-    if (saveBtn) saveBtn.addEventListener("click", function () {
-        localStorage.setItem("med_callflow", JSON.stringify(callflowDaten));
-        alert("Callflow gespeichert!");
-    });
+    if (saveBtn) saveBtn.addEventListener("click", callflowSpeichern);
+
+    // Neu
+    var neuBtn = document.getElementById("btn-flow-neu");
+    if (neuBtn) neuBtn.addEventListener("click", callflowNeu);
 
     // Simulieren
     var simBtn = document.getElementById("btn-flow-simulieren");
@@ -2863,7 +3021,7 @@ function initStandortSeite() {
             if (info.telefon) document.getElementById("standort-telefon").value = info.telefon;
             if (info.strasse) document.getElementById("standort-strasse").value = info.strasse;
             if (info.notfall) document.getElementById("standort-notfall").value = info.notfall;
-        } catch (e) {}
+        } catch (e) { console.warn("standort laden:", e); }
         infoForm.addEventListener("submit", function (e) {
             e.preventDefault();
             localStorage.setItem("med_standort_info", JSON.stringify({ name: document.getElementById("standort-name").value, telefon: document.getElementById("standort-telefon").value, strasse: document.getElementById("standort-strasse").value, notfall: document.getElementById("standort-notfall").value }));

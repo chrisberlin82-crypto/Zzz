@@ -10,6 +10,7 @@ from pydantic import BaseModel
 
 from database import get_db, Anruf, Agent, Queue, Callflow, Patient, Termin, KBArtikel, Einstellung
 from config import settings
+from api.auth import auth_erforderlich, admin_erforderlich
 
 router = APIRouter()
 
@@ -304,7 +305,9 @@ async def einstellungen_liste(db: AsyncSession = Depends(get_db)):
     return [e.__dict__ for e in result.scalars().all()]
 
 @router.put("/einstellungen/{schluessel}")
-async def einstellung_setzen(schluessel: str, wert: str, kategorie: str = "allgemein", db: AsyncSession = Depends(get_db)):
+async def einstellung_setzen(schluessel: str, wert: str, kategorie: str = "allgemein",
+                             agent: Agent = Depends(admin_erforderlich),
+                             db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Einstellung).where(Einstellung.schluessel == schluessel))
     e = result.scalar_one_or_none()
     if e:

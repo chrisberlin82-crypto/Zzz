@@ -2,6 +2,9 @@
 Voicebot-Engine — Zentrale Steuerung.
 Koordiniert STT, LLM, TTS und Audio-Mixer fuer natuerliche Gespraeche.
 Unterstuetzt Barge-In (Anrufer kann jederzeit unterbrechen).
+
+Jede VoicebotSession hat eigene Zustaende (STT-Buffer, TTS-Abbruch-Event),
+damit mehrere gleichzeitige Anrufe sich nicht gegenseitig stoeren.
 """
 import asyncio
 import logging
@@ -11,9 +14,12 @@ from branchen import branche_laden, voicebot_system_prompt
 
 log = logging.getLogger("voicebot.engine")
 
+# Maximale Anzahl Nachrichten die ans LLM gesendet werden (Sliding Window)
+MAX_LLM_VERLAUF = 20
+
 
 class VoicebotEngine:
-    """Hauptklasse — verwaltet eine Voicebot-Session pro Anruf."""
+    """Hauptklasse — laedt globale Ressourcen, erzeugt Sessions."""
 
     def __init__(self):
         self.stt = None
@@ -66,8 +72,10 @@ class VoicebotEngine:
 class VoicebotSession:
     """
     Eine aktive Voicebot-Session fuer einen einzelnen Anruf.
-    Unterstuetzt Barge-In: waehrend der Bot spricht, lauscht STT weiter.
-    Sobald Sprache erkannt wird, wird TTS sofort gestoppt.
+    Jede Session hat:
+    - Eigenen STT-Stream (eigener Audio-Buffer)
+    - Eigenes TTS-Abbruch-Event (fuer Barge-In)
+    - Eigenen Gespraechsverlauf
     """
 
     def __init__(self, engine: VoicebotEngine, kanal_id: str,
@@ -84,8 +92,15 @@ class VoicebotSession:
         self.aktiv = True
         self.spricht_gerade = False
         self.barge_in_aktiv = True
+
+        # Session-spezifischer STT-Stream (eigener Buffer)
+        self._stt_stream = engine.stt.neuer_stream()
+
+        # Session-spezifisches TTS-Abbruch-Event
+        self._tts_abbruch = asyncio.Event()
+
+        # Aktiver TTS-Task fuer Barge-In-Abbruch
         self._tts_task: Optional[asyncio.Task] = None
-        self._stt_stream_aktiv = False
 
         # Stimme: ID aus Config nachschlagen oder Default
         self._stimme_voice_id = settings.tts_stimme
@@ -113,10 +128,8 @@ class VoicebotSession:
             "Guten Tag, wie kann ich Ihnen helfen?"
         )
 
-        # Begruessung als erste Bot-Nachricht
         self.gespraechs_verlauf.append({"rolle": "bot", "text": begruessung})
 
-        # TTS: Begruessung synthetisieren
         audio = await self._sprechen(begruessung)
 
         return {
@@ -128,9 +141,6 @@ class VoicebotSession:
         """
         Audio vom Anrufer empfangen (Echtzeit-Stream).
         Wird kontinuierlich aufgerufen, auch waehrend der Bot spricht (Barge-In).
-
-        Returns:
-            dict mit {aktion, daten} oder None wenn noch nichts erkannt.
         """
         if not self.aktiv:
             return None
@@ -141,10 +151,10 @@ class VoicebotSession:
             if hat_sprache:
                 log.info("[%s] BARGE-IN erkannt — stoppe TTS", self.kanal_id)
                 await self._tts_stoppen()
-                # Weiter mit normaler Erkennung
+                self._stt_stream.buffer_leeren()
 
-        # --- STT: Audio -> Text ---
-        ergebnis = await self.engine.stt.verarbeiten(audio_chunk)
+        # --- STT: Audio -> Text (session-eigener Stream) ---
+        ergebnis = await self._stt_stream.verarbeiten(audio_chunk)
         if not ergebnis or not ergebnis.get("text"):
             return None
 
@@ -154,12 +164,15 @@ class VoicebotSession:
 
         log.info("[%s] Anrufer: '%s'", self.kanal_id, erkannter_text)
 
-        # Gespraechsverlauf aktualisieren
         self.gespraechs_verlauf.append({"rolle": "anrufer", "text": erkannter_text})
 
-        # --- LLM: Antwort generieren ---
+        # --- LLM: Antwort generieren (mit Sliding Window) ---
+        verlauf_fuer_llm = self.gespraechs_verlauf
+        if len(verlauf_fuer_llm) > MAX_LLM_VERLAUF:
+            verlauf_fuer_llm = verlauf_fuer_llm[-MAX_LLM_VERLAUF:]
+
         antwort = await self.engine.llm.antwort_generieren(
-            self.gespraechs_verlauf,
+            verlauf_fuer_llm,
             kontext=self._callflow_kontext()
         )
         log.info("[%s] Bot: '%s'", self.kanal_id, antwort)
@@ -179,26 +192,40 @@ class VoicebotSession:
     async def _sprechen(self, text: str) -> bytes:
         """TTS ausfuehren mit Hintergrundgeraeuschen."""
         self.spricht_gerade = True
+        self._tts_abbruch.clear()
 
-        # TTS generieren (mit Session-Stimme)
-        tts_audio = await self.engine.tts.synthetisieren(
-            text, voice=self._stimme_voice_id
-        )
-
-        # Hintergrundgeraeusche mischen (mit Session-Hintergrund)
-        if settings.audio_hintergrund_aktiv and self._hintergrund_typ != "keine":
-            tts_audio = await self.engine.mixer.mischen(
-                tts_audio,
-                hintergrund_typ=self._hintergrund_typ,
-                lautstaerke=settings.audio_hintergrund_lautstaerke,
+        async def _tts_pipeline():
+            # TTS generieren (mit Session-Stimme und Abbruch-Event)
+            tts_audio = await self.engine.tts.synthetisieren(
+                text, voice=self._stimme_voice_id,
+                abbruch=self._tts_abbruch,
             )
 
-        self.spricht_gerade = False
-        return tts_audio
+            # Hintergrundgeraeusche mischen
+            if settings.audio_hintergrund_aktiv and self._hintergrund_typ != "keine":
+                tts_audio = await self.engine.mixer.mischen(
+                    tts_audio,
+                    hintergrund_typ=self._hintergrund_typ,
+                    lautstaerke=settings.audio_hintergrund_lautstaerke,
+                )
+            return tts_audio
+
+        # TTS als Task starten (damit Barge-In ihn abbrechen kann)
+        self._tts_task = asyncio.create_task(_tts_pipeline())
+        try:
+            audio = await self._tts_task
+        except asyncio.CancelledError:
+            audio = self.engine.tts._stille(100)
+        finally:
+            self.spricht_gerade = False
+            self._tts_task = None
+
+        return audio
 
     async def _tts_stoppen(self):
         """TTS sofort stoppen (Barge-In)."""
         self.spricht_gerade = False
+        self._tts_abbruch.set()
         if self._tts_task and not self._tts_task.done():
             self._tts_task.cancel()
             try:
@@ -217,7 +244,6 @@ class VoicebotSession:
         self.aktiv = False
         await self._tts_stoppen()
 
-        # Zusammenfassung per LLM
         zusammenfassung = ""
         if len(self.gespraechs_verlauf) > 1:
             zusammenfassung = await self.engine.llm.zusammenfassung(self.gespraechs_verlauf)
