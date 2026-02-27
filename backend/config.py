@@ -41,23 +41,99 @@ class Settings(BaseSettings):
     )
 
     # --- Voicebot: STT (Faster-Whisper) ---
-    stt_model: str = "small"
+    stt_model: str = "medium"
     stt_language: str = "de"
     stt_device: str = "cpu"
     stt_compute_type: str = "int8"
 
-    # --- Voicebot: TTS (Piper) ---
-    tts_model: str = "de_DE-thorsten-high"
-    tts_speaker_id: int = 0
-    tts_speed: float = 1.0
+    # --- Voicebot: TTS (Edge TTS — Microsoft Neural Voices) ---
+    tts_stimme: str = "de-DE-SeraphinaMultilingualNeural"
+    tts_rate: str = "+0%"
     tts_sample_rate: int = 16000
-    tts_models_dir: str = str(BASE_DIR / "models" / "tts")
 
     # --- Audio-Mixer ---
     audio_hintergrund_dir: str = str(BASE_DIR / "audio" / "hintergrund")
     audio_hintergrund_lautstaerke: float = 0.08
     audio_hintergrund_aktiv: bool = True
     audio_hintergrund_typ: str = "buero"
+
+    # --- Verfuegbare Stimmen (Edge TTS Neural Voices) ---
+    # Format: {id: {name, voice_id, geschlecht, beschreibung}}
+    # Die besten deutschen Stimmen von Microsoft
+    @staticmethod
+    def verfuegbare_stimmen():
+        return {
+            "seraphina": {
+                "name": "Seraphina",
+                "voice_id": "de-DE-SeraphinaMultilingualNeural",
+                "geschlecht": "weiblich",
+                "beschreibung": "Warm, natuerlich, multilingual (Premium)",
+            },
+            "florian": {
+                "name": "Florian",
+                "voice_id": "de-DE-FlorianMultilingualNeural",
+                "geschlecht": "maennlich",
+                "beschreibung": "Professionell, klar, multilingual (Premium)",
+            },
+            "katja": {
+                "name": "Katja",
+                "voice_id": "de-DE-KatjaNeural",
+                "geschlecht": "weiblich",
+                "beschreibung": "Freundlich, klassisch",
+            },
+            "conrad": {
+                "name": "Conrad",
+                "voice_id": "de-DE-ConradNeural",
+                "geschlecht": "maennlich",
+                "beschreibung": "Sachlich, kompetent",
+            },
+            "amala": {
+                "name": "Amala",
+                "voice_id": "de-DE-AmalaNeural",
+                "geschlecht": "weiblich",
+                "beschreibung": "Sanft, einfuehlsam",
+            },
+            "killian": {
+                "name": "Killian",
+                "voice_id": "de-DE-KillianNeural",
+                "geschlecht": "maennlich",
+                "beschreibung": "Dynamisch, jung",
+            },
+            "louisa": {
+                "name": "Louisa",
+                "voice_id": "de-DE-LouisaNeural",
+                "geschlecht": "weiblich",
+                "beschreibung": "Herzlich, vertrauensvoll",
+            },
+            "ralf": {
+                "name": "Ralf",
+                "voice_id": "de-DE-RalfNeural",
+                "geschlecht": "maennlich",
+                "beschreibung": "Ruhig, gelassen",
+            },
+        }
+
+    # --- Verfuegbare Hintergrundgeraeusche ---
+    @staticmethod
+    def verfuegbare_hintergruende():
+        return {
+            "buero": {
+                "name": "Buero",
+                "beschreibung": "Leises Buero-Ambiente (Tastatur, gedaempfte Geraeusche)",
+            },
+            "praxis": {
+                "name": "Arztpraxis",
+                "beschreibung": "Ruhige Praxis-Atmosphaere",
+            },
+            "ruhig": {
+                "name": "Sehr ruhig",
+                "beschreibung": "Minimales Hintergrundrauschen",
+            },
+            "keine": {
+                "name": "Kein Hintergrund",
+                "beschreibung": "Komplett stille Umgebung",
+            },
+        }
 
     # --- ACD ---
     acd_standard_queue: str = "rezeption"

@@ -199,18 +199,42 @@
                 <!-- Anruf-Panel -->
                 <section class="card">
                     <div class="vb-call-panel">
-                        <div>
-                            <label for="vb-branche" style="display:block;margin-bottom:6px;font-weight:600;color:#334155">Branche waehlen</label>
-                            <select id="vb-branche" class="vb-branche-select">
-                                <option value="arztpraxis">Arztpraxis</option>
-                                <option value="zahnarzt">Zahnarztpraxis</option>
-                                <option value="anwalt">Rechtsanwaltskanzlei</option>
-                                <option value="steuerberater">Steuerberatung</option>
-                                <option value="friseur">Friseursalon</option>
-                                <option value="werkstatt">KFZ-Werkstatt</option>
-                                <option value="tierarzt">Tierarztpraxis</option>
-                                <option value="allgemein">Allgemeines Buero</option>
-                            </select>
+                        <div style="display:flex;flex-wrap:wrap;gap:16px;justify-content:center;margin-bottom:16px">
+                            <div style="flex:1;min-width:200px;max-width:360px">
+                                <label for="vb-branche" style="display:block;margin-bottom:6px;font-weight:600;color:#334155"><i class="fa-solid fa-building"></i> Branche</label>
+                                <select id="vb-branche" class="vb-branche-select">
+                                    <option value="arztpraxis">Arztpraxis</option>
+                                    <option value="zahnarzt">Zahnarztpraxis</option>
+                                    <option value="anwalt">Rechtsanwaltskanzlei</option>
+                                    <option value="steuerberater">Steuerberatung</option>
+                                    <option value="friseur">Friseursalon</option>
+                                    <option value="werkstatt">KFZ-Werkstatt</option>
+                                    <option value="tierarzt">Tierarztpraxis</option>
+                                    <option value="allgemein">Allgemeines Buero</option>
+                                </select>
+                            </div>
+                            <div style="flex:1;min-width:200px;max-width:360px">
+                                <label for="vb-stimme" style="display:block;margin-bottom:6px;font-weight:600;color:#334155"><i class="fa-solid fa-microphone-lines"></i> Stimme</label>
+                                <select id="vb-stimme" class="vb-branche-select">
+                                    <option value="seraphina">Seraphina — Warm, natuerlich (Premium)</option>
+                                    <option value="florian">Florian — Professionell, klar (Premium)</option>
+                                    <option value="katja">Katja — Freundlich, klassisch</option>
+                                    <option value="conrad">Conrad — Sachlich, kompetent</option>
+                                    <option value="amala">Amala — Sanft, einfuehlsam</option>
+                                    <option value="killian">Killian — Dynamisch, jung</option>
+                                    <option value="louisa">Louisa — Herzlich, vertrauensvoll</option>
+                                    <option value="ralf">Ralf — Ruhig, gelassen</option>
+                                </select>
+                            </div>
+                            <div style="flex:1;min-width:200px;max-width:360px">
+                                <label for="vb-hintergrund" style="display:block;margin-bottom:6px;font-weight:600;color:#334155"><i class="fa-solid fa-volume-low"></i> Hintergrund</label>
+                                <select id="vb-hintergrund" class="vb-branche-select">
+                                    <option value="buero">Buero — Leises Ambiente</option>
+                                    <option value="praxis">Arztpraxis — Ruhige Atmosphaere</option>
+                                    <option value="ruhig">Sehr ruhig — Minimales Rauschen</option>
+                                    <option value="keine">Kein Hintergrund — Stille</option>
+                                </select>
+                            </div>
                         </div>
 
                         <div class="vb-audio-viz inaktiv" id="vb-viz">
@@ -288,6 +312,8 @@
         var infoMsgs = document.getElementById("vb-info-msgs");
         var infoWords = document.getElementById("vb-info-words");
         var zusammenfassungBereich = document.getElementById("vb-zusammenfassung-bereich");
+        var stimmeSelect = document.getElementById("vb-stimme");
+        var hintergrundSelect = document.getElementById("vb-hintergrund");
 
         // --- State ---
         var ws = null;
@@ -459,6 +485,8 @@
             btnAuflegen.hidden = false;
             callLabel.textContent = "Auflegen";
             brancheSelect.disabled = true;
+            stimmeSelect.disabled = true;
+            hintergrundSelect.disabled = true;
             setStatus("verbindet", "Verbinde...");
             transcriptEl.innerHTML = "";
             zusammenfassungBereich.innerHTML = "";
@@ -469,6 +497,8 @@
 
             var kanalId = "webrtc-" + Date.now();
             var branche = brancheSelect.value;
+            var stimme = stimmeSelect.value;
+            var hintergrund = hintergrundSelect.value;
 
             // AudioContext erstellen
             audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -482,6 +512,8 @@
                 btnAuflegen.hidden = true;
                 callLabel.textContent = "Anruf starten";
                 brancheSelect.disabled = false;
+                stimmeSelect.disabled = false;
+                hintergrundSelect.disabled = false;
                 return;
             }
             navigator.mediaDevices.getUserMedia({ audio: true, video: false })
@@ -498,8 +530,13 @@
                         timerStarten();
                         msgHinzufuegen("system", "Verbindung hergestellt — Branche: " + brancheSelect.options[brancheSelect.selectedIndex].text);
 
-                        // Start-Nachricht mit Branche senden
-                        ws.send(JSON.stringify({ typ: "start", branche: branche }));
+                        // Start-Nachricht mit Branche, Stimme und Hintergrund senden
+                        ws.send(JSON.stringify({
+                            typ: "start",
+                            branche: branche,
+                            stimme: stimme,
+                            hintergrund: hintergrund
+                        }));
 
                         // Audio-Streaming starten
                         audioStreamStarten(stream);
@@ -555,6 +592,8 @@
                     btnAuflegen.hidden = true;
                     callLabel.textContent = "Anruf starten";
                     brancheSelect.disabled = false;
+                    stimmeSelect.disabled = false;
+                    hintergrundSelect.disabled = false;
                 });
         }
 
@@ -624,6 +663,8 @@
             btnAuflegen.hidden = true;
             callLabel.textContent = "Anruf starten";
             brancheSelect.disabled = false;
+            stimmeSelect.disabled = false;
+            hintergrundSelect.disabled = false;
         }
 
         // --- Event-Listener ---

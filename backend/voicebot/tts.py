@@ -1,18 +1,12 @@
 """
-TTS — Text-to-Speech mit Piper (Standalone-Binary).
-Laeuft komplett lokal auf CPU. DSGVO-konform.
-Erzeugt natuerlich klingende deutsche Sprache.
+TTS — Text-to-Speech mit Edge TTS (Microsoft Neural Voices).
+Kostenlos, kein API-Key noetig. Sehr natuerliche Stimmen.
 Unterstuetzt sofortiges Abbrechen fuer Barge-In.
-
-Piper wird als Binary aufgerufen (kein Python-Paket noetig).
-Download: https://github.com/rhasspy/piper/releases
 """
 import asyncio
 import io
 import logging
-import shutil
 import wave
-from pathlib import Path
 from config import settings
 
 log = logging.getLogger("voicebot.tts")
@@ -20,126 +14,120 @@ log = logging.getLogger("voicebot.tts")
 
 class TTSProcessor:
     def __init__(self):
-        self.piper_bin: str | None = None
-        self.model_path: Path | None = None
-        self._process: asyncio.subprocess.Process | None = None
         self._abgebrochen = False
+        self._edge_tts_verfuegbar = False
 
     async def initialize(self):
-        """Piper Binary und Modell pruefen."""
-        loop = asyncio.get_event_loop()
-        await loop.run_in_executor(None, self._laden)
+        """Edge-TTS pruefen."""
+        try:
+            import edge_tts
+            self._edge_tts_verfuegbar = True
+            log.info("Edge-TTS bereit (Stimme: %s)", settings.tts_stimme)
+        except ImportError:
+            log.warning("edge-tts nicht installiert. TTS nicht verfuegbar.")
 
-    def _laden(self):
-        """Piper Binary und Voice-Modell suchen."""
-        # Binary suchen
-        self.piper_bin = shutil.which("piper")
-        if not self.piper_bin:
-            # Auch in /opt/piper und /usr/local/bin pruefen
-            for pfad in ["/opt/piper/piper", "/usr/local/bin/piper"]:
-                if Path(pfad).exists():
-                    self.piper_bin = pfad
-                    break
-
-        if self.piper_bin:
-            log.info("Piper Binary gefunden: %s", self.piper_bin)
-        else:
-            log.warning("Piper Binary nicht gefunden. TTS nicht verfuegbar.")
-            return
-
-        # Modell suchen
-        models_dir = Path(settings.tts_models_dir)
-        models_dir.mkdir(parents=True, exist_ok=True)
-        model_path = models_dir / f"{settings.tts_model}.onnx"
-
-        if model_path.exists():
-            self.model_path = model_path
-            log.info("TTS-Modell geladen: %s", settings.tts_model)
-        else:
-            log.warning(
-                "TTS-Modell nicht gefunden: %s. "
-                "Bitte mit install.sh herunterladen.",
-                model_path,
-            )
-
-    async def synthetisieren(self, text: str) -> bytes:
+    async def synthetisieren(self, text: str, voice: str = None) -> bytes:
         """
         Text in Audio umwandeln.
-        Gibt WAV-Bytes zurueck (16kHz, 16bit, mono).
+        Gibt WAV-Bytes zurueck (16kHz, 16bit, mono) fuer Kompatibilitaet mit dem Rest.
+
+        Args:
+            text: Der zu sprechende Text.
+            voice: Edge TTS Voice ID (z.B. "de-DE-SeraphinaMultilingualNeural").
+                   Wenn None, wird die Standard-Stimme aus der Config verwendet.
         """
         self._abgebrochen = False
 
-        if not self.piper_bin or not self.model_path:
+        if not self._edge_tts_verfuegbar:
             log.warning("TTS nicht verfuegbar — Stille zurueckgeben")
             return self._stille(len(text) * 50)
 
         try:
-            audio = await self._generieren(text)
+            audio = await self._generieren(text, voice=voice)
             return audio
         except Exception as e:
             log.error("TTS Fehler: %s", e)
             return self._stille(1000)
 
-    async def _generieren(self, text: str) -> bytes:
-        """Piper-Binary als Subprocess ausfuehren."""
-        # Natuerliche Pausen einfuegen
-        text = self._pausen_einfuegen(text)
-
-        # Piper aufrufen: echo "text" | piper --model x.onnx --output_raw
-        self._process = await asyncio.create_subprocess_exec(
-            self.piper_bin,
-            "--model", str(self.model_path),
-            "--output_raw",
-            "--length_scale", str(1.0 / settings.tts_speed),
-            "--speaker", str(settings.tts_speaker_id),
-            stdin=asyncio.subprocess.PIPE,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-        )
-
-        try:
-            stdout, stderr = await self._process.communicate(
-                input=text.encode("utf-8")
-            )
-        except asyncio.CancelledError:
-            self._process.kill()
-            raise
+    async def _generieren(self, text: str, voice: str = None) -> bytes:
+        """Edge-TTS Audio generieren und in 16kHz WAV konvertieren."""
+        import edge_tts
 
         if self._abgebrochen:
-            log.info("TTS abgebrochen (Barge-In)")
             return self._stille(100)
 
-        if self._process.returncode != 0:
-            log.error("Piper Fehler: %s", stderr.decode("utf-8", errors="replace"))
-            return self._stille(1000)
+        voice = voice or settings.tts_stimme
 
-        # Raw PCM → WAV konvertieren
-        buf = io.BytesIO()
-        with wave.open(buf, "wb") as wf:
-            wf.setnchannels(1)
-            wf.setsampwidth(2)
-            wf.setframerate(settings.tts_sample_rate)
-            wf.writeframes(stdout)
-        return buf.getvalue()
+        # Edge-TTS generiert MP3 — wir sammeln die Bytes
+        communicate = edge_tts.Communicate(
+            text,
+            voice=voice,
+            rate=settings.tts_rate,
+        )
+
+        mp3_chunks = []
+        async for chunk in communicate.stream():
+            if self._abgebrochen:
+                log.info("TTS abgebrochen (Barge-In)")
+                return self._stille(100)
+            if chunk["type"] == "audio":
+                mp3_chunks.append(chunk["data"])
+
+        if not mp3_chunks:
+            return self._stille(500)
+
+        mp3_data = b"".join(mp3_chunks)
+
+        # MP3 -> WAV 16kHz 16bit mono konvertieren
+        wav_data = await asyncio.get_event_loop().run_in_executor(
+            None, self._mp3_zu_wav, mp3_data
+        )
+        return wav_data
+
+    def _mp3_zu_wav(self, mp3_data: bytes) -> bytes:
+        """MP3-Bytes in 16kHz 16bit mono WAV konvertieren."""
+        try:
+            # Versuch 1: pydub (wenn verfuegbar)
+            from pydub import AudioSegment
+            audio = AudioSegment.from_mp3(io.BytesIO(mp3_data))
+            audio = audio.set_frame_rate(settings.tts_sample_rate)
+            audio = audio.set_channels(1)
+            audio = audio.set_sample_width(2)
+
+            buf = io.BytesIO()
+            audio.export(buf, format="wav")
+            return buf.getvalue()
+        except ImportError:
+            pass
+
+        try:
+            # Versuch 2: ffmpeg subprocess
+            import subprocess
+            result = subprocess.run(
+                [
+                    "ffmpeg", "-y",
+                    "-f", "mp3", "-i", "pipe:0",
+                    "-ar", str(settings.tts_sample_rate),
+                    "-ac", "1",
+                    "-f", "wav", "pipe:1",
+                ],
+                input=mp3_data,
+                capture_output=True,
+                timeout=10,
+            )
+            if result.returncode == 0:
+                return result.stdout
+            log.error("ffmpeg Fehler: %s", result.stderr.decode("utf-8", errors="replace"))
+        except FileNotFoundError:
+            log.error("Weder pydub noch ffmpeg verfuegbar fuer MP3->WAV Konvertierung")
+        except Exception as e:
+            log.error("MP3->WAV Fehler: %s", e)
+
+        return self._stille(1000)
 
     def abbrechen(self):
         """TTS sofort stoppen (Barge-In)."""
         self._abgebrochen = True
-        if self._process and self._process.returncode is None:
-            try:
-                self._process.kill()
-            except ProcessLookupError:
-                pass
-
-    def _pausen_einfuegen(self, text: str) -> str:
-        """
-        Natuerliche Sprechpausen einfuegen.
-        Piper unterstuetzt SSML-aehnliche Pausen mit '...'.
-        """
-        text = text.replace(". ", "... ")
-        text = text.replace(", ", ".. ")
-        text = text.replace("? ", "?... ")
-        return text
 
     def _stille(self, ms: int) -> bytes:
         """Stille-Audio erzeugen (Fallback)."""

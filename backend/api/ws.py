@@ -47,7 +47,12 @@ async def voicebot_stream(ws: WebSocket, kanal_id: str):
                 if msg.get("typ") == "start":
                     # --- Session starten mit Branchen-Auswahl ---
                     branche = msg.get("branche", "arztpraxis")
-                    session = engine.neue_session(kanal_id, branche=branche)
+                    stimme = msg.get("stimme", None)
+                    hintergrund = msg.get("hintergrund", None)
+                    session = engine.neue_session(
+                        kanal_id, branche=branche,
+                        stimme=stimme, hintergrund=hintergrund,
+                    )
                     ergebnis = await session.starten()
 
                     # Begruessung senden

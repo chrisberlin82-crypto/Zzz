@@ -263,21 +263,36 @@ async def voicebot_config():
     return {
         "llm_model": settings.llm_model,
         "stt_model": settings.stt_model,
-        "tts_model": settings.tts_model,
-        "tts_speed": settings.tts_speed,
+        "tts_stimme": settings.tts_stimme,
+        "tts_rate": settings.tts_rate,
         "hintergrund_typ": settings.audio_hintergrund_typ,
         "hintergrund_aktiv": settings.audio_hintergrund_aktiv,
         "hintergrund_lautstaerke": settings.audio_hintergrund_lautstaerke,
         "barge_in": True,
     }
 
+@router.get("/voicebot/stimmen")
+async def voicebot_stimmen():
+    """Alle verfuegbaren TTS-Stimmen."""
+    stimmen = settings.verfuegbare_stimmen()
+    return [
+        {
+            "id": k,
+            "name": v["name"],
+            "voice_id": v["voice_id"],
+            "geschlecht": v["geschlecht"],
+            "beschreibung": v["beschreibung"],
+        }
+        for k, v in stimmen.items()
+    ]
+
 @router.get("/voicebot/hintergruende")
 async def voicebot_hintergruende():
     """Verfuegbare Hintergrundgeraeusch-Typen."""
-    from voicebot.audio_mixer import HINTERGRUND_TYPEN
+    hintergruende = settings.verfuegbare_hintergruende()
     return [
         {"id": k, "name": v["name"], "beschreibung": v["beschreibung"]}
-        for k, v in HINTERGRUND_TYPEN.items()
+        for k, v in hintergruende.items()
     ]
 
 
@@ -324,5 +339,5 @@ async def system_status():
         "asterisk": "pruefen...",
         "llm": settings.llm_model,
         "stt": settings.stt_model,
-        "tts": settings.tts_model,
+        "tts": settings.tts_stimme,
     }

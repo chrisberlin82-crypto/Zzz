@@ -53,9 +53,14 @@ class VoicebotEngine:
         log.info("Voicebot-Engine heruntergefahren")
 
     def neue_session(self, kanal_id: str, branche: str = "arztpraxis",
-                     callflow_id: Optional[int] = None):
+                     callflow_id: Optional[int] = None,
+                     stimme: Optional[str] = None,
+                     hintergrund: Optional[str] = None):
         """Erstellt eine neue Gespraechs-Session."""
-        return VoicebotSession(self, kanal_id, branche, callflow_id)
+        return VoicebotSession(
+            self, kanal_id, branche, callflow_id,
+            stimme=stimme, hintergrund=hintergrund,
+        )
 
 
 class VoicebotSession:
@@ -67,7 +72,9 @@ class VoicebotSession:
 
     def __init__(self, engine: VoicebotEngine, kanal_id: str,
                  branche: str = "arztpraxis",
-                 callflow_id: Optional[int] = None):
+                 callflow_id: Optional[int] = None,
+                 stimme: Optional[str] = None,
+                 hintergrund: Optional[str] = None):
         self.engine = engine
         self.kanal_id = kanal_id
         self.branche = branche
@@ -79,7 +86,22 @@ class VoicebotSession:
         self.barge_in_aktiv = True
         self._tts_task: Optional[asyncio.Task] = None
         self._stt_stream_aktiv = False
-        log.info("Neue Session fuer Kanal %s (Branche: %s)", kanal_id, branche)
+
+        # Stimme: ID aus Config nachschlagen oder Default
+        self._stimme_voice_id = settings.tts_stimme
+        if stimme:
+            stimmen = settings.verfuegbare_stimmen()
+            if stimme in stimmen:
+                self._stimme_voice_id = stimmen[stimme]["voice_id"]
+
+        # Hintergrundgeraeusch-Typ
+        self._hintergrund_typ = hintergrund or settings.audio_hintergrund_typ
+        hintergruende = settings.verfuegbare_hintergruende()
+        if self._hintergrund_typ not in hintergruende:
+            self._hintergrund_typ = settings.audio_hintergrund_typ
+
+        log.info("Neue Session fuer Kanal %s (Branche: %s, Stimme: %s, Hintergrund: %s)",
+                 kanal_id, branche, self._stimme_voice_id, self._hintergrund_typ)
 
     async def starten(self) -> dict:
         """Session starten — Begruessung abspielen."""
@@ -158,14 +180,16 @@ class VoicebotSession:
         """TTS ausfuehren mit Hintergrundgeraeuschen."""
         self.spricht_gerade = True
 
-        # TTS generieren
-        tts_audio = await self.engine.tts.synthetisieren(text)
+        # TTS generieren (mit Session-Stimme)
+        tts_audio = await self.engine.tts.synthetisieren(
+            text, voice=self._stimme_voice_id
+        )
 
-        # Hintergrundgeraeusche mischen
-        if settings.audio_hintergrund_aktiv:
+        # Hintergrundgeraeusche mischen (mit Session-Hintergrund)
+        if settings.audio_hintergrund_aktiv and self._hintergrund_typ != "keine":
             tts_audio = await self.engine.mixer.mischen(
                 tts_audio,
-                hintergrund_typ=settings.audio_hintergrund_typ,
+                hintergrund_typ=self._hintergrund_typ,
                 lautstaerke=settings.audio_hintergrund_lautstaerke,
             )
 
