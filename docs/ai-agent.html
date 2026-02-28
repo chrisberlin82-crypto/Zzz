@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Agent Engineering – MedReception</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: #f8fafc; display: flex; }
+  /* Sidebar */
+  .sidebar { width: 220px; background: white; border-right: 1px solid #e5e7eb; padding: 20px 12px; flex-shrink: 0; min-height: 100vh; }
+  .sidebar-logo { display: flex; align-items: center; gap: 10px; padding: 8px 10px; margin-bottom: 24px; cursor: pointer; }
+  .sidebar-logo .icon { width: 34px; height: 34px; background: #2563eb; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 16px; }
+  .sidebar-logo span { font-weight: 700; font-size: 15px; color: #111827; }
+  .nav-group { font-size: 10px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; padding: 0 12px; margin: 14px 0 6px; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 10px; font-size: 13px; font-weight: 500; color: #6b7280; cursor: pointer; margin-bottom: 2px; }
+  .nav-item.active { background: #eff6ff; color: #2563eb; }
+  .nav-item:hover:not(.active) { background: #f9fafb; color: #374151; }
+  /* Main */
+  .main { flex: 1; padding: 28px; overflow: auto; }
+  .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+  h1 { font-size: 22px; font-weight: 700; color: #111827; }
+  .live-badge { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #15803d; font-weight: 600; background: #dcfce7; padding: 4px 10px; border-radius: 999px; }
+  .live-dot { width: 7px; height: 7px; background: #22c55e; border-radius: 50%; animation: blink 1.2s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+  .date { font-size: 13px; color: #6b7280; margin-bottom: 20px; }
+  /* Tabs */
+  .dash-tabs { display: flex; gap: 4px; margin-bottom: 20px; background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 5px; width: fit-content; }
+  .dash-tab { padding: 8px 18px; border-radius: 9px; font-size: 13px; font-weight: 600; cursor: pointer; color: #6b7280; border: none; background: transparent; font-family: 'Inter', sans-serif; }
+  .dash-tab.active { background: #2563eb; color: white; }
+  .dash-tab:hover:not(.active) { background: #f1f5f9; color: #374151; }
+  /* Cards */
+  .card { background: white; border-radius: 14px; border: 1px solid #e5e7eb; margin-bottom: 20px; }
+  .card-header { padding: 14px 20px; border-bottom: 1px solid #f3f4f6; display: flex; justify-content: space-between; align-items: center; }
+  .card-header h2 { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .card-body { padding: 16px 20px; }
+  /* KPI */
+  .kpi-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 20px; }
+  .kpi { background: white; border-radius: 14px; border: 1px solid #e5e7eb; padding: 16px 18px; }
+  .kpi-label { font-size: 11px; color: #6b7280; font-weight: 500; margin-bottom: 8px; }
+  .kpi-value { font-size: 26px; font-weight: 700; color: #111827; }
+  .kpi-sub { font-size: 10px; color: #9ca3af; margin-top: 2px; }
+  .kpi-trend { font-size: 10px; font-weight: 600; margin-top: 4px; }
+  .kpi-trend.up{color:#15803d} .kpi-trend.down{color:#dc2626}
+  /* Forms */
+  .form-row { margin-bottom: 12px; }
+  .form-label { font-size: 11px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 5px; }
+  .form-select, .form-input { width: 100%; padding: 8px 12px; border: 1.5px solid #e2e8f0; border-radius: 9px; font-size: 13px; font-family: 'Inter', sans-serif; color: #1e293b; outline: none; background: white; }
+  .form-select:focus, .form-input:focus { border-color: #2563eb; }
+  .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+  .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+  textarea.form-input { min-height: 80px; resize: vertical; line-height: 1.6; }
+  /* Buttons */
+  .btn { padding: 7px 16px; border-radius: 9px; font-size: 12px; font-weight: 600; border: none; cursor: pointer; font-family: 'Inter', sans-serif; }
+  .btn.primary { background: #2563eb; color: white; }
+  .btn.secondary { background: #f1f5f9; color: #475569; border: 1.5px solid #e2e8f0; }
+  .btn.green { background: #16a34a; color: white; }
+  .btn.red { background: #dc2626; color: white; }
+  .btn:hover { opacity: .85; }
+  .btn-row { display: flex; gap: 8px; margin-top: 14px; }
+  /* Skills Grid */
+  .skills-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .skill-tag { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 10px; border: 1.5px solid #e2e8f0; background: #f9fafb; font-size: 12px; font-weight: 500; color: #475569; cursor: pointer; transition: all .15s; }
+  .skill-tag.on { background: #eff6ff; border-color: #93c5fd; color: #1d4ed8; }
+  .skill-tag:hover { border-color: #93c5fd; }
+  .skill-check { width: 16px; height: 16px; border-radius: 4px; border: 1.5px solid #d1d5db; display: flex; align-items: center; justify-content: center; font-size: 10px; flex-shrink: 0; }
+  .skill-tag.on .skill-check { background: #2563eb; border-color: #2563eb; color: white; }
+  /* Status Dots */
+  .status-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f3f4f6; }
+  .status-row:last-child { border-bottom: none; }
+  .status-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  .status-dot.green { background: #22c55e; box-shadow: 0 0 0 3px rgba(34,197,94,.15); }
+  .status-dot.red { background: #ef4444; box-shadow: 0 0 0 3px rgba(239,68,68,.15); }
+  .status-dot.yellow { background: #f59e0b; box-shadow: 0 0 0 3px rgba(245,158,11,.15); }
+  .status-name { font-size: 13px; font-weight: 500; color: #374151; flex: 1; }
+  .status-detail { font-size: 11px; color: #9ca3af; }
+  /* Chat */
+  .chat-box { background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 12px; height: 320px; overflow-y: auto; padding: 14px; margin-bottom: 12px; }
+  .chat-msg { margin-bottom: 10px; display: flex; flex-direction: column; }
+  .chat-msg.bot { align-items: flex-start; }
+  .chat-msg.user { align-items: flex-end; }
+  .chat-bubble { max-width: 75%; padding: 10px 14px; border-radius: 12px; font-size: 13px; line-height: 1.5; }
+  .chat-msg.bot .chat-bubble { background: white; border: 1px solid #e5e7eb; color: #374151; border-bottom-left-radius: 4px; }
+  .chat-msg.user .chat-bubble { background: #2563eb; color: white; border-bottom-right-radius: 4px; }
+  .chat-sender { font-size: 10px; font-weight: 600; color: #9ca3af; margin-bottom: 3px; }
+  .chat-input-row { display: flex; gap: 8px; }
+  .chat-input-row input { flex: 1; padding: 10px 14px; border: 1.5px solid #e2e8f0; border-radius: 10px; font-size: 13px; font-family: 'Inter', sans-serif; outline: none; }
+  .chat-input-row input:focus { border-color: #2563eb; }
+  .chat-meta { display: flex; gap: 16px; margin-top: 8px; font-size: 11px; color: #9ca3af; }
+  /* Table */
+  .tbl { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .tbl th { padding: 8px 12px; text-align: left; font-size: 10px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: .5px; border-bottom: 1px solid #e5e7eb; background: #f9fafb; white-space: nowrap; }
+  .tbl td { padding: 10px 12px; border-bottom: 1px solid #f3f4f6; color: #374151; }
+  .tbl td.fw { font-weight: 600; color: #1e293b; }
+  .tbl tr:last-child td { border-bottom: none; }
+  .tbl tr:hover td { background: #fafafa; }
+  .badge { padding: 2px 8px; border-radius: 6px; font-size: 10px; font-weight: 600; }
+  .badge.green { background: #dcfce7; color: #15803d; }
+  .badge.blue { background: #dbeafe; color: #1d4ed8; }
+  .badge.yellow { background: #fef3c7; color: #92400e; }
+  .badge.red { background: #fef2f2; color: #dc2626; }
+  .badge.gray { background: #f3f4f6; color: #6b7280; }
+  /* Vorlagen */
+  .tpl-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .tpl-card { border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 14px 16px; cursor: pointer; transition: all .15s; }
+  .tpl-card:hover { border-color: #93c5fd; background: #f0f9ff; }
+  .tpl-title { font-size: 13px; font-weight: 700; color: #1e293b; margin-bottom: 4px; }
+  .tpl-desc { font-size: 11px; color: #6b7280; line-height: 1.5; }
+  .tpl-badge { display: inline-block; margin-top: 6px; padding: 2px 8px; border-radius: 6px; font-size: 10px; font-weight: 600; background: #ede9fe; color: #7c3aed; }
+  /* Slider */
+  .slider-row { display: flex; align-items: center; gap: 12px; }
+  .slider-row input[type="range"] { flex: 1; accent-color: #2563eb; }
+  .slider-val { font-size: 14px; font-weight: 700; color: #2563eb; min-width: 32px; text-align: center; }
+  /* Section Title */
+  .section-title { font-size: 13px; font-weight: 700; color: #374151; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+</style>
+</head>
+<body>
+<!-- Sidebar -->
+<div class="sidebar">
+  <div class="sidebar-logo" onclick="location.href='admin-dashboard.html'"><div class="icon">M</div><span>MedReception</span></div>
+  <div class="nav-group">Übersicht</div>
+  <div class="nav-item" onclick="location.href='admin-dashboard.html'" style="cursor:pointer">📊 Admin Dashboard</div>
+  <div class="nav-group">Callcenter</div>
+  <div class="nav-item" onclick="location.href='agenten.html'" style="cursor:pointer">🎧 Agenten</div>
+  <div class="nav-item" onclick="location.href='voicebot.html'" style="cursor:pointer">🤖 Voicebot</div>
+  <div class="nav-item" onclick="location.href='ansagen.html'" style="cursor:pointer">📢 Ansagen</div>
+  <div class="nav-item" onclick="location.href='callflow.html'" style="cursor:pointer">🔀 Callflow</div>
+  <div class="nav-group">Praxis</div>
+  <div class="nav-item" onclick="location.href='termine.html'" style="cursor:pointer">📅 Termine</div>
+  <div class="nav-item" onclick="location.href='auswertung.html'" style="cursor:pointer">📈 Auswertungen</div>
+  <div class="nav-group">KI</div>
+  <div class="nav-item active">🧠 AI Agent Engineering</div>
+  <div class="nav-group">System</div>
+  <div class="nav-item" onclick="sessionStorage.removeItem('mr_guard_session');location.href='index.html'" style="cursor:pointer">🔓 Abmelden</div>
+</div>
+<!-- Main -->
+<div class="main">
+  <div class="top-bar">
+    <h1>AI Agent Engineering</h1>
+    <div class="live-badge"><span class="live-dot"></span> System Online</div>
+  </div>
+  <p class="date">Voicebot-KI konfigurieren, testen und überwachen</p>
+
+  <!-- Tabs -->
+  <div class="dash-tabs">
+    <button class="dash-tab active" onclick="showTab('builder')">🛠 Agent Builder</button>
+    <button class="dash-tab" onclick="showTab('prompts')">💬 Prompt Engineering</button>
+    <button class="dash-tab" onclick="showTab('monitoring')">📡 Monitoring & Logs</button>
+  </div>
+
+  <!-- ═══ TAB 1: Agent Builder ═══ -->
+  <div id="tab-builder">
+    <div class="card">
+      <div class="card-header">
+        <h2>🛠 Neuen AI-Agent erstellen</h2>
+        <button class="btn primary">+ Vorlage laden</button>
+      </div>
+      <div class="card-body">
+        <div class="form-row-2">
+          <div>
+            <div class="form-label">Agent-Name</div>
+            <input class="form-input" type="text" placeholder="z.B. Praxis-Rezeptionistin" value="Praxis Dr. Schmidt – Empfang">
+          </div>
+          <div>
+            <div class="form-label">Branche</div>
+            <select class="form-select">
+              <option selected>Arztpraxis</option>
+              <option>Zahnarztpraxis</option>
+              <option>Rechtsanwaltskanzlei</option>
+              <option>Steuerberatung</option>
+              <option>Friseursalon</option>
+              <option>KFZ-Werkstatt</option>
+              <option>Tierarztpraxis</option>
+              <option>Allgemeines Büro</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row-3">
+          <div>
+            <div class="form-label">TTS-Stimme</div>
+            <select class="form-select">
+              <option>Azure Neural – KatjaNeural (empfohlen)</option>
+              <option>Azure Neural – ConradNeural (männlich)</option>
+              <option>ElevenLabs – Rachel</option>
+              <option>OpenAI TTS – Nova</option>
+              <option>Piper TTS – de_DE (lokal)</option>
+            </select>
+          </div>
+          <div>
+            <div class="form-label">LLM-Modell</div>
+            <select class="form-select">
+              <option>Llama 3.1 8B (Standard)</option>
+              <option>Llama 3.1 70B (Premium)</option>
+              <option>Mistral 7B</option>
+              <option>Gemma 2 9B</option>
+            </select>
+          </div>
+          <div>
+            <div class="form-label">Temperatur</div>
+            <div class="slider-row">
+              <input type="range" min="0" max="1.5" step="0.1" value="0.7" oninput="document.getElementById('temp-val').textContent=this.value">
+              <span class="slider-val" id="temp-val">0.7</span>
+            </div>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-label">Begrüßung</div>
+          <input class="form-input" type="text" value="Guten Tag, Praxis Dr. Schmidt, wie kann ich Ihnen helfen?">
+        </div>
+        <div class="form-row">
+          <div class="form-label">Persönlichkeit & Verhalten</div>
+          <textarea class="form-input">Freundlich und professionell. Spricht Anrufer mit "Sie" an. Nutzt natürliche Füllwörter wie "Ach so" und "Alles klar". Fasst sich kurz (1-3 Sätze pro Antwort).</textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-label">Regeln & Einschränkungen</div>
+          <textarea class="form-input">Keine medizinischen Diagnosen stellen. Bei Notfällen sofort 112 empfehlen. Maximal 3 Fragen pro Gesprächsrunde. Bei Unklarheit an menschlichen Agenten weiterleiten.</textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-label">Fähigkeiten</div>
+          <div class="skills-grid">
+            <div class="skill-tag on" onclick="this.classList.toggle('on')"><div class="skill-check">✓</div>📅 Terminvergabe</div>
+            <div class="skill-tag on" onclick="this.classList.toggle('on')"><div class="skill-check">✓</div>💊 Rezeptbestellung</div>
+            <div class="skill-tag on" onclick="this.classList.toggle('on')"><div class="skill-check">✓</div>📞 Weiterleitung</div>
+            <div class="skill-tag" onclick="this.classList.toggle('on')"><div class="skill-check"></div>📚 Wissensdatenbank</div>
+            <div class="skill-tag" onclick="this.classList.toggle('on')"><div class="skill-check"></div>🔄 Rückruf-Angebot</div>
+            <div class="skill-tag on" onclick="this.classList.toggle('on')"><div class="skill-check">✓</div>🚨 Notfall-Erkennung</div>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn primary" onclick="saveAgent()">💾 Agent speichern</button>
+          <button class="btn secondary" onclick="showTab('prompts')">🔬 Agent testen</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gespeicherte Agents -->
+    <div class="card">
+      <div class="card-header">
+        <h2>🤖 Gespeicherte AI-Agents</h2>
+        <span style="font-size:11px;color:#9ca3af">2 Agents konfiguriert</span>
+      </div>
+      <div class="card-body" style="padding:0">
+        <table class="tbl">
+          <thead>
+            <tr><th>Name</th><th>Branche</th><th>Stimme</th><th>Modell</th><th>Status</th><th>Aktion</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="fw">Praxis Dr. Schmidt – Empfang</td>
+              <td>Arztpraxis</td>
+              <td>KatjaNeural</td>
+              <td>Llama 3.1 8B</td>
+              <td><span class="badge green">Aktiv</span></td>
+              <td><div style="display:flex;gap:5px"><button class="btn secondary" style="font-size:11px;padding:4px 10px">✏ Bearbeiten</button><button class="btn secondary" style="font-size:11px;padding:4px 10px">📋 Duplizieren</button></div></td>
+            </tr>
+            <tr>
+              <td class="fw">Praxis Dr. Schmidt – Notfall</td>
+              <td>Arztpraxis</td>
+              <td>ConradNeural</td>
+              <td>Llama 3.1 8B</td>
+              <td><span class="badge yellow">Entwurf</span></td>
+              <td><div style="display:flex;gap:5px"><button class="btn secondary" style="font-size:11px;padding:4px 10px">✏ Bearbeiten</button><button class="btn secondary" style="font-size:11px;padding:4px 10px">▶ Aktivieren</button></div></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ TAB 2: Prompt Engineering ═══ -->
+  <div id="tab-prompts" style="display:none">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+      <!-- Links: Prompt Editor -->
+      <div>
+        <div class="card">
+          <div class="card-header">
+            <h2>💬 System-Prompt Editor</h2>
+            <select class="form-select" style="width:200px;font-size:11px;padding:5px 10px">
+              <option>Praxis Dr. Schmidt – Empfang</option>
+              <option>Praxis Dr. Schmidt – Notfall</option>
+            </select>
+          </div>
+          <div class="card-body">
+            <div class="form-row">
+              <div class="form-label">System-Prompt</div>
+              <textarea class="form-input" style="min-height:180px;font-family:'Fira Code','Courier New',monospace;font-size:12px;line-height:1.7">Du bist die freundliche Empfangsassistentin der Arztpraxis Dr. Schmidt.
+
+DEINE AUFGABEN:
+- Anrufer begrüßen und Anliegen erfragen
+- Termine vergeben (Mo-Fr 8-18 Uhr, Sa 9-12 Uhr)
+- Rezeptanfragen aufnehmen (Name, Geburtsdatum, Medikament)
+- Bei Notfällen sofort 112 empfehlen und an Arzt weiterleiten
+
+VERHALTEN:
+- Antworte KURZ (1-3 Sätze)
+- Stelle pro Antwort nur EINE Frage
+- Sprich den Anrufer mit "Sie" an
+- Bei Unklarheit: an menschlichen Agenten weiterleiten
+
+GRENZEN:
+- Keine medizinischen Diagnosen oder Empfehlungen
+- Keine Auskünfte über andere Patienten
+- Kein Zugriff auf Patientenakten</textarea>
+            </div>
+            <div class="form-row">
+              <div class="form-label">Zusätzlicher Kontext</div>
+              <textarea class="form-input" style="font-family:'Fira Code','Courier New',monospace;font-size:12px;line-height:1.7">Öffnungszeiten: Mo-Fr 8-18 Uhr, Sa 9-12 Uhr
+Ärzte: Dr. med. Thomas Schmidt (Allgemeinmedizin), Dr. med. Lisa Weber (Innere Medizin)
+Adresse: Musterstraße 42, 80333 München
+Telefon: 089 123 456 78</textarea>
+            </div>
+            <div class="btn-row">
+              <button class="btn primary">💾 Prompt speichern</button>
+              <button class="btn secondary">↩ Standard wiederherstellen</button>
+            </div>
+          </div>
+        </div>
+        <!-- Vorlagen -->
+        <div class="card">
+          <div class="card-header"><h2>📋 Prompt-Vorlagen</h2></div>
+          <div class="card-body">
+            <div class="tpl-grid">
+              <div class="tpl-card" onclick="loadTemplate('arzt')">
+                <div class="tpl-title">🏥 Arztpraxis Standard</div>
+                <div class="tpl-desc">Empfang, Terminvergabe, Rezeptanfragen, Notfall-Erkennung</div>
+                <div class="tpl-badge">Empfohlen</div>
+              </div>
+              <div class="tpl-card" onclick="loadTemplate('zahnarzt')">
+                <div class="tpl-title">🦷 Zahnarztpraxis</div>
+                <div class="tpl-desc">Schmerzpatienten priorisieren, Prophylaxe-Termine, Recall</div>
+                <div class="tpl-badge">Branche</div>
+              </div>
+              <div class="tpl-card" onclick="loadTemplate('anwalt')">
+                <div class="tpl-title">⚖️ Rechtsanwalt</div>
+                <div class="tpl-desc">Mandantenaufnahme, Rechtsgebiet erfragen, Erstberatung planen</div>
+                <div class="tpl-badge">Branche</div>
+              </div>
+              <div class="tpl-card" onclick="loadTemplate('minimal')">
+                <div class="tpl-title">📝 Minimal</div>
+                <div class="tpl-desc">Einfacher Agent: Begrüßung, Anliegen, Weiterleitung</div>
+                <div class="tpl-badge">Basis</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Rechts: Test-Chat -->
+      <div>
+        <div class="card">
+          <div class="card-header">
+            <h2>🔬 Testgespräch</h2>
+            <button class="btn secondary" onclick="clearChat()" style="font-size:11px;padding:5px 12px">🗑 Chat leeren</button>
+          </div>
+          <div class="card-body">
+            <div class="chat-box" id="chat-box">
+              <div class="chat-msg bot">
+                <div class="chat-sender">🤖 Voicebot</div>
+                <div class="chat-bubble">Guten Tag, Praxis Dr. Schmidt, wie kann ich Ihnen helfen?</div>
+              </div>
+              <div class="chat-msg user">
+                <div class="chat-sender">📞 Anrufer</div>
+                <div class="chat-bubble">Ich bräuchte einen Termin beim Arzt, möglichst diese Woche noch.</div>
+              </div>
+              <div class="chat-msg bot">
+                <div class="chat-sender">🤖 Voicebot</div>
+                <div class="chat-bubble">Sehr gerne! Ich kann Ihnen am Donnerstag um 10:30 Uhr oder am Freitag um 14:00 Uhr einen Termin anbieten. Was passt Ihnen besser?</div>
+              </div>
+              <div class="chat-msg user">
+                <div class="chat-sender">📞 Anrufer</div>
+                <div class="chat-bubble">Donnerstag wäre super.</div>
+              </div>
+              <div class="chat-msg bot">
+                <div class="chat-sender">🤖 Voicebot</div>
+                <div class="chat-bubble">Alles klar, Donnerstag 10:30 Uhr bei Dr. Schmidt. Darf ich Ihren Namen und Ihre Versicherung notieren?</div>
+              </div>
+            </div>
+            <div class="chat-input-row">
+              <input type="text" id="chat-input" placeholder="Nachricht eingeben (simuliert Anrufer)..." onkeypress="if(event.key==='Enter')sendTestMsg()">
+              <button class="btn primary" onclick="sendTestMsg()">Senden</button>
+            </div>
+            <div class="chat-meta">
+              <span>Tokens: 247</span>
+              <span>Latenz: 380 ms</span>
+              <span>Modell: Llama 3.1 8B</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ TAB 3: Monitoring & Logs ═══ -->
+  <div id="tab-monitoring" style="display:none">
+    <!-- KPIs -->
+    <div class="kpi-grid">
+      <div class="kpi">
+        <div class="kpi-label">Gespräche heute</div>
+        <div class="kpi-value">38</div>
+        <div class="kpi-sub">14 via Voicebot autonom</div>
+        <div class="kpi-trend up">↑ 36.8% automatisiert</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Ø Latenz</div>
+        <div class="kpi-value">420ms</div>
+        <div class="kpi-sub">Antwortzeit LLM</div>
+        <div class="kpi-trend up">↓ 15% schneller als gestern</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Erfolgsquote</div>
+        <div class="kpi-value">89%</div>
+        <div class="kpi-sub">ohne menschliche Hilfe gelöst</div>
+        <div class="kpi-trend up">↑ +3% diese Woche</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Aktive Sessions</div>
+        <div class="kpi-value">2</div>
+        <div class="kpi-sub">gerade im Gespräch</div>
+        <div class="kpi-trend up">Normal</div>
+      </div>
+    </div>
+
+    <!-- System-Status -->
+    <div class="card">
+      <div class="card-header">
+        <h2>⚙️ System-Status</h2>
+        <button class="btn secondary" style="font-size:11px;padding:5px 12px">🔄 Aktualisieren</button>
+      </div>
+      <div class="card-body">
+        <div class="status-row">
+          <span class="status-dot green"></span>
+          <span class="status-name">LLM (Ollama – Llama 3.1 8B)</span>
+          <span class="status-detail">Latenz: 380ms · GPU: 4.2 GB VRAM · Uptime: 14h</span>
+        </div>
+        <div class="status-row">
+          <span class="status-dot green"></span>
+          <span class="status-name">STT (Faster-Whisper – large-v3)</span>
+          <span class="status-detail">RTF: 0.12 · Deutsch · GPU-Modus</span>
+        </div>
+        <div class="status-row">
+          <span class="status-dot green"></span>
+          <span class="status-name">TTS (Edge TTS – KatjaNeural)</span>
+          <span class="status-detail">Latenz: 95ms · Streaming: aktiv</span>
+        </div>
+        <div class="status-row">
+          <span class="status-dot green"></span>
+          <span class="status-name">Asterisk PBX</span>
+          <span class="status-detail">5 SIP-Peers online · 2 aktive Kanäle</span>
+        </div>
+        <div class="status-row">
+          <span class="status-dot yellow"></span>
+          <span class="status-name">Audio Mixer</span>
+          <span class="status-detail">Background: Büro-Ambience · CPU: 12%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Letzte Gespräche -->
+    <div class="card">
+      <div class="card-header">
+        <h2>📝 Letzte Gespräche</h2>
+        <span style="font-size:11px;color:#9ca3af">Heute: 38 Gespräche</span>
+      </div>
+      <div class="card-body" style="padding:0">
+        <table class="tbl">
+          <thead>
+            <tr><th>Zeit</th><th>Anrufer</th><th>Agent</th><th>Dauer</th><th>Anliegen</th><th>Status</th><th>Aktion</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>08:34</td>
+              <td class="fw">+49 176 ****321</td>
+              <td>🤖 Voicebot</td>
+              <td>1:42</td>
+              <td>Terminbuchung</td>
+              <td><span class="badge green">Gelöst</span></td>
+              <td><button class="btn secondary" style="font-size:11px;padding:4px 10px" onclick="showTranscript(1)">📜 Transkript</button></td>
+            </tr>
+            <tr>
+              <td>08:31</td>
+              <td class="fw">+49 89 ****456</td>
+              <td>🤖 → Dr. Schmidt</td>
+              <td>3:15</td>
+              <td>Medizinische Frage</td>
+              <td><span class="badge yellow">Weitergeleitet</span></td>
+              <td><button class="btn secondary" style="font-size:11px;padding:4px 10px" onclick="showTranscript(2)">📜 Transkript</button></td>
+            </tr>
+            <tr>
+              <td>08:28</td>
+              <td class="fw">+49 152 ****789</td>
+              <td>🤖 Voicebot</td>
+              <td>0:58</td>
+              <td>Rezeptanfrage</td>
+              <td><span class="badge green">Gelöst</span></td>
+              <td><button class="btn secondary" style="font-size:11px;padding:4px 10px" onclick="showTranscript(3)">📜 Transkript</button></td>
+            </tr>
+            <tr>
+              <td>08:22</td>
+              <td class="fw">+49 171 ****234</td>
+              <td>🤖 Voicebot</td>
+              <td>2:10</td>
+              <td>Terminbuchung</td>
+              <td><span class="badge green">Gelöst</span></td>
+              <td><button class="btn secondary" style="font-size:11px;padding:4px 10px" onclick="showTranscript(4)">📜 Transkript</button></td>
+            </tr>
+            <tr>
+              <td>08:15</td>
+              <td class="fw">+49 160 ****567</td>
+              <td>🤖 → Anna Weber</td>
+              <td>4:30</td>
+              <td>Beschwerde</td>
+              <td><span class="badge red">Eskaliert</span></td>
+              <td><button class="btn secondary" style="font-size:11px;padding:4px 10px" onclick="showTranscript(5)">📜 Transkript</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Transkript -->
+    <div class="card" id="transcript-card" style="display:none">
+      <div class="card-header">
+        <h2>📜 Transkript</h2>
+        <button class="btn secondary" onclick="document.getElementById('transcript-card').style.display='none'" style="font-size:11px;padding:5px 12px">✕ Schließen</button>
+      </div>
+      <div class="card-body">
+        <div id="transcript-content" class="chat-box" style="height:auto;max-height:400px">
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// Tab-Steuerung
+function showTab(name) {
+  ['builder','prompts','monitoring'].forEach(t => {
+    const el = document.getElementById('tab-'+t);
+    if(el) el.style.display = t===name ? '' : 'none';
+  });
+  document.querySelectorAll('.dash-tab').forEach((btn,i) => {
+    const tabs = ['builder','prompts','monitoring'];
+    btn.classList.toggle('active', tabs[i]===name);
+  });
+}
+
+// Agent speichern
+function saveAgent() {
+  const btn = event.target;
+  btn.textContent = '✓ Gespeichert!';
+  btn.style.background = '#16a34a';
+  setTimeout(() => { btn.textContent = '💾 Agent speichern'; btn.style.background = '#2563eb'; }, 2000);
+}
+
+// Test-Chat
+function sendTestMsg() {
+  const input = document.getElementById('chat-input');
+  const box = document.getElementById('chat-box');
+  const text = input.value.trim();
+  if(!text) return;
+  // User msg
+  box.innerHTML += '<div class="chat-msg user"><div class="chat-sender">📞 Anrufer</div><div class="chat-bubble">'+text+'</div></div>';
+  input.value = '';
+  box.scrollTop = box.scrollHeight;
+  // Bot response
+  setTimeout(() => {
+    const responses = [
+      'Alles klar, ich habe das notiert. Kann ich sonst noch etwas für Sie tun?',
+      'Vielen Dank für die Information. Ich leite das weiter.',
+      'Ich verstehe. Darf ich kurz Ihren Namen und Ihre Versichertennummer erfragen?',
+      'Einen Moment bitte, ich schaue nach freien Terminen für Sie.',
+      'Das habe ich mir notiert. Gibt es sonst noch ein Anliegen?'
+    ];
+    const resp = responses[Math.floor(Math.random()*responses.length)];
+    box.innerHTML += '<div class="chat-msg bot"><div class="chat-sender">🤖 Voicebot</div><div class="chat-bubble">'+resp+'</div></div>';
+    box.scrollTop = box.scrollHeight;
+  }, 600);
+}
+
+function clearChat() {
+  const box = document.getElementById('chat-box');
+  box.innerHTML = '<div class="chat-msg bot"><div class="chat-sender">🤖 Voicebot</div><div class="chat-bubble">Guten Tag, Praxis Dr. Schmidt, wie kann ich Ihnen helfen?</div></div>';
+}
+
+// Transkript anzeigen
+function showTranscript(id) {
+  const transcripts = {
+    1: [
+      {role:'bot', text:'Guten Tag, Praxis Dr. Schmidt, wie kann ich Ihnen helfen?'},
+      {role:'user', text:'Hallo, ich bräuchte einen Termin diese Woche.'},
+      {role:'bot', text:'Sehr gerne! Ich kann Ihnen Donnerstag 10:30 oder Freitag 14:00 Uhr anbieten. Was passt Ihnen besser?'},
+      {role:'user', text:'Donnerstag bitte.'},
+      {role:'bot', text:'Alles klar, Donnerstag 10:30 Uhr ist vorgemerkt. Ihr Name bitte?'},
+      {role:'user', text:'Müller, Maria Müller.'},
+      {role:'bot', text:'Vielen Dank, Frau Müller. Donnerstag 10:30 Uhr bei Dr. Schmidt ist gebucht. Auf Wiederhören!'}
+    ],
+    2: [
+      {role:'bot', text:'Guten Tag, Praxis Dr. Schmidt, wie kann ich Ihnen helfen?'},
+      {role:'user', text:'Ich habe seit gestern starke Kopfschmerzen und mir ist schwindelig.'},
+      {role:'bot', text:'Das tut mir leid zu hören. Ich verbinde Sie direkt mit Dr. Schmidt, damit er Ihnen weiterhelfen kann. Einen Moment bitte.'},
+      {role:'bot', text:'[Weiterleitung an Dr. Schmidt – Ext. 101]'}
+    ],
+    3: [
+      {role:'bot', text:'Guten Tag, Praxis Dr. Schmidt, wie kann ich Ihnen helfen?'},
+      {role:'user', text:'Ich brauche ein Folgerezept für Metformin.'},
+      {role:'bot', text:'Natürlich. Darf ich Ihren Namen und Ihr Geburtsdatum erfahren?'},
+      {role:'user', text:'Hans Berger, 15. März 1962.'},
+      {role:'bot', text:'Vielen Dank, Herr Berger. Das Rezept für Metformin wird vorbereitet. Sie können es ab morgen an der Rezeption abholen. Soll ich es alternativ per Post senden?'},
+      {role:'user', text:'Abholen ist gut, danke.'},
+      {role:'bot', text:'Alles klar. Bis morgen, Herr Berger. Auf Wiederhören!'}
+    ]
+  };
+  const t = transcripts[id] || transcripts[1];
+  const card = document.getElementById('transcript-card');
+  const content = document.getElementById('transcript-content');
+  content.innerHTML = t.map(m =>
+    '<div class="chat-msg '+(m.role==='bot'?'bot':'user')+'">' +
+    '<div class="chat-sender">'+(m.role==='bot'?'🤖 Voicebot':'📞 Anrufer')+'</div>' +
+    '<div class="chat-bubble">'+m.text+'</div></div>'
+  ).join('');
+  card.style.display = '';
+  card.scrollIntoView({behavior:'smooth'});
+}
+
+// Vorlagen laden
+function loadTemplate(type) {
+  alert('Vorlage "'+type+'" geladen – Prompt wurde aktualisiert.');
+}
+
+// Live-Zeit
+setInterval(() => {
+  const now = new Date();
+  const t = now.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});
+  document.querySelectorAll('.live-badge').forEach(b => {
+    if(b.textContent.includes('Online')) b.innerHTML = '<span class="live-dot"></span> System Online · '+t;
+  });
+}, 30000);
+</script>
+</body>
+</html>
