@@ -17,27 +17,19 @@ git pull origin claude/medreception-mvp-COCku
 
 # 2. Web-Verzeichnis vorbereiten
 echo "[2/5] Web-Verzeichnis vorbereiten..."
-mkdir -p /var/www/html
+mkdir -p /var/www/html/screenshots
 
-# 3. Alle HTML + CSS + JS Dateien kopieren
-echo "[3/5] Dateien nach /var/www/html kopieren..."
-cp /root/Zzz/docs/index.html       /var/www/html/
-cp /root/Zzz/docs/guard.html       /var/www/html/
-cp /root/Zzz/docs/admin-dashboard.html /var/www/html/
-cp /root/Zzz/docs/agenten.html     /var/www/html/
-cp /root/Zzz/docs/voicebot.html    /var/www/html/
-cp /root/Zzz/docs/ansagen.html     /var/www/html/
-cp /root/Zzz/docs/callflow.html    /var/www/html/
-cp /root/Zzz/docs/termine.html     /var/www/html/
-cp /root/Zzz/docs/auswertung.html  /var/www/html/
-cp /root/Zzz/docs/asterisk.html    /var/www/html/
-cp /root/Zzz/docs/acd.html         /var/www/html/
-cp /root/Zzz/docs/ai-agent.html    /var/www/html/
-cp /root/Zzz/docs/404.html         /var/www/html/
-cp /root/Zzz/docs/style.css        /var/www/html/
-cp /root/Zzz/docs/app.js           /var/www/html/ 2>/dev/null || true
+# 3. Alle Dateien aus docs/ kopieren
+echo "[3/5] Alle Dateien nach /var/www/html kopieren..."
+cp /root/Zzz/docs/*.html /var/www/html/
+cp /root/Zzz/docs/*.css  /var/www/html/
+cp /root/Zzz/docs/*.js   /var/www/html/ 2>/dev/null || true
+cp /root/Zzz/docs/screenshots/* /var/www/html/screenshots/ 2>/dev/null || true
 
-# 4. Nginx reparieren
+COUNT=$(ls -1 /var/www/html/*.html 2>/dev/null | wc -l)
+echo "  $COUNT HTML-Seiten deployed"
+
+# 4. Nginx konfigurieren
 echo "[4/5] Nginx konfigurieren..."
 rm -f /etc/nginx/sites-enabled/*
 
@@ -53,6 +45,8 @@ server {
     }
 
     error_page 404 /404.html;
+
+    add_header Cache-Control "no-cache, must-revalidate";
 
     gzip on;
     gzip_types text/plain text/css application/json application/javascript text/xml;
@@ -70,4 +64,5 @@ systemctl status nginx --no-pager
 echo ""
 echo "===== Deployment abgeschlossen ====="
 echo "Seite erreichbar unter: http://46.225.86.170"
+echo "Seiten: $COUNT HTML-Dateien"
 echo ""
