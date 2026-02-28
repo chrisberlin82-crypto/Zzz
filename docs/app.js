@@ -183,19 +183,8 @@ function rollenSidebarAnpassen(rolleKey) {
 }
 
 function rollenSeitePruefen(rolleKey) {
-    var rolle = ROLLEN[rolleKey];
-    if (!rolle) return;
-    var erlaubteSeiten = rolle.seiten;
-
-    // Aktuelle Seite ermitteln
-    var aktuelleSeite = window.location.pathname.split("/").pop() || "index.html";
-    if (aktuelleSeite === "") aktuelleSeite = "index.html";
-
-    // Ist diese Seite fuer die Rolle erlaubt?
-    if (erlaubteSeiten.indexOf(aktuelleSeite) === -1) {
-        // Zurueck zum Dashboard
-        window.location.href = "index.html";
-    }
+    // Sidebar-Links werden bereits von rollenSidebarAnpassen() versteckt.
+    // Kein Redirect noetig — alle Rollen haben aktuell gleiche Berechtigung.
 }
 
 function escapeHtmlSafe(text) {
