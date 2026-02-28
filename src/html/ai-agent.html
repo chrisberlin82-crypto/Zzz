@@ -3,70 +3,146 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MED Rezeption - AI Agent Engineering</title>
+    <title>AI Agent Engineering – Plattform</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="style.css">
+    <style>
+        .int-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin-top:12px}
+        .int-card{background:var(--card-bg,#1e293b);border:1px solid var(--border,#334155);border-radius:12px;padding:20px;transition:all .2s;cursor:pointer;position:relative}
+        .int-card:hover{border-color:var(--primary,#6366f1);transform:translateY(-2px);box-shadow:0 4px 16px rgba(99,102,241,.15)}
+        .int-card.connected{border-color:#22c55e}
+        .int-card.connected::after{content:'';position:absolute;top:12px;right:12px;width:10px;height:10px;background:#22c55e;border-radius:50%}
+        .int-card-icon{font-size:28px;margin-bottom:10px}
+        .int-card h4{margin:0 0 6px;font-size:15px}
+        .int-card p{margin:0;font-size:12px;color:var(--text-muted,#94a3b8);line-height:1.4}
+        .int-card .int-tags{margin-top:10px;display:flex;flex-wrap:wrap;gap:4px}
+        .int-tag{font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(99,102,241,.15);color:var(--primary,#6366f1)}
+        .int-category{margin-top:24px;margin-bottom:8px;font-size:13px;font-weight:600;color:var(--text-muted,#94a3b8);text-transform:uppercase;letter-spacing:1px;display:flex;align-items:center;gap:8px}
+        .int-category::after{content:'';flex:1;height:1px;background:var(--border,#334155)}
+        .deploy-pipeline{display:flex;gap:0;align-items:stretch;margin:20px 0;overflow-x:auto}
+        .deploy-step{flex:1;min-width:150px;padding:16px;background:var(--card-bg,#1e293b);border:1px solid var(--border,#334155);text-align:center;position:relative}
+        .deploy-step:first-child{border-radius:12px 0 0 12px}
+        .deploy-step:last-child{border-radius:0 12px 12px 0}
+        .deploy-step .step-num{font-size:11px;color:var(--text-muted,#94a3b8);margin-bottom:4px}
+        .deploy-step .step-icon{font-size:24px;margin:8px 0;color:var(--primary,#6366f1)}
+        .deploy-step .step-title{font-size:13px;font-weight:600}
+        .deploy-step .step-desc{font-size:11px;color:var(--text-muted,#94a3b8);margin-top:4px}
+        .deploy-step.done{border-color:#22c55e}
+        .deploy-step.done .step-icon{color:#22c55e}
+        .deploy-step.active{border-color:var(--primary,#6366f1);background:rgba(99,102,241,.08)}
+        .deploy-step::after{content:'\f054';font-family:'Font Awesome 6 Free';font-weight:900;position:absolute;right:-10px;top:50%;transform:translateY(-50%);color:var(--text-muted,#94a3b8);font-size:12px;z-index:1}
+        .deploy-step:last-child::after{display:none}
+        .env-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-top:12px}
+        .env-card{background:var(--card-bg,#1e293b);border:1px solid var(--border,#334155);border-radius:12px;padding:20px}
+        .env-card h4{margin:0 0 12px;display:flex;align-items:center;gap:8px}
+        .env-badge{font-size:10px;padding:2px 8px;border-radius:10px}
+        .env-badge.dev{background:rgba(59,130,246,.2);color:#60a5fa}
+        .env-badge.staging{background:rgba(245,158,11,.2);color:#fbbf24}
+        .env-badge.prod{background:rgba(34,197,94,.2);color:#4ade80}
+        .env-detail{font-size:12px;color:var(--text-muted,#94a3b8);margin:4px 0;display:flex;justify-content:space-between}
+        .channel-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-top:12px}
+        .channel-card{background:var(--card-bg,#1e293b);border:1px solid var(--border,#334155);border-radius:10px;padding:16px;text-align:center;cursor:pointer;transition:all .2s}
+        .channel-card:hover{border-color:var(--primary,#6366f1)}
+        .channel-card.active{border-color:#22c55e;background:rgba(34,197,94,.05)}
+        .channel-card i{font-size:24px;margin-bottom:8px;display:block}
+        .channel-card span{font-size:13px;font-weight:500}
+        .channel-card small{display:block;font-size:11px;color:var(--text-muted,#94a3b8);margin-top:4px}
+        .checklist-item{display:flex;align-items:center;gap:10px;padding:10px;background:var(--card-bg,#1e293b);border:1px solid var(--border,#334155);border-radius:8px;cursor:pointer}
+    </style>
 </head>
 <body>
     <aside class="sidebar" id="sidebar">
-        <div class="sidebar-logo"><h2>MED Rezeption</h2><small>Praxisverwaltung</small></div>
+        <div class="sidebar-logo" onclick="location.href='admin-dashboard.html'"><div class="icon">M</div><span>MedReception</span></div>
         <nav class="sidebar-nav">
-            <a href="dashboard.html"><i class="fa-solid fa-chart-pie nav-icon"></i> Dashboard</a>
+            <div class="nav-group">Uebersicht</div>
+            <a href="admin-dashboard.html"><i class="fa-solid fa-gauge nav-icon"></i> Dashboard</a>
+            <div class="nav-group">Praxis</div>
             <a href="patienten.html"><i class="fa-solid fa-users nav-icon"></i> Patienten</a>
             <a href="aerzte.html"><i class="fa-solid fa-user-doctor nav-icon"></i> Aerzte</a>
             <a href="termine.html"><i class="fa-solid fa-calendar-days nav-icon"></i> Termine</a>
             <a href="wartezimmer.html"><i class="fa-solid fa-couch nav-icon"></i> Wartezimmer</a>
-            <a href="wissensdatenbank.html"><i class="fa-solid fa-book nav-icon"></i> Wissensdatenbank</a>
-            <a href="ansagen.html"><i class="fa-solid fa-tower-broadcast nav-icon"></i> Ansagen Generator</a>
-            <a href="auswertung.html"><i class="fa-solid fa-chart-line nav-icon"></i> Auswertungen</a>
-            <a href="standort.html"><i class="fa-solid fa-building nav-icon"></i> Standort &amp; ACD</a>
-            <a href="callflow.html"><i class="fa-solid fa-diagram-project nav-icon"></i> Callflow Editor</a>
-            <a href="voicebot.html"><i class="fa-solid fa-robot nav-icon"></i> Voicebot</a>
+            <div class="nav-group">Callcenter</div>
             <a href="agenten.html"><i class="fa-solid fa-headset nav-icon"></i> Agenten</a>
+            <a href="voicebot.html"><i class="fa-solid fa-robot nav-icon"></i> Voicebot</a>
+            <a href="voicebot-live.html"><i class="fa-solid fa-microphone nav-icon"></i> Voicebot Live</a>
+            <a href="ansagen.html"><i class="fa-solid fa-tower-broadcast nav-icon"></i> Ansagen</a>
             <a href="softphone.html"><i class="fa-solid fa-phone nav-icon"></i> Softphone</a>
+            <div class="nav-group">Telefonie</div>
+            <a href="asterisk.html"><i class="fa-solid fa-server nav-icon"></i> Asterisk</a>
+            <a href="acd.html"><i class="fa-solid fa-phone-volume nav-icon"></i> ACD</a>
+            <a href="standort.html"><i class="fa-solid fa-building nav-icon"></i> Standort</a>
+            <a href="callflow.html"><i class="fa-solid fa-diagram-project nav-icon"></i> Callflow</a>
+            <div class="nav-group">Analyse</div>
+            <a href="auswertung.html"><i class="fa-solid fa-chart-line nav-icon"></i> Auswertungen</a>
+            <a href="wissensdatenbank.html"><i class="fa-solid fa-book nav-icon"></i> Wissensdatenbank</a>
             <a href="uebersetzung.html"><i class="fa-solid fa-language nav-icon"></i> Uebersetzer</a>
-            <a href="ai-agent.html" class="active"><i class="fa-solid fa-microchip nav-icon"></i> AI Agent Engineering</a>
+            <div class="nav-group">Admin</div>
             <a href="benutzer.html"><i class="fa-solid fa-user-gear nav-icon"></i> Benutzer</a>
+            <div class="nav-group">KI</div>
+            <a href="ai-agent.html" class="active"><i class="fa-solid fa-microchip nav-icon"></i> AI Agent Hub</a>
         </nav>
-        <div class="sidebar-footer"><button id="btn-demo-reset" type="button">Demo zuruecksetzen</button></div>
+        <div class="sidebar-footer">
+            <button onclick="sessionStorage.removeItem('mr_guard_session');location.href='index.html'" type="button"><i class="fa-solid fa-right-from-bracket nav-icon"></i> Abmelden</button>
+        </div>
     </aside>
     <div class="main-wrapper">
         <header class="topbar">
             <button id="menu-toggle" type="button"><i class="fa-solid fa-bars"></i></button>
-            <h1>AI Agent Engineering</h1>
-            <div class="topbar-right">Demo-Modus</div>
+            <h1><i class="fa-solid fa-microchip"></i> AI Agent Engineering</h1>
         </header>
         <main id="ai-agent">
 
             <!-- ===== Tab-Navigation ===== -->
             <div class="ai-tabs">
                 <button class="ai-tab active" data-tab="builder"><i class="fa-solid fa-wand-magic-sparkles"></i> Agent Builder</button>
+                <button class="ai-tab" data-tab="integrations"><i class="fa-solid fa-plug"></i> Integrationen</button>
                 <button class="ai-tab" data-tab="prompts"><i class="fa-solid fa-terminal"></i> Prompt Engineering</button>
-                <button class="ai-tab" data-tab="monitoring"><i class="fa-solid fa-chart-bar"></i> Monitoring &amp; Logs</button>
+                <button class="ai-tab" data-tab="deployment"><i class="fa-solid fa-rocket"></i> Deployment</button>
+                <button class="ai-tab" data-tab="monitoring"><i class="fa-solid fa-chart-bar"></i> Monitoring</button>
             </div>
 
             <!-- ===== TAB 1: Agent Builder ===== -->
             <div class="ai-tab-content active" id="tab-builder">
-
                 <div class="card">
                     <h3><i class="fa-solid fa-wand-magic-sparkles"></i> Neuen AI-Agent erstellen</h3>
                     <form id="agent-builder-form">
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="ab-name">Agent-Name</label>
-                                <input type="text" id="ab-name" placeholder="z.B. Praxis-Rezeptionistin" required>
+                                <input type="text" id="ab-name" placeholder="z.B. Klinik-Rezeption, IT-Helpdesk-Bot" required>
                             </div>
                             <div class="form-group">
-                                <label for="ab-branche">Branche</label>
+                                <label for="ab-branche">Branche / Einsatzbereich</label>
                                 <select id="ab-branche">
-                                    <option value="arztpraxis">Arztpraxis</option>
-                                    <option value="zahnarzt">Zahnarztpraxis</option>
-                                    <option value="anwalt">Rechtsanwaltskanzlei</option>
-                                    <option value="steuerberater">Steuerberatungsbuero</option>
-                                    <option value="friseur">Friseursalon</option>
-                                    <option value="werkstatt">KFZ-Werkstatt</option>
-                                    <option value="tierarzt">Tierarztpraxis</option>
-                                    <option value="allgemein">Allgemeines Buero</option>
+                                    <optgroup label="Gesundheitswesen">
+                                        <option value="klinik">Klinik / Krankenhaus</option>
+                                        <option value="arztpraxis">Arztpraxis</option>
+                                        <option value="zahnarzt">Zahnarztpraxis</option>
+                                        <option value="tierarzt">Tierarztpraxis</option>
+                                        <option value="pflege">Pflegeeinrichtung</option>
+                                    </optgroup>
+                                    <optgroup label="Verwaltung &amp; Office">
+                                        <option value="klinik-verwaltung">Klinikverwaltung</option>
+                                        <option value="buero">Allgemeines Buero</option>
+                                        <option value="it-helpdesk">IT Helpdesk / ServiceDesk</option>
+                                        <option value="hr">HR / Personalabteilung</option>
+                                    </optgroup>
+                                    <optgroup label="Dienstleistung">
+                                        <option value="anwalt">Rechtsanwaltskanzlei</option>
+                                        <option value="steuerberater">Steuerberatungsbuero</option>
+                                        <option value="versicherung">Versicherung</option>
+                                        <option value="immobilien">Immobilienverwaltung</option>
+                                    </optgroup>
+                                    <optgroup label="Handel &amp; Gewerbe">
+                                        <option value="werkstatt">KFZ-Werkstatt</option>
+                                        <option value="friseur">Friseursalon</option>
+                                        <option value="hotel">Hotel / Gastronomie</option>
+                                        <option value="retail">Einzelhandel</option>
+                                    </optgroup>
+                                    <optgroup label="Enterprise">
+                                        <option value="callcenter">Callcenter / BPO</option>
+                                        <option value="enterprise">Enterprise (Custom)</option>
+                                    </optgroup>
                                 </select>
                             </div>
                         </div>
@@ -79,7 +155,8 @@
                                 <label for="ab-hintergrund">Hintergrundgeraeusch</label>
                                 <select id="ab-hintergrund">
                                     <option value="buero">Buero / Empfang</option>
-                                    <option value="praxis">Arztpraxis</option>
+                                    <option value="callcenter">Callcenter</option>
+                                    <option value="klinik">Klinik / Krankenhaus</option>
                                     <option value="ruhig">Sehr ruhig</option>
                                     <option value="keine">Kein Hintergrund</option>
                                 </select>
@@ -87,15 +164,15 @@
                         </div>
                         <div class="form-group">
                             <label for="ab-persoenlichkeit">Persoenlichkeit &amp; Verhalten</label>
-                            <textarea id="ab-persoenlichkeit" rows="3" placeholder="z.B. Freundlich, professionell, spricht Anrufer mit Sie an, nutzt Fuellwoerter wie 'Ach so' und 'Alles klar'"></textarea>
+                            <textarea id="ab-persoenlichkeit" rows="3" placeholder="z.B. Freundlich, professionell, spricht Anrufer mit Sie an"></textarea>
                         </div>
                         <div class="form-group">
                             <label for="ab-begruessung">Begruessung</label>
-                            <input type="text" id="ab-begruessung" placeholder="z.B. Guten Tag, Praxis Dr. Mueller, wie kann ich Ihnen helfen?">
+                            <input type="text" id="ab-begruessung" placeholder="z.B. Guten Tag, Universitaetsklinikum Berlin, wie kann ich Ihnen helfen?">
                         </div>
                         <div class="form-group">
                             <label for="ab-regeln">Regeln &amp; Einschraenkungen</label>
-                            <textarea id="ab-regeln" rows="3" placeholder="z.B. Keine medizinischen Diagnosen stellen. Bei Notfaellen sofort 112 empfehlen. Maximal 3 Fragen pro Gespraech."></textarea>
+                            <textarea id="ab-regeln" rows="3" placeholder="z.B. Keine medizinischen Diagnosen stellen. Bei Notfaellen sofort 112 empfehlen."></textarea>
                         </div>
                         <div class="form-row">
                             <div class="form-group">
@@ -105,6 +182,8 @@
                                     <option value="llama3.1:70b-instruct-q4_K_M">Llama 3.1 70B (Premium)</option>
                                     <option value="mistral:7b-instruct-q4_K_M">Mistral 7B</option>
                                     <option value="gemma2:9b-instruct-q4_K_M">Gemma 2 9B</option>
+                                    <option value="gpt-4o">GPT-4o (OpenAI)</option>
+                                    <option value="claude-sonnet">Claude Sonnet (Anthropic)</option>
                                 </select>
                             </div>
                             <div class="form-group">
@@ -115,12 +194,53 @@
                         <div class="form-group">
                             <label>Faehigkeiten</label>
                             <div class="ai-skills-grid">
-                                <label class="ai-skill-toggle"><input type="checkbox" id="ab-skill-termine" checked> <i class="fa-solid fa-calendar-check"></i> Terminvergabe</label>
-                                <label class="ai-skill-toggle"><input type="checkbox" id="ab-skill-rezept" checked> <i class="fa-solid fa-prescription"></i> Rezeptbestellung</label>
-                                <label class="ai-skill-toggle"><input type="checkbox" id="ab-skill-weiterleitung" checked> <i class="fa-solid fa-phone-flip"></i> Weiterleitung</label>
-                                <label class="ai-skill-toggle"><input type="checkbox" id="ab-skill-kb"> <i class="fa-solid fa-book-medical"></i> Wissensdatenbank</label>
-                                <label class="ai-skill-toggle"><input type="checkbox" id="ab-skill-rueckruf"> <i class="fa-solid fa-phone-arrow-up-right"></i> Rueckruf-Angebot</label>
-                                <label class="ai-skill-toggle"><input type="checkbox" id="ab-skill-notfall" checked> <i class="fa-solid fa-triangle-exclamation"></i> Notfall-Erkennung</label>
+                                <label class="ai-skill-toggle"><input type="checkbox" checked> <i class="fa-solid fa-calendar-check"></i> Terminvergabe</label>
+                                <label class="ai-skill-toggle"><input type="checkbox" checked> <i class="fa-solid fa-phone-flip"></i> Weiterleitung</label>
+                                <label class="ai-skill-toggle"><input type="checkbox" checked> <i class="fa-solid fa-book"></i> Wissensdatenbank</label>
+                                <label class="ai-skill-toggle"><input type="checkbox" checked> <i class="fa-solid fa-triangle-exclamation"></i> Notfall-Erkennung</label>
+                                <label class="ai-skill-toggle"><input type="checkbox"> <i class="fa-solid fa-phone-arrow-up-right"></i> Rueckruf-Angebot</label>
+                                <label class="ai-skill-toggle"><input type="checkbox" checked> <i class="fa-solid fa-ticket"></i> Ticket erstellen</label>
+                                <label class="ai-skill-toggle"><input type="checkbox"> <i class="fa-solid fa-envelope"></i> E-Mail senden</label>
+                                <label class="ai-skill-toggle"><input type="checkbox"> <i class="fa-solid fa-database"></i> Daten abfragen</label>
+                                <label class="ai-skill-toggle"><input type="checkbox"> <i class="fa-solid fa-arrow-up-right-from-square"></i> Eskalation</label>
+                                <label class="ai-skill-toggle"><input type="checkbox"> <i class="fa-solid fa-file-lines"></i> Formulare ausfuellen</label>
+                                <label class="ai-skill-toggle"><input type="checkbox"> <i class="fa-solid fa-shield-halved"></i> Authentifizierung</label>
+                                <label class="ai-skill-toggle"><input type="checkbox"> <i class="fa-solid fa-language"></i> Live-Uebersetzung</label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Einsatz-Kanaele</label>
+                            <div class="channel-grid">
+                                <div class="channel-card active" onclick="this.classList.toggle('active')">
+                                    <i class="fa-solid fa-phone"></i>
+                                    <span>Telefon / SIP</span>
+                                    <small>Asterisk, ACD</small>
+                                </div>
+                                <div class="channel-card" onclick="this.classList.toggle('active')">
+                                    <i class="fa-solid fa-comments"></i>
+                                    <span>Webchat</span>
+                                    <small>Widget, iFrame</small>
+                                </div>
+                                <div class="channel-card" onclick="this.classList.toggle('active')">
+                                    <i class="fa-brands fa-whatsapp"></i>
+                                    <span>WhatsApp</span>
+                                    <small>Business API</small>
+                                </div>
+                                <div class="channel-card" onclick="this.classList.toggle('active')">
+                                    <i class="fa-brands fa-microsoft"></i>
+                                    <span>MS Teams</span>
+                                    <small>Bot Framework</small>
+                                </div>
+                                <div class="channel-card" onclick="this.classList.toggle('active')">
+                                    <i class="fa-solid fa-envelope"></i>
+                                    <span>E-Mail</span>
+                                    <small>IMAP/SMTP, Exchange</small>
+                                </div>
+                                <div class="channel-card" onclick="this.classList.toggle('active')">
+                                    <i class="fa-solid fa-code"></i>
+                                    <span>REST API</span>
+                                    <small>Custom Integration</small>
+                                </div>
                             </div>
                         </div>
                         <div class="button-gruppe">
@@ -130,31 +250,230 @@
                     </form>
                     <div id="ab-erfolg" class="erfolg-meldung" hidden></div>
                 </div>
-
-                <!-- Gespeicherte Agents -->
                 <div class="card">
                     <h3><i class="fa-solid fa-robot"></i> Gespeicherte AI-Agents</h3>
                     <div class="table-container">
                         <table id="ai-agents-tabelle">
-                            <thead>
-                                <tr>
-                                    <th>Name</th>
-                                    <th>Branche</th>
-                                    <th>Stimme</th>
-                                    <th>Modell</th>
-                                    <th>Status</th>
-                                    <th>Aktionen</th>
-                                </tr>
-                            </thead>
+                            <thead><tr><th>Name</th><th>Branche</th><th>Kanaele</th><th>Modell</th><th>Integrationen</th><th>Status</th><th>Aktionen</th></tr></thead>
                             <tbody></tbody>
                         </table>
                     </div>
                 </div>
             </div>
 
-            <!-- ===== TAB 2: Prompt Engineering ===== -->
-            <div class="ai-tab-content" id="tab-prompts">
+            <!-- ===== TAB 2: Integrationen ===== -->
+            <div class="ai-tab-content" id="tab-integrations">
+                <div class="card">
+                    <h3><i class="fa-solid fa-plug"></i> Schnittstellen &amp; Integrationen</h3>
+                    <p style="color:var(--text-muted,#94a3b8);font-size:13px;margin-bottom:8px;">Verbinde AI-Agents mit externen Systemen. Klicke auf eine Integration um sie zu konfigurieren.</p>
 
+                    <div class="int-category"><i class="fa-solid fa-headset"></i> ITSM &amp; ServiceDesk</div>
+                    <div class="int-grid">
+                        <div class="int-card connected" onclick="intKonfig(this)">
+                            <div class="int-card-icon"><i class="fa-solid fa-snowflake" style="color:#81b5a1"></i></div>
+                            <h4>ServiceNow</h4>
+                            <p>Tickets erstellen, Status abfragen, Incidents/Changes verwalten, CMDB durchsuchen</p>
+                            <div class="int-tags"><span class="int-tag">ITSM</span><span class="int-tag">REST API</span><span class="int-tag">OAuth2</span></div>
+                        </div>
+                        <div class="int-card" onclick="intKonfig(this)">
+                            <div class="int-card-icon"><i class="fa-brands fa-jira" style="color:#2684ff"></i></div>
+                            <h4>Jira Service Management</h4>
+                            <p>Issue-Tracking, Service Requests, Workflows automatisieren</p>
+                            <div class="int-tags"><span class="int-tag">ITSM</span><span class="int-tag">REST API</span></div>
+                        </div>
+                        <div class="int-card" onclick="intKonfig(this)">
+                            <div class="int-card-icon"><i class="fa-solid fa-z" style="color:#03363d;background:#d4f4dd;padding:4px 8px;border-radius:6px;font-size:20px"></i></div>
+                            <h4>Zendesk</h4>
+                            <p>Tickets, Wissensdatenbank, Chat-Integration, Agent Assist</p>
+                            <div class="int-tags"><span class="int-tag">Helpdesk</span><span class="int-tag">REST API</span></div>
+                        </div>
+                    </div>
+
+                    <div class="int-category"><i class="fa-brands fa-microsoft"></i> Microsoft 365 &amp; Office</div>
+                    <div class="int-grid">
+                        <div class="int-card connected" onclick="intKonfig(this)">
+                            <div class="int-card-icon"><i class="fa-solid fa-envelope" style="color:#0078d4"></i></div>
+                            <h4>Outlook / Exchange</h4>
+                            <p>E-Mails lesen/senden, Kalender verwalten, Kontakte synchronisieren</p>
+                            <div class="int-tags"><span class="int-tag">E-Mail</span><span class="int-tag">Kalender</span><span class="int-tag">Graph API</span></div>
+                        </div>
+                        <div class="int-card connected" onclick="intKonfig(this)">
+                            <div class="int-card-icon"><i class="fa-brands fa-microsoft" style="color:#5b5fc7"></i></div>
+                            <h4>Microsoft Teams</h4>
+                            <p>Bot-Integration, Nachrichten, Channels, Meetings planen</p>
+                            <div class="int-tags"><span class="int-tag">Chat</span><span class="int-tag">Bot Framework</span></div>
+                        </div>
+                        <div class="int-card" onclick="intKonfig(this)">
+                            <div class="int-card-icon"><i class="fa-solid fa-share-nodes" style="color:#038387"></i></div>
+                            <h4>SharePoint / OneDrive</h4>
+                            <p>Dokumente lesen, Wissensbasis aufbauen, Dateien verwalten</p>
+                            <div class="int-tags"><span class="int-tag">DMS</span><span class="int-tag">Graph API</span></div>
+                        </div>
+                        <div class="int-card" onclick="intKonfig(this)">
+                            <div class="int-card-icon"><i class="fa-solid fa-file-excel" style="color:#217346"></i></div>
+                            <h4>Excel / Power Automate</h4>
+                            <p>Tabellen lesen/schreiben, Workflows triggern, Reports generieren</p>
+                            <div class="int-tags"><span class="int-tag">Daten</span><span class="int-tag">Automation</span></div>
+                        </div>
+                    </div>
+
+                    <div class="int-category"><i class="fa-solid fa-hospital"></i> Gesundheitswesen &amp; Klinikverwaltung</div>
+                    <div class="int-grid">
+                        <div class="int-card connected" onclick="intKonfig(this)">
+                            <div class="int-card-icon"><i class="fa-solid fa-hospital" style="color:#e11d48"></i></div>
+                            <h4>KIS / HIS</h4>
+                            <p>Krankenhausinformationssystem — Patientendaten, Aufnahme, Belegung, OP-Planung</p>
+                            <div class="int-tags"><span class="int-tag">HL7</span><span class="int-tag">FHIR</span><span class="int-tag">SAP ISH</span></div>
+                        </div>
+                        <div class="int-card" onclick="intKonfig(this)">
+                            <div class="int-card-icon"><i class="fa-solid fa-fire" style="color:#ff6b35"></i></div>
+                            <h4>FHIR / HL7</h4>
+                            <p>Healthcare-Standard — Patientendaten, Befunde, Medikation, Termine austauschen</p>
+                            <div class="int-tags"><span class="int-tag">Healthcare</span><span class="int-tag">REST</span><span class="int-tag">R4</span></div>
+                        </div>
+                        <div class="int-card" onclick="intKonfig(this)">
+                            <div class="int-card-icon"><i class="fa-solid fa-x-ray" style="color:#7c3aed"></i></div>
+                            <h4>PACS / DICOM</h4>
+                            <p>Bildgebung — Radiologie-Anfragen, Befundstatus, Untersuchungstermine</p>
+                            <div class="int-tags"><span class="int-tag">Radiologie</span><span class="int-tag">DICOM</span></div>
+                        </div>
+                        <div class="int-card" onclick="intKonfig(this)">
+                            <div class="int-card-icon"><i class="fa-solid fa-flask-vial" style="color:#0ea5e9"></i></div>
+                            <h4>LIS (Labor)</h4>
+                            <p>Laborinformationssystem — Befunde abfragen, Auftraege, Ergebnisse</p>
+                            <div class="int-tags"><span class="int-tag">Labor</span><span class="int-tag">HL7</span></div>
+                        </div>
+                    </div>
+
+                    <div class="int-category"><i class="fa-solid fa-phone"></i> Telefonie &amp; Kommunikation</div>
+                    <div class="int-grid">
+                        <div class="int-card connected" onclick="intKonfig(this)">
+                            <div class="int-card-icon"><i class="fa-solid fa-server" style="color:#f59e0b"></i></div>
+                            <h4>Asterisk PBX</h4>
+                            <p>SIP-Trunks, IVR, ACD-Queues, AMI/ARI, Anrufsteuerung</p>
+                            <div class="int-tags"><span class="int-tag">SIP</span><span class="int-tag">AMI</span><span class="int-tag">ARI</span><span class="int-tag">WebRTC</span></div>
+                        </div>
+                        <div class="int-card connected" onclick="intKonfig(this)">
+                            <div class="int-card-icon"><i class="fa-solid fa-phone-volume" style="color:#8b5cf6"></i></div>
+                            <h4>ACD / Queue Manager</h4>
+                            <p>Warteschlangen, Skill-based Routing, Agenten-Zuweisung, Overflow</p>
+                            <div class="int-tags"><span class="int-tag">Routing</span><span class="int-tag">Queues</span></div>
+                        </div>
+                        <div class="int-card" onclick="intKonfig(this)">
+                            <div class="int-card-icon"><i class="fa-solid fa-tower-cell" style="color:#06b6d4"></i></div>
+                            <h4>SIP-Trunk Provider</h4>
+                            <p>Telekom, Sipgate, Placetel, easybell — DID-Nummern, CLIP, Routing</p>
+                            <div class="int-tags"><span class="int-tag">SIP</span><span class="int-tag">PSTN</span></div>
+                        </div>
+                        <div class="int-card" onclick="intKonfig(this)">
+                            <div class="int-card-icon"><i class="fa-brands fa-whatsapp" style="color:#25d366"></i></div>
+                            <h4>WhatsApp Business</h4>
+                            <p>Cloud API, Templates, Interactive Messages, Media</p>
+                            <div class="int-tags"><span class="int-tag">Messaging</span><span class="int-tag">Cloud API</span></div>
+                        </div>
+                    </div>
+
+                    <div class="int-category"><i class="fa-solid fa-building"></i> Enterprise &amp; ERP</div>
+                    <div class="int-grid">
+                        <div class="int-card" onclick="intKonfig(this)">
+                            <div class="int-card-icon"><i class="fa-solid fa-s" style="color:#fff;background:#0070f2;padding:4px 10px;border-radius:6px;font-size:20px"></i></div>
+                            <h4>SAP</h4>
+                            <p>RFC/BAPI, SAP GUI, Stammdaten, Finanzbuchhaltung, MM, SD</p>
+                            <div class="int-tags"><span class="int-tag">ERP</span><span class="int-tag">RFC</span><span class="int-tag">OData</span></div>
+                        </div>
+                        <div class="int-card" onclick="intKonfig(this)">
+                            <div class="int-card-icon"><i class="fa-solid fa-address-book" style="color:#e97627"></i></div>
+                            <h4>LDAP / Active Directory</h4>
+                            <p>Benutzer-Authentifizierung, Gruppen, Berechtigungen, SSO</p>
+                            <div class="int-tags"><span class="int-tag">Auth</span><span class="int-tag">SSO</span><span class="int-tag">Kerberos</span></div>
+                        </div>
+                        <div class="int-card" onclick="intKonfig(this)">
+                            <div class="int-card-icon"><i class="fa-solid fa-industry" style="color:#64748b"></i></div>
+                            <h4>ERP / CRM (Generic)</h4>
+                            <p>REST/SOAP-Anbindung an beliebiges ERP/CRM-System</p>
+                            <div class="int-tags"><span class="int-tag">REST</span><span class="int-tag">SOAP</span><span class="int-tag">Webhook</span></div>
+                        </div>
+                        <div class="int-card" onclick="intKonfig(this)">
+                            <div class="int-card-icon"><i class="fa-brands fa-salesforce" style="color:#00a1e0"></i></div>
+                            <h4>Salesforce</h4>
+                            <p>Leads, Cases, Opportunities, Knowledge Base, Flows</p>
+                            <div class="int-tags"><span class="int-tag">CRM</span><span class="int-tag">REST API</span></div>
+                        </div>
+                    </div>
+
+                    <div class="int-category"><i class="fa-solid fa-gears"></i> Daten &amp; Automation</div>
+                    <div class="int-grid">
+                        <div class="int-card connected" onclick="intKonfig(this)">
+                            <div class="int-card-icon"><i class="fa-solid fa-code" style="color:#22c55e"></i></div>
+                            <h4>REST API (Custom)</h4>
+                            <p>Eigene Endpoints anbinden — GET/POST/PUT/DELETE, Auth, Headers</p>
+                            <div class="int-tags"><span class="int-tag">REST</span><span class="int-tag">JSON</span><span class="int-tag">OpenAPI</span></div>
+                        </div>
+                        <div class="int-card" onclick="intKonfig(this)">
+                            <div class="int-card-icon"><i class="fa-solid fa-bolt" style="color:#eab308"></i></div>
+                            <h4>Webhooks</h4>
+                            <p>Events empfangen/senden, Trigger-basierte Automation</p>
+                            <div class="int-tags"><span class="int-tag">Events</span><span class="int-tag">HTTP</span></div>
+                        </div>
+                        <div class="int-card" onclick="intKonfig(this)">
+                            <div class="int-card-icon"><i class="fa-solid fa-database" style="color:#f472b6"></i></div>
+                            <h4>Datenbank (SQL)</h4>
+                            <p>PostgreSQL, MySQL, MSSQL — Abfragen, Berichte, Datenexport</p>
+                            <div class="int-tags"><span class="int-tag">SQL</span><span class="int-tag">Read/Write</span></div>
+                        </div>
+                        <div class="int-card" onclick="intKonfig(this)">
+                            <div class="int-card-icon"><i class="fa-solid fa-diagram-project" style="color:#ff6d5a"></i></div>
+                            <h4>n8n / Make / Zapier</h4>
+                            <p>Low-Code Automation — Workflows verbinden, Trigger, Actions</p>
+                            <div class="int-tags"><span class="int-tag">Automation</span><span class="int-tag">No-Code</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Konfig Panel -->
+                <div class="card" id="int-config-panel" style="display:none">
+                    <h3><i class="fa-solid fa-gear"></i> <span id="int-config-title">Integration konfigurieren</span></h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="int-url">API URL / Endpoint</label>
+                            <input type="text" id="int-url" placeholder="https://instance.service-now.com/api/">
+                        </div>
+                        <div class="form-group">
+                            <label for="int-auth">Authentifizierung</label>
+                            <select id="int-auth">
+                                <option value="oauth2">OAuth 2.0</option>
+                                <option value="apikey">API Key</option>
+                                <option value="basic">Basic Auth</option>
+                                <option value="bearer">Bearer Token</option>
+                                <option value="cert">Zertifikat (mTLS)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="int-user">Benutzername / Client ID</label>
+                            <input type="text" id="int-user" placeholder="client_id oder username">
+                        </div>
+                        <div class="form-group">
+                            <label for="int-pass">Passwort / Secret</label>
+                            <input type="password" id="int-pass" placeholder="********">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="int-mapping">Feld-Mapping (JSON)</label>
+                        <textarea id="int-mapping" rows="4" class="ai-code-editor" placeholder='{"caller_name": "$.patient.name", "reason": "$.ticket.description"}'></textarea>
+                    </div>
+                    <div class="button-gruppe">
+                        <button type="button" class="btn-primary" onclick="intSpeichern()"><i class="fa-solid fa-floppy-disk"></i> Verbindung speichern</button>
+                        <button type="button" class="btn-secondary" onclick="intTesten()"><i class="fa-solid fa-plug"></i> Verbindung testen</button>
+                        <button type="button" class="btn-text" onclick="document.getElementById('int-config-panel').style.display='none'"><i class="fa-solid fa-xmark"></i> Schliessen</button>
+                    </div>
+                    <div id="int-erfolg" class="erfolg-meldung" hidden></div>
+                </div>
+            </div>
+
+            <!-- ===== TAB 3: Prompt Engineering ===== -->
+            <div class="ai-tab-content" id="tab-prompts">
                 <div class="card">
                     <h3><i class="fa-solid fa-terminal"></i> System-Prompt Editor</h3>
                     <div class="form-group">
@@ -168,7 +487,7 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label for="pe-kontext">Zusaetzlicher Kontext (Branchen-spezifisch)</label>
-                            <textarea id="pe-kontext" rows="5" placeholder="Spezifische Infos fuer den Agent: Oeffnungszeiten, Aerzte, Leistungen..." class="ai-code-editor"></textarea>
+                            <textarea id="pe-kontext" rows="5" placeholder="Spezifische Infos: Oeffnungszeiten, Abteilungen, Leistungen..." class="ai-code-editor"></textarea>
                         </div>
                         <div class="form-group">
                             <label for="pe-regeln">Prompt-Regeln (wird ans Ende angehaengt)</label>
@@ -181,8 +500,6 @@
                     </div>
                     <div id="pe-erfolg" class="erfolg-meldung" hidden></div>
                 </div>
-
-                <!-- Test-Chat -->
                 <div class="card">
                     <h3><i class="fa-solid fa-flask"></i> Prompt testen (Testgespraech)</h3>
                     <div id="pe-test-chat" class="ai-test-chat">
@@ -198,85 +515,143 @@
                         <button type="button" id="pe-chat-leeren" class="btn-text"><i class="fa-solid fa-trash"></i> Chat leeren</button>
                     </div>
                 </div>
-
-                <!-- Prompt-Vorlagen -->
                 <div class="card">
                     <h3><i class="fa-solid fa-copy"></i> Prompt-Vorlagen</h3>
                     <div id="pe-vorlagen" class="ai-vorlagen-grid"></div>
                 </div>
             </div>
 
-            <!-- ===== TAB 3: Monitoring & Logs ===== -->
-            <div class="ai-tab-content" id="tab-monitoring">
-
-                <!-- KPIs -->
-                <div class="stat-grid ai-stat-grid">
-                    <div class="stat-card">
-                        <div class="stat-label">Gespraeche heute</div>
-                        <div class="stat-value" id="mon-gespraeche">0</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Durchschn. Latenz</div>
-                        <div class="stat-value" id="mon-latenz">— ms</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Erfolgsquote</div>
-                        <div class="stat-value" id="mon-erfolg">— %</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Aktive Sessions</div>
-                        <div class="stat-value" id="mon-sessions">0</div>
+            <!-- ===== TAB 4: Deployment ===== -->
+            <div class="ai-tab-content" id="tab-deployment">
+                <div class="card">
+                    <h3><i class="fa-solid fa-rocket"></i> Agent Deployment Pipeline</h3>
+                    <p style="color:var(--text-muted,#94a3b8);font-size:13px;margin-bottom:16px">Agent vom Builder bis zum Live-Betrieb — Schritt fuer Schritt.</p>
+                    <div class="deploy-pipeline">
+                        <div class="deploy-step done">
+                            <div class="step-num">Schritt 1</div>
+                            <div class="step-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+                            <div class="step-title">Konfiguration</div>
+                            <div class="step-desc">Agent Builder</div>
+                        </div>
+                        <div class="deploy-step done">
+                            <div class="step-num">Schritt 2</div>
+                            <div class="step-icon"><i class="fa-solid fa-plug"></i></div>
+                            <div class="step-title">Integrationen</div>
+                            <div class="step-desc">Schnittstellen verbinden</div>
+                        </div>
+                        <div class="deploy-step done">
+                            <div class="step-num">Schritt 3</div>
+                            <div class="step-icon"><i class="fa-solid fa-terminal"></i></div>
+                            <div class="step-title">Prompts</div>
+                            <div class="step-desc">Verhalten definieren</div>
+                        </div>
+                        <div class="deploy-step active">
+                            <div class="step-num">Schritt 4</div>
+                            <div class="step-icon"><i class="fa-solid fa-flask"></i></div>
+                            <div class="step-title">Testing</div>
+                            <div class="step-desc">Agent validieren</div>
+                        </div>
+                        <div class="deploy-step">
+                            <div class="step-num">Schritt 5</div>
+                            <div class="step-icon"><i class="fa-solid fa-rocket"></i></div>
+                            <div class="step-title">Go Live</div>
+                            <div class="step-desc">Produktiv schalten</div>
+                        </div>
                     </div>
                 </div>
+                <div class="card">
+                    <h3><i class="fa-solid fa-robot"></i> Agent fuer Deployment</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="dep-agent">Agent auswaehlen</label>
+                            <select id="dep-agent"><option value="">— Agent waehlen —</option></select>
+                        </div>
+                        <div class="form-group">
+                            <label for="dep-version">Version</label>
+                            <select id="dep-version">
+                                <option value="v1.0">v1.0 (aktuell)</option>
+                                <option value="v0.9">v0.9 (vorherige)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3><i class="fa-solid fa-server"></i> Umgebungen</h3>
+                    <div class="env-grid">
+                        <div class="env-card">
+                            <h4><i class="fa-solid fa-code"></i> Development <span class="env-badge dev">DEV</span></h4>
+                            <div class="env-detail"><span>Status:</span><span style="color:#22c55e">Aktiv</span></div>
+                            <div class="env-detail"><span>URL:</span><span>dev.agent.local:8080</span></div>
+                            <div class="env-detail"><span>LLM:</span><span>Llama 3.1 8B</span></div>
+                            <div class="env-detail"><span>Telefonie:</span><span>SIP Test-Trunk</span></div>
+                            <div class="env-detail"><span>Letztes Deploy:</span><span>Heute, 14:32</span></div>
+                            <button type="button" class="btn-secondary" style="margin-top:12px;width:100%"><i class="fa-solid fa-rotate"></i> Neu deployen</button>
+                        </div>
+                        <div class="env-card">
+                            <h4><i class="fa-solid fa-vial"></i> Staging <span class="env-badge staging">STAGING</span></h4>
+                            <div class="env-detail"><span>Status:</span><span style="color:#eab308">Bereit</span></div>
+                            <div class="env-detail"><span>URL:</span><span>staging.voicebot.example.com</span></div>
+                            <div class="env-detail"><span>LLM:</span><span>Llama 3.1 70B</span></div>
+                            <div class="env-detail"><span>Telefonie:</span><span>Asterisk Staging</span></div>
+                            <div class="env-detail"><span>Letztes Deploy:</span><span>Gestern, 18:05</span></div>
+                            <button type="button" class="btn-secondary" style="margin-top:12px;width:100%"><i class="fa-solid fa-arrow-up"></i> Promote to Staging</button>
+                        </div>
+                        <div class="env-card">
+                            <h4><i class="fa-solid fa-shield-halved"></i> Production <span class="env-badge prod">PROD</span></h4>
+                            <div class="env-detail"><span>Status:</span><span style="color:#22c55e">Live</span></div>
+                            <div class="env-detail"><span>URL:</span><span>voicebot.example.com</span></div>
+                            <div class="env-detail"><span>LLM:</span><span>Llama 3.1 70B</span></div>
+                            <div class="env-detail"><span>Telefonie:</span><span>Asterisk Prod + ACD</span></div>
+                            <div class="env-detail"><span>Letztes Deploy:</span><span>25.02.2026</span></div>
+                            <button type="button" class="btn-primary" style="margin-top:12px;width:100%"><i class="fa-solid fa-rocket"></i> Deploy to Production</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3><i class="fa-solid fa-clipboard-check"></i> Go-Live Checklist</h3>
+                    <div style="display:grid;gap:8px">
+                        <label class="checklist-item"><input type="checkbox" checked> <i class="fa-solid fa-check-circle" style="color:#22c55e"></i> Agent-Konfiguration vollstaendig</label>
+                        <label class="checklist-item"><input type="checkbox" checked> <i class="fa-solid fa-check-circle" style="color:#22c55e"></i> Integrationen verbunden &amp; getestet</label>
+                        <label class="checklist-item"><input type="checkbox" checked> <i class="fa-solid fa-check-circle" style="color:#22c55e"></i> System-Prompt optimiert</label>
+                        <label class="checklist-item"><input type="checkbox"> <i class="fa-solid fa-circle" style="color:var(--text-muted,#94a3b8)"></i> Asterisk SIP-Trunk konfiguriert</label>
+                        <label class="checklist-item"><input type="checkbox"> <i class="fa-solid fa-circle" style="color:var(--text-muted,#94a3b8)"></i> ACD-Queues &amp; Routing eingerichtet</label>
+                        <label class="checklist-item"><input type="checkbox"> <i class="fa-solid fa-circle" style="color:var(--text-muted,#94a3b8)"></i> Fallback / Eskalation getestet</label>
+                        <label class="checklist-item"><input type="checkbox"> <i class="fa-solid fa-circle" style="color:var(--text-muted,#94a3b8)"></i> Datenschutz / DSGVO geprueft</label>
+                    </div>
+                </div>
+            </div>
 
-                <!-- Letzte Gespraeche -->
+            <!-- ===== TAB 5: Monitoring ===== -->
+            <div class="ai-tab-content" id="tab-monitoring">
+                <div class="stat-grid ai-stat-grid">
+                    <div class="stat-card"><div class="stat-label">Gespraeche heute</div><div class="stat-value" id="mon-gespraeche">0</div></div>
+                    <div class="stat-card"><div class="stat-label">Durchschn. Latenz</div><div class="stat-value" id="mon-latenz">— ms</div></div>
+                    <div class="stat-card"><div class="stat-label">Erfolgsquote</div><div class="stat-value" id="mon-erfolg">— %</div></div>
+                    <div class="stat-card"><div class="stat-label">Aktive Sessions</div><div class="stat-value" id="mon-sessions">0</div></div>
+                </div>
                 <div class="card">
                     <h3><i class="fa-solid fa-list"></i> Letzte Gespraeche</h3>
                     <div class="table-container">
                         <table id="mon-gespraeche-tabelle">
-                            <thead>
-                                <tr>
-                                    <th>Zeit</th>
-                                    <th>Kanal</th>
-                                    <th>Agent</th>
-                                    <th>Dauer</th>
-                                    <th>Nachrichten</th>
-                                    <th>Status</th>
-                                    <th>Aktionen</th>
-                                </tr>
-                            </thead>
+                            <thead><tr><th>Zeit</th><th>Kanal</th><th>Agent</th><th>Dauer</th><th>Nachrichten</th><th>Status</th><th>Aktionen</th></tr></thead>
                             <tbody></tbody>
                         </table>
                     </div>
                 </div>
-
-                <!-- Live-Transkript -->
                 <div class="card">
                     <h3><i class="fa-solid fa-scroll"></i> Transkript</h3>
                     <div id="mon-transkript" class="ai-transkript">
                         <p class="ai-transkript-leer">Gespraech auswaehlen um Transkript anzuzeigen...</p>
                     </div>
                 </div>
-
-                <!-- System-Status -->
                 <div class="card">
                     <h3><i class="fa-solid fa-server"></i> System-Status</h3>
                     <div class="ai-system-status">
-                        <div class="ai-status-item">
-                            <span class="ai-status-dot" id="mon-llm-dot"></span>
-                            <span>LLM (Ollama)</span>
-                            <span id="mon-llm-info" class="ai-status-detail">pruefen...</span>
-                        </div>
-                        <div class="ai-status-item">
-                            <span class="ai-status-dot" id="mon-stt-dot"></span>
-                            <span>STT (Whisper)</span>
-                            <span id="mon-stt-info" class="ai-status-detail">pruefen...</span>
-                        </div>
-                        <div class="ai-status-item">
-                            <span class="ai-status-dot" id="mon-tts-dot"></span>
-                            <span>TTS (Edge)</span>
-                            <span id="mon-tts-info" class="ai-status-detail">pruefen...</span>
-                        </div>
+                        <div class="ai-status-item"><span class="ai-status-dot" id="mon-llm-dot"></span><span>LLM (Ollama)</span><span id="mon-llm-info" class="ai-status-detail">pruefen...</span></div>
+                        <div class="ai-status-item"><span class="ai-status-dot" id="mon-stt-dot"></span><span>STT (Whisper)</span><span id="mon-stt-info" class="ai-status-detail">pruefen...</span></div>
+                        <div class="ai-status-item"><span class="ai-status-dot" id="mon-tts-dot"></span><span>TTS (Edge)</span><span id="mon-tts-info" class="ai-status-detail">pruefen...</span></div>
+                        <div class="ai-status-item"><span class="ai-status-dot" id="mon-asterisk-dot"></span><span>Asterisk PBX</span><span id="mon-asterisk-info" class="ai-status-detail">pruefen...</span></div>
+                        <div class="ai-status-item"><span class="ai-status-dot" id="mon-acd-dot"></span><span>ACD / Queues</span><span id="mon-acd-info" class="ai-status-detail">pruefen...</span></div>
                     </div>
                 </div>
             </div>
@@ -285,7 +660,7 @@
     </div>
     <button id="chat-toggle" type="button"><i class="fa-solid fa-comment-dots"></i></button>
     <div id="chat-fenster">
-        <div class="chat-header"><span><i class="fa-solid fa-robot"></i> Praxis-Assistent</span><button id="chat-schliessen" type="button"><i class="fa-solid fa-xmark"></i></button></div>
+        <div class="chat-header"><span><i class="fa-solid fa-robot"></i> Assistent</span><button id="chat-schliessen" type="button"><i class="fa-solid fa-xmark"></i></button></div>
         <div id="chat-nachrichten"></div>
         <div class="chat-eingabe">
             <input id="chat-input" type="text" placeholder="Frage stellen oder sprechen...">
@@ -294,5 +669,11 @@
         </div>
     </div>
     <script src="app.js"></script>
+    <script>
+        function intKonfig(el){var p=document.getElementById('int-config-panel'),t=document.getElementById('int-config-title'),n=el.querySelector('h4').textContent;t.textContent=n+' konfigurieren';p.style.display='block';p.scrollIntoView({behavior:'smooth'})}
+        function intSpeichern(){var m=document.getElementById('int-erfolg');m.textContent='Verbindung gespeichert!';m.hidden=false;setTimeout(function(){m.hidden=true},3000)}
+        function intTesten(){var m=document.getElementById('int-erfolg');m.textContent='Verbindung erfolgreich getestet!';m.style.background='rgba(34,197,94,.1)';m.style.color='#22c55e';m.hidden=false;setTimeout(function(){m.hidden=true},3000)}
+        document.querySelectorAll('.ai-tab').forEach(function(tab){tab.addEventListener('click',function(){document.querySelectorAll('.ai-tab').forEach(function(t){t.classList.remove('active')});document.querySelectorAll('.ai-tab-content').forEach(function(c){c.classList.remove('active')});tab.classList.add('active');document.getElementById('tab-'+tab.dataset.tab).classList.add('active')})})
+    </script>
 </body>
 </html>

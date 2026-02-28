@@ -1,278 +1,59 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI Agent Hub – MedReception</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="style.css">
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Inter', sans-serif; background: #f8fafc; display: flex; }
-  .main { flex: 1; padding: 28px; overflow: auto; margin-left: 240px; }
-  .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
-  h1 { font-size: 22px; font-weight: 700; color: #111827; }
-  .live-badge { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #15803d; font-weight: 600; background: #dcfce7; padding: 4px 10px; border-radius: 999px; }
-  .live-dot { width: 7px; height: 7px; background: #22c55e; border-radius: 50%; animation: blink 1.2s infinite; }
-  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
-  .date { font-size: 13px; color: #6b7280; margin-bottom: 20px; }
-  /* Tabs */
-  .dash-tabs { display: flex; gap: 4px; margin-bottom: 20px; background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 5px; width: fit-content; flex-wrap: wrap; }
-  .dash-tab { padding: 8px 18px; border-radius: 9px; font-size: 13px; font-weight: 600; cursor: pointer; color: #6b7280; border: none; background: transparent; font-family: 'Inter', sans-serif; }
-  .dash-tab.active { background: #6366f1; color: white; }
-  .dash-tab:hover:not(.active) { background: #f1f5f9; color: #374151; }
-  /* Cards */
-  .card { background: white; border-radius: 14px; border: 1px solid #e5e7eb; margin-bottom: 20px; }
-  .card-header { padding: 14px 20px; border-bottom: 1px solid #f3f4f6; display: flex; justify-content: space-between; align-items: center; }
-  .card-header h2 { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
-  .card-body { padding: 16px 20px; }
-  /* KPI */
-  .kpi-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 20px; }
-  .kpi { background: white; border-radius: 14px; border: 1px solid #e5e7eb; padding: 16px 18px; }
-  .kpi-label { font-size: 11px; color: #6b7280; font-weight: 500; margin-bottom: 8px; }
-  .kpi-value { font-size: 26px; font-weight: 700; color: #111827; }
-  .kpi-sub { font-size: 10px; color: #9ca3af; margin-top: 2px; }
-  .kpi-trend { font-size: 10px; font-weight: 600; margin-top: 4px; }
-  .kpi-trend.up{color:#15803d} .kpi-trend.down{color:#dc2626}
-  /* Forms */
-  .form-row { margin-bottom: 12px; }
-  .form-label { font-size: 11px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 5px; }
-  .form-select, .form-input { width: 100%; padding: 8px 12px; border: 1.5px solid #e2e8f0; border-radius: 9px; font-size: 13px; font-family: 'Inter', sans-serif; color: #1e293b; outline: none; background: white; }
-  .form-select:focus, .form-input:focus { border-color: #6366f1; }
-  .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
-  .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 12px; }
-  textarea.form-input { min-height: 80px; resize: vertical; line-height: 1.6; }
-  /* Buttons */
-  .btn { padding: 7px 16px; border-radius: 9px; font-size: 12px; font-weight: 600; border: none; cursor: pointer; font-family: 'Inter', sans-serif; }
-  .btn.primary { background: #6366f1; color: white; }
-  .btn.secondary { background: #f1f5f9; color: #475569; border: 1.5px solid #e2e8f0; }
-  .btn.green { background: #16a34a; color: white; }
-  .btn.red { background: #dc2626; color: white; }
-  .btn:hover { opacity: .85; }
-  .btn-row { display: flex; gap: 8px; margin-top: 14px; }
-  /* Skills */
-  .skills-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-  .skill-tag { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 10px; border: 1.5px solid #e2e8f0; background: #f9fafb; font-size: 12px; font-weight: 500; color: #475569; cursor: pointer; transition: all .15s; }
-  .skill-tag.on { background: #eff6ff; border-color: #93c5fd; color: #4f46e5; }
-  .skill-check { width: 16px; height: 16px; border-radius: 4px; border: 1.5px solid #d1d5db; display: flex; align-items: center; justify-content: center; font-size: 10px; flex-shrink: 0; }
-  .skill-tag.on .skill-check { background: #6366f1; border-color: #6366f1; color: white; }
-  /* Status */
-  .status-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f3f4f6; }
-  .status-row:last-child { border-bottom: none; }
-  .status-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
-  .status-dot.green { background: #22c55e; box-shadow: 0 0 0 3px rgba(34,197,94,.15); }
-  .status-dot.yellow { background: #f59e0b; box-shadow: 0 0 0 3px rgba(245,158,11,.15); }
-  /* Chat */
-  .chat-box { background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 12px; height: 320px; overflow-y: auto; padding: 14px; margin-bottom: 12px; }
-  .chat-msg { margin-bottom: 10px; display: flex; flex-direction: column; }
-  .chat-msg.bot { align-items: flex-start; } .chat-msg.user { align-items: flex-end; }
-  .chat-bubble { max-width: 75%; padding: 10px 14px; border-radius: 12px; font-size: 13px; line-height: 1.5; }
-  .chat-msg.bot .chat-bubble { background: white; border: 1px solid #e5e7eb; color: #374151; border-bottom-left-radius: 4px; }
-  .chat-msg.user .chat-bubble { background: #6366f1; color: white; border-bottom-right-radius: 4px; }
-  .chat-sender { font-size: 10px; font-weight: 600; color: #9ca3af; margin-bottom: 3px; }
-  .chat-input-row { display: flex; gap: 8px; }
-  .chat-input-row input { flex: 1; padding: 10px 14px; border: 1.5px solid #e2e8f0; border-radius: 10px; font-size: 13px; font-family: 'Inter', sans-serif; outline: none; }
-  .chat-input-row input:focus { border-color: #6366f1; }
-  .chat-meta { display: flex; gap: 16px; margin-top: 8px; font-size: 11px; color: #9ca3af; }
-  /* Table */
-  .tbl { width: 100%; border-collapse: collapse; font-size: 12px; }
-  .tbl th { padding: 8px 12px; text-align: left; font-size: 10px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: .5px; border-bottom: 1px solid #e5e7eb; background: #f9fafb; white-space: nowrap; }
-  .tbl td { padding: 10px 12px; border-bottom: 1px solid #f3f4f6; color: #374151; }
-  .tbl td.fw { font-weight: 600; color: #1e293b; }
-  .badge { padding: 2px 8px; border-radius: 6px; font-size: 10px; font-weight: 600; }
-  .badge.green { background: #dcfce7; color: #15803d; }
-  .badge.blue { background: #dbeafe; color: #4f46e5; }
-  .badge.yellow { background: #fef3c7; color: #92400e; }
-  .badge.red { background: #fef2f2; color: #dc2626; }
-  .badge.gray { background: #f3f4f6; color: #6b7280; }
-  /* Templates */
-  .tpl-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-  .tpl-card { border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 14px 16px; cursor: pointer; transition: all .15s; }
-  .tpl-card:hover { border-color: #93c5fd; background: #f0f9ff; }
-  .tpl-title { font-size: 13px; font-weight: 700; color: #1e293b; margin-bottom: 4px; }
-  .tpl-desc { font-size: 11px; color: #6b7280; line-height: 1.5; }
-  .tpl-badge { display: inline-block; margin-top: 6px; padding: 2px 8px; border-radius: 6px; font-size: 10px; font-weight: 600; background: #ede9fe; color: #7c3aed; }
-  /* Slider */
-  .slider-row { display: flex; align-items: center; gap: 12px; }
-  .slider-row input[type="range"] { flex: 1; accent-color: #6366f1; }
-  .slider-val { font-size: 14px; font-weight: 700; color: #6366f1; min-width: 32px; text-align: center; }
-  .section-title { font-size: 13px; font-weight: 700; color: #374151; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
-
-  /* ═══ Galerie Styles ═══ */
-  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
-  .stat-card { background: white; border-radius: 14px; border: 1px solid #e5e7eb; padding: 18px 20px; position: relative; overflow: hidden; }
-  .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
-  .stat-card.purple::before { background: #6366f1; } .stat-card.sgreen::before { background: #22c55e; }
-  .stat-card.syellow::before { background: #f59e0b; } .stat-card.sblue::before { background: #3b82f6; }
-  .stat-icon2 { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; margin-bottom: 12px; }
-  .stat-icon2.purple { background: #ede9fe; color: #6366f1; } .stat-icon2.green { background: #dcfce7; color: #16a34a; }
-  .stat-icon2.yellow { background: #fef3c7; color: #d97706; } .stat-icon2.blue { background: #dbeafe; color: #2563eb; }
-  .stat-label2 { font-size: 11px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
-  .stat-value2 { font-size: 28px; font-weight: 800; color: #0f172a; }
-  .stat-sub2 { font-size: 11px; color: #9ca3af; margin-top: 2px; }
-  .filter-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
-  .search-box { position: relative; flex: 1; min-width: 220px; }
-  .search-box input { width: 100%; padding: 10px 14px 10px 38px; border: 1.5px solid #e2e8f0; border-radius: 10px; font-size: 13px; font-family: 'Inter', sans-serif; color: #1e293b; outline: none; background: white; }
-  .search-box input:focus { border-color: #6366f1; }
-  .search-box i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #9ca3af; font-size: 13px; }
-  .filter-select { padding: 10px 14px; border: 1.5px solid #e2e8f0; border-radius: 10px; font-size: 13px; font-family: 'Inter', sans-serif; color: #1e293b; outline: none; background: white; cursor: pointer; min-width: 140px; }
-  .btn-create { display: flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 10px; font-size: 13px; font-weight: 600; border: none; cursor: pointer; font-family: 'Inter', sans-serif; background: #6366f1; color: white; }
-  .btn-create:hover { background: #4f46e5; }
-  .agent-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-  .agent-card { background: white; border-radius: 14px; border: 1px solid #e5e7eb; overflow: hidden; transition: all .2s ease; display: flex; flex-direction: column; }
-  .agent-card:hover { border-color: #c7d2fe; box-shadow: 0 8px 25px rgba(99,102,241,.1); transform: translateY(-2px); }
-  .agent-card-header { padding: 20px 20px 0; display: flex; align-items: flex-start; gap: 14px; }
-  .agent-avatar { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; color: white; flex-shrink: 0; }
-  .agent-avatar.purple { background: linear-gradient(135deg, #6366f1, #8b5cf6); }
-  .agent-avatar.green { background: linear-gradient(135deg, #22c55e, #16a34a); }
-  .agent-avatar.blue { background: linear-gradient(135deg, #3b82f6, #2563eb); }
-  .agent-avatar.orange { background: linear-gradient(135deg, #f59e0b, #ea580c); }
-  .agent-avatar.pink { background: linear-gradient(135deg, #ec4899, #db2777); }
-  .agent-avatar.teal { background: linear-gradient(135deg, #14b8a6, #0d9488); }
-  .agent-header-info { flex: 1; min-width: 0; }
-  .agent-name { font-size: 14px; font-weight: 700; color: #0f172a; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .agent-branch { font-size: 11px; color: #6b7280; font-weight: 500; }
-  .agent-status-badge { padding: 3px 10px; border-radius: 999px; font-size: 10px; font-weight: 700; white-space: nowrap; flex-shrink: 0; }
-  .agent-status-badge.aktiv { background: #dcfce7; color: #15803d; }
-  .agent-status-badge.entwurf { background: #fef3c7; color: #92400e; }
-  .agent-status-badge.inaktiv { background: #f3f4f6; color: #6b7280; }
-  .agent-card-body { padding: 16px 20px; flex: 1; }
-  .agent-detail-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 12px; color: #475569; }
-  .agent-detail-row i { width: 16px; text-align: center; color: #9ca3af; font-size: 11px; }
-  .agent-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 14px; padding-top: 14px; border-top: 1px solid #f3f4f6; }
-  .agent-kpi { text-align: center; }
-  .agent-kpi-value { font-size: 16px; font-weight: 800; color: #0f172a; }
-  .agent-kpi-label { font-size: 10px; color: #9ca3af; font-weight: 500; margin-top: 1px; }
-  .agent-card-footer { padding: 14px 20px; border-top: 1px solid #f3f4f6; display: flex; align-items: center; justify-content: space-between; background: #fafbfc; }
-  .agent-modified { font-size: 10px; color: #9ca3af; }
-  .agent-actions { display: flex; gap: 4px; }
-  .agent-actions button { width: 32px; height: 32px; border-radius: 8px; border: 1.5px solid #e2e8f0; background: white; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #64748b; transition: all .15s; }
-  .agent-actions button:hover { border-color: #6366f1; color: #6366f1; background: #f5f3ff; }
-  .agent-actions button.danger:hover { border-color: #ef4444; color: #ef4444; background: #fef2f2; }
-  .agent-actions button.success:hover { border-color: #22c55e; color: #22c55e; background: #f0fdf4; }
-  /* Modal */
-  .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15,23,42,.5); z-index: 1000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
-  .modal-overlay.show { display: flex; }
-  .modal { background: white; border-radius: 16px; width: 90%; max-width: 540px; max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 50px rgba(0,0,0,.15); }
-  .modal-header { padding: 20px 24px; border-bottom: 1px solid #f3f4f6; display: flex; align-items: center; justify-content: space-between; }
-  .modal-header h2 { font-size: 16px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px; }
-  .modal-close { width: 32px; height: 32px; border-radius: 8px; border: none; background: #f1f5f9; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #64748b; }
-  .modal-body { padding: 24px; }
-  .modal-footer { padding: 16px 24px; border-top: 1px solid #f3f4f6; display: flex; justify-content: flex-end; gap: 10px; }
-  .m-form-group { margin-bottom: 16px; }
-  .m-form-group label { display: block; font-size: 11px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
-  .m-form-group input, .m-form-group select { width: 100%; padding: 10px 14px; border: 1.5px solid #e2e8f0; border-radius: 10px; font-size: 13px; font-family: 'Inter', sans-serif; color: #1e293b; outline: none; background: white; }
-
-  /* ═══ Flow Editor Styles ═══ */
-  .fe-toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; padding: 12px 16px; background: white; border: 1px solid #e5e7eb; border-radius: 12px; }
-  .fe-mode { display: flex; background: #f1f5f9; border: 2px solid #e2e8f0; border-radius: 11px; padding: 3px; gap: 2px; }
-  .fe-mode-btn { padding: 6px 18px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; border: none; font-family: 'Inter', sans-serif; color: #64748b; background: transparent; display: flex; align-items: center; gap: 6px; }
-  .fe-mode-btn.active-vb { background: linear-gradient(135deg,#0ea5e9,#0369a1); color: white; box-shadow: 0 2px 8px rgba(3,105,161,.3); }
-  .fe-mode-btn.active-cb { background: linear-gradient(135deg,#8b5cf6,#6d28d9); color: white; box-shadow: 0 2px 8px rgba(109,40,217,.3); }
-  .fe-workspace { display: flex; gap: 0; height: calc(100vh - 280px); min-height: 500px; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; background: white; }
-  .fe-palette { width: 220px; border-right: 1px solid #e2e8f0; overflow-y: auto; flex-shrink: 0; background: white; }
-  .fe-pal-banner { padding: 10px 14px; font-size: 11px; font-weight: 700; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; gap: 7px; }
-  .fe-pal-group { font-size: 9px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 1.2px; padding: 10px 14px 4px; }
-  .fe-chip { display: flex; align-items: center; gap: 8px; padding: 8px 12px; margin: 2px 8px; border-radius: 9px; cursor: pointer; border: 1.5px solid #e5e7eb; background: #f8fafc; transition: all .13s; user-select: none; }
-  .fe-chip:hover { border-color: #93c5fd; background: #eff6ff; transform: translateX(2px); }
-  .fe-cdot { width: 8px; height: 8px; border-radius: 3px; flex-shrink: 0; }
-  .fe-clbl { font-size: 12px; font-weight: 600; color: #1e293b; }
-  .fe-csub { font-size: 10px; color: #94a3b8; margin-top: 1px; }
-  .fe-canvas { flex: 1; overflow-y: auto; padding: 24px; background: #f8fafc; }
-  .fe-canvas-inner { max-width: 680px; margin: 0 auto; }
-  .fe-canvas-empty { text-align: center; padding: 60px 20px; color: #94a3b8; }
-  /* Flow Blocks */
-  .fe-block { background: white; border: 1.5px solid #e5e7eb; border-radius: 13px; margin-bottom: 8px; overflow: hidden; transition: border-color .13s,box-shadow .13s; }
-  .fe-block:hover { border-color: #93c5fd; box-shadow: 0 3px 12px rgba(37,99,235,.06); }
-  .fe-block-head { display: flex; align-items: center; gap: 8px; padding: 9px 14px; border-bottom: 1px solid #f1f5f9; }
-  .fe-block-icon { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
-  .fe-block-nr { font-size: 9px; font-weight: 700; color: #94a3b8; background: #f1f5f9; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; border-radius: 50%; flex-shrink: 0; }
-  .fe-block-title { font-size: 12px; font-weight: 700; color: #1e293b; flex: 1; }
-  .fe-block-badge { padding: 2px 8px; border-radius: 5px; font-size: 9px; font-weight: 700; }
-  .fe-block-actions { display: flex; gap: 2px; }
-  .fe-block-actions button { background: none; border: none; color: #cbd5e1; cursor: pointer; padding: 3px 5px; border-radius: 5px; font-size: 11px; }
-  .fe-block-actions button:hover { color: #475569; background: #f1f5f9; }
-  .fe-block-actions .btn-del:hover { color: #ef4444; background: #fef2f2; }
-  /* Block type colors */
-  .fe-block.typ-start .fe-block-head { background: #f0fdf4; }
-  .fe-block.typ-start .fe-block-icon { background: #dcfce7; }
-  .fe-block.typ-start .fe-block-badge { background: #dcfce7; color: #15803d; }
-  .fe-block.typ-end .fe-block-head { background: #fef2f2; }
-  .fe-block.typ-end .fe-block-icon { background: #fef2f2; }
-  .fe-block.typ-end .fe-block-badge { background: #fef2f2; color: #ef4444; }
-  .fe-block.typ-greet .fe-block-head,.fe-block.typ-say .fe-block-head,.fe-block.typ-info .fe-block-head { background: #f5f3ff; }
-  .fe-block.typ-greet .fe-block-icon,.fe-block.typ-say .fe-block-icon,.fe-block.typ-info .fe-block-icon { background: #ede9fe; }
-  .fe-block.typ-greet .fe-block-badge,.fe-block.typ-say .fe-block-badge,.fe-block.typ-info .fe-block-badge { background: #ede9fe; color: #7c3aed; }
-  .fe-block.typ-listen .fe-block-head,.fe-block.typ-input .fe-block-head,.fe-block.typ-click .fe-block-head { background: #eff6ff; }
-  .fe-block.typ-listen .fe-block-icon,.fe-block.typ-input .fe-block-icon,.fe-block.typ-click .fe-block-icon { background: #dbeafe; }
-  .fe-block.typ-listen .fe-block-badge,.fe-block.typ-input .fe-block-badge,.fe-block.typ-click .fe-block-badge { background: #dbeafe; color: #1d4ed8; }
-  .fe-block.typ-cond .fe-block-head { background: #fffbeb; }
-  .fe-block.typ-cond .fe-block-icon { background: #fef3c7; }
-  .fe-block.typ-cond .fe-block-badge { background: #fef3c7; color: #d97706; }
-  .fe-block.typ-kb .fe-block-head { background: #ecfdf5; }
-  .fe-block.typ-kb .fe-block-icon { background: #d1fae5; }
-  .fe-block.typ-kb .fe-block-badge { background: #d1fae5; color: #059669; }
-  .fe-block.typ-termin .fe-block-head,.fe-block.typ-ticket .fe-block-head,.fe-block.typ-rezept .fe-block-head,.fe-block.typ-mail .fe-block-head { background: #fff7ed; }
-  .fe-block.typ-termin .fe-block-icon,.fe-block.typ-ticket .fe-block-icon,.fe-block.typ-rezept .fe-block-icon,.fe-block.typ-mail .fe-block-icon { background: #ffedd5; }
-  .fe-block.typ-termin .fe-block-badge,.fe-block.typ-ticket .fe-block-badge,.fe-block.typ-rezept .fe-block-badge,.fe-block.typ-mail .fe-block-badge { background: #ffedd5; color: #ea580c; }
-  .fe-block.typ-transfer .fe-block-head,.fe-block.typ-queue .fe-block-head { background: #fffbeb; }
-  .fe-block.typ-transfer .fe-block-icon,.fe-block.typ-queue .fe-block-icon { background: #fef3c7; }
-  .fe-block.typ-transfer .fe-block-badge,.fe-block.typ-queue .fe-block-badge { background: #fef3c7; color: #92400e; }
-  .fe-who-tag { display: inline-flex; align-items: center; gap: 4px; font-size: 9px; font-weight: 700; padding: 3px 8px; border-radius: 6px; margin-bottom: 6px; }
-  .fe-who-vb { background: #e0f2fe; color: #0369a1; }
-  .fe-who-cb { background: #ede9fe; color: #6d28d9; }
-  .fe-block-body { padding: 10px 14px; }
-  .fe-bf { margin-bottom: 6px; }
-  .fe-bf:last-child { margin-bottom: 0; }
-  .fe-bf label { display: block; font-size: 9px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: .8px; margin-bottom: 3px; }
-  .fe-bf input,.fe-bf textarea,.fe-bf select { width: 100%; padding: 7px 10px; border: 1.5px solid #e2e8f0; border-radius: 8px; font-size: 12px; font-family: 'Inter', sans-serif; color: #1e293b; background: white; outline: none; }
-  .fe-bf input:focus,.fe-bf textarea:focus,.fe-bf select:focus { border-color: #2563eb; }
-  .fe-bf textarea { resize: vertical; min-height: 52px; }
-  .fe-bf-row { display: flex; gap: 8px; }
-  .fe-bf-row .fe-bf { flex: 1; }
-  .fe-opt-item { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
-  .fe-opt-dot { width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; flex-shrink: 0; color: white; }
-  .fe-opt-item input { flex: 1; padding: 6px 10px; border: 1.5px solid #e2e8f0; border-radius: 8px; font-size: 12px; font-family: 'Inter', sans-serif; color: #1e293b; outline: none; }
-  .fe-opt-del { background: none; border: none; color: #d1d5db; cursor: pointer; font-size: 13px; padding: 2px 4px; }
-  .fe-opt-del:hover { color: #ef4444; }
-  .fe-opt-add { width: 100%; padding: 6px; border: 1.5px dashed #d1d5db; border-radius: 8px; font-size: 11px; color: #94a3b8; background: transparent; cursor: pointer; font-family: 'Inter', sans-serif; margin-top: 4px; }
-  .fe-opt-add:hover { border-color: #2563eb; color: #2563eb; }
-  .fe-kw-area { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; }
-  .fe-kwtag { display: inline-block; padding: 3px 9px; border-radius: 6px; font-size: 10px; font-weight: 600; cursor: pointer; background: #dbeafe; color: #1d4ed8; }
-  .fe-info-box { border-radius: 8px; padding: 7px 10px; font-size: 11px; margin-top: 6px; }
-  .fe-info-vb { background: #ecfdf5; border: 1px solid #6ee7b7; color: #047857; }
-  .fe-info-cb { background: #ede9fe; border: 1px solid #c4b5fd; color: #5b21b6; }
-  .fe-info-transfer { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; }
-  .fe-tog-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
-  .fe-tog-lbl { font-size: 12px; color: #374151; }
-  .fe-mtog { width: 34px; height: 18px; background: #d1d5db; border-radius: 9px; position: relative; cursor: pointer; transition: background .15s; flex-shrink: 0; }
-  .fe-mtog.on { background: #2563eb; }
-  .fe-mtog::after { content: ''; position: absolute; width: 12px; height: 12px; background: white; border-radius: 50%; top: 3px; left: 3px; transition: left .15s; }
-  .fe-mtog.on::after { left: 19px; }
-  .fe-statusbar { height: 27px; background: white; border-top: 1px solid #e2e8f0; display: flex; align-items: center; padding: 0 14px; gap: 16px; font-size: 11px; color: #94a3b8; border-radius: 0 0 12px 12px; }
-  .fe-sdot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; margin-right: 4px; }
-  .fe-badge-ok { padding: 3px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; display: none; }
-  .fe-badge-ok.show { display: inline-block; }
-  /* Preview Modal */
-  .fe-preview-overlay { display: none; position: fixed; inset: 0; background: rgba(15,23,42,.55); z-index: 200; align-items: center; justify-content: center; backdrop-filter: blur(3px); }
-  .fe-preview-overlay.show { display: flex; }
-  .fe-preview-box { background: white; border-radius: 18px; width: 860px; max-height: 86vh; overflow-y: auto; padding: 24px; box-shadow: 0 20px 60px rgba(0,0,0,.2); }
-  .fe-sim-line { border-radius: 8px; padding: 8px 12px; margin-bottom: 6px; font-size: 11px; }
-  .fe-sim-system { background: #1e293b; color: #64748b; }
-  .fe-sim-audio { background: #1e293b; color: #38bdf8; }
-  .fe-sim-input { background: #334155; color: #f1f5f9; }
-  .fe-sim-action { background: #1e293b; color: #34d399; }
-  .fe-sim-transfer { background: #1e2535; border: 1px solid #f59e0b; color: #fde68a; font-size: 10px; }
-  @media(max-width:1200px) { .agent-grid { grid-template-columns: repeat(2, 1fr); } }
-  @media(max-width:768px) { .agent-grid { grid-template-columns: 1fr; } .stats-grid { grid-template-columns: repeat(2,1fr); } .kpi-grid { grid-template-columns: repeat(2,1fr); } .fe-palette { display: none; } }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Agent Engineering – Plattform</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .int-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin-top:12px}
+        .int-card{background:var(--card-bg,#1e293b);border:1px solid var(--border,#334155);border-radius:12px;padding:20px;transition:all .2s;cursor:pointer;position:relative}
+        .int-card:hover{border-color:var(--primary,#6366f1);transform:translateY(-2px);box-shadow:0 4px 16px rgba(99,102,241,.15)}
+        .int-card.connected{border-color:#22c55e}
+        .int-card.connected::after{content:'';position:absolute;top:12px;right:12px;width:10px;height:10px;background:#22c55e;border-radius:50%}
+        .int-card-icon{font-size:28px;margin-bottom:10px}
+        .int-card h4{margin:0 0 6px;font-size:15px}
+        .int-card p{margin:0;font-size:12px;color:var(--text-muted,#94a3b8);line-height:1.4}
+        .int-card .int-tags{margin-top:10px;display:flex;flex-wrap:wrap;gap:4px}
+        .int-tag{font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(99,102,241,.15);color:var(--primary,#6366f1)}
+        .int-category{margin-top:24px;margin-bottom:8px;font-size:13px;font-weight:600;color:var(--text-muted,#94a3b8);text-transform:uppercase;letter-spacing:1px;display:flex;align-items:center;gap:8px}
+        .int-category::after{content:'';flex:1;height:1px;background:var(--border,#334155)}
+        .deploy-pipeline{display:flex;gap:0;align-items:stretch;margin:20px 0;overflow-x:auto}
+        .deploy-step{flex:1;min-width:150px;padding:16px;background:var(--card-bg,#1e293b);border:1px solid var(--border,#334155);text-align:center;position:relative}
+        .deploy-step:first-child{border-radius:12px 0 0 12px}
+        .deploy-step:last-child{border-radius:0 12px 12px 0}
+        .deploy-step .step-num{font-size:11px;color:var(--text-muted,#94a3b8);margin-bottom:4px}
+        .deploy-step .step-icon{font-size:24px;margin:8px 0;color:var(--primary,#6366f1)}
+        .deploy-step .step-title{font-size:13px;font-weight:600}
+        .deploy-step .step-desc{font-size:11px;color:var(--text-muted,#94a3b8);margin-top:4px}
+        .deploy-step.done{border-color:#22c55e}
+        .deploy-step.done .step-icon{color:#22c55e}
+        .deploy-step.active{border-color:var(--primary,#6366f1);background:rgba(99,102,241,.08)}
+        .deploy-step::after{content:'\f054';font-family:'Font Awesome 6 Free';font-weight:900;position:absolute;right:-10px;top:50%;transform:translateY(-50%);color:var(--text-muted,#94a3b8);font-size:12px;z-index:1}
+        .deploy-step:last-child::after{display:none}
+        .env-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-top:12px}
+        .env-card{background:var(--card-bg,#1e293b);border:1px solid var(--border,#334155);border-radius:12px;padding:20px}
+        .env-card h4{margin:0 0 12px;display:flex;align-items:center;gap:8px}
+        .env-badge{font-size:10px;padding:2px 8px;border-radius:10px}
+        .env-badge.dev{background:rgba(59,130,246,.2);color:#60a5fa}
+        .env-badge.staging{background:rgba(245,158,11,.2);color:#fbbf24}
+        .env-badge.prod{background:rgba(34,197,94,.2);color:#4ade80}
+        .env-detail{font-size:12px;color:var(--text-muted,#94a3b8);margin:4px 0;display:flex;justify-content:space-between}
+        .channel-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-top:12px}
+        .channel-card{background:var(--card-bg,#1e293b);border:1px solid var(--border,#334155);border-radius:10px;padding:16px;text-align:center;cursor:pointer;transition:all .2s}
+        .channel-card:hover{border-color:var(--primary,#6366f1)}
+        .channel-card.active{border-color:#22c55e;background:rgba(34,197,94,.05)}
+        .channel-card i{font-size:24px;margin-bottom:8px;display:block}
+        .channel-card span{font-size:13px;font-weight:500}
+        .channel-card small{display:block;font-size:11px;color:var(--text-muted,#94a3b8);margin-top:4px}
+        .checklist-item{display:flex;align-items:center;gap:10px;padding:10px;background:var(--card-bg,#1e293b);border:1px solid var(--border,#334155);border-radius:8px;cursor:pointer}
+    </style>
 </head>
 <body>
-<!-- Sidebar -->
-<aside class="sidebar" id="sidebar">
-  <div class="sidebar-logo" onclick="location.href='admin-dashboard.html'"><div class="icon">M</div><span>MedReception</span></div>
-  <nav class="sidebar-nav">
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-logo" onclick="location.href='admin-dashboard.html'"><div class="icon">M</div><span>MedReception</span></div>
+        <nav class="sidebar-nav">
             <div class="nav-group">Uebersicht</div>
             <a href="admin-dashboard.html"><i class="fa-solid fa-gauge nav-icon"></i> Dashboard</a>
             <div class="nav-group">Praxis</div>
@@ -299,703 +80,600 @@
             <a href="benutzer.html"><i class="fa-solid fa-user-gear nav-icon"></i> Benutzer</a>
             <div class="nav-group">KI</div>
             <a href="ai-agent.html" class="active"><i class="fa-solid fa-microchip nav-icon"></i> AI Agent Hub</a>
-  </nav>
-  <div class="sidebar-footer">
-    <button onclick="sessionStorage.removeItem('mr_guard_session');location.href='index.html'" type="button"><i class="fa-solid fa-right-from-bracket nav-icon"></i> Abmelden</button>
-  </div>
-</aside>
-<!-- Main -->
-<div class="main">
-  <div class="top-bar">
-    <h1><i class="fa-solid fa-microchip" style="color:#6366f1;margin-right:8px"></i> AI Agent Hub</h1>
-    <div class="live-badge"><span class="live-dot"></span> System Online</div>
-  </div>
-  <p class="date">KI-Agenten erstellen, Flows designen und ueberwachen</p>
-
-  <!-- Tabs -->
-  <div class="dash-tabs">
-    <button class="dash-tab active" onclick="showTab('galerie')">Meine Agents</button>
-    <button class="dash-tab" onclick="showTab('builder')">Agent Builder</button>
-    <button class="dash-tab" onclick="showTab('floweditor')">Flow Editor</button>
-    <button class="dash-tab" onclick="showTab('prompts')">Prompt Engineering</button>
-    <button class="dash-tab" onclick="showTab('monitoring')">Monitoring</button>
-  </div>
-
-  <!-- ═══ TAB 1: Meine Agents (Galerie) ═══ -->
-  <div id="tab-galerie">
-    <div class="stats-grid">
-      <div class="stat-card purple"><div class="stat-icon2 purple"><i class="fa-solid fa-robot"></i></div><div class="stat-label2">Agents gesamt</div><div class="stat-value2" id="stat-total">5</div><div class="stat-sub2">Konfigurierte AI-Agents</div></div>
-      <div class="stat-card sgreen"><div class="stat-icon2 green"><i class="fa-solid fa-circle-check"></i></div><div class="stat-label2">Aktiv</div><div class="stat-value2" id="stat-active">3</div><div class="stat-sub2">Produktiv im Einsatz</div></div>
-      <div class="stat-card syellow"><div class="stat-icon2 yellow"><i class="fa-solid fa-pen-ruler"></i></div><div class="stat-label2">Entwurf</div><div class="stat-value2" id="stat-draft">1</div><div class="stat-sub2">In Entwicklung</div></div>
-      <div class="stat-card sblue"><div class="stat-icon2 blue"><i class="fa-solid fa-chart-line"></i></div><div class="stat-label2">Erfolgsrate</div><div class="stat-value2" id="stat-success">88%</div><div class="stat-sub2">Durchschnitt aktiver Agents</div></div>
-    </div>
-    <div class="filter-bar">
-      <div class="search-box"><i class="fa-solid fa-magnifying-glass"></i><input type="text" id="search-input" placeholder="Agent suchen..." oninput="applyFilters()"></div>
-      <select class="filter-select" id="filter-status" onchange="applyFilters()"><option value="all">Alle Status</option><option value="Aktiv">Aktiv</option><option value="Entwurf">Entwurf</option><option value="Inaktiv">Inaktiv</option></select>
-      <select class="filter-select" id="sort-select" onchange="applyFilters()"><option value="name-asc">Name A-Z</option><option value="name-desc">Name Z-A</option><option value="status">Status</option><option value="date-desc">Zuletzt bearbeitet</option></select>
-      <button class="btn-create" onclick="openCreateModal()"><i class="fa-solid fa-plus"></i> Neuen Agent erstellen</button>
-    </div>
-    <div class="agent-grid" id="agent-grid"></div>
-    <div id="empty-state" style="display:none;text-align:center;padding:60px 20px;color:#9ca3af"><i class="fa-solid fa-robot" style="font-size:48px;color:#d1d5db;display:block;margin-bottom:16px"></i><h3 style="font-size:16px;font-weight:600;color:#6b7280;margin-bottom:6px">Keine Agents gefunden</h3><p style="font-size:13px">Passen Sie Ihre Suchkriterien an oder erstellen Sie einen neuen Agent.</p></div>
-  </div>
-
-  <!-- ═══ TAB 2: Agent Builder ═══ -->
-  <div id="tab-builder" style="display:none">
-    <div class="card">
-      <div class="card-header"><h2>Neuen AI-Agent konfigurieren</h2><button class="btn primary">+ Vorlage laden</button></div>
-      <div class="card-body">
-        <div class="form-row-2">
-          <div><div class="form-label">Agent-Name</div><input class="form-input" type="text" placeholder="z.B. Praxis-Rezeptionistin" value="Praxis Dr. Schmidt – Empfang"></div>
-          <div><div class="form-label">Branche</div><select class="form-select"><option selected>Arztpraxis</option><option>Zahnarztpraxis</option><option>Rechtsanwaltskanzlei</option><option>Steuerberatung</option><option>Friseursalon</option><option>KFZ-Werkstatt</option><option>Tierarztpraxis</option><option>Allgemeines Buero</option></select></div>
+        </nav>
+        <div class="sidebar-footer">
+            <button onclick="sessionStorage.removeItem('mr_guard_session');location.href='index.html'" type="button"><i class="fa-solid fa-right-from-bracket nav-icon"></i> Abmelden</button>
         </div>
-        <div class="form-row-3">
-          <div><div class="form-label">TTS-Stimme</div><select class="form-select"><option>Azure Neural – KatjaNeural</option><option>Azure Neural – ConradNeural</option><option>ElevenLabs – Rachel</option><option>OpenAI TTS – Nova</option><option>Piper TTS – de_DE (lokal)</option></select></div>
-          <div><div class="form-label">LLM-Modell</div><select class="form-select"><option>Llama 3.1 8B (Standard)</option><option>Llama 3.1 70B (Premium)</option><option>Mistral 7B</option><option>Gemma 2 9B</option></select></div>
-          <div><div class="form-label">Temperatur</div><div class="slider-row"><input type="range" min="0" max="1.5" step="0.1" value="0.7" oninput="document.getElementById('temp-val').textContent=this.value"><span class="slider-val" id="temp-val">0.7</span></div></div>
-        </div>
-        <div class="form-row"><div class="form-label">Begruessung</div><input class="form-input" type="text" value="Guten Tag, Praxis Dr. Schmidt, wie kann ich Ihnen helfen?"></div>
-        <div class="form-row"><div class="form-label">Persoenlichkeit & Verhalten</div><textarea class="form-input">Freundlich und professionell. Spricht Anrufer mit "Sie" an. Nutzt natuerliche Fuellwoerter wie "Ach so" und "Alles klar". Fasst sich kurz (1-3 Saetze pro Antwort).</textarea></div>
-        <div class="form-row"><div class="form-label">Regeln & Einschraenkungen</div><textarea class="form-input">Keine medizinischen Diagnosen stellen. Bei Notfaellen sofort 112 empfehlen. Maximal 3 Fragen pro Gespraechsrunde. Bei Unklarheit an menschlichen Agenten weiterleiten.</textarea></div>
-        <div class="form-row"><div class="form-label">Faehigkeiten</div>
-          <div class="skills-grid">
-            <div class="skill-tag on" onclick="this.classList.toggle('on')"><div class="skill-check">✓</div> Terminvergabe</div>
-            <div class="skill-tag on" onclick="this.classList.toggle('on')"><div class="skill-check">✓</div> Rezeptbestellung</div>
-            <div class="skill-tag on" onclick="this.classList.toggle('on')"><div class="skill-check">✓</div> Weiterleitung</div>
-            <div class="skill-tag" onclick="this.classList.toggle('on')"><div class="skill-check"></div> Wissensdatenbank</div>
-            <div class="skill-tag" onclick="this.classList.toggle('on')"><div class="skill-check"></div> Rueckruf-Angebot</div>
-            <div class="skill-tag on" onclick="this.classList.toggle('on')"><div class="skill-check">✓</div> Notfall-Erkennung</div>
-          </div>
-        </div>
-        <div class="btn-row">
-          <button class="btn primary" onclick="saveBuilderAgent()">Agent speichern</button>
-          <button class="btn secondary" onclick="showTab('prompts')">Agent testen</button>
-        </div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-header"><h2>Gespeicherte AI-Agents</h2><span style="font-size:11px;color:#9ca3af">2 Agents konfiguriert</span></div>
-      <div class="card-body" style="padding:0">
-        <table class="tbl"><thead><tr><th>Name</th><th>Branche</th><th>Stimme</th><th>Modell</th><th>Status</th><th>Aktion</th></tr></thead>
-        <tbody>
-          <tr><td class="fw">Praxis Dr. Schmidt – Empfang</td><td>Arztpraxis</td><td>KatjaNeural</td><td>Llama 3.1 8B</td><td><span class="badge green">Aktiv</span></td><td><div style="display:flex;gap:5px"><button class="btn secondary" style="font-size:11px;padding:4px 10px">Bearbeiten</button><button class="btn secondary" style="font-size:11px;padding:4px 10px">Duplizieren</button></div></td></tr>
-          <tr><td class="fw">Praxis Dr. Schmidt – Notfall</td><td>Arztpraxis</td><td>ConradNeural</td><td>Llama 3.1 8B</td><td><span class="badge yellow">Entwurf</span></td><td><div style="display:flex;gap:5px"><button class="btn secondary" style="font-size:11px;padding:4px 10px">Bearbeiten</button><button class="btn secondary" style="font-size:11px;padding:4px 10px">Aktivieren</button></div></td></tr>
-        </tbody></table>
-      </div>
-    </div>
-  </div>
+    </aside>
+    <div class="main-wrapper">
+        <header class="topbar">
+            <button id="menu-toggle" type="button"><i class="fa-solid fa-bars"></i></button>
+            <h1><i class="fa-solid fa-microchip"></i> AI Agent Engineering</h1>
+        </header>
+        <main id="ai-agent">
 
-  <!-- ═══ TAB 3: Flow Editor ═══ -->
-  <div id="tab-floweditor" style="display:none">
-    <!-- Toolbar -->
-    <div class="fe-toolbar">
-      <div class="fe-mode">
-        <button class="fe-mode-btn active-vb" id="fe-mm-vb" onclick="feSwitchMode('vb')">Voicebot</button>
-        <button class="fe-mode-btn" id="fe-mm-cb" onclick="feSwitchMode('cb')">Clickbot</button>
-      </div>
-      <select class="form-select" id="fe-flow-sel" style="width:220px;font-size:12px;padding:6px 12px">
-        <option>Voicebot — Allgemein</option><option>Voicebot — Notfall</option><option>Voicebot — Rezept</option><option value="new">+ Neuer Flow</option>
-      </select>
-      <span class="fe-badge-ok" id="fe-badge-saved">Gespeichert</span>
-      <div style="flex:1"></div>
-      <button class="btn secondary" onclick="feTogglePreview()">Vorschau</button>
-      <button class="btn primary" onclick="feSpeichern()">Speichern</button>
-    </div>
-    <!-- Workspace -->
-    <div class="fe-workspace">
-      <!-- VB Palette -->
-      <div class="fe-palette" id="fe-pal-vb">
-        <div class="fe-pal-banner" style="background:#e0f2fe;color:#0369a1">Voicebot-Bausteine</div>
-        <div class="fe-pal-group">Gespraechssteuerung</div>
-        <div class="fe-chip" onclick="feAddBlock('start')"><div class="fe-cdot" style="background:#22c55e"></div><div><div class="fe-clbl">Anruf eingehend</div><div class="fe-csub">Gespraech startet</div></div></div>
-        <div class="fe-chip" onclick="feAddBlock('greet')"><div class="fe-cdot" style="background:#7c3aed"></div><div><div class="fe-clbl">Begruessung sprechen</div><div class="fe-csub">TTS-Ansage</div></div></div>
-        <div class="fe-chip" onclick="feAddBlock('listen')"><div class="fe-cdot" style="background:#0369a1"></div><div><div class="fe-clbl">Zuhoeren / Fragen</div><div class="fe-csub">STT aktiv</div></div></div>
-        <div class="fe-chip" onclick="feAddBlock('say')"><div class="fe-cdot" style="background:#7c3aed"></div><div><div class="fe-clbl">Antwort sprechen</div><div class="fe-csub">Voicebot spricht TTS</div></div></div>
-        <div class="fe-chip" onclick="feAddBlock('cond')"><div class="fe-cdot" style="background:#f59e0b"></div><div><div class="fe-clbl">Bedingung / Weiche</div><div class="fe-csub">Flow verzweigen</div></div></div>
-        <div class="fe-chip" onclick="feAddBlock('kb')"><div class="fe-cdot" style="background:#10b981"></div><div><div class="fe-clbl">KB nachschlagen</div><div class="fe-csub">Antwort aus Wissensbasis</div></div></div>
-        <div class="fe-pal-group">Aktionen</div>
-        <div class="fe-chip" onclick="feAddBlock('termin')"><div class="fe-cdot" style="background:#f97316"></div><div><div class="fe-clbl">Termin buchen</div><div class="fe-csub">Kalender abfragen</div></div></div>
-        <div class="fe-chip" onclick="feAddBlock('ticket')"><div class="fe-cdot" style="background:#f97316"></div><div><div class="fe-clbl">Ticket erstellen</div><div class="fe-csub">Anliegen erfassen</div></div></div>
-        <div class="fe-chip" onclick="feAddBlock('mail')"><div class="fe-cdot" style="background:#7c3aed"></div><div><div class="fe-clbl">Mail / SMS senden</div><div class="fe-csub">Zusammenfassung</div></div></div>
-        <div class="fe-chip" onclick="feAddBlock('input')"><div class="fe-cdot" style="background:#0369a1"></div><div><div class="fe-clbl">Daten erfassen</div><div class="fe-csub">Name, Geb.-Datum…</div></div></div>
-        <div class="fe-pal-group" style="color:#d97706">Uebergabe</div>
-        <div class="fe-chip" style="border-color:#fde68a;background:#fffbeb" onclick="feAddBlock('transfer')"><div class="fe-cdot" style="background:#f59e0b"></div><div><div class="fe-clbl" style="color:#92400e">An Agent weiterleiten</div><div class="fe-csub">Mit Kontext</div></div></div>
-        <div class="fe-chip" style="border-color:#fde68a;background:#fffbeb" onclick="feAddBlock('queue')"><div class="fe-cdot" style="background:#f59e0b"></div><div><div class="fe-clbl" style="color:#92400e">In Queue einreihen</div><div class="fe-csub">Warten auf Agent</div></div></div>
-        <div class="fe-pal-group">Ende</div>
-        <div class="fe-chip" onclick="feAddBlock('end')"><div class="fe-cdot" style="background:#ef4444"></div><div><div class="fe-clbl">Gespraech beenden</div><div class="fe-csub">Verabschiedung</div></div></div>
-      </div>
-      <!-- CB Palette -->
-      <div class="fe-palette" id="fe-pal-cb" style="display:none">
-        <div class="fe-pal-banner" style="background:#ede9fe;color:#6d28d9">Clickbot-Bausteine</div>
-        <div class="fe-pal-group">Navigation</div>
-        <div class="fe-chip" onclick="feAddBlock('start')"><div class="fe-cdot" style="background:#22c55e"></div><div><div class="fe-clbl">Agent nimmt an</div><div class="fe-csub">Clickbot startet</div></div></div>
-        <div class="fe-chip" onclick="feAddBlock('click')"><div class="fe-cdot" style="background:#6d28d9"></div><div><div class="fe-clbl">Klick-Vorgabe</div><div class="fe-csub">Agent klickt Antwort</div></div></div>
-        <div class="fe-chip" onclick="feAddBlock('info')"><div class="fe-cdot" style="background:#7c3aed"></div><div><div class="fe-clbl">Info anzeigen</div><div class="fe-csub">Text / KB-Auszug</div></div></div>
-        <div class="fe-chip" onclick="feAddBlock('cond')"><div class="fe-cdot" style="background:#f59e0b"></div><div><div class="fe-clbl">Bedingung</div><div class="fe-csub">Verzweigung</div></div></div>
-        <div class="fe-chip" onclick="feAddBlock('kb')"><div class="fe-cdot" style="background:#10b981"></div><div><div class="fe-clbl">KB einblenden</div><div class="fe-csub">Artikel anzeigen</div></div></div>
-        <div class="fe-pal-group">Aktionen</div>
-        <div class="fe-chip" onclick="feAddBlock('termin')"><div class="fe-cdot" style="background:#f97316"></div><div><div class="fe-clbl">Termin buchen</div><div class="fe-csub">Kalender oeffnen</div></div></div>
-        <div class="fe-chip" onclick="feAddBlock('ticket')"><div class="fe-cdot" style="background:#f97316"></div><div><div class="fe-clbl">Ticket erstellen</div><div class="fe-csub">Anliegen erfassen</div></div></div>
-        <div class="fe-chip" onclick="feAddBlock('rezept')"><div class="fe-cdot" style="background:#f97316"></div><div><div class="fe-clbl">Rezept erfassen</div><div class="fe-csub">Medikament + Patient</div></div></div>
-        <div class="fe-chip" onclick="feAddBlock('mail')"><div class="fe-cdot" style="background:#7c3aed"></div><div><div class="fe-clbl">Mail senden</div><div class="fe-csub">Zusammenfassung</div></div></div>
-        <div class="fe-chip" onclick="feAddBlock('transfer')"><div class="fe-cdot" style="background:#06b6d4"></div><div><div class="fe-clbl">Weiterleiten</div><div class="fe-csub">Durchstellen</div></div></div>
-        <div class="fe-pal-group">Ende</div>
-        <div class="fe-chip" onclick="feAddBlock('end')"><div class="fe-cdot" style="background:#ef4444"></div><div><div class="fe-clbl">Ticket schliessen</div><div class="fe-csub">Clickbot beenden</div></div></div>
-      </div>
-      <!-- Canvas -->
-      <div class="fe-canvas">
-        <div class="fe-canvas-inner">
-          <div id="fe-blocks"></div>
-          <div class="fe-canvas-empty" id="fe-empty-msg"><span style="font-size:48px;opacity:.3;display:block;margin-bottom:12px">🧠</span><div style="font-size:14px;font-weight:700;margin-bottom:4px">Flow ist leer</div><div style="font-size:12px">Klicken Sie links auf einen Baustein um den Flow zu erstellen.</div></div>
-        </div>
-      </div>
-    </div>
-    <!-- Status Bar -->
-    <div class="fe-statusbar">
-      <span id="fe-sb-mode"><span class="fe-sdot" style="background:#0369a1"></span>Voicebot-Modus</span>
-      <span id="fe-sb-count"><span class="fe-sdot" style="background:#22c55e"></span>0 Bloecke</span>
-      <span><span class="fe-sdot" style="background:#22c55e"></span>Flow valide</span>
-      <span style="margin-left:auto">MedReception · Flow Editor v2.0</span>
-    </div>
-  </div>
-
-  <!-- ═══ TAB 4: Prompt Engineering ═══ -->
-  <div id="tab-prompts" style="display:none">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
-      <div>
-        <div class="card">
-          <div class="card-header"><h2>System-Prompt Editor</h2><select class="form-select" style="width:200px;font-size:11px;padding:5px 10px"><option>Praxis Dr. Schmidt – Empfang</option><option>Praxis Dr. Schmidt – Notfall</option></select></div>
-          <div class="card-body">
-            <div class="form-row"><div class="form-label">System-Prompt</div>
-              <textarea class="form-input" style="min-height:180px;font-family:'Fira Code','Courier New',monospace;font-size:12px;line-height:1.7">Du bist die freundliche Empfangsassistentin der Arztpraxis Dr. Schmidt.
-
-DEINE AUFGABEN:
-- Anrufer begruessen und Anliegen erfragen
-- Termine vergeben (Mo-Fr 8-18 Uhr, Sa 9-12 Uhr)
-- Rezeptanfragen aufnehmen (Name, Geburtsdatum, Medikament)
-- Bei Notfaellen sofort 112 empfehlen und an Arzt weiterleiten
-
-VERHALTEN:
-- Antworte KURZ (1-3 Saetze)
-- Stelle pro Antwort nur EINE Frage
-- Sprich den Anrufer mit "Sie" an
-- Bei Unklarheit: an menschlichen Agenten weiterleiten
-
-GRENZEN:
-- Keine medizinischen Diagnosen oder Empfehlungen
-- Keine Auskuenfte ueber andere Patienten
-- Kein Zugriff auf Patientenakten</textarea>
+            <!-- ===== Tab-Navigation ===== -->
+            <div class="ai-tabs">
+                <button class="ai-tab active" data-tab="builder"><i class="fa-solid fa-wand-magic-sparkles"></i> Agent Builder</button>
+                <button class="ai-tab" data-tab="integrations"><i class="fa-solid fa-plug"></i> Integrationen</button>
+                <button class="ai-tab" data-tab="prompts"><i class="fa-solid fa-terminal"></i> Prompt Engineering</button>
+                <button class="ai-tab" data-tab="deployment"><i class="fa-solid fa-rocket"></i> Deployment</button>
+                <button class="ai-tab" data-tab="monitoring"><i class="fa-solid fa-chart-bar"></i> Monitoring</button>
             </div>
-            <div class="form-row"><div class="form-label">Zusaetzlicher Kontext</div>
-              <textarea class="form-input" style="font-family:'Fira Code','Courier New',monospace;font-size:12px;line-height:1.7">Oeffnungszeiten: Mo-Fr 8-18 Uhr, Sa 9-12 Uhr
-Aerzte: Dr. med. Thomas Schmidt (Allgemeinmedizin), Dr. med. Lisa Weber (Innere Medizin)
-Adresse: Musterstrasse 42, 80333 Muenchen
-Telefon: 089 123 456 78</textarea>
+
+            <!-- ===== TAB 1: Agent Builder ===== -->
+            <div class="ai-tab-content active" id="tab-builder">
+                <div class="card">
+                    <h3><i class="fa-solid fa-wand-magic-sparkles"></i> Neuen AI-Agent erstellen</h3>
+                    <form id="agent-builder-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="ab-name">Agent-Name</label>
+                                <input type="text" id="ab-name" placeholder="z.B. Klinik-Rezeption, IT-Helpdesk-Bot" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="ab-branche">Branche / Einsatzbereich</label>
+                                <select id="ab-branche">
+                                    <optgroup label="Gesundheitswesen">
+                                        <option value="klinik">Klinik / Krankenhaus</option>
+                                        <option value="arztpraxis">Arztpraxis</option>
+                                        <option value="zahnarzt">Zahnarztpraxis</option>
+                                        <option value="tierarzt">Tierarztpraxis</option>
+                                        <option value="pflege">Pflegeeinrichtung</option>
+                                    </optgroup>
+                                    <optgroup label="Verwaltung &amp; Office">
+                                        <option value="klinik-verwaltung">Klinikverwaltung</option>
+                                        <option value="buero">Allgemeines Buero</option>
+                                        <option value="it-helpdesk">IT Helpdesk / ServiceDesk</option>
+                                        <option value="hr">HR / Personalabteilung</option>
+                                    </optgroup>
+                                    <optgroup label="Dienstleistung">
+                                        <option value="anwalt">Rechtsanwaltskanzlei</option>
+                                        <option value="steuerberater">Steuerberatungsbuero</option>
+                                        <option value="versicherung">Versicherung</option>
+                                        <option value="immobilien">Immobilienverwaltung</option>
+                                    </optgroup>
+                                    <optgroup label="Handel &amp; Gewerbe">
+                                        <option value="werkstatt">KFZ-Werkstatt</option>
+                                        <option value="friseur">Friseursalon</option>
+                                        <option value="hotel">Hotel / Gastronomie</option>
+                                        <option value="retail">Einzelhandel</option>
+                                    </optgroup>
+                                    <optgroup label="Enterprise">
+                                        <option value="callcenter">Callcenter / BPO</option>
+                                        <option value="enterprise">Enterprise (Custom)</option>
+                                    </optgroup>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="ab-stimme">Stimme</label>
+                                <select id="ab-stimme"></select>
+                            </div>
+                            <div class="form-group">
+                                <label for="ab-hintergrund">Hintergrundgeraeusch</label>
+                                <select id="ab-hintergrund">
+                                    <option value="buero">Buero / Empfang</option>
+                                    <option value="callcenter">Callcenter</option>
+                                    <option value="klinik">Klinik / Krankenhaus</option>
+                                    <option value="ruhig">Sehr ruhig</option>
+                                    <option value="keine">Kein Hintergrund</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="ab-persoenlichkeit">Persoenlichkeit &amp; Verhalten</label>
+                            <textarea id="ab-persoenlichkeit" rows="3" placeholder="z.B. Freundlich, professionell, spricht Anrufer mit Sie an"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="ab-begruessung">Begruessung</label>
+                            <input type="text" id="ab-begruessung" placeholder="z.B. Guten Tag, Universitaetsklinikum Berlin, wie kann ich Ihnen helfen?">
+                        </div>
+                        <div class="form-group">
+                            <label for="ab-regeln">Regeln &amp; Einschraenkungen</label>
+                            <textarea id="ab-regeln" rows="3" placeholder="z.B. Keine medizinischen Diagnosen stellen. Bei Notfaellen sofort 112 empfehlen."></textarea>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="ab-llm-model">LLM-Modell</label>
+                                <select id="ab-llm-model">
+                                    <option value="llama3.1:8b-instruct-q4_K_M">Llama 3.1 8B (Standard)</option>
+                                    <option value="llama3.1:70b-instruct-q4_K_M">Llama 3.1 70B (Premium)</option>
+                                    <option value="mistral:7b-instruct-q4_K_M">Mistral 7B</option>
+                                    <option value="gemma2:9b-instruct-q4_K_M">Gemma 2 9B</option>
+                                    <option value="gpt-4o">GPT-4o (OpenAI)</option>
+                                    <option value="claude-sonnet">Claude Sonnet (Anthropic)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="ab-temperatur">Temperatur: <span id="ab-temp-wert">0.7</span></label>
+                                <input type="range" id="ab-temperatur" min="0" max="1.5" step="0.1" value="0.7">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Faehigkeiten</label>
+                            <div class="ai-skills-grid">
+                                <label class="ai-skill-toggle"><input type="checkbox" checked> <i class="fa-solid fa-calendar-check"></i> Terminvergabe</label>
+                                <label class="ai-skill-toggle"><input type="checkbox" checked> <i class="fa-solid fa-phone-flip"></i> Weiterleitung</label>
+                                <label class="ai-skill-toggle"><input type="checkbox" checked> <i class="fa-solid fa-book"></i> Wissensdatenbank</label>
+                                <label class="ai-skill-toggle"><input type="checkbox" checked> <i class="fa-solid fa-triangle-exclamation"></i> Notfall-Erkennung</label>
+                                <label class="ai-skill-toggle"><input type="checkbox"> <i class="fa-solid fa-phone-arrow-up-right"></i> Rueckruf-Angebot</label>
+                                <label class="ai-skill-toggle"><input type="checkbox" checked> <i class="fa-solid fa-ticket"></i> Ticket erstellen</label>
+                                <label class="ai-skill-toggle"><input type="checkbox"> <i class="fa-solid fa-envelope"></i> E-Mail senden</label>
+                                <label class="ai-skill-toggle"><input type="checkbox"> <i class="fa-solid fa-database"></i> Daten abfragen</label>
+                                <label class="ai-skill-toggle"><input type="checkbox"> <i class="fa-solid fa-arrow-up-right-from-square"></i> Eskalation</label>
+                                <label class="ai-skill-toggle"><input type="checkbox"> <i class="fa-solid fa-file-lines"></i> Formulare ausfuellen</label>
+                                <label class="ai-skill-toggle"><input type="checkbox"> <i class="fa-solid fa-shield-halved"></i> Authentifizierung</label>
+                                <label class="ai-skill-toggle"><input type="checkbox"> <i class="fa-solid fa-language"></i> Live-Uebersetzung</label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Einsatz-Kanaele</label>
+                            <div class="channel-grid">
+                                <div class="channel-card active" onclick="this.classList.toggle('active')">
+                                    <i class="fa-solid fa-phone"></i>
+                                    <span>Telefon / SIP</span>
+                                    <small>Asterisk, ACD</small>
+                                </div>
+                                <div class="channel-card" onclick="this.classList.toggle('active')">
+                                    <i class="fa-solid fa-comments"></i>
+                                    <span>Webchat</span>
+                                    <small>Widget, iFrame</small>
+                                </div>
+                                <div class="channel-card" onclick="this.classList.toggle('active')">
+                                    <i class="fa-brands fa-whatsapp"></i>
+                                    <span>WhatsApp</span>
+                                    <small>Business API</small>
+                                </div>
+                                <div class="channel-card" onclick="this.classList.toggle('active')">
+                                    <i class="fa-brands fa-microsoft"></i>
+                                    <span>MS Teams</span>
+                                    <small>Bot Framework</small>
+                                </div>
+                                <div class="channel-card" onclick="this.classList.toggle('active')">
+                                    <i class="fa-solid fa-envelope"></i>
+                                    <span>E-Mail</span>
+                                    <small>IMAP/SMTP, Exchange</small>
+                                </div>
+                                <div class="channel-card" onclick="this.classList.toggle('active')">
+                                    <i class="fa-solid fa-code"></i>
+                                    <span>REST API</span>
+                                    <small>Custom Integration</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="button-gruppe">
+                            <button type="submit" class="btn-primary"><i class="fa-solid fa-floppy-disk"></i> Agent speichern</button>
+                            <button type="button" id="ab-testen" class="btn-secondary"><i class="fa-solid fa-flask"></i> Agent testen</button>
+                        </div>
+                    </form>
+                    <div id="ab-erfolg" class="erfolg-meldung" hidden></div>
+                </div>
+                <div class="card">
+                    <h3><i class="fa-solid fa-robot"></i> Gespeicherte AI-Agents</h3>
+                    <div class="table-container">
+                        <table id="ai-agents-tabelle">
+                            <thead><tr><th>Name</th><th>Branche</th><th>Kanaele</th><th>Modell</th><th>Integrationen</th><th>Status</th><th>Aktionen</th></tr></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
-            <div class="btn-row"><button class="btn primary">Prompt speichern</button><button class="btn secondary">Standard wiederherstellen</button></div>
-          </div>
+
+            <!-- ===== TAB 2: Integrationen ===== -->
+            <div class="ai-tab-content" id="tab-integrations">
+                <div class="card">
+                    <h3><i class="fa-solid fa-plug"></i> Schnittstellen &amp; Integrationen</h3>
+                    <p style="color:var(--text-muted,#94a3b8);font-size:13px;margin-bottom:8px;">Verbinde AI-Agents mit externen Systemen. Klicke auf eine Integration um sie zu konfigurieren.</p>
+
+                    <div class="int-category"><i class="fa-solid fa-headset"></i> ITSM &amp; ServiceDesk</div>
+                    <div class="int-grid">
+                        <div class="int-card connected" onclick="intKonfig(this)">
+                            <div class="int-card-icon"><i class="fa-solid fa-snowflake" style="color:#81b5a1"></i></div>
+                            <h4>ServiceNow</h4>
+                            <p>Tickets erstellen, Status abfragen, Incidents/Changes verwalten, CMDB durchsuchen</p>
+                            <div class="int-tags"><span class="int-tag">ITSM</span><span class="int-tag">REST API</span><span class="int-tag">OAuth2</span></div>
+                        </div>
+                        <div class="int-card" onclick="intKonfig(this)">
+                            <div class="int-card-icon"><i class="fa-brands fa-jira" style="color:#2684ff"></i></div>
+                            <h4>Jira Service Management</h4>
+                            <p>Issue-Tracking, Service Requests, Workflows automatisieren</p>
+                            <div class="int-tags"><span class="int-tag">ITSM</span><span class="int-tag">REST API</span></div>
+                        </div>
+                        <div class="int-card" onclick="intKonfig(this)">
+                            <div class="int-card-icon"><i class="fa-solid fa-z" style="color:#03363d;background:#d4f4dd;padding:4px 8px;border-radius:6px;font-size:20px"></i></div>
+                            <h4>Zendesk</h4>
+                            <p>Tickets, Wissensdatenbank, Chat-Integration, Agent Assist</p>
+                            <div class="int-tags"><span class="int-tag">Helpdesk</span><span class="int-tag">REST API</span></div>
+                        </div>
+                    </div>
+
+                    <div class="int-category"><i class="fa-brands fa-microsoft"></i> Microsoft 365 &amp; Office</div>
+                    <div class="int-grid">
+                        <div class="int-card connected" onclick="intKonfig(this)">
+                            <div class="int-card-icon"><i class="fa-solid fa-envelope" style="color:#0078d4"></i></div>
+                            <h4>Outlook / Exchange</h4>
+                            <p>E-Mails lesen/senden, Kalender verwalten, Kontakte synchronisieren</p>
+                            <div class="int-tags"><span class="int-tag">E-Mail</span><span class="int-tag">Kalender</span><span class="int-tag">Graph API</span></div>
+                        </div>
+                        <div class="int-card connected" onclick="intKonfig(this)">
+                            <div class="int-card-icon"><i class="fa-brands fa-microsoft" style="color:#5b5fc7"></i></div>
+                            <h4>Microsoft Teams</h4>
+                            <p>Bot-Integration, Nachrichten, Channels, Meetings planen</p>
+                            <div class="int-tags"><span class="int-tag">Chat</span><span class="int-tag">Bot Framework</span></div>
+                        </div>
+                        <div class="int-card" onclick="intKonfig(this)">
+                            <div class="int-card-icon"><i class="fa-solid fa-share-nodes" style="color:#038387"></i></div>
+                            <h4>SharePoint / OneDrive</h4>
+                            <p>Dokumente lesen, Wissensbasis aufbauen, Dateien verwalten</p>
+                            <div class="int-tags"><span class="int-tag">DMS</span><span class="int-tag">Graph API</span></div>
+                        </div>
+                        <div class="int-card" onclick="intKonfig(this)">
+                            <div class="int-card-icon"><i class="fa-solid fa-file-excel" style="color:#217346"></i></div>
+                            <h4>Excel / Power Automate</h4>
+                            <p>Tabellen lesen/schreiben, Workflows triggern, Reports generieren</p>
+                            <div class="int-tags"><span class="int-tag">Daten</span><span class="int-tag">Automation</span></div>
+                        </div>
+                    </div>
+
+                    <div class="int-category"><i class="fa-solid fa-hospital"></i> Gesundheitswesen &amp; Klinikverwaltung</div>
+                    <div class="int-grid">
+                        <div class="int-card connected" onclick="intKonfig(this)">
+                            <div class="int-card-icon"><i class="fa-solid fa-hospital" style="color:#e11d48"></i></div>
+                            <h4>KIS / HIS</h4>
+                            <p>Krankenhausinformationssystem — Patientendaten, Aufnahme, Belegung, OP-Planung</p>
+                            <div class="int-tags"><span class="int-tag">HL7</span><span class="int-tag">FHIR</span><span class="int-tag">SAP ISH</span></div>
+                        </div>
+                        <div class="int-card" onclick="intKonfig(this)">
+                            <div class="int-card-icon"><i class="fa-solid fa-fire" style="color:#ff6b35"></i></div>
+                            <h4>FHIR / HL7</h4>
+                            <p>Healthcare-Standard — Patientendaten, Befunde, Medikation, Termine austauschen</p>
+                            <div class="int-tags"><span class="int-tag">Healthcare</span><span class="int-tag">REST</span><span class="int-tag">R4</span></div>
+                        </div>
+                        <div class="int-card" onclick="intKonfig(this)">
+                            <div class="int-card-icon"><i class="fa-solid fa-x-ray" style="color:#7c3aed"></i></div>
+                            <h4>PACS / DICOM</h4>
+                            <p>Bildgebung — Radiologie-Anfragen, Befundstatus, Untersuchungstermine</p>
+                            <div class="int-tags"><span class="int-tag">Radiologie</span><span class="int-tag">DICOM</span></div>
+                        </div>
+                        <div class="int-card" onclick="intKonfig(this)">
+                            <div class="int-card-icon"><i class="fa-solid fa-flask-vial" style="color:#0ea5e9"></i></div>
+                            <h4>LIS (Labor)</h4>
+                            <p>Laborinformationssystem — Befunde abfragen, Auftraege, Ergebnisse</p>
+                            <div class="int-tags"><span class="int-tag">Labor</span><span class="int-tag">HL7</span></div>
+                        </div>
+                    </div>
+
+                    <div class="int-category"><i class="fa-solid fa-phone"></i> Telefonie &amp; Kommunikation</div>
+                    <div class="int-grid">
+                        <div class="int-card connected" onclick="intKonfig(this)">
+                            <div class="int-card-icon"><i class="fa-solid fa-server" style="color:#f59e0b"></i></div>
+                            <h4>Asterisk PBX</h4>
+                            <p>SIP-Trunks, IVR, ACD-Queues, AMI/ARI, Anrufsteuerung</p>
+                            <div class="int-tags"><span class="int-tag">SIP</span><span class="int-tag">AMI</span><span class="int-tag">ARI</span><span class="int-tag">WebRTC</span></div>
+                        </div>
+                        <div class="int-card connected" onclick="intKonfig(this)">
+                            <div class="int-card-icon"><i class="fa-solid fa-phone-volume" style="color:#8b5cf6"></i></div>
+                            <h4>ACD / Queue Manager</h4>
+                            <p>Warteschlangen, Skill-based Routing, Agenten-Zuweisung, Overflow</p>
+                            <div class="int-tags"><span class="int-tag">Routing</span><span class="int-tag">Queues</span></div>
+                        </div>
+                        <div class="int-card" onclick="intKonfig(this)">
+                            <div class="int-card-icon"><i class="fa-solid fa-tower-cell" style="color:#06b6d4"></i></div>
+                            <h4>SIP-Trunk Provider</h4>
+                            <p>Telekom, Sipgate, Placetel, easybell — DID-Nummern, CLIP, Routing</p>
+                            <div class="int-tags"><span class="int-tag">SIP</span><span class="int-tag">PSTN</span></div>
+                        </div>
+                        <div class="int-card" onclick="intKonfig(this)">
+                            <div class="int-card-icon"><i class="fa-brands fa-whatsapp" style="color:#25d366"></i></div>
+                            <h4>WhatsApp Business</h4>
+                            <p>Cloud API, Templates, Interactive Messages, Media</p>
+                            <div class="int-tags"><span class="int-tag">Messaging</span><span class="int-tag">Cloud API</span></div>
+                        </div>
+                    </div>
+
+                    <div class="int-category"><i class="fa-solid fa-building"></i> Enterprise &amp; ERP</div>
+                    <div class="int-grid">
+                        <div class="int-card" onclick="intKonfig(this)">
+                            <div class="int-card-icon"><i class="fa-solid fa-s" style="color:#fff;background:#0070f2;padding:4px 10px;border-radius:6px;font-size:20px"></i></div>
+                            <h4>SAP</h4>
+                            <p>RFC/BAPI, SAP GUI, Stammdaten, Finanzbuchhaltung, MM, SD</p>
+                            <div class="int-tags"><span class="int-tag">ERP</span><span class="int-tag">RFC</span><span class="int-tag">OData</span></div>
+                        </div>
+                        <div class="int-card" onclick="intKonfig(this)">
+                            <div class="int-card-icon"><i class="fa-solid fa-address-book" style="color:#e97627"></i></div>
+                            <h4>LDAP / Active Directory</h4>
+                            <p>Benutzer-Authentifizierung, Gruppen, Berechtigungen, SSO</p>
+                            <div class="int-tags"><span class="int-tag">Auth</span><span class="int-tag">SSO</span><span class="int-tag">Kerberos</span></div>
+                        </div>
+                        <div class="int-card" onclick="intKonfig(this)">
+                            <div class="int-card-icon"><i class="fa-solid fa-industry" style="color:#64748b"></i></div>
+                            <h4>ERP / CRM (Generic)</h4>
+                            <p>REST/SOAP-Anbindung an beliebiges ERP/CRM-System</p>
+                            <div class="int-tags"><span class="int-tag">REST</span><span class="int-tag">SOAP</span><span class="int-tag">Webhook</span></div>
+                        </div>
+                        <div class="int-card" onclick="intKonfig(this)">
+                            <div class="int-card-icon"><i class="fa-brands fa-salesforce" style="color:#00a1e0"></i></div>
+                            <h4>Salesforce</h4>
+                            <p>Leads, Cases, Opportunities, Knowledge Base, Flows</p>
+                            <div class="int-tags"><span class="int-tag">CRM</span><span class="int-tag">REST API</span></div>
+                        </div>
+                    </div>
+
+                    <div class="int-category"><i class="fa-solid fa-gears"></i> Daten &amp; Automation</div>
+                    <div class="int-grid">
+                        <div class="int-card connected" onclick="intKonfig(this)">
+                            <div class="int-card-icon"><i class="fa-solid fa-code" style="color:#22c55e"></i></div>
+                            <h4>REST API (Custom)</h4>
+                            <p>Eigene Endpoints anbinden — GET/POST/PUT/DELETE, Auth, Headers</p>
+                            <div class="int-tags"><span class="int-tag">REST</span><span class="int-tag">JSON</span><span class="int-tag">OpenAPI</span></div>
+                        </div>
+                        <div class="int-card" onclick="intKonfig(this)">
+                            <div class="int-card-icon"><i class="fa-solid fa-bolt" style="color:#eab308"></i></div>
+                            <h4>Webhooks</h4>
+                            <p>Events empfangen/senden, Trigger-basierte Automation</p>
+                            <div class="int-tags"><span class="int-tag">Events</span><span class="int-tag">HTTP</span></div>
+                        </div>
+                        <div class="int-card" onclick="intKonfig(this)">
+                            <div class="int-card-icon"><i class="fa-solid fa-database" style="color:#f472b6"></i></div>
+                            <h4>Datenbank (SQL)</h4>
+                            <p>PostgreSQL, MySQL, MSSQL — Abfragen, Berichte, Datenexport</p>
+                            <div class="int-tags"><span class="int-tag">SQL</span><span class="int-tag">Read/Write</span></div>
+                        </div>
+                        <div class="int-card" onclick="intKonfig(this)">
+                            <div class="int-card-icon"><i class="fa-solid fa-diagram-project" style="color:#ff6d5a"></i></div>
+                            <h4>n8n / Make / Zapier</h4>
+                            <p>Low-Code Automation — Workflows verbinden, Trigger, Actions</p>
+                            <div class="int-tags"><span class="int-tag">Automation</span><span class="int-tag">No-Code</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Konfig Panel -->
+                <div class="card" id="int-config-panel" style="display:none">
+                    <h3><i class="fa-solid fa-gear"></i> <span id="int-config-title">Integration konfigurieren</span></h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="int-url">API URL / Endpoint</label>
+                            <input type="text" id="int-url" placeholder="https://instance.service-now.com/api/">
+                        </div>
+                        <div class="form-group">
+                            <label for="int-auth">Authentifizierung</label>
+                            <select id="int-auth">
+                                <option value="oauth2">OAuth 2.0</option>
+                                <option value="apikey">API Key</option>
+                                <option value="basic">Basic Auth</option>
+                                <option value="bearer">Bearer Token</option>
+                                <option value="cert">Zertifikat (mTLS)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="int-user">Benutzername / Client ID</label>
+                            <input type="text" id="int-user" placeholder="client_id oder username">
+                        </div>
+                        <div class="form-group">
+                            <label for="int-pass">Passwort / Secret</label>
+                            <input type="password" id="int-pass" placeholder="********">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="int-mapping">Feld-Mapping (JSON)</label>
+                        <textarea id="int-mapping" rows="4" class="ai-code-editor" placeholder='{"caller_name": "$.patient.name", "reason": "$.ticket.description"}'></textarea>
+                    </div>
+                    <div class="button-gruppe">
+                        <button type="button" class="btn-primary" onclick="intSpeichern()"><i class="fa-solid fa-floppy-disk"></i> Verbindung speichern</button>
+                        <button type="button" class="btn-secondary" onclick="intTesten()"><i class="fa-solid fa-plug"></i> Verbindung testen</button>
+                        <button type="button" class="btn-text" onclick="document.getElementById('int-config-panel').style.display='none'"><i class="fa-solid fa-xmark"></i> Schliessen</button>
+                    </div>
+                    <div id="int-erfolg" class="erfolg-meldung" hidden></div>
+                </div>
+            </div>
+
+            <!-- ===== TAB 3: Prompt Engineering ===== -->
+            <div class="ai-tab-content" id="tab-prompts">
+                <div class="card">
+                    <h3><i class="fa-solid fa-terminal"></i> System-Prompt Editor</h3>
+                    <div class="form-group">
+                        <label for="pe-agent-select">Agent auswaehlen</label>
+                        <select id="pe-agent-select"><option value="">— Agent waehlen —</option></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="pe-system-prompt">System-Prompt</label>
+                        <textarea id="pe-system-prompt" rows="10" placeholder="Der System-Prompt definiert das gesamte Verhalten des AI-Agents..." class="ai-code-editor"></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="pe-kontext">Zusaetzlicher Kontext (Branchen-spezifisch)</label>
+                            <textarea id="pe-kontext" rows="5" placeholder="Spezifische Infos: Oeffnungszeiten, Abteilungen, Leistungen..." class="ai-code-editor"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="pe-regeln">Prompt-Regeln (wird ans Ende angehaengt)</label>
+                            <textarea id="pe-regeln" rows="5" placeholder="WICHTIG fuer dein Verhalten am Telefon:&#10;- Antworte KURZ (1-3 Saetze)&#10;- Stelle eine Frage pro Antwort" class="ai-code-editor"></textarea>
+                        </div>
+                    </div>
+                    <div class="button-gruppe">
+                        <button type="button" id="pe-speichern" class="btn-primary"><i class="fa-solid fa-floppy-disk"></i> Prompt speichern</button>
+                        <button type="button" id="pe-zuruecksetzen" class="btn-secondary"><i class="fa-solid fa-rotate-left"></i> Standard wiederherstellen</button>
+                    </div>
+                    <div id="pe-erfolg" class="erfolg-meldung" hidden></div>
+                </div>
+                <div class="card">
+                    <h3><i class="fa-solid fa-flask"></i> Prompt testen (Testgespraech)</h3>
+                    <div id="pe-test-chat" class="ai-test-chat">
+                        <div id="pe-chat-verlauf" class="ai-chat-verlauf"></div>
+                        <div class="ai-chat-eingabe">
+                            <input type="text" id="pe-chat-input" placeholder="Nachricht eingeben (simuliert Anrufer)...">
+                            <button type="button" id="pe-chat-senden"><i class="fa-solid fa-paper-plane"></i></button>
+                        </div>
+                    </div>
+                    <div class="ai-chat-meta">
+                        <span id="pe-chat-tokens">Tokens: —</span>
+                        <span id="pe-chat-latenz">Latenz: —</span>
+                        <button type="button" id="pe-chat-leeren" class="btn-text"><i class="fa-solid fa-trash"></i> Chat leeren</button>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3><i class="fa-solid fa-copy"></i> Prompt-Vorlagen</h3>
+                    <div id="pe-vorlagen" class="ai-vorlagen-grid"></div>
+                </div>
+            </div>
+
+            <!-- ===== TAB 4: Deployment ===== -->
+            <div class="ai-tab-content" id="tab-deployment">
+                <div class="card">
+                    <h3><i class="fa-solid fa-rocket"></i> Agent Deployment Pipeline</h3>
+                    <p style="color:var(--text-muted,#94a3b8);font-size:13px;margin-bottom:16px">Agent vom Builder bis zum Live-Betrieb — Schritt fuer Schritt.</p>
+                    <div class="deploy-pipeline">
+                        <div class="deploy-step done">
+                            <div class="step-num">Schritt 1</div>
+                            <div class="step-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+                            <div class="step-title">Konfiguration</div>
+                            <div class="step-desc">Agent Builder</div>
+                        </div>
+                        <div class="deploy-step done">
+                            <div class="step-num">Schritt 2</div>
+                            <div class="step-icon"><i class="fa-solid fa-plug"></i></div>
+                            <div class="step-title">Integrationen</div>
+                            <div class="step-desc">Schnittstellen verbinden</div>
+                        </div>
+                        <div class="deploy-step done">
+                            <div class="step-num">Schritt 3</div>
+                            <div class="step-icon"><i class="fa-solid fa-terminal"></i></div>
+                            <div class="step-title">Prompts</div>
+                            <div class="step-desc">Verhalten definieren</div>
+                        </div>
+                        <div class="deploy-step active">
+                            <div class="step-num">Schritt 4</div>
+                            <div class="step-icon"><i class="fa-solid fa-flask"></i></div>
+                            <div class="step-title">Testing</div>
+                            <div class="step-desc">Agent validieren</div>
+                        </div>
+                        <div class="deploy-step">
+                            <div class="step-num">Schritt 5</div>
+                            <div class="step-icon"><i class="fa-solid fa-rocket"></i></div>
+                            <div class="step-title">Go Live</div>
+                            <div class="step-desc">Produktiv schalten</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3><i class="fa-solid fa-robot"></i> Agent fuer Deployment</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="dep-agent">Agent auswaehlen</label>
+                            <select id="dep-agent"><option value="">— Agent waehlen —</option></select>
+                        </div>
+                        <div class="form-group">
+                            <label for="dep-version">Version</label>
+                            <select id="dep-version">
+                                <option value="v1.0">v1.0 (aktuell)</option>
+                                <option value="v0.9">v0.9 (vorherige)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3><i class="fa-solid fa-server"></i> Umgebungen</h3>
+                    <div class="env-grid">
+                        <div class="env-card">
+                            <h4><i class="fa-solid fa-code"></i> Development <span class="env-badge dev">DEV</span></h4>
+                            <div class="env-detail"><span>Status:</span><span style="color:#22c55e">Aktiv</span></div>
+                            <div class="env-detail"><span>URL:</span><span>dev.agent.local:8080</span></div>
+                            <div class="env-detail"><span>LLM:</span><span>Llama 3.1 8B</span></div>
+                            <div class="env-detail"><span>Telefonie:</span><span>SIP Test-Trunk</span></div>
+                            <div class="env-detail"><span>Letztes Deploy:</span><span>Heute, 14:32</span></div>
+                            <button type="button" class="btn-secondary" style="margin-top:12px;width:100%"><i class="fa-solid fa-rotate"></i> Neu deployen</button>
+                        </div>
+                        <div class="env-card">
+                            <h4><i class="fa-solid fa-vial"></i> Staging <span class="env-badge staging">STAGING</span></h4>
+                            <div class="env-detail"><span>Status:</span><span style="color:#eab308">Bereit</span></div>
+                            <div class="env-detail"><span>URL:</span><span>staging.voicebot.example.com</span></div>
+                            <div class="env-detail"><span>LLM:</span><span>Llama 3.1 70B</span></div>
+                            <div class="env-detail"><span>Telefonie:</span><span>Asterisk Staging</span></div>
+                            <div class="env-detail"><span>Letztes Deploy:</span><span>Gestern, 18:05</span></div>
+                            <button type="button" class="btn-secondary" style="margin-top:12px;width:100%"><i class="fa-solid fa-arrow-up"></i> Promote to Staging</button>
+                        </div>
+                        <div class="env-card">
+                            <h4><i class="fa-solid fa-shield-halved"></i> Production <span class="env-badge prod">PROD</span></h4>
+                            <div class="env-detail"><span>Status:</span><span style="color:#22c55e">Live</span></div>
+                            <div class="env-detail"><span>URL:</span><span>voicebot.example.com</span></div>
+                            <div class="env-detail"><span>LLM:</span><span>Llama 3.1 70B</span></div>
+                            <div class="env-detail"><span>Telefonie:</span><span>Asterisk Prod + ACD</span></div>
+                            <div class="env-detail"><span>Letztes Deploy:</span><span>25.02.2026</span></div>
+                            <button type="button" class="btn-primary" style="margin-top:12px;width:100%"><i class="fa-solid fa-rocket"></i> Deploy to Production</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3><i class="fa-solid fa-clipboard-check"></i> Go-Live Checklist</h3>
+                    <div style="display:grid;gap:8px">
+                        <label class="checklist-item"><input type="checkbox" checked> <i class="fa-solid fa-check-circle" style="color:#22c55e"></i> Agent-Konfiguration vollstaendig</label>
+                        <label class="checklist-item"><input type="checkbox" checked> <i class="fa-solid fa-check-circle" style="color:#22c55e"></i> Integrationen verbunden &amp; getestet</label>
+                        <label class="checklist-item"><input type="checkbox" checked> <i class="fa-solid fa-check-circle" style="color:#22c55e"></i> System-Prompt optimiert</label>
+                        <label class="checklist-item"><input type="checkbox"> <i class="fa-solid fa-circle" style="color:var(--text-muted,#94a3b8)"></i> Asterisk SIP-Trunk konfiguriert</label>
+                        <label class="checklist-item"><input type="checkbox"> <i class="fa-solid fa-circle" style="color:var(--text-muted,#94a3b8)"></i> ACD-Queues &amp; Routing eingerichtet</label>
+                        <label class="checklist-item"><input type="checkbox"> <i class="fa-solid fa-circle" style="color:var(--text-muted,#94a3b8)"></i> Fallback / Eskalation getestet</label>
+                        <label class="checklist-item"><input type="checkbox"> <i class="fa-solid fa-circle" style="color:var(--text-muted,#94a3b8)"></i> Datenschutz / DSGVO geprueft</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== TAB 5: Monitoring ===== -->
+            <div class="ai-tab-content" id="tab-monitoring">
+                <div class="stat-grid ai-stat-grid">
+                    <div class="stat-card"><div class="stat-label">Gespraeche heute</div><div class="stat-value" id="mon-gespraeche">0</div></div>
+                    <div class="stat-card"><div class="stat-label">Durchschn. Latenz</div><div class="stat-value" id="mon-latenz">— ms</div></div>
+                    <div class="stat-card"><div class="stat-label">Erfolgsquote</div><div class="stat-value" id="mon-erfolg">— %</div></div>
+                    <div class="stat-card"><div class="stat-label">Aktive Sessions</div><div class="stat-value" id="mon-sessions">0</div></div>
+                </div>
+                <div class="card">
+                    <h3><i class="fa-solid fa-list"></i> Letzte Gespraeche</h3>
+                    <div class="table-container">
+                        <table id="mon-gespraeche-tabelle">
+                            <thead><tr><th>Zeit</th><th>Kanal</th><th>Agent</th><th>Dauer</th><th>Nachrichten</th><th>Status</th><th>Aktionen</th></tr></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3><i class="fa-solid fa-scroll"></i> Transkript</h3>
+                    <div id="mon-transkript" class="ai-transkript">
+                        <p class="ai-transkript-leer">Gespraech auswaehlen um Transkript anzuzeigen...</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3><i class="fa-solid fa-server"></i> System-Status</h3>
+                    <div class="ai-system-status">
+                        <div class="ai-status-item"><span class="ai-status-dot" id="mon-llm-dot"></span><span>LLM (Ollama)</span><span id="mon-llm-info" class="ai-status-detail">pruefen...</span></div>
+                        <div class="ai-status-item"><span class="ai-status-dot" id="mon-stt-dot"></span><span>STT (Whisper)</span><span id="mon-stt-info" class="ai-status-detail">pruefen...</span></div>
+                        <div class="ai-status-item"><span class="ai-status-dot" id="mon-tts-dot"></span><span>TTS (Edge)</span><span id="mon-tts-info" class="ai-status-detail">pruefen...</span></div>
+                        <div class="ai-status-item"><span class="ai-status-dot" id="mon-asterisk-dot"></span><span>Asterisk PBX</span><span id="mon-asterisk-info" class="ai-status-detail">pruefen...</span></div>
+                        <div class="ai-status-item"><span class="ai-status-dot" id="mon-acd-dot"></span><span>ACD / Queues</span><span id="mon-acd-info" class="ai-status-detail">pruefen...</span></div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+    <button id="chat-toggle" type="button"><i class="fa-solid fa-comment-dots"></i></button>
+    <div id="chat-fenster">
+        <div class="chat-header"><span><i class="fa-solid fa-robot"></i> Assistent</span><button id="chat-schliessen" type="button"><i class="fa-solid fa-xmark"></i></button></div>
+        <div id="chat-nachrichten"></div>
+        <div class="chat-eingabe">
+            <input id="chat-input" type="text" placeholder="Frage stellen oder sprechen...">
+            <button id="chat-mikrofon" type="button" title="Sprechen"><i class="fa-solid fa-microphone"></i></button>
+            <button id="chat-senden" type="button"><i class="fa-solid fa-paper-plane"></i></button>
         </div>
-        <div class="card">
-          <div class="card-header"><h2>Prompt-Vorlagen</h2></div>
-          <div class="card-body">
-            <div class="tpl-grid">
-              <div class="tpl-card" onclick="loadTemplate('arzt')"><div class="tpl-title">Arztpraxis Standard</div><div class="tpl-desc">Empfang, Terminvergabe, Rezeptanfragen, Notfall-Erkennung</div><div class="tpl-badge">Empfohlen</div></div>
-              <div class="tpl-card" onclick="loadTemplate('zahnarzt')"><div class="tpl-title">Zahnarztpraxis</div><div class="tpl-desc">Schmerzpatienten priorisieren, Prophylaxe-Termine, Recall</div><div class="tpl-badge">Branche</div></div>
-              <div class="tpl-card" onclick="loadTemplate('anwalt')"><div class="tpl-title">Rechtsanwalt</div><div class="tpl-desc">Mandantenaufnahme, Rechtsgebiet erfragen, Erstberatung planen</div><div class="tpl-badge">Branche</div></div>
-              <div class="tpl-card" onclick="loadTemplate('minimal')"><div class="tpl-title">Minimal</div><div class="tpl-desc">Einfacher Agent: Begruessung, Anliegen, Weiterleitung</div><div class="tpl-badge">Basis</div></div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div>
-        <div class="card">
-          <div class="card-header"><h2>Testgespraech</h2><button class="btn secondary" onclick="clearChat()" style="font-size:11px;padding:5px 12px">Chat leeren</button></div>
-          <div class="card-body">
-            <div class="chat-box" id="chat-box">
-              <div class="chat-msg bot"><div class="chat-sender">Voicebot</div><div class="chat-bubble">Guten Tag, Praxis Dr. Schmidt, wie kann ich Ihnen helfen?</div></div>
-              <div class="chat-msg user"><div class="chat-sender">Anrufer</div><div class="chat-bubble">Ich braeuchte einen Termin beim Arzt, moeglichst diese Woche noch.</div></div>
-              <div class="chat-msg bot"><div class="chat-sender">Voicebot</div><div class="chat-bubble">Sehr gerne! Ich kann Ihnen am Donnerstag um 10:30 Uhr oder am Freitag um 14:00 Uhr einen Termin anbieten. Was passt Ihnen besser?</div></div>
-              <div class="chat-msg user"><div class="chat-sender">Anrufer</div><div class="chat-bubble">Donnerstag waere super.</div></div>
-              <div class="chat-msg bot"><div class="chat-sender">Voicebot</div><div class="chat-bubble">Alles klar, Donnerstag 10:30 Uhr bei Dr. Schmidt. Darf ich Ihren Namen und Ihre Versicherung notieren?</div></div>
-            </div>
-            <div class="chat-input-row">
-              <input type="text" id="chat-input" placeholder="Nachricht eingeben (simuliert Anrufer)..." onkeypress="if(event.key==='Enter')sendTestMsg()">
-              <button class="btn primary" onclick="sendTestMsg()">Senden</button>
-            </div>
-            <div class="chat-meta"><span>Tokens: 247</span><span>Latenz: 380 ms</span><span>Modell: Llama 3.1 8B</span></div>
-          </div>
-        </div>
-      </div>
     </div>
-  </div>
-
-  <!-- ═══ TAB 5: Monitoring & Logs ═══ -->
-  <div id="tab-monitoring" style="display:none">
-    <div class="kpi-grid">
-      <div class="kpi"><div class="kpi-label">Gespraeche heute</div><div class="kpi-value">38</div><div class="kpi-sub">14 via Voicebot autonom</div><div class="kpi-trend up">36.8% automatisiert</div></div>
-      <div class="kpi"><div class="kpi-label">Latenz</div><div class="kpi-value">420ms</div><div class="kpi-sub">Antwortzeit LLM</div><div class="kpi-trend up">15% schneller als gestern</div></div>
-      <div class="kpi"><div class="kpi-label">Erfolgsquote</div><div class="kpi-value">89%</div><div class="kpi-sub">ohne menschliche Hilfe geloest</div><div class="kpi-trend up">+3% diese Woche</div></div>
-      <div class="kpi"><div class="kpi-label">Aktive Sessions</div><div class="kpi-value">2</div><div class="kpi-sub">gerade im Gespraech</div><div class="kpi-trend up">Normal</div></div>
-    </div>
-    <div class="card">
-      <div class="card-header"><h2>System-Status</h2><button class="btn secondary" style="font-size:11px;padding:5px 12px">Aktualisieren</button></div>
-      <div class="card-body">
-        <div class="status-row"><span class="status-dot green"></span><span style="font-size:13px;font-weight:500;color:#374151;flex:1">LLM (Ollama – Llama 3.1 8B)</span><span style="font-size:11px;color:#9ca3af">Latenz: 380ms · GPU: 4.2 GB VRAM · Uptime: 14h</span></div>
-        <div class="status-row"><span class="status-dot green"></span><span style="font-size:13px;font-weight:500;color:#374151;flex:1">STT (Faster-Whisper – large-v3)</span><span style="font-size:11px;color:#9ca3af">RTF: 0.12 · Deutsch · GPU-Modus</span></div>
-        <div class="status-row"><span class="status-dot green"></span><span style="font-size:13px;font-weight:500;color:#374151;flex:1">TTS (Edge TTS – KatjaNeural)</span><span style="font-size:11px;color:#9ca3af">Latenz: 95ms · Streaming: aktiv</span></div>
-        <div class="status-row"><span class="status-dot green"></span><span style="font-size:13px;font-weight:500;color:#374151;flex:1">Asterisk PBX</span><span style="font-size:11px;color:#9ca3af">5 SIP-Peers online · 2 aktive Kanaele</span></div>
-        <div class="status-row"><span class="status-dot yellow"></span><span style="font-size:13px;font-weight:500;color:#374151;flex:1">Audio Mixer</span><span style="font-size:11px;color:#9ca3af">Background: Buero-Ambience · CPU: 12%</span></div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-header"><h2>Letzte Gespraeche</h2><span style="font-size:11px;color:#9ca3af">Heute: 38 Gespraeche</span></div>
-      <div class="card-body" style="padding:0">
-        <table class="tbl"><thead><tr><th>Zeit</th><th>Anrufer</th><th>Agent</th><th>Dauer</th><th>Anliegen</th><th>Status</th><th>Aktion</th></tr></thead>
-        <tbody>
-          <tr><td>08:34</td><td class="fw">+49 176 ****321</td><td>Voicebot</td><td>1:42</td><td>Terminbuchung</td><td><span class="badge green">Geloest</span></td><td><button class="btn secondary" style="font-size:11px;padding:4px 10px" onclick="showTranscript(1)">Transkript</button></td></tr>
-          <tr><td>08:31</td><td class="fw">+49 89 ****456</td><td>VB → Dr. Schmidt</td><td>3:15</td><td>Medizinische Frage</td><td><span class="badge yellow">Weitergeleitet</span></td><td><button class="btn secondary" style="font-size:11px;padding:4px 10px" onclick="showTranscript(2)">Transkript</button></td></tr>
-          <tr><td>08:28</td><td class="fw">+49 152 ****789</td><td>Voicebot</td><td>0:58</td><td>Rezeptanfrage</td><td><span class="badge green">Geloest</span></td><td><button class="btn secondary" style="font-size:11px;padding:4px 10px" onclick="showTranscript(3)">Transkript</button></td></tr>
-          <tr><td>08:22</td><td class="fw">+49 171 ****234</td><td>Voicebot</td><td>2:10</td><td>Terminbuchung</td><td><span class="badge green">Geloest</span></td><td><button class="btn secondary" style="font-size:11px;padding:4px 10px" onclick="showTranscript(1)">Transkript</button></td></tr>
-          <tr><td>08:15</td><td class="fw">+49 160 ****567</td><td>VB → Anna Weber</td><td>4:30</td><td>Beschwerde</td><td><span class="badge red">Eskaliert</span></td><td><button class="btn secondary" style="font-size:11px;padding:4px 10px" onclick="showTranscript(2)">Transkript</button></td></tr>
-        </tbody></table>
-      </div>
-    </div>
-    <div class="card" id="transcript-card" style="display:none">
-      <div class="card-header"><h2>Transkript</h2><button class="btn secondary" onclick="document.getElementById('transcript-card').style.display='none'" style="font-size:11px;padding:5px 12px">Schliessen</button></div>
-      <div class="card-body"><div id="transcript-content" class="chat-box" style="height:auto;max-height:400px"></div></div>
-    </div>
-  </div>
-
-</div><!-- /main -->
-
-<!-- Modals -->
-<div class="modal-overlay" id="agent-modal">
-  <div class="modal">
-    <div class="modal-header"><h2><i class="fa-solid fa-robot" style="color:#6366f1"></i> <span id="modal-title">Neuen Agent erstellen</span></h2><button class="modal-close" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></button></div>
-    <div class="modal-body">
-      <input type="hidden" id="edit-agent-id">
-      <div class="m-form-group"><label for="modal-name">Agent-Name</label><input type="text" id="modal-name" placeholder="z.B. Praxis Dr. Mueller – Empfang"></div>
-      <div class="form-row-2">
-        <div class="m-form-group"><label for="modal-branch">Branche</label><select id="modal-branch"><option>Arztpraxis</option><option>Zahnarztpraxis</option><option>Rechtsanwalt</option><option>Steuerberatung</option><option>Friseursalon</option><option>KFZ-Werkstatt</option><option>Tierarztpraxis</option><option>Allgemeines Buero</option></select></div>
-        <div class="m-form-group"><label for="modal-status">Status</label><select id="modal-status"><option value="Aktiv">Aktiv</option><option value="Entwurf">Entwurf</option><option value="Inaktiv">Inaktiv</option></select></div>
-      </div>
-      <div class="m-form-group"><label for="modal-phone">Telefonnummer / IVR Entry Point</label><input type="text" id="modal-phone" placeholder="z.B. +49 89 123456 – IVR Hauptmenue"></div>
-      <div class="form-row-2">
-        <div class="m-form-group"><label for="modal-voice">TTS-Stimme</label><select id="modal-voice"><option>KatjaNeural</option><option>ConradNeural</option><option>Anna (Piper)</option><option>Rachel (ElevenLabs)</option><option>Nova (OpenAI)</option></select></div>
-        <div class="m-form-group"><label for="modal-model">LLM-Modell</label><select id="modal-model"><option>Llama 3.1 8B</option><option>Llama 3.1 70B</option><option>Mistral 7B</option><option>Gemma 2 9B</option></select></div>
-      </div>
-    </div>
-    <div class="modal-footer"><button class="btn secondary" onclick="closeModal()">Abbrechen</button><button class="btn primary" id="modal-save-btn" onclick="saveGalerieAgent()">Speichern</button></div>
-  </div>
-</div>
-<div class="modal-overlay" id="delete-modal">
-  <div class="modal" style="max-width:420px">
-    <div class="modal-header"><h2><i class="fa-solid fa-triangle-exclamation" style="color:#ef4444"></i> Agent loeschen</h2><button class="modal-close" onclick="closeDeleteModal()"><i class="fa-solid fa-xmark"></i></button></div>
-    <div class="modal-body"><p style="font-size:14px;color:#374151;line-height:1.6">Sind Sie sicher, dass Sie den Agent <strong id="delete-agent-name"></strong> unwiderruflich loeschen moechten?</p></div>
-    <div class="modal-footer"><button class="btn secondary" onclick="closeDeleteModal()">Abbrechen</button><button class="btn red" onclick="confirmDelete()">Endgueltig loeschen</button></div>
-  </div>
-</div>
-<!-- Flow Preview -->
-<div class="fe-preview-overlay" id="fe-preview">
-  <div class="fe-preview-box">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
-      <div style="font-size:15px;font-weight:800" id="fe-preview-title">Flow-Vorschau</div>
-      <button class="btn secondary" onclick="feTogglePreview()">Schliessen</button>
-    </div>
-    <div style="background:#0f172a;border-radius:14px;padding:16px;font-family:'Inter',monospace" id="fe-preview-body"></div>
-  </div>
-</div>
-
-<script>
-// ═══════════════════════════════════════
-// TAB SYSTEM
-// ═══════════════════════════════════════
-var ALL_TABS = ['galerie','builder','floweditor','prompts','monitoring'];
-function showTab(name) {
-  ALL_TABS.forEach(function(t) {
-    var el = document.getElementById('tab-'+t);
-    if(el) el.style.display = t===name ? '' : 'none';
-  });
-  document.querySelectorAll('.dash-tab').forEach(function(btn,i) {
-    btn.classList.toggle('active', ALL_TABS[i]===name);
-  });
-}
-
-// ═══════════════════════════════════════
-// GALERIE — CRUD mit localStorage
-// ═══════════════════════════════════════
-var GAL_KEY = 'med_ai_agents';
-var AVATAR_COLORS = ['purple','green','blue','orange','pink','teal'];
-var deleteTargetId = null;
-
-function getDefaultAgents() {
-  return [
-    {id:'agent_001',name:'Praxis Dr. Schmidt – Empfang',branch:'Arztpraxis',status:'Aktiv',phone:'+49 89 123456 – IVR Hauptmenue',voice:'KatjaNeural',model:'Llama 3.1 8B',callsToday:38,successRate:89,avgDuration:142,modified:'2026-02-28T08:30:00',avatarColor:'purple'},
-    {id:'agent_002',name:'Praxis Dr. Schmidt – Notfall',branch:'Arztpraxis',status:'Entwurf',phone:'+49 89 123456 – IVR Notfall',voice:'ConradNeural',model:'Llama 3.1 8B',callsToday:0,successRate:0,avgDuration:0,modified:'2026-02-27T14:15:00',avatarColor:'orange'},
-    {id:'agent_003',name:'Zahnarzt Dr. Weber – Rezeption',branch:'Zahnarztpraxis',status:'Aktiv',phone:'+49 89 654321 – IVR Empfang',voice:'Anna (Piper)',model:'Mistral 7B',callsToday:24,successRate:92,avgDuration:118,modified:'2026-02-28T09:10:00',avatarColor:'green'},
-    {id:'agent_004',name:'Kanzlei Meier – Mandantenaufnahme',branch:'Rechtsanwalt',status:'Aktiv',phone:'+49 89 987654 – IVR Kanzlei',voice:'Rachel (ElevenLabs)',model:'Llama 3.1 70B',callsToday:12,successRate:85,avgDuration:195,modified:'2026-02-26T16:45:00',avatarColor:'blue'},
-    {id:'agent_005',name:'Friseursalon Style – Termine',branch:'Friseursalon',status:'Inaktiv',phone:'+49 89 112233 – IVR Salon',voice:'Nova (OpenAI)',model:'Gemma 2 9B',callsToday:0,successRate:0,avgDuration:0,modified:'2026-02-20T11:00:00',avatarColor:'pink'}
-  ];
-}
-
-function loadAgents() {
-  var raw = localStorage.getItem(GAL_KEY);
-  if(!raw) { var d = getDefaultAgents(); localStorage.setItem(GAL_KEY, JSON.stringify(d)); return d; }
-  try { var p = JSON.parse(raw); if(!Array.isArray(p)||p.length===0) throw 0; return p; } catch(e) { var d = getDefaultAgents(); localStorage.setItem(GAL_KEY, JSON.stringify(d)); return d; }
-}
-function saveAgentsLS(agents) { localStorage.setItem(GAL_KEY, JSON.stringify(agents)); }
-function generateId() { return 'agent_' + Date.now() + '_' + Math.random().toString(36).substring(2,7); }
-function escHtml(s) { if(!s)return''; return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-function fmtDur(s) { if(!s)return'–'; var m=Math.floor(s/60),r=s%60; return m+':'+String(r).padStart(2,'0'); }
-function fmtDate(iso) { if(!iso)return'–'; var d=new Date(iso); return String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+d.getFullYear()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
-
-function renderAgents() {
-  var agents = loadAgents();
-  var search = (document.getElementById('search-input').value||'').toLowerCase().trim();
-  var statusF = document.getElementById('filter-status').value;
-  var sortBy = document.getElementById('sort-select').value;
-  var filtered = agents.filter(function(a) {
-    return (a.name.toLowerCase().includes(search)||a.branch.toLowerCase().includes(search)) && (statusF==='all'||a.status===statusF);
-  });
-  filtered.sort(function(a,b) {
-    if(sortBy==='name-asc') return a.name.localeCompare(b.name,'de');
-    if(sortBy==='name-desc') return b.name.localeCompare(a.name,'de');
-    if(sortBy==='status') { var o={Aktiv:0,Entwurf:1,Inaktiv:2}; return (o[a.status]||3)-(o[b.status]||3); }
-    if(sortBy==='date-desc') return new Date(b.modified)-new Date(a.modified);
-    return 0;
-  });
-  var grid = document.getElementById('agent-grid');
-  var empty = document.getElementById('empty-state');
-  if(filtered.length===0) { grid.style.display='none'; empty.style.display=''; } else { grid.style.display=''; empty.style.display='none'; }
-  grid.innerHTML = filtered.map(function(a) {
-    var sc = a.status==='Aktiv'?'aktiv':(a.status==='Entwurf'?'entwurf':'inaktiv');
-    var ti = a.status==='Aktiv'?'fa-pause':'fa-play';
-    return '<div class="agent-card"><div class="agent-card-header"><div class="agent-avatar '+(a.avatarColor||'purple')+'"><i class="fa-solid fa-robot"></i></div><div class="agent-header-info"><div class="agent-name" title="'+escHtml(a.name)+'">'+escHtml(a.name)+'</div><div class="agent-branch">'+escHtml(a.branch)+'</div></div><span class="agent-status-badge '+sc+'">'+escHtml(a.status)+'</span></div><div class="agent-card-body"><div class="agent-detail-row"><i class="fa-solid fa-phone"></i><span>'+escHtml(a.phone||'–')+'</span></div><div class="agent-detail-row"><i class="fa-solid fa-volume-high"></i><span>'+escHtml(a.voice)+'</span></div><div class="agent-detail-row"><i class="fa-solid fa-microchip"></i><span>'+escHtml(a.model)+'</span></div><div class="agent-kpis"><div class="agent-kpi"><div class="agent-kpi-value">'+(a.callsToday||0)+'</div><div class="agent-kpi-label">Anrufe</div></div><div class="agent-kpi"><div class="agent-kpi-value" style="color:'+(a.successRate>=85?'#15803d':'#d97706')+'">'+(a.successRate||0)+'%</div><div class="agent-kpi-label">Erfolg</div></div><div class="agent-kpi"><div class="agent-kpi-value">'+fmtDur(a.avgDuration)+'</div><div class="agent-kpi-label">Dauer</div></div></div></div><div class="agent-card-footer"><span class="agent-modified"><i class="fa-regular fa-clock" style="margin-right:4px"></i>'+fmtDate(a.modified)+'</span><div class="agent-actions"><button title="Bearbeiten" onclick="editAgent(\''+a.id+'\')"><i class="fa-solid fa-pen"></i></button><button title="Duplizieren" onclick="duplicateAgent(\''+a.id+'\')"><i class="fa-solid fa-copy"></i></button><button class="success" title="'+(a.status==='Aktiv'?'Deaktivieren':'Aktivieren')+'" onclick="toggleAgent(\''+a.id+'\')"><i class="fa-solid '+ti+'"></i></button><button class="danger" title="Loeschen" onclick="deleteAgent(\''+a.id+'\')"><i class="fa-solid fa-trash"></i></button></div></div></div>';
-  }).join('');
-  updateStats();
-}
-function updateStats() {
-  var a=loadAgents(),act=a.filter(function(x){return x.status==='Aktiv'}),dr=a.filter(function(x){return x.status==='Entwurf'});
-  var avg=0; if(act.length){var s=act.reduce(function(ac,x){return ac+(x.successRate||0)},0);avg=Math.round(s/act.length)}
-  document.getElementById('stat-total').textContent=a.length;
-  document.getElementById('stat-active').textContent=act.length;
-  document.getElementById('stat-draft').textContent=dr.length;
-  document.getElementById('stat-success').textContent=avg+'%';
-}
-function applyFilters(){renderAgents()}
-function openCreateModal(){document.getElementById('edit-agent-id').value='';document.getElementById('modal-title').textContent='Neuen Agent erstellen';document.getElementById('modal-name').value='';document.getElementById('modal-branch').value='Arztpraxis';document.getElementById('modal-status').value='Entwurf';document.getElementById('modal-phone').value='';document.getElementById('modal-voice').value='KatjaNeural';document.getElementById('modal-model').value='Llama 3.1 8B';document.getElementById('agent-modal').classList.add('show')}
-function editAgent(id){var a=loadAgents().find(function(x){return x.id===id});if(!a)return;document.getElementById('edit-agent-id').value=a.id;document.getElementById('modal-title').textContent='Agent bearbeiten';document.getElementById('modal-name').value=a.name;document.getElementById('modal-branch').value=a.branch;document.getElementById('modal-status').value=a.status;document.getElementById('modal-phone').value=a.phone||'';document.getElementById('modal-voice').value=a.voice;document.getElementById('modal-model').value=a.model;document.getElementById('agent-modal').classList.add('show')}
-function closeModal(){document.getElementById('agent-modal').classList.remove('show')}
-function saveGalerieAgent(){var name=document.getElementById('modal-name').value.trim();if(!name){document.getElementById('modal-name').focus();return}var agents=loadAgents();var eid=document.getElementById('edit-agent-id').value;var now=new Date().toISOString();if(eid){var idx=agents.findIndex(function(a){return a.id===eid});if(idx!==-1){agents[idx].name=name;agents[idx].branch=document.getElementById('modal-branch').value;agents[idx].status=document.getElementById('modal-status').value;agents[idx].phone=document.getElementById('modal-phone').value;agents[idx].voice=document.getElementById('modal-voice').value;agents[idx].model=document.getElementById('modal-model').value;agents[idx].modified=now}}else{agents.push({id:generateId(),name:name,branch:document.getElementById('modal-branch').value,status:document.getElementById('modal-status').value,phone:document.getElementById('modal-phone').value,voice:document.getElementById('modal-voice').value,model:document.getElementById('modal-model').value,callsToday:0,successRate:0,avgDuration:0,modified:now,avatarColor:AVATAR_COLORS[agents.length%AVATAR_COLORS.length]})}saveAgentsLS(agents);closeModal();renderAgents()}
-function duplicateAgent(id){var agents=loadAgents();var a=agents.find(function(x){return x.id===id});if(!a)return;var c=JSON.parse(JSON.stringify(a));c.id=generateId();c.name=a.name+' (Kopie)';c.status='Entwurf';c.callsToday=0;c.successRate=0;c.avgDuration=0;c.modified=new Date().toISOString();c.avatarColor=AVATAR_COLORS[agents.length%AVATAR_COLORS.length];agents.push(c);saveAgentsLS(agents);renderAgents()}
-function toggleAgent(id){var agents=loadAgents();var a=agents.find(function(x){return x.id===id});if(!a)return;a.status=a.status==='Aktiv'?'Inaktiv':'Aktiv';a.modified=new Date().toISOString();saveAgentsLS(agents);renderAgents()}
-function deleteAgent(id){var a=loadAgents().find(function(x){return x.id===id});if(!a)return;deleteTargetId=id;document.getElementById('delete-agent-name').textContent=a.name;document.getElementById('delete-modal').classList.add('show')}
-function closeDeleteModal(){document.getElementById('delete-modal').classList.remove('show');deleteTargetId=null}
-function confirmDelete(){if(!deleteTargetId)return;var agents=loadAgents().filter(function(a){return a.id!==deleteTargetId});saveAgentsLS(agents);closeDeleteModal();renderAgents()}
-document.getElementById('agent-modal').addEventListener('click',function(e){if(e.target===this)closeModal()});
-document.getElementById('delete-modal').addEventListener('click',function(e){if(e.target===this)closeDeleteModal()});
-document.addEventListener('keydown',function(e){if(e.key==='Escape'){closeModal();closeDeleteModal()}});
-
-// ═══════════════════════════════════════
-// FLOW EDITOR
-// ═══════════════════════════════════════
-(function(){
-  var feMode = 'vb';
-  var feNextId = 1;
-  var feVbBlocks = [];
-  var feCbBlocks = [];
-
-  var FE_TYPES = {
-    start:{icon:'📞',title:'Anruf eingehend',badge:'START',cbIcon:'👤',cbTitle:'Agent nimmt an'},
-    greet:{icon:'💬',title:'Begruessung',badge:'ANSAGE'},
-    listen:{icon:'🎙',title:'Zuhoeren / Fragen',badge:'STT'},
-    say:{icon:'🔊',title:'Antwort sprechen',badge:'TTS'},
-    cond:{icon:'⚡',title:'Bedingung',badge:'WEICHE'},
-    kb:{icon:'📚',title:'KB nachschlagen',badge:'KB',cbTitle:'KB einblenden'},
-    termin:{icon:'📅',title:'Termin buchen',badge:'AKTION'},
-    ticket:{icon:'🎫',title:'Ticket erstellen',badge:'AKTION'},
-    rezept:{icon:'💊',title:'Rezept erfassen',badge:'AKTION'},
-    mail:{icon:'✉️',title:'Mail senden',badge:'MAIL'},
-    input:{icon:'⌨️',title:'Daten erfassen',badge:'INPUT'},
-    transfer:{icon:'🔀',title:'An Agent weiterleiten',badge:'UEBERGABE',cbIcon:'↗️',cbTitle:'Weiterleiten',cbBadge:'TRANSFER'},
-    queue:{icon:'⏳',title:'In Queue einreihen',badge:'QUEUE'},
-    click:{icon:'🖱',title:'Klick-Vorgabe',badge:'KLICK'},
-    info:{icon:'💬',title:'Info anzeigen',badge:'INFO'},
-    end:{icon:'🔴',title:'Gespraech beenden',badge:'ENDE',cbTitle:'Ticket schliessen'}
-  };
-
-  function feBlocks(){return feMode==='vb'?feVbBlocks:feCbBlocks}
-  function feSetBlocks(b){if(feMode==='vb')feVbBlocks=b;else feCbBlocks=b}
-  function feEsc(s){var d=document.createElement('div');d.textContent=s||'';return d.innerHTML}
-
-  // Demo data
-  function feLoadDemo(){
-    feVbBlocks=[
-      {id:1,typ:'start',label:'Anruf eingehend',config:{quelle:'SIP-Trunk'}},
-      {id:2,typ:'greet',label:'Begruessung',config:{text:'Guten Tag, Praxis Dr. Schmidt, was kann ich fuer Sie tun?',stimme:'Azure Neural — de-DE-KatjaNeural'}},
-      {id:3,typ:'listen',label:'Anliegen zuhoeren',config:{text:'Spracherkennung aktiv',engine:'Azure Speech de-DE',timeout:8,keywords:['Termin','Rezept','Notfall'],fallback:'KB befragen'}},
-      {id:4,typ:'termin',label:'Termin buchen',config:{text:'Fuer wann darf ich einen Termin eintragen?',api:'GET /api/termine'}},
-      {id:5,typ:'kb',label:'KB nachschlagen',config:{kategorie:'Alle aktiven Artikel',text:'Kein Szenario erkannt — KB wird durchsucht'}},
-      {id:6,typ:'transfer',label:'An Agent weiterleiten',config:{text:'Komplexes Anliegen',queue:'rezeption',kontext:true}},
-      {id:7,typ:'end',label:'Gespraech beenden',config:{text:'Auf Wiederhoeren und einen schoenen Tag!'}}
-    ];
-    feCbBlocks=[
-      {id:101,typ:'start',label:'Agent nimmt an',config:{quelle:'Clickbot startet automatisch'}},
-      {id:102,typ:'click',label:'Anliegen waehlen',config:{text:'Was ist das Anliegen?',optionen:[{dot:'#0369a1',label:'Termin buchen'},{dot:'#10b981',label:'Rezeptanfrage'},{dot:'#ef4444',label:'Notfall'},{dot:'#f59e0b',label:'Ueberweisung'}]}},
-      {id:103,typ:'termin',label:'Termin buchen',config:{text:'Kalender oeffnet sich im Chat'}},
-      {id:104,typ:'kb',label:'KB-Vorschlag',config:{kategorie:'Alle aktiven Artikel',text:'Passende Artikel werden angezeigt'}},
-      {id:105,typ:'end',label:'Ticket schliessen',config:{text:'Status: Erledigt'}}
-    ];
-    feNextId=200;
-  }
-
-  // Load or demo
-  try{
-    var sv=localStorage.getItem('fe_vb_v2');
-    var sc=localStorage.getItem('fe_cb_v2');
-    if(sv){feVbBlocks=JSON.parse(sv)}else{feLoadDemo()}
-    if(sc)feCbBlocks=JSON.parse(sc);
-    var mx=0;feVbBlocks.concat(feCbBlocks).forEach(function(b){if(b.id>mx)mx=b.id});feNextId=mx+1;
-  }catch(e){feLoadDemo()}
-
-  function feRender(){
-    var container=document.getElementById('fe-blocks');
-    var empty=document.getElementById('fe-empty-msg');
-    container.innerHTML='';
-    var bl=feBlocks();
-    if(bl.length===0){empty.style.display='';return}
-    empty.style.display='none';
-    for(var i=0;i<bl.length;i++){container.appendChild(feBuildBlock(bl[i],i))}
-    feUpdateStatus();
-  }
-
-  function feBuildBlock(block,idx){
-    var t=FE_TYPES[block.typ]||{icon:'❓',title:block.typ,badge:'?'};
-    var icon=feMode==='cb'&&t.cbIcon?t.cbIcon:t.icon;
-    var title=feMode==='cb'&&t.cbTitle?t.cbTitle:t.title;
-    var badge=feMode==='cb'&&t.cbBadge?t.cbBadge:t.badge;
-    var whoHtml=feMode==='vb'?'<span class="fe-who-tag fe-who-vb">Voicebot</span>':'<span class="fe-who-tag fe-who-cb">Agent</span>';
-    var div=document.createElement('div');
-    div.className='fe-block typ-'+block.typ;
-    div.setAttribute('data-id',block.id);
-    var h='<div class="fe-block-head"><span class="fe-block-nr">'+(idx+1)+'</span><div class="fe-block-icon">'+icon+'</div><span class="fe-block-title">'+feEsc(title)+'</span><span class="fe-block-badge">'+badge+'</span><div class="fe-block-actions">';
-    if(idx>0)h+='<button class="btn-up" title="Hoch">▲</button>';
-    if(idx<feBlocks().length-1)h+='<button class="btn-down" title="Runter">▼</button>';
-    if(block.typ!=='start')h+='<button class="btn-del" title="Loeschen">🗑</button>';
-    h+='</div></div>';
-    var b='<div class="fe-block-body">'+whoHtml;
-    b+='<div class="fe-bf"><label>Bezeichnung</label><input type="text" class="fbi" data-f="label" value="'+feEsc(block.label)+'"></div>';
-
-    if(block.typ==='start'){
-      b+='<div class="fe-bf"><label>Quelle</label><input type="text" class="fbi" data-f="config.quelle" value="'+feEsc(block.config.quelle||'')+'"></div>';
-    } else if(block.typ==='greet'||block.typ==='say'){
-      b+='<div class="fe-bf"><label>Sprachtext (TTS)</label><textarea class="fbi" data-f="config.text" rows="2">'+feEsc(block.config.text||'')+'</textarea></div>';
-      b+='<div class="fe-bf"><label>TTS Stimme</label><select class="fbi" data-f="config.stimme"><option>Azure Neural — de-DE-KatjaNeural</option><option>Azure Neural — de-DE-ConradNeural</option><option>ElevenLabs — Domi</option><option>OpenAI TTS — Nova</option></select></div>';
-    } else if(block.typ==='listen'){
-      b+='<div class="fe-bf"><label>Beschreibung</label><textarea class="fbi" data-f="config.text" rows="2">'+feEsc(block.config.text||'')+'</textarea></div>';
-      b+='<div class="fe-bf-row"><div class="fe-bf"><label>STT Engine</label><select class="fbi" data-f="config.engine"><option>Azure Speech de-DE</option><option>Whisper OpenAI</option><option>Google STT de-DE</option></select></div>';
-      b+='<div class="fe-bf"><label>Timeout (Sek)</label><input type="number" class="fbi" data-f="config.timeout" value="'+(block.config.timeout||8)+'"></div></div>';
-      b+='<div class="fe-bf"><label>Schluesselwoerter</label><div class="fe-kw-area">';
-      var kws=block.config.keywords||[];
-      for(var k=0;k<kws.length;k++)b+='<span class="fe-kwtag">'+feEsc(kws[k])+'</span>';
-      b+='<span class="fe-kwtag" style="background:#f1f5f9;color:#64748b;cursor:pointer" onclick="fePromptKeyword('+block.id+')">+ Wort</span></div></div>';
-      b+='<div class="fe-bf"><label>Fallback</label><select class="fbi" data-f="config.fallback"><option>KB befragen</option><option>Nochmals fragen (max 2x)</option><option>An Agent weiterleiten</option></select></div>';
-    } else if(block.typ==='click'){
-      b+='<div class="fe-bf"><label>Frage an Agent</label><input type="text" class="fbi" data-f="config.text" value="'+feEsc(block.config.text||'')+'"></div>';
-      b+='<div class="fe-bf"><label>Antwort-Optionen</label>';
-      var opts=block.config.optionen||[];
-      var cols=['#0369a1','#10b981','#ef4444','#f59e0b','#7c3aed','#06b6d4'];
-      for(var o=0;o<opts.length;o++){b+='<div class="fe-opt-item"><div class="fe-opt-dot" style="background:'+(opts[o].dot||cols[o%cols.length])+'">'+feEsc(opts[o].label?opts[o].label.charAt(0):'')+'</div><input type="text" data-opt="'+o+'" value="'+feEsc(opts[o].label||'')+'"><button class="fe-opt-del" data-opt-del="'+o+'">×</button></div>'}
-      b+='<button class="fe-opt-add" data-block-id="'+block.id+'">+ Option hinzufuegen</button></div>';
-    } else if(block.typ==='info'){
-      b+='<div class="fe-bf"><label>Info-Text</label><textarea class="fbi" data-f="config.text" rows="2">'+feEsc(block.config.text||'')+'</textarea></div>';
-      b+='<div class="fe-info-box fe-info-cb">Text wird dem Agenten angezeigt</div>';
-    } else if(block.typ==='cond'){
-      b+='<div class="fe-bf"><label>Bedingung</label><input type="text" class="fbi" data-f="config.bedingung" value="'+feEsc(block.config.bedingung||'')+'" placeholder="z.B. Uhrzeit > 18:00"></div>';
-      b+='<div class="fe-bf-row"><div class="fe-bf"><label>Wenn wahr</label><input type="text" class="fbi" data-f="config.wahr" value="'+feEsc(block.config.wahr||'')+'"></div>';
-      b+='<div class="fe-bf"><label>Wenn falsch</label><input type="text" class="fbi" data-f="config.falsch" value="'+feEsc(block.config.falsch||'')+'"></div></div>';
-    } else if(block.typ==='kb'){
-      b+='<div class="fe-bf"><label>Kategorie</label><select class="fbi" data-f="config.kategorie"><option>Alle aktiven Artikel</option><option>Termine & Oeffnungszeiten</option><option>Rezept & Medikamente</option><option>Praxis-Infos</option></select></div>';
-      b+='<div class="fe-bf"><label>Beschreibung</label><input type="text" class="fbi" data-f="config.text" value="'+feEsc(block.config.text||'')+'"></div>';
-      if(feMode==='vb')b+='<div class="fe-info-box fe-info-vb">Voicebot sucht KB und liest Antwort vor</div>';
-      else b+='<div class="fe-info-box fe-info-cb">Passende KB-Artikel werden dem Agenten angezeigt</div>';
-    } else if(block.typ==='termin'||block.typ==='ticket'||block.typ==='rezept'){
-      b+='<div class="fe-bf"><label>Beschreibung</label><textarea class="fbi" data-f="config.text" rows="2">'+feEsc(block.config.text||'')+'</textarea></div>';
-      if(block.config.api)b+='<div class="fe-bf"><label>API Endpunkt</label><input type="text" class="fbi" data-f="config.api" value="'+feEsc(block.config.api||'')+'"></div>';
-    } else if(block.typ==='mail'){
-      b+='<div class="fe-bf"><label>Beschreibung</label><input type="text" class="fbi" data-f="config.text" value="'+feEsc(block.config.text||'')+'"></div>';
-      b+='<div class="fe-bf"><label>Empfaenger</label><input type="text" class="fbi" data-f="config.empfaenger" value="'+feEsc(block.config.empfaenger||'')+'" placeholder="praxis@..."></div>';
-    } else if(block.typ==='input'){
-      b+='<div class="fe-bf"><label>Abzufragende Felder</label><input type="text" class="fbi" data-f="config.text" value="'+feEsc(block.config.text||'')+'" placeholder="Name, Geburtsdatum, Versichertennr."></div>';
-    } else if(block.typ==='transfer'){
-      b+='<div class="fe-bf"><label>Beschreibung</label><input type="text" class="fbi" data-f="config.text" value="'+feEsc(block.config.text||'')+'"></div>';
-      b+='<div class="fe-bf-row"><div class="fe-bf"><label>Queue / Nebenstelle</label><input type="text" class="fbi" data-f="config.queue" value="'+feEsc(block.config.queue||'')+'"></div>';
-      b+='<div class="fe-bf"><label>Kontext uebergeben</label><div class="fe-tog-row"><div class="fe-tog-lbl">Gespraechsdaten mitsenden</div><div class="fe-mtog'+(block.config.kontext?' on':'')+'" data-tog="config.kontext"></div></div></div></div>';
-      b+='<div class="fe-info-box fe-info-transfer">Gespraechs-Kontext wird uebergeben</div>';
-    } else if(block.typ==='queue'){
-      b+='<div class="fe-bf-row"><div class="fe-bf"><label>Queue</label><input type="text" class="fbi" data-f="config.queue" value="'+feEsc(block.config.queue||'')+'"></div>';
-      b+='<div class="fe-bf"><label>Max. Wartezeit (Sek)</label><input type="number" class="fbi" data-f="config.maxWait" value="'+(block.config.maxWait||120)+'"></div></div>';
-    } else if(block.typ==='end'){
-      b+='<div class="fe-bf"><label>Abschlusstext</label><input type="text" class="fbi" data-f="config.text" value="'+feEsc(block.config.text||'')+'"></div>';
-    }
-    b+='</div>';
-    div.innerHTML=h+b;
-    // Events
-    var btnUp=div.querySelector('.btn-up'),btnDown=div.querySelector('.btn-down'),btnDel=div.querySelector('.btn-del');
-    if(btnUp)btnUp.onclick=function(){feCollect();var bl=feBlocks();var tmp=bl[idx];bl[idx]=bl[idx-1];bl[idx-1]=tmp;feRender()};
-    if(btnDown)btnDown.onclick=function(){feCollect();var bl=feBlocks();var tmp=bl[idx];bl[idx]=bl[idx+1];bl[idx+1]=tmp;feRender()};
-    if(btnDel)btnDel.onclick=function(){feCollect();var bl=feBlocks();bl.splice(idx,1);feSetBlocks(bl);feRender()};
-    var optDels=div.querySelectorAll('.fe-opt-del');
-    for(var d2=0;d2<optDels.length;d2++){optDels[d2].onclick=(function(oi){return function(){feCollect();block.config.optionen.splice(oi,1);feRender()}})(parseInt(optDels[d2].getAttribute('data-opt-del')))}
-    var optAdd=div.querySelector('.fe-opt-add');
-    if(optAdd)optAdd.onclick=function(){feCollect();if(!block.config.optionen)block.config.optionen=[];block.config.optionen.push({dot:'#64748b',label:''});feRender()};
-    var togs=div.querySelectorAll('.fe-mtog');
-    for(var t2=0;t2<togs.length;t2++){togs[t2].onclick=function(){this.classList.toggle('on')}}
-    return div;
-  }
-
-  function feCollect(){
-    var els=document.querySelectorAll('.fe-block');
-    for(var i=0;i<els.length;i++){
-      var id=parseInt(els[i].getAttribute('data-id'));
-      var bl=feBlocks();var block=null;
-      for(var j=0;j<bl.length;j++){if(bl[j].id===id){block=bl[j];break}}
-      if(!block)continue;
-      var inputs=els[i].querySelectorAll('.fbi');
-      for(var k=0;k<inputs.length;k++){
-        var f=inputs[k].getAttribute('data-f');if(!f)continue;
-        var val=inputs[k].value;
-        if(f.indexOf('config.')===0){var key=f.replace('config.','');if(inputs[k].type==='number')val=parseInt(val)||0;block.config[key]=val}
-        else{block[f]=val}
-      }
-      var optInputs=els[i].querySelectorAll('.fe-opt-item input');
-      for(var oi=0;oi<optInputs.length;oi++){var optIdx=parseInt(optInputs[oi].getAttribute('data-opt'));if(block.config.optionen&&block.config.optionen[optIdx]){block.config.optionen[optIdx].label=optInputs[oi].value}}
-      var togs=els[i].querySelectorAll('.fe-mtog');
-      for(var ti=0;ti<togs.length;ti++){var tf=togs[ti].getAttribute('data-tog');if(tf&&tf.indexOf('config.')===0){block.config[tf.replace('config.','')]=togs[ti].classList.contains('on')}}
-    }
-  }
-
-  window.feAddBlock=function(typ){
-    feCollect();var conf={};
-    if(typ==='start')conf={quelle:''};
-    else if(typ==='greet'||typ==='say')conf={text:'',stimme:'Azure Neural — de-DE-KatjaNeural'};
-    else if(typ==='listen')conf={text:'',engine:'Azure Speech de-DE',timeout:8,keywords:[],fallback:'KB befragen'};
-    else if(typ==='cond')conf={bedingung:'',wahr:'',falsch:''};
-    else if(typ==='kb')conf={kategorie:'Alle aktiven Artikel',text:''};
-    else if(typ==='termin'||typ==='ticket'||typ==='rezept')conf={text:'',api:''};
-    else if(typ==='mail')conf={text:'',empfaenger:''};
-    else if(typ==='input')conf={text:''};
-    else if(typ==='transfer')conf={text:'',queue:'',kontext:true};
-    else if(typ==='queue')conf={queue:'',maxWait:120,ansage:''};
-    else if(typ==='click')conf={text:'',optionen:[]};
-    else if(typ==='info')conf={text:''};
-    else conf={text:''};
-    var t=FE_TYPES[typ]||{title:typ};
-    var label=feMode==='cb'&&t.cbTitle?t.cbTitle:t.title;
-    feBlocks().push({id:feNextId++,typ:typ,label:label+' (neu)',config:conf});
-    feRender();
-  };
-
-  window.feSwitchMode=function(m){
-    feCollect();feMode=m;
-    document.getElementById('fe-mm-vb').className='fe-mode-btn'+(m==='vb'?' active-vb':'');
-    document.getElementById('fe-mm-cb').className='fe-mode-btn'+(m==='cb'?' active-cb':'');
-    document.getElementById('fe-pal-vb').style.display=m==='vb'?'block':'none';
-    document.getElementById('fe-pal-cb').style.display=m==='cb'?'block':'none';
-    document.getElementById('fe-sb-mode').innerHTML=m==='vb'?'<span class="fe-sdot" style="background:#0369a1"></span>Voicebot-Modus':'<span class="fe-sdot" style="background:#6d28d9"></span>Clickbot-Modus';
-    var sel=document.getElementById('fe-flow-sel');
-    sel.innerHTML=m==='vb'?'<option>Voicebot — Allgemein</option><option>Voicebot — Notfall</option><option>Voicebot — Rezept</option><option value="new">+ Neuer Flow</option>':'<option>Clickbot — Allgemein</option><option>Clickbot — Rezept</option><option>Clickbot — Ueberweisung</option><option value="new">+ Neuer Flow</option>';
-    feRender();
-  };
-
-  window.feSpeichern=function(){
-    feCollect();
-    localStorage.setItem('fe_vb_v2',JSON.stringify(feVbBlocks));
-    localStorage.setItem('fe_cb_v2',JSON.stringify(feCbBlocks));
-    var badge=document.getElementById('fe-badge-saved');
-    badge.classList.add('show');setTimeout(function(){badge.classList.remove('show')},2000);
-  };
-
-  window.fePromptKeyword=function(blockId){
-    var wort=prompt('Neues Schluesselwort:');if(!wort)return;
-    feCollect();var bl=feBlocks();
-    for(var i=0;i<bl.length;i++){if(bl[i].id===blockId){if(!bl[i].config.keywords)bl[i].config.keywords=[];bl[i].config.keywords.push(wort);break}}
-    feRender();
-  };
-
-  window.feTogglePreview=function(){
-    var overlay=document.getElementById('fe-preview');
-    if(overlay.classList.contains('show')){overlay.classList.remove('show');return}
-    feCollect();
-    var body=document.getElementById('fe-preview-body');
-    document.getElementById('fe-preview-title').textContent=feMode==='vb'?'Voicebot Flow — Simulation':'Clickbot Flow — Simulation';
-    var html='<div style="font-size:11px;color:#64748b;margin-bottom:12px">// '+(feMode==='vb'?'Voicebot':'Clickbot')+' Gespraechsverlauf — simuliert</div>';
-    var bl=feBlocks();
-    for(var i=0;i<bl.length;i++){
-      var b=bl[i];
-      if(b.typ==='start')html+='<div class="fe-sim-line fe-sim-system">'+(feMode==='vb'?'📞 Anruf eingehend':'👤 Agent nimmt an')+'</div>';
-      else if(b.typ==='greet'||b.typ==='say')html+='<div class="fe-sim-line fe-sim-audio"><span style="color:#0ea5e9">🤖 Voicebot: </span><span style="color:#e2e8f0;font-style:italic">„'+(b.config.text||'...')+'"</span></div>';
-      else if(b.typ==='listen')html+='<div class="fe-sim-line fe-sim-system">🎙 Spracherkennung aktiv (Timeout: '+(b.config.timeout||8)+'s)</div><div class="fe-sim-line fe-sim-input">🎙 Patient: "Ich brauche einen Termin."</div>';
-      else if(b.typ==='click'){html+='<div class="fe-sim-line fe-sim-system">🖱 Agent sieht Optionen: ';var opts=b.config.optionen||[];for(var o=0;o<opts.length;o++)html+=(o>0?' · ':'')+(opts[o].label||'Option');html+='</div>'}
-      else if(b.typ==='termin')html+='<div class="fe-sim-line fe-sim-action">📅 Termin buchen</div>';
-      else if(b.typ==='ticket')html+='<div class="fe-sim-line fe-sim-action">🎫 Ticket erstellt</div>';
-      else if(b.typ==='kb')html+='<div class="fe-sim-line fe-sim-action">📚 KB durchsucht</div>';
-      else if(b.typ==='mail')html+='<div class="fe-sim-line fe-sim-action">✉️ Mail gesendet an '+(b.config.empfaenger||'...')+'</div>';
-      else if(b.typ==='transfer')html+='<div class="fe-sim-line fe-sim-transfer">🔀 Uebergabe an Agent · Queue: '+(b.config.queue||'...')+'</div>';
-      else if(b.typ==='cond')html+='<div class="fe-sim-line fe-sim-system">⚡ Bedingung: '+(b.config.bedingung||'...')+'</div>';
-      else if(b.typ==='end')html+='<div class="fe-sim-line fe-sim-system">🔴 '+(feMode==='vb'?'Gespraech beendet':'Ticket geschlossen')+'</div>';
-    }
-    body.innerHTML=html;overlay.classList.add('show');
-  };
-
-  function feUpdateStatus(){document.getElementById('fe-sb-count').innerHTML='<span class="fe-sdot" style="background:#22c55e"></span>'+feBlocks().length+' Bloecke'}
-  feRender();
-})();
-
-// ═══════════════════════════════════════
-// BUILDER, CHAT, MONITORING
-// ═══════════════════════════════════════
-function saveBuilderAgent(){
-  var btn=event.target;btn.textContent='Gespeichert!';btn.style.background='#16a34a';
-  setTimeout(function(){btn.textContent='Agent speichern';btn.style.background='#6366f1'},2000);
-}
-function sendTestMsg(){
-  var input=document.getElementById('chat-input');
-  var box=document.getElementById('chat-box');
-  var text=input.value.trim();if(!text)return;
-  box.innerHTML+='<div class="chat-msg user"><div class="chat-sender">Anrufer</div><div class="chat-bubble">'+text+'</div></div>';
-  input.value='';box.scrollTop=box.scrollHeight;
-  setTimeout(function(){
-    var responses=['Alles klar, ich habe das notiert. Kann ich sonst noch etwas fuer Sie tun?','Vielen Dank fuer die Information. Ich leite das weiter.','Ich verstehe. Darf ich kurz Ihren Namen und Ihre Versichertennummer erfragen?','Einen Moment bitte, ich schaue nach freien Terminen fuer Sie.','Das habe ich mir notiert. Gibt es sonst noch ein Anliegen?'];
-    var resp=responses[Math.floor(Math.random()*responses.length)];
-    box.innerHTML+='<div class="chat-msg bot"><div class="chat-sender">Voicebot</div><div class="chat-bubble">'+resp+'</div></div>';
-    box.scrollTop=box.scrollHeight;
-  },600);
-}
-function clearChat(){document.getElementById('chat-box').innerHTML='<div class="chat-msg bot"><div class="chat-sender">Voicebot</div><div class="chat-bubble">Guten Tag, Praxis Dr. Schmidt, wie kann ich Ihnen helfen?</div></div>'}
-function showTranscript(id){
-  var transcripts={
-    1:[{role:'bot',text:'Guten Tag, Praxis Dr. Schmidt, wie kann ich Ihnen helfen?'},{role:'user',text:'Hallo, ich braeuchte einen Termin diese Woche.'},{role:'bot',text:'Sehr gerne! Ich kann Ihnen Donnerstag 10:30 oder Freitag 14:00 Uhr anbieten.'},{role:'user',text:'Donnerstag bitte.'},{role:'bot',text:'Alles klar, Donnerstag 10:30 Uhr ist vorgemerkt. Ihr Name bitte?'},{role:'user',text:'Mueller, Maria Mueller.'},{role:'bot',text:'Vielen Dank, Frau Mueller. Donnerstag 10:30 Uhr bei Dr. Schmidt ist gebucht. Auf Wiederhoeren!'}],
-    2:[{role:'bot',text:'Guten Tag, Praxis Dr. Schmidt, wie kann ich Ihnen helfen?'},{role:'user',text:'Ich habe seit gestern starke Kopfschmerzen und mir ist schwindelig.'},{role:'bot',text:'Das tut mir leid zu hoeren. Ich verbinde Sie direkt mit Dr. Schmidt. Einen Moment bitte.'},{role:'bot',text:'[Weiterleitung an Dr. Schmidt – Ext. 101]'}],
-    3:[{role:'bot',text:'Guten Tag, Praxis Dr. Schmidt, wie kann ich Ihnen helfen?'},{role:'user',text:'Ich brauche ein Folgerezept fuer Metformin.'},{role:'bot',text:'Natuerlich. Darf ich Ihren Namen und Ihr Geburtsdatum erfahren?'},{role:'user',text:'Hans Berger, 15. Maerz 1962.'},{role:'bot',text:'Vielen Dank, Herr Berger. Das Rezept fuer Metformin wird vorbereitet. Sie koennen es ab morgen abholen.'},{role:'user',text:'Abholen ist gut, danke.'},{role:'bot',text:'Alles klar. Bis morgen, Herr Berger. Auf Wiederhoeren!'}]
-  };
-  var t=transcripts[id]||transcripts[1];
-  var card=document.getElementById('transcript-card');
-  var content=document.getElementById('transcript-content');
-  content.innerHTML=t.map(function(m){return '<div class="chat-msg '+(m.role==='bot'?'bot':'user')+'"><div class="chat-sender">'+(m.role==='bot'?'Voicebot':'Anrufer')+'</div><div class="chat-bubble">'+m.text+'</div></div>'}).join('');
-  card.style.display='';card.scrollIntoView({behavior:'smooth'});
-}
-function loadTemplate(type){alert('Vorlage "'+type+'" geladen – Prompt wurde aktualisiert.')}
-
-// Live-Zeit
-setInterval(function(){
-  var now=new Date();var t=now.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});
-  document.querySelectorAll('.live-badge').forEach(function(b){
-    if(b.textContent.includes('Online'))b.innerHTML='<span class="live-dot"></span> System Online · '+t;
-  });
-},30000);
-
-// Init Galerie
-renderAgents();
-</script>
+    <script src="app.js"></script>
+    <script>
+        function intKonfig(el){var p=document.getElementById('int-config-panel'),t=document.getElementById('int-config-title'),n=el.querySelector('h4').textContent;t.textContent=n+' konfigurieren';p.style.display='block';p.scrollIntoView({behavior:'smooth'})}
+        function intSpeichern(){var m=document.getElementById('int-erfolg');m.textContent='Verbindung gespeichert!';m.hidden=false;setTimeout(function(){m.hidden=true},3000)}
+        function intTesten(){var m=document.getElementById('int-erfolg');m.textContent='Verbindung erfolgreich getestet!';m.style.background='rgba(34,197,94,.1)';m.style.color='#22c55e';m.hidden=false;setTimeout(function(){m.hidden=true},3000)}
+        document.querySelectorAll('.ai-tab').forEach(function(tab){tab.addEventListener('click',function(){document.querySelectorAll('.ai-tab').forEach(function(t){t.classList.remove('active')});document.querySelectorAll('.ai-tab-content').forEach(function(c){c.classList.remove('active')});tab.classList.add('active');document.getElementById('tab-'+tab.dataset.tab).classList.add('active')})})
+    </script>
 </body>
 </html>
