@@ -102,32 +102,16 @@ function modusAnzeigeAktualisieren() {
     }
 }
 
-// ===== Guard / Auth Check =====
+// ===== Guard / Auth Check (DEAKTIVIERT) =====
+// Anmeldung wurde entfernt — alle Seiten sind direkt zugaenglich.
 
 function guardPruefen() {
-    // Portal-Check: Zutrittscode muss eingegeben sein
-    if (!sessionStorage.getItem("med_portal_ok")) {
-        window.location.href = "portal.html";
-        return null;
-    }
-    var auth = sessionStorage.getItem("med_guard_auth") || localStorage.getItem("med_guard_auth");
-    if (!auth) {
-        window.location.href = "guard.html";
-        return null;
-    }
-    try {
-        return JSON.parse(auth);
-    } catch (e) {
-        window.location.href = "guard.html";
-        return null;
-    }
+    // Auth deaktiviert — Standardbenutzer zurueckgeben
+    return { benutzer: "admin", name: "Administrator", rolle: "admin" };
 }
 
 function guardAbmelden() {
-    sessionStorage.removeItem("med_guard_auth");
-    localStorage.removeItem("med_guard_auth");
-    sessionStorage.removeItem("med_portal_ok");
-    window.location.href = "portal.html";
+    // Auth deaktiviert — nichts zu tun
 }
 
 // Rollen-Konfiguration: Wer darf was sehen
@@ -140,29 +124,14 @@ var ROLLEN = {
 };
 
 function guardInfoAnzeigen() {
-    var auth = sessionStorage.getItem("med_guard_auth") || localStorage.getItem("med_guard_auth");
-    if (!auth) return;
-    try {
-        var daten = JSON.parse(auth);
-        var rolle = ROLLEN[daten.rolle] || ROLLEN.agent;
-
-        // Topbar: Name + Rolle + Abmelden
-        var topbar = document.querySelector(".topbar-right");
-        if (topbar) {
-            topbar.innerHTML = '<span style="margin-right:0.5rem"><i class="fa-solid ' + rolle.icon + '" style="color:' + rolle.farbe + '"></i> ' +
-                escapeHtmlSafe(daten.name) + ' <small style="background:' + rolle.farbe + ';color:#fff;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem">' + escapeHtmlSafe(rolle.label) + '</small></span>' +
-                '<button type="button" id="btn-abmelden" style="padding:0.3rem 0.7rem;font-size:0.8rem;background:#64748b;border-radius:6px">' +
-                '<i class="fa-solid fa-right-from-bracket"></i> Abmelden</button>';
-            var btn = document.getElementById("btn-abmelden");
-            if (btn) btn.addEventListener("click", guardAbmelden);
-        }
-
-        // Sidebar: Nur erlaubte Seiten anzeigen
-        rollenSidebarAnpassen(daten.rolle);
-
-        // Seitenzugriff pruefen
-        rollenSeitePruefen(daten.rolle);
-    } catch (e) { console.warn("guardInfoAnzeigen:", e); }
+    // Auth deaktiviert — Standardbenutzer anzeigen
+    var rolle = ROLLEN.admin;
+    var topbar = document.querySelector(".topbar-right");
+    if (topbar) {
+        topbar.innerHTML = '<span style="margin-right:0.5rem"><i class="fa-solid ' + rolle.icon + '" style="color:' + rolle.farbe + '"></i> ' +
+            'Administrator <small style="background:' + rolle.farbe + ';color:#fff;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem">' + rolle.label + '</small></span>';
+    }
+    rollenSidebarAnpassen("admin");
 }
 
 function rollenSidebarAnpassen(rolleKey) {
@@ -4317,13 +4286,8 @@ if (typeof window !== "undefined") {
 /** Init (nur im Browser) */
 if (typeof document !== "undefined") {
     document.addEventListener("DOMContentLoaded", function () {
-        // Guard: Auth-Check auf allen Seiten ausser guard.html
-        var istGuardSeite = window.location.pathname.indexOf("guard.html") !== -1;
-        if (!istGuardSeite) {
-            var auth = guardPruefen();
-            if (!auth) return; // Redirect zur Guard-Seite
-            guardInfoAnzeigen();
-        }
+        // Auth deaktiviert — keine Anmeldung noetig
+        guardInfoAnzeigen();
 
         brancheLaden();
         brancheAnwenden();
