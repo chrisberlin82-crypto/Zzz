@@ -8,7 +8,7 @@ from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel
 
-from database import get_db, Anruf, Agent, Queue, Callflow, Patient, Termin, KBArtikel, Einstellung
+from database import get_db, Anruf, Agent, Queue, Callflow, Patient, Termin, KBArtikel, Einstellung, Arzt
 from config import settings
 from api.auth import auth_erforderlich, admin_erforderlich
 
@@ -53,6 +53,22 @@ class KBSchema(BaseModel):
     antwort: str = ""
     voicebot_aktiv: bool = True
     clickbot_aktiv: bool = True
+
+class PatientSchema(BaseModel):
+    name: str
+    telefon: str = ""
+    email: str = ""
+    geburtsdatum: str = ""
+    versichertennr: str = ""
+    notizen: str = ""
+
+class ArztSchema(BaseModel):
+    titel: str = ""
+    vorname: str
+    nachname: str
+    fachrichtung: str
+    telefon: str = ""
+    email: str = ""
 
 class EinstellungSchema(BaseModel):
     schluessel: str
@@ -222,6 +238,90 @@ async def termin_erstellen(data: TerminSchema, db: AsyncSession = Depends(get_db
     await db.commit()
     await db.refresh(termin)
     return termin.__dict__
+
+
+# ===== Patienten =====
+
+@router.get("/patienten")
+async def patienten_liste(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Patient).order_by(Patient.name))
+    return [p.__dict__ for p in result.scalars().all()]
+
+@router.get("/patienten/{patient_id}")
+async def patient_detail(patient_id: int, db: AsyncSession = Depends(get_db)):
+    patient = await db.get(Patient, patient_id)
+    if not patient:
+        raise HTTPException(404, "Patient nicht gefunden")
+    return patient.__dict__
+
+@router.post("/patienten")
+async def patient_erstellen(data: PatientSchema, db: AsyncSession = Depends(get_db)):
+    patient = Patient(**data.model_dump())
+    db.add(patient)
+    await db.commit()
+    await db.refresh(patient)
+    return patient.__dict__
+
+@router.put("/patienten/{patient_id}")
+async def patient_aktualisieren(patient_id: int, data: PatientSchema, db: AsyncSession = Depends(get_db)):
+    patient = await db.get(Patient, patient_id)
+    if not patient:
+        raise HTTPException(404, "Patient nicht gefunden")
+    for key, value in data.model_dump().items():
+        setattr(patient, key, value)
+    await db.commit()
+    return patient.__dict__
+
+@router.delete("/patienten/{patient_id}")
+async def patient_loeschen(patient_id: int, db: AsyncSession = Depends(get_db)):
+    patient = await db.get(Patient, patient_id)
+    if not patient:
+        raise HTTPException(404, "Patient nicht gefunden")
+    await db.delete(patient)
+    await db.commit()
+    return {"ok": True}
+
+
+# ===== Aerzte =====
+
+@router.get("/aerzte")
+async def aerzte_liste(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Arzt).order_by(Arzt.nachname))
+    return [a.__dict__ for a in result.scalars().all()]
+
+@router.get("/aerzte/{arzt_id}")
+async def arzt_detail(arzt_id: int, db: AsyncSession = Depends(get_db)):
+    arzt = await db.get(Arzt, arzt_id)
+    if not arzt:
+        raise HTTPException(404, "Arzt nicht gefunden")
+    return arzt.__dict__
+
+@router.post("/aerzte")
+async def arzt_erstellen(data: ArztSchema, db: AsyncSession = Depends(get_db)):
+    arzt = Arzt(**data.model_dump())
+    db.add(arzt)
+    await db.commit()
+    await db.refresh(arzt)
+    return arzt.__dict__
+
+@router.put("/aerzte/{arzt_id}")
+async def arzt_aktualisieren(arzt_id: int, data: ArztSchema, db: AsyncSession = Depends(get_db)):
+    arzt = await db.get(Arzt, arzt_id)
+    if not arzt:
+        raise HTTPException(404, "Arzt nicht gefunden")
+    for key, value in data.model_dump().items():
+        setattr(arzt, key, value)
+    await db.commit()
+    return arzt.__dict__
+
+@router.delete("/aerzte/{arzt_id}")
+async def arzt_loeschen(arzt_id: int, db: AsyncSession = Depends(get_db)):
+    arzt = await db.get(Arzt, arzt_id)
+    if not arzt:
+        raise HTTPException(404, "Arzt nicht gefunden")
+    await db.delete(arzt)
+    await db.commit()
+    return {"ok": True}
 
 
 # ===== Wissensdatenbank =====

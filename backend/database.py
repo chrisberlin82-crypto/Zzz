@@ -119,6 +119,18 @@ class KBArtikel(Base):
     erstellt = Column(DateTime, default=_utcnow)
 
 
+class Arzt(Base):
+    __tablename__ = "aerzte"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    titel = Column(String(32), default="")
+    vorname = Column(String(128))
+    nachname = Column(String(128))
+    fachrichtung = Column(String(128))
+    telefon = Column(String(32), default="")
+    email = Column(String(128), default="")
+    erstellt = Column(DateTime, default=_utcnow)
+
+
 class Einstellung(Base):
     __tablename__ = "einstellungen"
     id = Column(Integer, primary_key=True, autoincrement=True)

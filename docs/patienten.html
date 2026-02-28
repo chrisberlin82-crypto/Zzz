@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Termine – MedReception</title>
+    <title>Patienten – MedReception</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
@@ -14,9 +14,9 @@
             <div class="nav-group">Uebersicht</div>
             <a href="admin-dashboard.html"><i class="fa-solid fa-gauge nav-icon"></i> Dashboard</a>
             <div class="nav-group">Praxis</div>
-            <a href="patienten.html"><i class="fa-solid fa-users nav-icon"></i> Patienten</a>
+            <a href="patienten.html" class="active"><i class="fa-solid fa-users nav-icon"></i> Patienten</a>
             <a href="aerzte.html"><i class="fa-solid fa-user-doctor nav-icon"></i> Aerzte</a>
-            <a href="termine.html" class="active"><i class="fa-solid fa-calendar-days nav-icon"></i> Termine</a>
+            <a href="termine.html"><i class="fa-solid fa-calendar-days nav-icon"></i> Termine</a>
             <a href="wartezimmer.html"><i class="fa-solid fa-couch nav-icon"></i> Wartezimmer</a>
             <div class="nav-group">Callcenter</div>
             <a href="agenten.html"><i class="fa-solid fa-headset nav-icon"></i> Agenten</a>
@@ -46,40 +46,48 @@
     <div class="main-wrapper">
         <header class="topbar">
             <button id="menu-toggle" type="button"><i class="fa-solid fa-bars"></i></button>
-            <h1>Terminverwaltung</h1>
+            <h1>Patienten</h1>
             <div class="topbar-right">Demo-Modus</div>
         </header>
         <main>
-            <section id="termin-formular" class="card">
-                <h2 id="termin-formular-titel">Termin anlegen</h2>
-                <form id="termin-form">
-                    <input type="hidden" id="termin-id">
+            <section id="patient-formular" class="card">
+                <h2 id="patient-formular-titel">Patient anlegen</h2>
+                <form id="patient-form">
+                    <input type="hidden" id="patient-id">
                     <div class="form-row">
-                        <div class="form-group"><label for="termin-patient">Patient</label><select id="termin-patient" required><option value="">-- Patient waehlen --</option></select></div>
-                        <div class="form-group"><label for="termin-arzt">Arzt</label><select id="termin-arzt" required><option value="">-- Arzt waehlen --</option></select></div>
+                        <div class="form-group"><label for="patient-vorname">Vorname</label><input type="text" id="patient-vorname" required></div>
+                        <div class="form-group"><label for="patient-nachname">Nachname</label><input type="text" id="patient-nachname" required></div>
                     </div>
                     <div class="form-row">
-                        <div class="form-group"><label for="termin-datum">Datum</label><input type="date" id="termin-datum" required></div>
-                        <div class="form-group"><label for="termin-uhrzeit">Uhrzeit</label><input type="time" id="termin-uhrzeit" required></div>
-                        <div class="form-group"><label for="termin-dauer">Dauer (Min.)</label><input type="number" id="termin-dauer" value="15" min="5" max="120"></div>
+                        <div class="form-group"><label for="patient-geburtsdatum">Geburtsdatum</label><input type="date" id="patient-geburtsdatum" required></div>
+                        <div class="form-group"><label for="patient-krankenkasse">Krankenkasse</label><input type="text" id="patient-krankenkasse" required></div>
                     </div>
-                    <div class="form-group"><label for="termin-grund">Grund</label><input type="text" id="termin-grund" placeholder="z.B. Vorsorge, Kontrolle..."></div>
+                    <div class="form-group"><label for="patient-versicherungsnummer">Versicherungsnummer</label><input type="text" id="patient-versicherungsnummer" required></div>
+                    <div class="form-row">
+                        <div class="form-group"><label for="patient-telefon">Telefon</label><input type="tel" id="patient-telefon"></div>
+                        <div class="form-group"><label for="patient-email">E-Mail</label><input type="email" id="patient-email"></div>
+                    </div>
+                    <fieldset><legend>Adresse</legend>
+                        <div class="form-group"><label for="patient-strasse">Strasse</label><input type="text" id="patient-strasse"></div>
+                        <div class="form-row">
+                            <div class="form-group"><label for="patient-plz">PLZ</label><input type="text" id="patient-plz" maxlength="5"></div>
+                            <div class="form-group"><label for="patient-stadt">Stadt</label><input type="text" id="patient-stadt"></div>
+                        </div>
+                    </fieldset>
                     <div class="button-gruppe">
-                        <button type="submit" id="btn-termin-speichern">Speichern</button>
-                        <button type="button" id="btn-termin-abbrechen" hidden>Abbrechen</button>
+                        <button type="submit" id="btn-patient-speichern">Speichern</button>
+                        <button type="button" id="btn-patient-abbrechen" hidden>Abbrechen</button>
                     </div>
                 </form>
-                <div id="termin-erfolg" class="ergebnis" hidden></div>
-                <div id="termin-fehler" class="fehler" hidden></div>
+                <div id="patient-erfolg" class="ergebnis" hidden></div>
+                <div id="patient-fehler" class="fehler" hidden></div>
             </section>
             <section class="card">
-                <div class="section-header">
-                    <h2>Terminliste</h2>
-                    <div class="form-group" style="margin-bottom:0"><input type="date" id="termin-filter-datum" title="Nach Datum filtern"></div>
-                </div>
+                <h2>Patientenliste</h2>
+                <div class="suche-box"><input type="text" id="patient-suche" placeholder="Patient suchen..."></div>
                 <div class="table-container">
-                    <table id="termine-tabelle">
-                        <thead><tr><th>Datum</th><th>Uhrzeit</th><th>Patient</th><th>Arzt</th><th>Grund</th><th>Status</th><th>Aktionen</th></tr></thead>
+                    <table id="patienten-tabelle">
+                        <thead><tr><th>Name</th><th>Geburtsdatum</th><th>Vers.-Nr.</th><th>Krankenkasse</th><th>Telefon</th><th>Aktionen</th></tr></thead>
                         <tbody></tbody>
                     </table>
                 </div>
@@ -97,5 +105,6 @@
         </div>
     </div>
     <script src="app.js"></script>
+
 </body>
 </html>

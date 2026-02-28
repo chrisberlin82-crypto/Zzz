@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Standort &amp; ACD – MedReception</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-logo" onclick="location.href='admin-dashboard.html'"><div class="icon">M</div><span>MedReception</span></div>
+        <nav class="sidebar-nav">
+            <div class="nav-group">Uebersicht</div>
+            <a href="admin-dashboard.html"><i class="fa-solid fa-gauge nav-icon"></i> Dashboard</a>
+            <div class="nav-group">Praxis</div>
+            <a href="patienten.html"><i class="fa-solid fa-users nav-icon"></i> Patienten</a>
+            <a href="aerzte.html"><i class="fa-solid fa-user-doctor nav-icon"></i> Aerzte</a>
+            <a href="termine.html"><i class="fa-solid fa-calendar-days nav-icon"></i> Termine</a>
+            <a href="wartezimmer.html"><i class="fa-solid fa-couch nav-icon"></i> Wartezimmer</a>
+            <div class="nav-group">Callcenter</div>
+            <a href="agenten.html"><i class="fa-solid fa-headset nav-icon"></i> Agenten</a>
+            <a href="voicebot.html"><i class="fa-solid fa-robot nav-icon"></i> Voicebot</a>
+            <a href="voicebot-live.html"><i class="fa-solid fa-microphone nav-icon"></i> Voicebot Live</a>
+            <a href="ansagen.html"><i class="fa-solid fa-tower-broadcast nav-icon"></i> Ansagen</a>
+            <a href="softphone.html"><i class="fa-solid fa-phone nav-icon"></i> Softphone</a>
+            <div class="nav-group">Telefonie</div>
+            <a href="asterisk.html"><i class="fa-solid fa-server nav-icon"></i> Asterisk</a>
+            <a href="acd.html"><i class="fa-solid fa-phone-volume nav-icon"></i> ACD</a>
+            <a href="standort.html" class="active"><i class="fa-solid fa-building nav-icon"></i> Standort</a>
+            <a href="callflow.html"><i class="fa-solid fa-diagram-project nav-icon"></i> Callflow</a>
+            <div class="nav-group">Analyse</div>
+            <a href="auswertung.html"><i class="fa-solid fa-chart-line nav-icon"></i> Auswertungen</a>
+            <a href="wissensdatenbank.html"><i class="fa-solid fa-book nav-icon"></i> Wissensdatenbank</a>
+            <a href="uebersetzung.html"><i class="fa-solid fa-language nav-icon"></i> Uebersetzer</a>
+            <div class="nav-group">Admin</div>
+            <a href="benutzer.html"><i class="fa-solid fa-user-gear nav-icon"></i> Benutzer</a>
+            <div class="nav-group">KI</div>
+            <a href="ai-agent.html"><i class="fa-solid fa-microchip nav-icon"></i> AI Agent Hub</a>
+
+        </nav>
+        <div class="sidebar-footer">
+            <button onclick="sessionStorage.removeItem('mr_guard_session');location.href='index.html'" type="button"><i class="fa-solid fa-right-from-bracket nav-icon"></i> Abmelden</button>
+        </div>
+    </aside>
+    <div class="main-wrapper">
+        <header class="topbar">
+            <button id="menu-toggle" type="button"><i class="fa-solid fa-bars"></i></button>
+            <h1><i class="fa-solid fa-building"></i> Standort &amp; ACD</h1>
+            <div class="topbar-right">Demo-Modus</div>
+        </header>
+        <main>
+            <!-- ===== Branchen-Konfiguration ===== -->
+            <section class="card" id="branche-auswahl">
+                <h2><i class="fa-solid fa-briefcase"></i> Branche &amp; Buero-Typ</h2>
+                <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:1rem">Waehlen Sie Ihre Branche. Alle Texte, der KI-Assistent und der Voicebot passen sich automatisch an.</p>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="branche-select">Branche</label>
+                        <select id="branche-select"></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="branche-firmenname">Firmenname (optional)</label>
+                        <input type="text" id="branche-firmenname" placeholder="z.B. Praxis Dr. Mueller, Kanzlei Schmidt, Salon Anna...">
+                    </div>
+                </div>
+                <div id="branche-vorschau" style="background:var(--bg);padding:0.75rem;border-radius:8px;margin:0.5rem 0 1rem"></div>
+                <button type="button" id="btn-branche-speichern"><i class="fa-solid fa-save"></i> Branche speichern</button>
+                <div id="branche-erfolg" class="ergebnis" hidden></div>
+            </section>
+
+            <!-- ===== Standort-Info ===== -->
+            <section class="card">
+                <h2><i class="fa-solid fa-location-dot"></i> Standort-Informationen</h2>
+                <form id="standort-info-form">
+                    <div class="form-row">
+                        <div class="form-group"><label for="standort-name">Standortname</label><input type="text" id="standort-name" value="MED Rezeption Berlin Mitte"></div>
+                        <div class="form-group"><label for="standort-telefon">Hauptnummer</label><input type="tel" id="standort-telefon" value="030-123 456 0"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label for="standort-strasse">Adresse</label><input type="text" id="standort-strasse" value="Friedrichstr. 100, 10117 Berlin"></div>
+                        <div class="form-group"><label for="standort-notfall">Notfall-Nebenstelle</label><input type="text" id="standort-notfall" value="200"></div>
+                    </div>
+                    <button type="submit"><i class="fa-solid fa-save"></i> Standort speichern</button>
+                </form>
+                <div id="standort-info-erfolg" class="ergebnis" hidden></div>
+            </section>
+
+            <!-- ===== ACD Konfiguration ===== -->
+            <section class="card">
+                <h2><i class="fa-solid fa-shuffle"></i> ACD-Anrufverteilung</h2>
+                <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:1rem">Legen Sie fest, wie eingehende Anrufe am Standort verteilt werden. Die Zeitsteuerung unten ueberschreibt den Standard-Modus fuer bestimmte Tage und Uhrzeiten.</p>
+
+                <div class="form-group">
+                    <label><i class="fa-solid fa-sliders"></i> Standard ACD-Modus</label>
+                </div>
+                <div class="acd-modus-auswahl" id="acd-modus-auswahl">
+                    <div class="acd-modus-karte selected" data-modus="alle_annehmen">
+                        <div class="acd-modus-icon"><i class="fa-solid fa-phone-volume"></i></div>
+                        <div class="acd-modus-info">
+                            <h3>Alle Anrufe annehmen</h3>
+                            <p>Anrufe klingeln bei allen verfuegbaren Agenten und Standortleitung. Kein Bot.</p>
+                        </div>
+                        <div class="acd-modus-check"><i class="fa-solid fa-circle-check"></i></div>
+                    </div>
+                    <div class="acd-modus-karte" data-modus="klingeln_dann_bot">
+                        <div class="acd-modus-icon"><i class="fa-solid fa-bell"></i></div>
+                        <div class="acd-modus-info">
+                            <h3>3x Klingeln, dann Bot</h3>
+                            <p>Es klingelt dreimal bei den Agenten. Nimmt niemand ab, uebernimmt der Voicebot.</p>
+                        </div>
+                        <div class="acd-modus-check"><i class="fa-solid fa-circle-check"></i></div>
+                    </div>
+                    <div class="acd-modus-karte" data-modus="bot_direkt">
+                        <div class="acd-modus-icon"><i class="fa-solid fa-robot"></i></div>
+                        <div class="acd-modus-info">
+                            <h3>Bot nimmt direkt an</h3>
+                            <p>Alle Anrufe werden sofort vom Voicebot angenommen und verarbeitet.</p>
+                        </div>
+                        <div class="acd-modus-check"><i class="fa-solid fa-circle-check"></i></div>
+                    </div>
+                </div>
+
+                <div class="form-row" style="margin-top:1rem">
+                    <div class="form-group">
+                        <label for="acd-klingelanzahl">Klingelanzahl (bei "Klingeln dann Bot")</label>
+                        <input type="number" id="acd-klingelanzahl" value="3" min="1" max="10">
+                    </div>
+                    <div class="form-group">
+                        <label for="acd-klingel-timeout">Klingel-Timeout (Sekunden)</label>
+                        <input type="number" id="acd-klingel-timeout" value="15" min="5" max="60">
+                    </div>
+                    <div class="form-group">
+                        <label for="acd-verteilung">Verteilungsstrategie</label>
+                        <select id="acd-verteilung">
+                            <option value="alle_gleichzeitig">Alle gleichzeitig klingeln</option>
+                            <option value="rundlauf">Rundlauf (Round Robin)</option>
+                            <option value="laengste_pause">Laengste Pause zuerst</option>
+                            <option value="wenigste_anrufe">Wenigste Anrufe zuerst</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="button" id="btn-acd-speichern"><i class="fa-solid fa-save"></i> ACD-Modus speichern</button>
+                <div id="acd-modus-erfolg" class="ergebnis" hidden></div>
+            </section>
+
+            <!-- ===== Zeitsteuerung ===== -->
+            <section class="card">
+                <h2><i class="fa-solid fa-clock"></i> Zeitsteuerung (ACD pro Tag &amp; Uhrzeit)</h2>
+                <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:1rem">Definieren Sie fuer jeden Wochentag individuelle ACD-Regeln. Ausserhalb der definierten Zeiten gilt der Standard-Modus.</p>
+
+                <div class="zeitplan-tabelle-wrapper">
+                    <table class="zeitplan-tabelle" id="zeitplan-tabelle">
+                        <thead>
+                            <tr>
+                                <th>Tag</th>
+                                <th>Aktiv</th>
+                                <th>Von</th>
+                                <th>Bis</th>
+                                <th>ACD-Modus</th>
+                                <th>Pause Von</th>
+                                <th>Pause Bis</th>
+                                <th>Pause-Modus</th>
+                            </tr>
+                        </thead>
+                        <tbody id="zeitplan-body">
+                            <!-- Wird per JS generiert -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="button-gruppe" style="margin-top:1rem">
+                    <button type="button" id="btn-zeitplan-speichern"><i class="fa-solid fa-save"></i> Zeitplan speichern</button>
+                    <button type="button" id="btn-zeitplan-reset" class="btn-secondary"><i class="fa-solid fa-rotate-right"></i> Standard wiederherstellen</button>
+                </div>
+                <div id="zeitplan-erfolg" class="ergebnis" hidden></div>
+            </section>
+
+            <!-- ===== Aktueller ACD-Status ===== -->
+            <section class="card">
+                <h2><i class="fa-solid fa-signal"></i> Aktueller ACD-Status (Live)</h2>
+                <div class="acd-live-status" id="acd-live-status">
+                    <!-- Wird per JS generiert -->
+                </div>
+            </section>
+
+            <!-- ===== Standortleitung ===== -->
+            <section class="card">
+                <h2><i class="fa-solid fa-user-tie"></i> Standortleitung &amp; Teamleiter</h2>
+                <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:1rem">Standortleitung und Teamleiter verfuegen ueber die gleichen Telefonfunktionen wie Agenten: Nebenstelle, SIP, Warteschlangen-Zuweisung und Status-Steuerung.</p>
+
+                <form id="standortleitung-form">
+                    <input type="hidden" id="sl-id">
+                    <div class="form-row">
+                        <div class="form-group"><label for="sl-name">Name</label><input type="text" id="sl-name" required></div>
+                        <div class="form-group"><label for="sl-rolle">Rolle</label>
+                            <select id="sl-rolle">
+                                <option value="standortleitung">Standortleitung</option>
+                                <option value="teamleiter">Teamleiter</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label for="sl-nebenstelle">Nebenstelle</label><input type="text" id="sl-nebenstelle" required placeholder="z.B. 300"></div>
+                        <div class="form-group"><label for="sl-sip-passwort">SIP-Passwort</label><input type="password" id="sl-sip-passwort" required></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label for="sl-warteschlange">Warteschlange</label>
+                            <select id="sl-warteschlange">
+                                <option value="rezeption">Rezeption</option>
+                                <option value="terminvergabe">Terminvergabe</option>
+                                <option value="dringend">Dringend</option>
+                                <option value="allgemein">Allgemein</option>
+                                <option value="alle">Alle Warteschlangen</option>
+                            </select>
+                        </div>
+                        <div class="form-group"><label for="sl-telefon">Mobilnummer (optional)</label><input type="tel" id="sl-telefon" placeholder="z.B. 0170-1234567"></div>
+                    </div>
+                    <div class="form-group"><label for="sl-email">E-Mail</label><input type="email" id="sl-email" placeholder="leitung@praxis.de"></div>
+                    <div class="button-gruppe">
+                        <button type="submit" id="btn-sl-speichern">Speichern</button>
+                        <button type="button" id="btn-sl-abbrechen" hidden>Abbrechen</button>
+                    </div>
+                </form>
+                <div id="sl-erfolg" class="ergebnis" hidden></div>
+                <div id="sl-fehler" class="fehler" hidden></div>
+            </section>
+
+            <!-- ===== Standortleitung-Board (wie Agenten) ===== -->
+            <section class="card">
+                <h2>Standortleitung &amp; Teamleiter - Board</h2>
+                <div class="agenten-grid" id="standortleitung-karten">
+                    <!-- Wird per JS generiert -->
+                </div>
+            </section>
+
+            <!-- ===== Statistiken ===== -->
+            <section class="card">
+                <h2><i class="fa-solid fa-chart-bar"></i> ACD-Statistiken (heute)</h2>
+                <div class="stat-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-primary"><i class="fa-solid fa-phone-volume"></i></div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="acd-stat-anrufe">0</div>
+                            <div class="stat-label">Eingehende Anrufe</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon bg-success"><i class="fa-solid fa-phone-flip"></i></div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="acd-stat-angenommen">0</div>
+                            <div class="stat-label">Angenommen</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon bg-info"><i class="fa-solid fa-robot"></i></div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="acd-stat-bot">0</div>
+                            <div class="stat-label">Bot bearbeitet</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon bg-danger"><i class="fa-solid fa-phone-slash"></i></div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="acd-stat-verpasst">0</div>
+                            <div class="stat-label">Verpasst</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon bg-warning"><i class="fa-solid fa-clock"></i></div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="acd-stat-wartezeit">0s</div>
+                            <div class="stat-label">Avg. Wartezeit</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    <button id="chat-toggle" type="button"><i class="fa-solid fa-comment-dots"></i></button>
+    <div id="chat-fenster">
+        <div class="chat-header"><span><i class="fa-solid fa-robot"></i> Praxis-Assistent</span><button id="chat-schliessen" type="button"><i class="fa-solid fa-xmark"></i></button></div>
+        <div id="chat-nachrichten"></div>
+        <div class="chat-eingabe">
+            <input id="chat-input" type="text" placeholder="Frage stellen oder sprechen...">
+            <button id="chat-mikrofon" type="button" title="Sprechen"><i class="fa-solid fa-microphone"></i></button>
+            <button id="chat-senden" type="button"><i class="fa-solid fa-paper-plane"></i></button>
+        </div>
+    </div>
+    <script src="app.js"></script>
+
+</body>
+</html>
