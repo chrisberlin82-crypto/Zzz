@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Zugang erforderlich</title>
+<title>Login – MedReception</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Inter:wght@400;500;600&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     min-height: 100vh;
-    background: linear-gradient(135deg, #e0f7f7 0%, #b2ebf2 25%, #e3f2fd 60%, #ffffff 100%);
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 25%, #e0e7ff 60%, #f8fafc 100%);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -22,7 +22,7 @@
     content: '';
     position: fixed;
     width: 500px; height: 500px;
-    background: radial-gradient(circle, rgba(0,188,212,.15) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(37,99,235,.12) 0%, transparent 70%);
     top: -100px; right: -100px;
     pointer-events: none;
   }
@@ -30,7 +30,7 @@
     content: '';
     position: fixed;
     width: 400px; height: 400px;
-    background: radial-gradient(circle, rgba(33,150,243,.12) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(37,99,235,.10) 0%, transparent 70%);
     bottom: -80px; left: -80px;
     pointer-events: none;
   }
@@ -49,10 +49,10 @@
   .inner {
     background: rgba(255,255,255,0.88);
     backdrop-filter: blur(20px);
-    border: 1px solid rgba(0,188,212,.25);
+    border: 1px solid rgba(37,99,235,.18);
     border-radius: 24px;
     padding: 44px 40px;
-    box-shadow: 0 4px 40px rgba(0,150,200,.10), 0 1px 2px rgba(0,0,0,.04);
+    box-shadow: 0 4px 40px rgba(37,99,235,.08), 0 1px 2px rgba(0,0,0,.04);
     position: relative;
   }
   .inner::before {
@@ -60,7 +60,7 @@
     position: absolute;
     top: 0; left: 0; right: 0;
     height: 4px;
-    background: linear-gradient(90deg, #00bcd4, #2196f3, #00bcd4);
+    background: linear-gradient(90deg, #2563eb, #1d4ed8, #2563eb);
     border-radius: 24px 24px 0 0;
   }
   .logo {
@@ -71,17 +71,17 @@
   }
   .logo-icon {
     width: 48px; height: 48px;
-    background: linear-gradient(135deg, #00bcd4, #1976d2);
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
     border-radius: 14px;
     display: flex; align-items: center; justify-content: center;
     font-size: 24px;
-    box-shadow: 0 4px 16px rgba(0,188,212,.35);
+    box-shadow: 0 4px 16px rgba(37,99,235,.35);
   }
   .logo-text {
-    font-family: 'Playfair Display', serif;
+    font-family: 'Inter', sans-serif;
     font-size: 22px;
     font-weight: 700;
-    color: #0d47a1;
+    color: #1e293b;
   }
   .logo-sub {
     font-size: 10px;
@@ -91,9 +91,10 @@
     margin-top: 3px;
   }
   h1 {
-    font-family: 'Playfair Display', serif;
+    font-family: 'Inter', sans-serif;
     font-size: 26px;
-    color: #0d47a1;
+    font-weight: 700;
+    color: #1e293b;
     margin-bottom: 8px;
   }
   .subtitle {
@@ -103,17 +104,17 @@
     line-height: 1.6;
   }
   .quote {
-    background: linear-gradient(135deg, rgba(0,188,212,.07), rgba(33,150,243,.07));
-    border-left: 3px solid #00bcd4;
+    background: linear-gradient(135deg, rgba(37,99,235,.06), rgba(29,78,216,.06));
+    border-left: 3px solid #2563eb;
     border-radius: 0 10px 10px 0;
     padding: 13px 16px;
     margin-bottom: 24px;
   }
   .quote p {
-    font-family: 'Playfair Display', serif;
+    font-family: 'Inter', sans-serif;
     font-style: italic;
     font-size: 13px;
-    color: #1565c0;
+    color: #2563eb;
     line-height: 1.6;
   }
   .quote span {
@@ -139,17 +140,17 @@
     width: 100%;
     padding: 13px 16px;
     background: rgba(255,255,255,0.95);
-    border: 1.5px solid #b2dfdb;
+    border: 1.5px solid #cbd5e1;
     border-radius: 12px;
-    color: #1a237e;
+    color: #1e293b;
     font-family: 'Inter', sans-serif;
     font-size: 15px;
     outline: none;
     transition: border-color .2s, box-shadow .2s;
   }
   .field input:focus {
-    border-color: #00bcd4;
-    box-shadow: 0 0 0 3px rgba(0,188,212,.15);
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37,99,235,.15);
   }
   .field input.error {
     border-color: #ef5350;
@@ -167,7 +168,7 @@
     width: 100%;
     padding: 14px;
     margin-top: 8px;
-    background: linear-gradient(135deg, #00bcd4, #1976d2);
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
     border: none;
     border-radius: 12px;
     color: white;
@@ -176,9 +177,9 @@
     font-weight: 600;
     cursor: pointer;
     transition: transform .1s, box-shadow .2s;
-    box-shadow: 0 4px 20px rgba(0,188,212,.4);
+    box-shadow: 0 4px 20px rgba(37,99,235,.35);
   }
-  button:hover { box-shadow: 0 6px 28px rgba(0,188,212,.55); }
+  button:hover { box-shadow: 0 6px 28px rgba(37,99,235,.45); }
   button:active { transform: scale(.98); }
   button:disabled { opacity: .6; cursor: not-allowed; }
   .spinner {
@@ -196,13 +197,13 @@
   }
   .divider::before, .divider::after {
     content: ''; flex: 1; height: 1px;
-    background: linear-gradient(90deg, transparent, #b2dfdb, transparent);
+    background: linear-gradient(90deg, transparent, #cbd5e1, transparent);
   }
   .divider span { font-size: 10px; color: #90a4ae; letter-spacing: 2px; text-transform: uppercase; }
   .meta { text-align: center; font-size: 11px; color: #90a4ae; line-height: 1.8; }
   .success-overlay {
     position: fixed; inset: 0;
-    background: linear-gradient(135deg, #e0f7f7, #e3f2fd);
+    background: linear-gradient(135deg, #eff6ff, #dbeafe);
     z-index: 100;
     display: flex; flex-direction: column;
     align-items: center; justify-content: center; gap: 16px;
@@ -211,24 +212,24 @@
   .success-overlay.show { opacity: 1; pointer-events: all; }
   .success-overlay .icon {
     width: 72px; height: 72px;
-    background: linear-gradient(135deg, #00bcd4, #1976d2);
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
     border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
     font-size: 32px; color: white;
-    box-shadow: 0 8px 32px rgba(0,188,212,.4);
+    box-shadow: 0 8px 32px rgba(37,99,235,.35);
     animation: popIn .4s cubic-bezier(.16,1,.3,1);
   }
   @keyframes popIn {
     from { transform: scale(.5); opacity: 0; }
     to   { transform: scale(1); opacity: 1; }
   }
-  .success-overlay p { font-size: 14px; color: #1565c0; font-weight: 500; }
+  .success-overlay p { font-size: 14px; color: #2563eb; font-weight: 500; }
   .zitat-banner {
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
-    background: linear-gradient(135deg, #0d47a1 0%, #1565c0 50%, #0d47a1 100%);
+    background: linear-gradient(135deg, #1e3a5f 0%, #1d4ed8 50%, #1e3a5f 100%);
     padding: 1.6rem 2rem;
     text-align: center;
     color: #fff;
@@ -237,7 +238,7 @@
     font-weight: 800;
     letter-spacing: 0.18em;
     text-transform: uppercase;
-    box-shadow: 0 -4px 24px rgba(13,71,161,0.3);
+    box-shadow: 0 -4px 24px rgba(29,78,216,0.3);
     z-index: 50;
   }
   .zitat-banner .verfasser {

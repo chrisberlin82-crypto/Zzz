@@ -4,19 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AI Agent Engineering – MedReception</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="stylesheet" href="style.css">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Inter', sans-serif; background: #f8fafc; display: flex; }
-  /* Sidebar */
-  .sidebar { width: 220px; background: white; border-right: 1px solid #e5e7eb; padding: 20px 12px; flex-shrink: 0; min-height: 100vh; }
-  .sidebar-logo { display: flex; align-items: center; gap: 10px; padding: 8px 10px; margin-bottom: 24px; cursor: pointer; }
-  .sidebar-logo .icon { width: 34px; height: 34px; background: #2563eb; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 16px; }
-  .sidebar-logo span { font-weight: 700; font-size: 15px; color: #111827; }
-  .nav-group { font-size: 10px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; padding: 0 12px; margin: 14px 0 6px; }
-  .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 10px; font-size: 13px; font-weight: 500; color: #6b7280; cursor: pointer; margin-bottom: 2px; }
-  .nav-item.active { background: #eff6ff; color: #2563eb; }
-  .nav-item:hover:not(.active) { background: #f9fafb; color: #374151; }
   /* Main */
   .main { flex: 1; padding: 28px; overflow: auto; }
   .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
@@ -118,26 +111,37 @@
 </head>
 <body>
 <!-- Sidebar -->
-<div class="sidebar">
-  <div class="sidebar-logo" onclick="location.href='admin-dashboard.html'"><div class="icon">M</div><span>MedReception</span></div>
-  <div class="nav-group">Übersicht</div>
-  <div class="nav-item" onclick="location.href='admin-dashboard.html'" style="cursor:pointer">📊 Admin Dashboard</div>
-  <div class="nav-group">Callcenter</div>
-  <div class="nav-item" onclick="location.href='agenten.html'" style="cursor:pointer">🎧 Agenten</div>
-  <div class="nav-item" onclick="location.href='voicebot.html'" style="cursor:pointer">🤖 Voicebot</div>
-  <div class="nav-item" onclick="location.href='ansagen.html'" style="cursor:pointer">📢 Ansagen</div>
-  <div class="nav-item" onclick="location.href='callflow.html'" style="cursor:pointer">🔀 Callflow</div>
-  <div class="nav-group">Telefonie</div>
-  <div class="nav-item" onclick="location.href='asterisk.html'" style="cursor:pointer">📡 Asterisk</div>
-  <div class="nav-item" onclick="location.href='acd.html'" style="cursor:pointer">📞 ACD</div>
-  <div class="nav-group">Praxis</div>
-  <div class="nav-item" onclick="location.href='termine.html'" style="cursor:pointer">📅 Termine</div>
-  <div class="nav-item" onclick="location.href='auswertung.html'" style="cursor:pointer">📈 Auswertungen</div>
-  <div class="nav-group">KI</div>
-  <div class="nav-item active">🧠 AI Agent Engineering</div>
-  <div class="nav-group">System</div>
-  <div class="nav-item" onclick="sessionStorage.removeItem('mr_guard_session');location.href='index.html'" style="cursor:pointer">🔓 Abmelden</div>
-</div>
+<aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo" onclick="location.href='admin-dashboard.html'"><div class="icon">M</div><span>MedReception</span></div>
+    <div class="nav-group">Übersicht</div>
+    <nav class="sidebar-nav">
+        <a href="admin-dashboard.html"><i class="fa-solid fa-chart-pie nav-icon"></i> Dashboard</a>
+    </nav>
+    <div class="nav-group">Callcenter</div>
+    <nav class="sidebar-nav">
+        <a href="agenten.html"><i class="fa-solid fa-headset nav-icon"></i> Agenten</a>
+        <a href="voicebot.html"><i class="fa-solid fa-robot nav-icon"></i> Voicebot</a>
+        <a href="ansagen.html"><i class="fa-solid fa-tower-broadcast nav-icon"></i> Ansagen</a>
+        <a href="callflow.html"><i class="fa-solid fa-diagram-project nav-icon"></i> Callflow</a>
+    </nav>
+    <div class="nav-group">Telefonie</div>
+    <nav class="sidebar-nav">
+        <a href="asterisk.html"><i class="fa-solid fa-server nav-icon"></i> Asterisk</a>
+        <a href="acd.html"><i class="fa-solid fa-phone-volume nav-icon"></i> ACD</a>
+    </nav>
+    <div class="nav-group">Praxis</div>
+    <nav class="sidebar-nav">
+        <a href="termine.html"><i class="fa-solid fa-calendar-days nav-icon"></i> Termine</a>
+        <a href="auswertung.html"><i class="fa-solid fa-chart-line nav-icon"></i> Auswertungen</a>
+    </nav>
+    <div class="nav-group">KI</div>
+    <nav class="sidebar-nav">
+        <a href="ai-agent.html" class="active"><i class="fa-solid fa-microchip nav-icon"></i> AI Agent</a>
+    </nav>
+    <div class="sidebar-footer">
+        <button onclick="sessionStorage.removeItem('mr_guard_session');location.href='index.html'" type="button"><i class="fa-solid fa-right-from-bracket nav-icon"></i> Abmelden</button>
+    </div>
+</aside>
 <!-- Main -->
 <div class="main">
   <div class="top-bar">

@@ -3,26 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MED Rezeption - Auswertungen &amp; Kosten</title>
+    <title>Auswertungen – MedReception</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <aside class="sidebar" id="sidebar">
-        <div class="sidebar-logo"><h2>MED Rezeption</h2><small>Praxisverwaltung</small></div>
+        <div class="sidebar-logo" onclick="location.href='admin-dashboard.html'"><div class="icon">M</div><span>MedReception</span></div>
+        <div class="nav-group">Übersicht</div>
         <nav class="sidebar-nav">
             <a href="admin-dashboard.html"><i class="fa-solid fa-chart-pie nav-icon"></i> Dashboard</a>
+        </nav>
+        <div class="nav-group">Callcenter</div>
+        <nav class="sidebar-nav">
             <a href="agenten.html"><i class="fa-solid fa-headset nav-icon"></i> Agenten</a>
             <a href="voicebot.html"><i class="fa-solid fa-robot nav-icon"></i> Voicebot</a>
             <a href="ansagen.html"><i class="fa-solid fa-tower-broadcast nav-icon"></i> Ansagen</a>
             <a href="callflow.html"><i class="fa-solid fa-diagram-project nav-icon"></i> Callflow</a>
+        </nav>
+        <div class="nav-group">Telefonie</div>
+        <nav class="sidebar-nav">
             <a href="asterisk.html"><i class="fa-solid fa-server nav-icon"></i> Asterisk</a>
             <a href="acd.html"><i class="fa-solid fa-phone-volume nav-icon"></i> ACD</a>
+        </nav>
+        <div class="nav-group">Praxis</div>
+        <nav class="sidebar-nav">
             <a href="termine.html"><i class="fa-solid fa-calendar-days nav-icon"></i> Termine</a>
             <a href="auswertung.html" class="active"><i class="fa-solid fa-chart-line nav-icon"></i> Auswertungen</a>
+        </nav>
+        <div class="nav-group">KI</div>
+        <nav class="sidebar-nav">
             <a href="ai-agent.html"><i class="fa-solid fa-microchip nav-icon"></i> AI Agent</a>
         </nav>
-        <div class="sidebar-footer"><button id="btn-demo-reset" type="button">Demo zuruecksetzen</button></div>
+        <div class="sidebar-footer">
+            <button onclick="sessionStorage.removeItem('mr_guard_session');location.href='index.html'" type="button"><i class="fa-solid fa-right-from-bracket nav-icon"></i> Abmelden</button>
+        </div>
     </aside>
     <div class="main-wrapper">
         <header class="topbar">
