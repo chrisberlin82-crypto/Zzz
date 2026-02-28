@@ -10,7 +10,7 @@
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Inter', sans-serif; background: #f8fafc; display: flex; }
-  .main { flex: 1; padding: 28px; overflow: auto; }
+  .main { flex: 1; padding: 28px; overflow: auto; margin-left: 240px; }
   .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
   h1 { font-size: 22px; font-weight: 700; color: #111827; }
   .live-badge { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #15803d; font-weight: 600; background: #dcfce7; padding: 4px 10px; border-radius: 999px; }
@@ -50,7 +50,7 @@
   .badge.green { background: #dcfce7; color: #15803d; }
   .badge.red { background: #fef2f2; color: #dc2626; }
   .badge.yellow { background: #fef3c7; color: #92400e; }
-  .badge.blue { background: #dbeafe; color: #1d4ed8; }
+  .badge.blue { background: #dbeafe; color: #4f46e5; }
   /* Agent Status Grid */
   .agents-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 20px; }
   .agent-card { background: white; border-radius: 12px; border: 1px solid #e5e7eb; padding: 12px 14px; display: flex; align-items: center; gap: 10px; }
@@ -75,7 +75,7 @@
   .toggle-row:last-child { border-bottom: none; }
   .toggle-label { font-size: 13px; color: #374151; }
   .toggle { width: 38px; height: 21px; background: #e2e8f0; border-radius: 999px; position: relative; cursor: pointer; transition: background .2s; }
-  .toggle.on { background: #2563eb; }
+  .toggle.on { background: #6366f1; }
   .toggle::after { content: ''; position: absolute; width: 17px; height: 17px; background: white; border-radius: 50%; top: 2px; left: 2px; transition: left .2s; }
   .toggle.on::after { left: 19px; }
   /* Forms */
@@ -85,7 +85,7 @@
   .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
   /* Buttons */
   .btn { padding: 7px 16px; border-radius: 9px; font-size: 12px; font-weight: 600; border: none; cursor: pointer; font-family: 'Inter', sans-serif; }
-  .btn.primary { background: #2563eb; color: white; }
+  .btn.primary { background: #6366f1; color: white; }
   .btn.secondary { background: #f1f5f9; color: #475569; border: 1.5px solid #e2e8f0; }
   .btn:hover { opacity: .85; }
   .btn-row { display: flex; gap: 8px; margin-top: 14px; }
@@ -184,7 +184,7 @@
       </div>
       <div style="font-size:10px;color:#6b7280;margin-bottom:4px">Agenten in Queue:</div>
       <div class="queue-agents-row">
-        <div class="qa" style="background:#2563eb" title="Dr. Schmidt">DS</div>
+        <div class="qa" style="background:#6366f1" title="Dr. Schmidt">DS</div>
         <div class="qa" style="background:#16a34a" title="Anna Weber">AW</div>
         <div class="qa" style="background:#ea580c" title="Laura Klein">LK</div>
       </div>
@@ -208,7 +208,7 @@
       </div>
       <div style="font-size:10px;color:#6b7280;margin-bottom:4px">Agenten in Queue:</div>
       <div class="queue-agents-row">
-        <div class="qa" style="background:#2563eb" title="Dr. Schmidt">DS</div>
+        <div class="qa" style="background:#6366f1" title="Dr. Schmidt">DS</div>
         <div class="qa" style="background:#7c3aed" title="Chris Müller">CM</div>
       </div>
       <div class="sla-bar"><div class="sla-fill green" style="width:100%"></div></div>
@@ -242,14 +242,14 @@
   <div class="section-title">👤 Agenten-Status & Queue-Zuordnung</div>
   <div class="agents-grid">
     <div class="agent-card">
-      <div class="agent-avatar" style="background:#2563eb">DS</div>
+      <div class="agent-avatar" style="background:#6366f1">DS</div>
       <div>
         <div class="agent-name">Dr. Schmidt</div>
         <div class="agent-status busy">🔴 Im Gespräch</div>
         <div class="agent-meta">seit 08:31 · 8 Anrufe</div>
       </div>
       <div class="agent-queues">
-        <span class="agent-q-tag" style="background:#dbeafe;color:#1d4ed8">Allg.</span>
+        <span class="agent-q-tag" style="background:#dbeafe;color:#4f46e5">Allg.</span>
         <span class="agent-q-tag" style="background:#fef2f2;color:#dc2626">Notfall</span>
       </div>
     </div>
@@ -261,7 +261,7 @@
         <div class="agent-meta">online seit 07:58 · 6 Anrufe</div>
       </div>
       <div class="agent-queues">
-        <span class="agent-q-tag" style="background:#dbeafe;color:#1d4ed8">Allg.</span>
+        <span class="agent-q-tag" style="background:#dbeafe;color:#4f46e5">Allg.</span>
         <span class="agent-q-tag" style="background:#dcfce7;color:#15803d">Rezept</span>
       </div>
     </div>
@@ -284,7 +284,7 @@
         <div class="agent-meta">seit 08:29 · 3 Anrufe</div>
       </div>
       <div class="agent-queues">
-        <span class="agent-q-tag" style="background:#dbeafe;color:#1d4ed8">Allg.</span>
+        <span class="agent-q-tag" style="background:#dbeafe;color:#4f46e5">Allg.</span>
       </div>
     </div>
     <div class="agent-card">

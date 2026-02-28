@@ -615,7 +615,7 @@ section + section, .card + .card {
 .btn-aufrufen { background: var(--success); padding: 0.4rem 0.8rem; font-size: 0.85rem; }
 .btn-aufrufen:hover { background: #16a34a; }
 .btn-fertig { background: var(--info); padding: 0.4rem 0.8rem; font-size: 0.85rem; }
-.btn-fertig:hover { background: #2563eb; }
+.btn-fertig:hover { background: #4f46e5; }
 
 .wartezeit { font-weight: 600; color: #92400e; }
 
@@ -691,7 +691,7 @@ section + section, .card + .card {
 .agent-karte .agent-aktionen .btn-online { background: var(--success); }
 .agent-karte .agent-aktionen .btn-online:hover { background: #16a34a; }
 .agent-karte .agent-aktionen .btn-im_gespraech { background: var(--info); }
-.agent-karte .agent-aktionen .btn-im_gespraech:hover { background: #2563eb; }
+.agent-karte .agent-aktionen .btn-im_gespraech:hover { background: #4f46e5; }
 .agent-karte .agent-aktionen .btn-pause { background: var(--warning); color: #000; }
 .agent-karte .agent-aktionen .btn-pause:hover { background: #d97706; }
 .agent-karte .agent-aktionen .btn-azu { background: #dc2626; }
