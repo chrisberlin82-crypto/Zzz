@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flow Editor – MedReception</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:#f1f5f9;height:100vh;display:flex;flex-direction:column;overflow:hidden;color:#1e293b}
+
+/* ── Top Bar ── */
+.topbar{height:52px;background:white;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;padding:0 16px;gap:10px;flex-shrink:0;box-shadow:0 1px 4px rgba(0,0,0,.05)}
+.tb-logo{width:30px;height:30px;background:#2563eb;border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:14px;flex-shrink:0}
+.tb-name{font-size:14px;font-weight:800;color:#1e293b}
+.tb-div{width:1px;height:22px;background:#e2e8f0}
+.tb-btn{padding:7px 16px;border-radius:9px;font-size:12px;font-weight:700;cursor:pointer;border:none;font-family:'Inter',sans-serif;transition:all .12s}
+.tb-btn.p{background:#2563eb;color:white}
+.tb-btn.s{background:white;color:#475569;border:1.5px solid #e2e8f0}
+.tb-btn:hover{opacity:.87}
+.tb-spacer{flex:1}
+.badge-ok{padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700;background:#dcfce7;color:#15803d;border:1px solid #bbf7d0;display:none}
+.badge-ok.show{display:inline-block}
+
+/* Mode Switcher */
+.main-mode{display:flex;background:#f1f5f9;border:2px solid #e2e8f0;border-radius:11px;padding:3px;gap:2px}
+.mm-btn{padding:6px 18px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;border:none;font-family:'Inter',sans-serif;transition:all .13s;display:flex;align-items:center;gap:6px;color:#64748b;background:transparent}
+.mm-btn.active-vb{background:linear-gradient(135deg,#0ea5e9,#0369a1);color:white;box-shadow:0 2px 8px rgba(3,105,161,.3)}
+.mm-btn.active-cb{background:linear-gradient(135deg,#8b5cf6,#6d28d9);color:white;box-shadow:0 2px 8px rgba(109,40,217,.3)}
+
+/* ── Layout ── */
+.workspace{flex:1;display:flex;overflow:hidden}
+
+/* ── Palette ── */
+.palette{width:220px;background:white;border-right:1px solid #e2e8f0;display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+.pal-banner{padding:10px 14px;font-size:11px;font-weight:700;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;gap:7px}
+.pal-group{font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:1.2px;padding:10px 14px 4px}
+.chip{display:flex;align-items:center;gap:8px;padding:8px 12px;margin:2px 8px;border-radius:9px;cursor:pointer;border:1.5px solid #e5e7eb;background:#f8fafc;transition:all .13s;user-select:none}
+.chip:hover{border-color:#93c5fd;background:#eff6ff;transform:translateX(2px);box-shadow:0 2px 8px rgba(37,99,235,.08)}
+.cdot{width:8px;height:8px;border-radius:3px;flex-shrink:0}
+.clbl{font-size:12px;font-weight:600;color:#1e293b}
+.csub{font-size:10px;color:#94a3b8;margin-top:1px}
+.chip-transfer{border-color:#fde68a;background:#fffbeb}
+.chip-transfer:hover{border-color:#f59e0b;background:#fef3c7}
+
+/* ── Canvas ── */
+.canvas{flex:1;overflow-y:auto;padding:24px;background:#f8fafc}
+.canvas-inner{max-width:680px;margin:0 auto}
+.canvas-empty{text-align:center;padding:60px 20px;color:#94a3b8}
+.canvas-empty i{font-size:48px;margin-bottom:12px;display:block;opacity:.4}
+
+/* ── Block ── */
+.block{background:white;border:1.5px solid #e5e7eb;border-radius:13px;margin-bottom:8px;overflow:hidden;transition:border-color .13s,box-shadow .13s}
+.block:hover{border-color:#93c5fd;box-shadow:0 3px 12px rgba(37,99,235,.06)}
+.block:focus-within{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+.block-head{display:flex;align-items:center;gap:8px;padding:9px 14px;border-bottom:1px solid #f1f5f9}
+.block-icon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.block-nr{font-size:9px;font-weight:700;color:#94a3b8;background:#f1f5f9;width:20px;height:20px;display:flex;align-items:center;justify-content:center;border-radius:50%;flex-shrink:0}
+.block-title{font-size:12px;font-weight:700;color:#1e293b;flex:1}
+.block-badge{padding:2px 8px;border-radius:5px;font-size:9px;font-weight:700}
+.block-actions{display:flex;gap:2px}
+.block-actions button{background:none;border:none;color:#cbd5e1;cursor:pointer;padding:3px 5px;border-radius:5px;font-size:11px;transition:all .12s}
+.block-actions button:hover{color:#475569;background:#f1f5f9}
+.block-actions .btn-del:hover{color:#ef4444;background:#fef2f2}
+
+/* Block Type Colors */
+.block.typ-start .block-head{background:#f0fdf4}
+.block.typ-start .block-icon{background:#dcfce7}
+.block.typ-start .block-badge{background:#dcfce7;color:#15803d}
+.block.typ-end .block-head{background:#fef2f2}
+.block.typ-end .block-icon{background:#fef2f2}
+.block.typ-end .block-badge{background:#fef2f2;color:#ef4444}
+.block.typ-greet .block-head,.block.typ-say .block-head,.block.typ-info .block-head{background:#f5f3ff}
+.block.typ-greet .block-icon,.block.typ-say .block-icon,.block.typ-info .block-icon{background:#ede9fe}
+.block.typ-greet .block-badge,.block.typ-say .block-badge,.block.typ-info .block-badge{background:#ede9fe;color:#7c3aed}
+.block.typ-listen .block-head,.block.typ-input .block-head,.block.typ-click .block-head{background:#eff6ff}
+.block.typ-listen .block-icon,.block.typ-input .block-icon,.block.typ-click .block-icon{background:#dbeafe}
+.block.typ-listen .block-badge,.block.typ-input .block-badge,.block.typ-click .block-badge{background:#dbeafe;color:#1d4ed8}
+.block.typ-cond .block-head{background:#fffbeb}
+.block.typ-cond .block-icon{background:#fef3c7}
+.block.typ-cond .block-badge{background:#fef3c7;color:#d97706}
+.block.typ-kb .block-head{background:#ecfdf5}
+.block.typ-kb .block-icon{background:#d1fae5}
+.block.typ-kb .block-badge{background:#d1fae5;color:#059669}
+.block.typ-termin .block-head,.block.typ-ticket .block-head,.block.typ-rezept .block-head,.block.typ-mail .block-head{background:#fff7ed}
+.block.typ-termin .block-icon,.block.typ-ticket .block-icon,.block.typ-rezept .block-icon,.block.typ-mail .block-icon{background:#ffedd5}
+.block.typ-termin .block-badge,.block.typ-ticket .block-badge,.block.typ-rezept .block-badge,.block.typ-mail .block-badge{background:#ffedd5;color:#ea580c}
+.block.typ-transfer .block-head,.block.typ-queue .block-head{background:#fffbeb}
+.block.typ-transfer .block-icon,.block.typ-queue .block-icon{background:#fef3c7}
+.block.typ-transfer .block-badge,.block.typ-queue .block-badge{background:#fef3c7;color:#92400e}
+
+/* Who Banner */
+.who-tag{display:inline-flex;align-items:center;gap:4px;font-size:9px;font-weight:700;padding:3px 8px;border-radius:6px;margin-bottom:6px}
+.who-vb{background:#e0f2fe;color:#0369a1}
+.who-cb{background:#ede9fe;color:#6d28d9}
+
+/* Block Body */
+.block-body{padding:10px 14px}
+.bf{margin-bottom:6px}
+.bf:last-child{margin-bottom:0}
+.bf label{display:block;font-size:9px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px}
+.bf input,.bf textarea,.bf select{width:100%;padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;font-family:'Inter',sans-serif;color:#1e293b;background:white;outline:none;transition:border-color .12s}
+.bf input:focus,.bf textarea:focus,.bf select:focus{border-color:#2563eb}
+.bf textarea{resize:vertical;min-height:52px}
+.bf-row{display:flex;gap:8px}
+.bf-row .bf{flex:1}
+
+/* DTMF / Click Options */
+.opt-item{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.opt-dot{width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;color:white}
+.opt-item input{flex:1;padding:6px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;font-family:'Inter',sans-serif;color:#1e293b;outline:none}
+.opt-item input:focus{border-color:#2563eb}
+.opt-del{background:none;border:none;color:#d1d5db;cursor:pointer;font-size:13px;padding:2px 4px}
+.opt-del:hover{color:#ef4444}
+.opt-add{width:100%;padding:6px;border:1.5px dashed #d1d5db;border-radius:8px;font-size:11px;color:#94a3b8;background:transparent;cursor:pointer;font-family:'Inter',sans-serif;margin-top:4px}
+.opt-add:hover{border-color:#2563eb;color:#2563eb}
+
+/* Toggle */
+.tog-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.tog-lbl{font-size:12px;color:#374151}
+.mtog{width:34px;height:18px;background:#d1d5db;border-radius:9px;position:relative;cursor:pointer;transition:background .15s;flex-shrink:0}
+.mtog.on{background:#2563eb}
+.mtog::after{content:'';position:absolute;width:12px;height:12px;background:white;border-radius:50%;top:3px;left:3px;transition:left .15s}
+.mtog.on::after{left:19px}
+
+/* Keyword Tags */
+.kw-area{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px}
+.kwtag{display:inline-block;padding:3px 9px;border-radius:6px;font-size:10px;font-weight:600;cursor:pointer;background:#dbeafe;color:#1d4ed8}
+
+/* Info Boxes */
+.info-box{border-radius:8px;padding:7px 10px;font-size:11px;margin-top:6px}
+.info-vb{background:#ecfdf5;border:1px solid #6ee7b7;color:#047857}
+.info-cb{background:#ede9fe;border:1px solid #c4b5fd;color:#5b21b6}
+.info-transfer{background:#fffbeb;border:1px solid #fde68a;color:#92400e}
+
+/* ── Status Bar ── */
+.statusbar{height:27px;background:white;border-top:1px solid #e2e8f0;display:flex;align-items:center;padding:0 14px;gap:16px;font-size:11px;color:#94a3b8;flex-shrink:0}
+.sdot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:4px}
+
+/* ── Preview Modal ── */
+.preview-overlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(3px)}
+.preview-overlay.show{display:flex}
+.preview-box{background:white;border-radius:18px;width:860px;max-height:86vh;overflow-y:auto;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.sim-line{border-radius:8px;padding:8px 12px;margin-bottom:6px;font-size:11px}
+.sim-system{background:#1e293b;color:#64748b}
+.sim-audio{background:#1e293b;color:#38bdf8}
+.sim-input{background:#334155;color:#f1f5f9}
+.sim-action{background:#1e293b;color:#34d399}
+.sim-transfer{background:#1e2535;border:1px solid #f59e0b;color:#fde68a;font-size:10px}
+
+/* ── Responsive ── */
+@media(max-width:768px){
+  .palette{display:none}
+  .mobile-add{display:flex !important}
+}
+.mobile-add{display:none;flex-wrap:wrap;gap:4px;margin-bottom:12px}
+.mobile-add button{background:white;border:1.5px solid #e2e8f0;color:#475569;padding:5px 10px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif}
+.mobile-add button:hover{border-color:#2563eb;color:#2563eb}
+</style>
+</head>
+<body>
+
+<!-- Top Bar -->
+<div class="topbar">
+  <button class="tb-btn s" onclick="location.href='uebersicht.html'" style="padding:5px 12px;font-size:12px">🗺 Uebersicht</button>
+  <div class="tb-logo">M</div>
+  <div class="tb-name">Flow Editor</div>
+  <div class="tb-div"></div>
+  <div class="main-mode">
+    <button class="mm-btn active-vb" id="mm-vb" onclick="switchMode('vb')">🤖 Voicebot</button>
+    <button class="mm-btn" id="mm-cb" onclick="switchMode('cb')">👤 Clickbot</button>
+  </div>
+  <div class="tb-div"></div>
+  <select class="tb-btn s" id="flow-sel" style="padding:6px 12px;font-size:12px;cursor:pointer">
+    <option>Voicebot — Allgemein</option>
+    <option>Voicebot — Notfall</option>
+    <option>Voicebot — Rezept</option>
+    <option value="new">+ Neuer Flow</option>
+  </select>
+  <span class="badge-ok" id="badge-saved">● Gespeichert</span>
+  <div class="tb-spacer"></div>
+  <button class="tb-btn s" onclick="togglePreview()">▶ Vorschau</button>
+  <button class="tb-btn p" id="btn-save" onclick="speichern()">✓ Speichern</button>
+</div>
+
+<div class="workspace">
+  <!-- Palette -->
+  <div class="palette" id="palette">
+    <!-- VB Palette -->
+    <div id="pal-vb">
+      <div class="pal-banner" style="background:#e0f2fe;color:#0369a1">🤖 Voicebot-Bausteine</div>
+      <div class="pal-group">Gespraechssteuerung</div>
+      <div class="chip" onclick="addBlock('start')"><div class="cdot" style="background:#22c55e"></div><div><div class="clbl">Anruf eingehend</div><div class="csub">Gespraech startet</div></div></div>
+      <div class="chip" onclick="addBlock('greet')"><div class="cdot" style="background:#7c3aed"></div><div><div class="clbl">Begruessung sprechen</div><div class="csub">TTS-Ansage</div></div></div>
+      <div class="chip" onclick="addBlock('listen')"><div class="cdot" style="background:#0369a1"></div><div><div class="clbl">Zuhoeren / Fragen</div><div class="csub">STT aktiv</div></div></div>
+      <div class="chip" onclick="addBlock('say')"><div class="cdot" style="background:#7c3aed"></div><div><div class="clbl">Antwort sprechen</div><div class="csub">Voicebot spricht TTS</div></div></div>
+      <div class="chip" onclick="addBlock('cond')"><div class="cdot" style="background:#f59e0b"></div><div><div class="clbl">Bedingung / Weiche</div><div class="csub">Flow verzweigen</div></div></div>
+      <div class="chip" onclick="addBlock('kb')"><div class="cdot" style="background:#10b981"></div><div><div class="clbl">KB nachschlagen</div><div class="csub">Antwort aus Wissensbasis</div></div></div>
+      <div class="pal-group">Aktionen</div>
+      <div class="chip" onclick="addBlock('termin')"><div class="cdot" style="background:#f97316"></div><div><div class="clbl">Termin buchen</div><div class="csub">Kalender abfragen</div></div></div>
+      <div class="chip" onclick="addBlock('ticket')"><div class="cdot" style="background:#f97316"></div><div><div class="clbl">Ticket erstellen</div><div class="csub">Anliegen erfassen</div></div></div>
+      <div class="chip" onclick="addBlock('mail')"><div class="cdot" style="background:#7c3aed"></div><div><div class="clbl">Mail / SMS senden</div><div class="csub">Zusammenfassung</div></div></div>
+      <div class="chip" onclick="addBlock('input')"><div class="cdot" style="background:#0369a1"></div><div><div class="clbl">Daten erfassen</div><div class="csub">Name, Geb.-Datum…</div></div></div>
+      <div class="pal-group" style="color:#d97706">Uebergabe</div>
+      <div class="chip chip-transfer" onclick="addBlock('transfer')"><div class="cdot" style="background:#f59e0b"></div><div><div class="clbl" style="color:#92400e">An Agent weiterleiten</div><div class="csub">Mit Kontext</div></div></div>
+      <div class="chip chip-transfer" onclick="addBlock('queue')"><div class="cdot" style="background:#f59e0b"></div><div><div class="clbl" style="color:#92400e">In Queue einreihen</div><div class="csub">Warten auf Agent</div></div></div>
+      <div class="pal-group">Ende</div>
+      <div class="chip" onclick="addBlock('end')"><div class="cdot" style="background:#ef4444"></div><div><div class="clbl">Gespraech beenden</div><div class="csub">Verabschiedung</div></div></div>
+    </div>
+    <!-- CB Palette -->
+    <div id="pal-cb" style="display:none">
+      <div class="pal-banner" style="background:#ede9fe;color:#6d28d9">👤 Clickbot-Bausteine</div>
+      <div class="pal-group">Navigation</div>
+      <div class="chip" onclick="addBlock('start')"><div class="cdot" style="background:#22c55e"></div><div><div class="clbl">Agent nimmt an</div><div class="csub">Clickbot startet</div></div></div>
+      <div class="chip" onclick="addBlock('click')"><div class="cdot" style="background:#6d28d9"></div><div><div class="clbl">Klick-Vorgabe</div><div class="csub">Agent klickt Antwort</div></div></div>
+      <div class="chip" onclick="addBlock('info')"><div class="cdot" style="background:#7c3aed"></div><div><div class="clbl">Info anzeigen</div><div class="csub">Text / KB-Auszug</div></div></div>
+      <div class="chip" onclick="addBlock('cond')"><div class="cdot" style="background:#f59e0b"></div><div><div class="clbl">Bedingung</div><div class="csub">Verzweigung</div></div></div>
+      <div class="chip" onclick="addBlock('kb')"><div class="cdot" style="background:#10b981"></div><div><div class="clbl">KB einblenden</div><div class="csub">Artikel anzeigen</div></div></div>
+      <div class="pal-group">Aktionen</div>
+      <div class="chip" onclick="addBlock('termin')"><div class="cdot" style="background:#f97316"></div><div><div class="clbl">Termin buchen</div><div class="csub">Kalender oeffnen</div></div></div>
+      <div class="chip" onclick="addBlock('ticket')"><div class="cdot" style="background:#f97316"></div><div><div class="clbl">Ticket erstellen</div><div class="csub">Anliegen erfassen</div></div></div>
+      <div class="chip" onclick="addBlock('rezept')"><div class="cdot" style="background:#f97316"></div><div><div class="clbl">Rezept erfassen</div><div class="csub">Medikament + Patient</div></div></div>
+      <div class="chip" onclick="addBlock('mail')"><div class="cdot" style="background:#7c3aed"></div><div><div class="clbl">Mail senden</div><div class="csub">Zusammenfassung</div></div></div>
+      <div class="chip" onclick="addBlock('transfer')"><div class="cdot" style="background:#06b6d4"></div><div><div class="clbl">Weiterleiten</div><div class="csub">Durchstellen</div></div></div>
+      <div class="pal-group">Ende</div>
+      <div class="chip" onclick="addBlock('end')"><div class="cdot" style="background:#ef4444"></div><div><div class="clbl">Ticket schliessen</div><div class="csub">Clickbot beenden</div></div></div>
+    </div>
+  </div>
+
+  <!-- Canvas -->
+  <div class="canvas">
+    <div class="canvas-inner">
+      <div class="mobile-add" id="mobile-add"></div>
+      <div id="blocks"></div>
+      <div class="canvas-empty" id="empty-msg">
+        <span style="font-size:48px;opacity:.3;display:block;margin-bottom:12px">🧠</span>
+        <div style="font-size:14px;font-weight:700;margin-bottom:4px">Flow ist leer</div>
+        <div style="font-size:12px">Klicken Sie links auf einen Baustein um den Flow zu erstellen.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Status Bar -->
+<div class="statusbar">
+  <span id="sb-mode"><span class="sdot" style="background:#0369a1"></span>Voicebot-Modus</span>
+  <span id="sb-count"><span class="sdot" style="background:#22c55e"></span>0 Bloecke</span>
+  <span><span class="sdot" style="background:#22c55e"></span>Flow valide</span>
+  <span style="margin-left:auto">MedReception · Flow Editor v2.0</span>
+</div>
+
+<!-- Preview -->
+<div class="preview-overlay" id="preview">
+  <div class="preview-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div style="font-size:15px;font-weight:800" id="preview-title">▶ Flow-Vorschau</div>
+      <button onclick="togglePreview()" style="padding:6px 14px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif">✕ Schliessen</button>
+    </div>
+    <div style="background:#0f172a;border-radius:14px;padding:16px;font-family:'Inter',monospace" id="preview-body"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var curMode = 'vb';
+  var nextId = 1;
+  var vbBlocks = [];
+  var cbBlocks = [];
+
+  var TYPES = {
+    start:    {icon:'📞',title:'Anruf eingehend',    badge:'START',    cbIcon:'👤',cbTitle:'Agent nimmt an'},
+    greet:    {icon:'💬',title:'Begruessung',         badge:'ANSAGE'},
+    listen:   {icon:'🎙',title:'Zuhoeren / Fragen',   badge:'STT'},
+    say:      {icon:'🔊',title:'Antwort sprechen',    badge:'TTS'},
+    cond:     {icon:'⚡',title:'Bedingung',            badge:'WEICHE'},
+    kb:       {icon:'📚',title:'KB nachschlagen',      badge:'KB',      cbTitle:'KB einblenden'},
+    termin:   {icon:'📅',title:'Termin buchen',        badge:'AKTION'},
+    ticket:   {icon:'🎫',title:'Ticket erstellen',     badge:'AKTION'},
+    rezept:   {icon:'💊',title:'Rezept erfassen',      badge:'AKTION'},
+    mail:     {icon:'✉️',title:'Mail senden',          badge:'MAIL'},
+    input:    {icon:'⌨️',title:'Daten erfassen',       badge:'INPUT'},
+    transfer: {icon:'🔀',title:'An Agent weiterleiten',badge:'UEBERGABE',cbIcon:'↗️',cbTitle:'Weiterleiten',cbBadge:'TRANSFER'},
+    queue:    {icon:'⏳',title:'In Queue einreihen',    badge:'QUEUE'},
+    click:    {icon:'🖱',title:'Klick-Vorgabe',         badge:'KLICK'},
+    info:     {icon:'💬',title:'Info anzeigen',         badge:'INFO'},
+    end:      {icon:'🔴',title:'Gespraech beenden',    badge:'ENDE',    cbTitle:'Ticket schliessen'}
+  };
+
+  function blocks(){return curMode==='vb'?vbBlocks:cbBlocks}
+  function setBlocks(b){if(curMode==='vb')vbBlocks=b;else cbBlocks=b}
+
+  // Demo data
+  function loadDemo(){
+    vbBlocks=[
+      {id:1,typ:'start',label:'Anruf eingehend',config:{quelle:'SIP-Trunk'}},
+      {id:2,typ:'greet',label:'Begruessung',config:{text:'Guten Tag, Praxis Dr. Schmidt, was kann ich fuer Sie tun?',stimme:'Azure Neural — de-DE-KatjaNeural'}},
+      {id:3,typ:'listen',label:'Anliegen zuhoeren',config:{text:'Spracherkennung aktiv — Anrufer spricht frei',engine:'Azure Speech de-DE',timeout:8,keywords:['Termin','Termin buchen','Rezept','Notfall'],fallback:'KB befragen'}},
+      {id:4,typ:'termin',label:'Termin buchen',config:{text:'Fuer wann darf ich einen Termin eintragen?',api:'GET /api/termine'}},
+      {id:5,typ:'rezept',label:'Rezept aufnehmen',config:{text:'Welches Medikament? Fuer wen?',api:'POST /api/rezepte'}},
+      {id:6,typ:'kb',label:'KB nachschlagen',config:{kategorie:'Alle aktiven Artikel',text:'Kein Szenario erkannt — Voicebot sucht KB und liest Antwort vor'}},
+      {id:7,typ:'transfer',label:'An Agent weiterleiten',config:{text:'Komplexes Anliegen oder Patient wuenscht Agent',queue:'rezeption',kontext:true}},
+      {id:8,typ:'mail',label:'Zusammenfassung senden',config:{text:'Mail an Praxis mit allen erfassten Daten',empfaenger:'praxis@dr-schmidt.de'}},
+      {id:9,typ:'end',label:'Gespraech beenden',config:{text:'Auf Wiederhoeren und einen schoenen Tag!'}}
+    ];
+    cbBlocks=[
+      {id:101,typ:'start',label:'Agent nimmt an',config:{quelle:'Clickbot startet automatisch'}},
+      {id:102,typ:'click',label:'Anliegen waehlen',config:{text:'Was ist das Anliegen des Patienten?',optionen:[{dot:'#0369a1',label:'Termin buchen'},{dot:'#10b981',label:'Rezeptanfrage'},{dot:'#ef4444',label:'Notfall'},{dot:'#f59e0b',label:'Ueberweisung'}]}},
+      {id:103,typ:'termin',label:'Termin buchen',config:{text:'Kalender oeffnet sich im Chat — Agent waehlt Termin'}},
+      {id:104,typ:'rezept',label:'Rezept erfassen',config:{text:'Medikament, Patient, Menge, Wiederholung'}},
+      {id:105,typ:'kb',label:'KB-Vorschlag einblenden',config:{kategorie:'Alle aktiven Artikel',text:'Passende Artikel werden dem Agenten angezeigt'}},
+      {id:106,typ:'mail',label:'Mail senden',config:{text:'Mail-Vorschau — Agent klickt Senden',empfaenger:'praxis@dr-schmidt.de'}},
+      {id:107,typ:'end',label:'Ticket schliessen',config:{text:'Status: Erledigt — Gespraech beendet'}}
+    ];
+    nextId=200;
+  }
+
+  // Load saved or demo
+  try{
+    var sv=localStorage.getItem('fe_vb_v2');
+    var sc=localStorage.getItem('fe_cb_v2');
+    if(sv){vbBlocks=JSON.parse(sv)}else{loadDemo();return init()}
+    if(sc)cbBlocks=JSON.parse(sc);
+    var mx=0;
+    vbBlocks.concat(cbBlocks).forEach(function(b){if(b.id>mx)mx=b.id});
+    nextId=mx+1;
+  }catch(e){loadDemo()}
+  init();
+
+  function init(){render();updateStatus()}
+
+  function esc(s){var d=document.createElement('div');d.textContent=s||'';return d.innerHTML}
+
+  function render(){
+    var container=document.getElementById('blocks');
+    var empty=document.getElementById('empty-msg');
+    container.innerHTML='';
+    var bl=blocks();
+    if(bl.length===0){empty.style.display='';return}
+    empty.style.display='none';
+    for(var i=0;i<bl.length;i++){
+      container.appendChild(buildBlock(bl[i],i));
+    }
+    updateStatus();
+  }
+
+  function buildBlock(block,idx){
+    var t=TYPES[block.typ]||{icon:'❓',title:block.typ,badge:'?'};
+    var icon=curMode==='cb'&&t.cbIcon?t.cbIcon:t.icon;
+    var title=curMode==='cb'&&t.cbTitle?t.cbTitle:t.title;
+    var badge=curMode==='cb'&&t.cbBadge?t.cbBadge:t.badge;
+    var whoHtml=curMode==='vb'?'<span class="who-tag who-vb">🤖 Voicebot</span>':'<span class="who-tag who-cb">👤 Agent</span>';
+
+    var div=document.createElement('div');
+    div.className='block typ-'+block.typ;
+    div.setAttribute('data-id',block.id);
+
+    // Header
+    var h='<div class="block-head">';
+    h+='<span class="block-nr">'+(idx+1)+'</span>';
+    h+='<div class="block-icon">'+icon+'</div>';
+    h+='<span class="block-title">'+esc(title)+'</span>';
+    h+='<span class="block-badge">'+badge+'</span>';
+    h+='<div class="block-actions">';
+    if(idx>0)h+='<button class="btn-up" title="Hoch">▲</button>';
+    if(idx<blocks().length-1)h+='<button class="btn-down" title="Runter">▼</button>';
+    if(block.typ!=='start')h+='<button class="btn-del" title="Loeschen">🗑</button>';
+    h+='</div></div>';
+
+    // Body
+    var b='<div class="block-body">'+whoHtml;
+    b+='<div class="bf"><label>Bezeichnung</label><input type="text" class="bi" data-f="label" value="'+esc(block.label)+'"></div>';
+
+    if(block.typ==='start'){
+      b+='<div class="bf"><label>Quelle</label><input type="text" class="bi" data-f="config.quelle" value="'+esc(block.config.quelle||'')+'"></div>';
+    }
+    else if(block.typ==='greet'||block.typ==='say'){
+      b+='<div class="bf"><label>Sprachtext (TTS)</label><textarea class="bi" data-f="config.text" rows="2">'+esc(block.config.text||'')+'</textarea></div>';
+      b+='<div class="bf"><label>TTS Stimme</label><select class="bi" data-f="config.stimme"><option'+(block.config.stimme==='Azure Neural — de-DE-KatjaNeural'?' selected':'')+'>Azure Neural — de-DE-KatjaNeural</option><option'+(block.config.stimme==='Azure Neural — de-DE-ConradNeural'?' selected':'')+'>Azure Neural — de-DE-ConradNeural</option><option'+(block.config.stimme==='ElevenLabs — Domi'?' selected':'')+'>ElevenLabs — Domi</option><option'+(block.config.stimme==='OpenAI TTS — Nova'?' selected':'')+'>OpenAI TTS — Nova</option></select></div>';
+    }
+    else if(block.typ==='listen'){
+      b+='<div class="bf"><label>Beschreibung</label><textarea class="bi" data-f="config.text" rows="2">'+esc(block.config.text||'')+'</textarea></div>';
+      b+='<div class="bf-row"><div class="bf"><label>STT Engine</label><select class="bi" data-f="config.engine"><option>Azure Speech de-DE</option><option>Whisper OpenAI</option><option>Google STT de-DE</option></select></div>';
+      b+='<div class="bf"><label>Timeout (Sek)</label><input type="number" class="bi" data-f="config.timeout" value="'+(block.config.timeout||8)+'"></div></div>';
+      b+='<div class="bf"><label>Erkannte Schluesselwoerter</label><div class="kw-area">';
+      var kws=block.config.keywords||[];
+      for(var k=0;k<kws.length;k++)b+='<span class="kwtag">'+esc(kws[k])+'</span>';
+      b+='<span class="kwtag" style="background:#f1f5f9;color:#64748b;cursor:pointer" onclick="promptKeyword('+block.id+')">+ Wort</span>';
+      b+='</div></div>';
+      b+='<div class="bf"><label>Fallback</label><select class="bi" data-f="config.fallback"><option'+(block.config.fallback==='KB befragen'?' selected':'')+'>KB befragen → vorlesen</option><option'+(block.config.fallback==='Nochmals fragen'?' selected':'')+'>Nochmals fragen (max 2x)</option><option'+(block.config.fallback==='An Agent weiterleiten'?' selected':'')+'>An Agent weiterleiten</option></select></div>';
+    }
+    else if(block.typ==='click'){
+      b+='<div class="bf"><label>Frage an Agent</label><input type="text" class="bi" data-f="config.text" value="'+esc(block.config.text||'')+'"></div>';
+      b+='<div class="bf"><label>Antwort-Optionen (Klickvorgaben)</label>';
+      var opts=block.config.optionen||[];
+      var colors=['#0369a1','#10b981','#ef4444','#f59e0b','#7c3aed','#06b6d4','#f97316','#64748b'];
+      for(var o=0;o<opts.length;o++){
+        b+='<div class="opt-item"><div class="opt-dot" style="background:'+(opts[o].dot||colors[o%colors.length])+'">'+esc(opts[o].label?opts[o].label.charAt(0):(o+1)+'')+'</div>';
+        b+='<input type="text" data-opt="'+o+'" value="'+esc(opts[o].label||'')+'">';
+        b+='<button class="opt-del" data-opt-del="'+o+'">×</button></div>';
+      }
+      b+='<button class="opt-add" data-block-id="'+block.id+'">+ Option hinzufuegen</button></div>';
+    }
+    else if(block.typ==='info'){
+      b+='<div class="bf"><label>Info-Text</label><textarea class="bi" data-f="config.text" rows="2">'+esc(block.config.text||'')+'</textarea></div>';
+      b+='<div class="info-box info-cb">👤 Text wird dem Agenten angezeigt</div>';
+    }
+    else if(block.typ==='cond'){
+      b+='<div class="bf"><label>Bedingung</label><input type="text" class="bi" data-f="config.bedingung" value="'+esc(block.config.bedingung||'')+'" placeholder="z.B. Uhrzeit > 18:00"></div>';
+      b+='<div class="bf-row"><div class="bf"><label>Wenn wahr</label><input type="text" class="bi" data-f="config.wahr" value="'+esc(block.config.wahr||'')+'" placeholder="→ Nachtschicht"></div>';
+      b+='<div class="bf"><label>Wenn falsch</label><input type="text" class="bi" data-f="config.falsch" value="'+esc(block.config.falsch||'')+'" placeholder="→ Weiter"></div></div>';
+    }
+    else if(block.typ==='kb'){
+      b+='<div class="bf"><label>Kategorie</label><select class="bi" data-f="config.kategorie"><option>Alle aktiven Artikel</option><option>Termine & Oeffnungszeiten</option><option>Rezept & Medikamente</option><option>Praxis-Infos</option></select></div>';
+      b+='<div class="bf"><label>Beschreibung</label><input type="text" class="bi" data-f="config.text" value="'+esc(block.config.text||'')+'"></div>';
+      if(curMode==='vb')b+='<div class="info-box info-vb">🤖 Kein Szenario erkannt → Voicebot sucht KB und liest Antwort vor</div>';
+      else b+='<div class="info-box info-cb">👤 Passende KB-Artikel werden dem Agenten angezeigt</div>';
+    }
+    else if(block.typ==='termin'||block.typ==='ticket'||block.typ==='rezept'){
+      b+='<div class="bf"><label>Beschreibung</label><textarea class="bi" data-f="config.text" rows="2">'+esc(block.config.text||'')+'</textarea></div>';
+      if(block.config.api)b+='<div class="bf"><label>API Endpunkt</label><input type="text" class="bi" data-f="config.api" value="'+esc(block.config.api||'')+'"></div>';
+    }
+    else if(block.typ==='mail'){
+      b+='<div class="bf"><label>Beschreibung</label><input type="text" class="bi" data-f="config.text" value="'+esc(block.config.text||'')+'"></div>';
+      b+='<div class="bf"><label>Empfaenger</label><input type="text" class="bi" data-f="config.empfaenger" value="'+esc(block.config.empfaenger||'')+'" placeholder="praxis@..."></div>';
+    }
+    else if(block.typ==='input'){
+      b+='<div class="bf"><label>Abzufragende Felder</label><input type="text" class="bi" data-f="config.text" value="'+esc(block.config.text||'')+'" placeholder="Name, Geburtsdatum, Versichertennr."></div>';
+    }
+    else if(block.typ==='transfer'){
+      b+='<div class="bf"><label>Beschreibung</label><input type="text" class="bi" data-f="config.text" value="'+esc(block.config.text||'')+'"></div>';
+      b+='<div class="bf-row"><div class="bf"><label>Queue / Nebenstelle</label><input type="text" class="bi" data-f="config.queue" value="'+esc(block.config.queue||'')+'" placeholder="rezeption"></div>';
+      b+='<div class="bf"><label>Kontext uebergeben</label><div class="tog-row"><div class="tog-lbl">Gespraechsdaten mitsenden</div><div class="mtog'+(block.config.kontext?' on':'')+'" data-tog="config.kontext"></div></div></div></div>';
+      b+='<div class="info-box info-transfer">⚡ Gespraechs-Kontext wird uebergeben: Anliegen, Gesprochenes, erfasste Daten</div>';
+    }
+    else if(block.typ==='queue'){
+      b+='<div class="bf-row"><div class="bf"><label>Queue</label><input type="text" class="bi" data-f="config.queue" value="'+esc(block.config.queue||'')+'" placeholder="rezeption"></div>';
+      b+='<div class="bf"><label>Max. Wartezeit (Sek)</label><input type="number" class="bi" data-f="config.maxWait" value="'+(block.config.maxWait||120)+'"></div></div>';
+      b+='<div class="bf"><label>Wartemusik</label><input type="text" class="bi" data-f="config.ansage" value="'+esc(block.config.ansage||'')+'" placeholder="bitte-warten.wav"></div>';
+    }
+    else if(block.typ==='end'){
+      b+='<div class="bf"><label>Abschlusstext</label><input type="text" class="bi" data-f="config.text" value="'+esc(block.config.text||'')+'"></div>';
+    }
+
+    b+='</div>';
+    div.innerHTML=h+b;
+
+    // Events
+    var btnUp=div.querySelector('.btn-up');
+    var btnDown=div.querySelector('.btn-down');
+    var btnDel=div.querySelector('.btn-del');
+    if(btnUp)btnUp.onclick=function(){collect();var bl=blocks();var tmp=bl[idx];bl[idx]=bl[idx-1];bl[idx-1]=tmp;render()};
+    if(btnDown)btnDown.onclick=function(){collect();var bl=blocks();var tmp=bl[idx];bl[idx]=bl[idx+1];bl[idx+1]=tmp;render()};
+    if(btnDel)btnDel.onclick=function(){collect();var bl=blocks();bl.splice(idx,1);setBlocks(bl);render()};
+
+    // Click option events
+    var optDels=div.querySelectorAll('.opt-del');
+    for(var d=0;d<optDels.length;d++){
+      optDels[d].onclick=(function(oi){return function(){collect();block.config.optionen.splice(oi,1);render()}})(parseInt(optDels[d].getAttribute('data-opt-del')));
+    }
+    var optAdd=div.querySelector('.opt-add');
+    if(optAdd)optAdd.onclick=function(){collect();if(!block.config.optionen)block.config.optionen=[];block.config.optionen.push({dot:'#64748b',label:''});render();setTimeout(function(){var inputs=document.querySelectorAll('.opt-item input');if(inputs.length)inputs[inputs.length-1].focus()},50)};
+
+    // Toggle events
+    var togs=div.querySelectorAll('.mtog');
+    for(var t2=0;t2<togs.length;t2++){
+      togs[t2].onclick=function(){this.classList.toggle('on')};
+    }
+
+    return div;
+  }
+
+  function collect(){
+    var els=document.querySelectorAll('.block');
+    for(var i=0;i<els.length;i++){
+      var id=parseInt(els[i].getAttribute('data-id'));
+      var bl=blocks();
+      var block=null;
+      for(var j=0;j<bl.length;j++){if(bl[j].id===id){block=bl[j];break}}
+      if(!block)continue;
+      var inputs=els[i].querySelectorAll('.bi');
+      for(var k=0;k<inputs.length;k++){
+        var f=inputs[k].getAttribute('data-f');
+        if(!f)continue;
+        var val=inputs[k].value;
+        if(f.indexOf('config.')===0){
+          var key=f.replace('config.','');
+          if(inputs[k].type==='number')val=parseInt(val)||0;
+          block.config[key]=val;
+        }else{
+          block[f]=val;
+        }
+      }
+      // Click options
+      var optInputs=els[i].querySelectorAll('.opt-item input');
+      for(var oi=0;oi<optInputs.length;oi++){
+        var optIdx=parseInt(optInputs[oi].getAttribute('data-opt'));
+        if(block.config.optionen&&block.config.optionen[optIdx]){
+          block.config.optionen[optIdx].label=optInputs[oi].value;
+        }
+      }
+      // Toggles
+      var togs=els[i].querySelectorAll('.mtog');
+      for(var ti=0;ti<togs.length;ti++){
+        var tf=togs[ti].getAttribute('data-tog');
+        if(tf&&tf.indexOf('config.')===0){
+          block.config[tf.replace('config.','')]=togs[ti].classList.contains('on');
+        }
+      }
+    }
+  }
+
+  // Public functions
+  window.addBlock=function(typ){
+    collect();
+    var conf={};
+    if(typ==='start')conf={quelle:''};
+    else if(typ==='greet'||typ==='say')conf={text:'',stimme:'Azure Neural — de-DE-KatjaNeural'};
+    else if(typ==='listen')conf={text:'',engine:'Azure Speech de-DE',timeout:8,keywords:[],fallback:'KB befragen'};
+    else if(typ==='cond')conf={bedingung:'',wahr:'',falsch:''};
+    else if(typ==='kb')conf={kategorie:'Alle aktiven Artikel',text:''};
+    else if(typ==='termin'||typ==='ticket'||typ==='rezept')conf={text:'',api:''};
+    else if(typ==='mail')conf={text:'',empfaenger:''};
+    else if(typ==='input')conf={text:''};
+    else if(typ==='transfer')conf={text:'',queue:'',kontext:true};
+    else if(typ==='queue')conf={queue:'',maxWait:120,ansage:''};
+    else if(typ==='click')conf={text:'',optionen:[]};
+    else if(typ==='info')conf={text:''};
+    else if(typ==='end')conf={text:''};
+    var t=TYPES[typ]||{title:typ};
+    var label=curMode==='cb'&&t.cbTitle?t.cbTitle:t.title;
+    blocks().push({id:nextId++,typ:typ,label:label+' (neu)',config:conf});
+    render();
+    setTimeout(function(){var bl=document.querySelectorAll('.block');if(bl.length)bl[bl.length-1].scrollIntoView({behavior:'smooth',block:'center'})},50);
+  };
+
+  window.switchMode=function(m){
+    collect();
+    curMode=m;
+    document.getElementById('mm-vb').className='mm-btn'+(m==='vb'?' active-vb':'');
+    document.getElementById('mm-cb').className='mm-btn'+(m==='cb'?' active-cb':'');
+    document.getElementById('pal-vb').style.display=m==='vb'?'block':'none';
+    document.getElementById('pal-cb').style.display=m==='cb'?'block':'none';
+    document.getElementById('sb-mode').innerHTML=m==='vb'
+      ?'<span class="sdot" style="background:#0369a1"></span>Voicebot-Modus'
+      :'<span class="sdot" style="background:#6d28d9"></span>Clickbot-Modus';
+    var sel=document.getElementById('flow-sel');
+    sel.innerHTML=m==='vb'
+      ?'<option>Voicebot — Allgemein</option><option>Voicebot — Notfall</option><option>Voicebot — Rezept</option><option value="new">+ Neuer Flow</option>'
+      :'<option>Clickbot — Allgemein</option><option>Clickbot — Rezept</option><option>Clickbot — Ueberweisung</option><option value="new">+ Neuer Flow</option>';
+    render();
+  };
+
+  window.speichern=function(){
+    collect();
+    localStorage.setItem('fe_vb_v2',JSON.stringify(vbBlocks));
+    localStorage.setItem('fe_cb_v2',JSON.stringify(cbBlocks));
+    var badge=document.getElementById('badge-saved');
+    badge.classList.add('show');
+    setTimeout(function(){badge.classList.remove('show')},2000);
+  };
+
+  window.promptKeyword=function(blockId){
+    var wort=prompt('Neues Schluesselwort:');
+    if(!wort)return;
+    collect();
+    var bl=blocks();
+    for(var i=0;i<bl.length;i++){
+      if(bl[i].id===blockId){
+        if(!bl[i].config.keywords)bl[i].config.keywords=[];
+        bl[i].config.keywords.push(wort);
+        break;
+      }
+    }
+    render();
+  };
+
+  window.togglePreview=function(){
+    var overlay=document.getElementById('preview');
+    if(overlay.classList.contains('show')){overlay.classList.remove('show');return}
+    collect();
+    var body=document.getElementById('preview-body');
+    var title=document.getElementById('preview-title');
+    title.textContent=curMode==='vb'?'▶ Voicebot Flow — Simulation':'▶ Clickbot Flow — Simulation';
+    var html='<div style="font-size:11px;color:#64748b;margin-bottom:12px">// '+(curMode==='vb'?'Voicebot':'Clickbot')+' Gespraechsverlauf — simuliert</div>';
+    var bl=blocks();
+    for(var i=0;i<bl.length;i++){
+      var b=bl[i];
+      if(b.typ==='start'){
+        html+='<div class="sim-line sim-system">'+(curMode==='vb'?'📞 Anruf eingehend':'👤 Agent nimmt an')+' — '+(b.config.quelle||'')+'</div>';
+      }else if(b.typ==='greet'||b.typ==='say'){
+        html+='<div class="sim-line sim-audio"><span style="color:#0ea5e9">🤖 Voicebot: </span><span style="color:#e2e8f0;font-style:italic">„'+(b.config.text||'...')+'"</span></div>';
+      }else if(b.typ==='listen'){
+        html+='<div class="sim-line sim-system">🎙 Spracherkennung aktiv (Timeout: '+(b.config.timeout||8)+'s)</div>';
+        html+='<div class="sim-line sim-input"><span style="color:#94a3b8">🎙 Patient: </span>"Ich brauche einen Termin."</div>';
+        html+='<div style="font-size:10px;color:#10b981;margin:4px 0 4px 8px">✓ Erkannt → Termin buchen</div>';
+      }else if(b.typ==='click'){
+        html+='<div class="sim-line sim-system">🖱 Agent sieht Optionen: ';
+        var opts=b.config.optionen||[];
+        for(var o=0;o<opts.length;o++)html+=(o>0?' · ':'')+(opts[o].label||'Option');
+        html+='</div>';
+        if(opts.length)html+='<div class="sim-line sim-action">👤 Agent klickt: '+(opts[0].label||'Option 1')+'</div>';
+      }else if(b.typ==='termin'){
+        html+='<div class="sim-line sim-action">📅 '+(curMode==='vb'?'Voicebot bucht Termin':'Agent oeffnet Kalender')+' — '+(b.config.text||'')+'</div>';
+      }else if(b.typ==='rezept'){
+        html+='<div class="sim-line sim-action">💊 Rezept erfassen — '+(b.config.text||'')+'</div>';
+      }else if(b.typ==='ticket'){
+        html+='<div class="sim-line sim-action">🎫 Ticket erstellt</div>';
+      }else if(b.typ==='kb'){
+        html+='<div class="sim-line sim-action">📚 KB durchsucht → Antwort '+(curMode==='vb'?'vorgelesen':'angezeigt')+'</div>';
+      }else if(b.typ==='mail'){
+        html+='<div class="sim-line sim-action">✉️ Mail gesendet an '+(b.config.empfaenger||'...')+'</div>';
+      }else if(b.typ==='transfer'){
+        html+='<div class="sim-line sim-transfer">🔀 Uebergabe an Agent · Queue: '+(b.config.queue||'...')+' · Kontext wird mitgegeben</div>';
+      }else if(b.typ==='queue'){
+        html+='<div class="sim-line sim-action">⏳ In Queue eingereiht: '+(b.config.queue||'...')+' (max '+(b.config.maxWait||120)+'s)</div>';
+      }else if(b.typ==='cond'){
+        html+='<div class="sim-line sim-system">⚡ Bedingung: '+(b.config.bedingung||'...')+' → Wahr: '+(b.config.wahr||'...')+'</div>';
+      }else if(b.typ==='info'){
+        html+='<div class="sim-line sim-audio">💬 Info: '+(b.config.text||'...')+'</div>';
+      }else if(b.typ==='input'){
+        html+='<div class="sim-line sim-system">⌨️ Daten erfassen: '+(b.config.text||'...')+'</div>';
+      }else if(b.typ==='end'){
+        html+='<div class="sim-line sim-system">'+(curMode==='vb'?'🔴 Gespraech beendet':'🔴 Ticket geschlossen')+' — '+(b.config.text||'')+'</div>';
+      }
+    }
+    body.innerHTML=html;
+    overlay.classList.add('show');
+  };
+
+  function updateStatus(){
+    document.getElementById('sb-count').innerHTML='<span class="sdot" style="background:#22c55e"></span>'+blocks().length+' Bloecke';
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
