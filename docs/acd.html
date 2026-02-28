@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ACD Dashboard – MedReception</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="stylesheet" href="style.css">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: #f8fafc; display: flex; }
+  .main { flex: 1; padding: 28px; overflow: auto; margin-left: 240px; }
+  .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+  h1 { font-size: 22px; font-weight: 700; color: #111827; }
+  .live-badge { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #15803d; font-weight: 600; background: #dcfce7; padding: 4px 10px; border-radius: 999px; }
+  .live-dot { width: 7px; height: 7px; background: #22c55e; border-radius: 50%; animation: blink 1.2s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+  .date { font-size: 13px; color: #6b7280; margin-bottom: 20px; }
+  /* KPI */
+  .kpi-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 12px; margin-bottom: 20px; }
+  .kpi { background: white; border-radius: 14px; border: 1px solid #e5e7eb; padding: 16px 18px; }
+  .kpi-label { font-size: 11px; color: #6b7280; font-weight: 500; margin-bottom: 8px; }
+  .kpi-value { font-size: 26px; font-weight: 700; color: #111827; }
+  .kpi-sub { font-size: 10px; color: #9ca3af; margin-top: 2px; }
+  .kpi-trend { font-size: 10px; font-weight: 600; margin-top: 4px; }
+  .kpi-trend.up{color:#15803d} .kpi-trend.down{color:#dc2626}
+  /* Cards */
+  .card { background: white; border-radius: 14px; border: 1px solid #e5e7eb; margin-bottom: 20px; }
+  .card-header { padding: 14px 20px; border-bottom: 1px solid #f3f4f6; display: flex; justify-content: space-between; align-items: center; }
+  .card-header h2 { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .card-body { padding: 16px 20px; }
+  .section-title { font-size: 13px; font-weight: 700; color: #374151; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  /* Queue Cards */
+  .queue-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-bottom: 20px; }
+  .queue-card { background: white; border-radius: 14px; border: 1.5px solid #e5e7eb; padding: 18px 20px; transition: border-color .15s; }
+  .queue-card:hover { border-color: #93c5fd; }
+  .queue-card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .queue-name { font-size: 15px; font-weight: 700; color: #1e293b; }
+  .queue-ext { font-size: 11px; color: #9ca3af; }
+  .queue-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+  .queue-stat { background: #f8fafc; border-radius: 8px; padding: 8px 10px; }
+  .queue-stat-label { font-size: 9px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: .5px; }
+  .queue-stat-val { font-size: 18px; font-weight: 800; color: #1e293b; margin-top: 2px; }
+  .queue-agents-row { display: flex; gap: 4px; flex-wrap: wrap; }
+  .qa { width: 28px; height: 28px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: white; }
+  .queue-strategy { font-size: 10px; color: #6b7280; margin-top: 8px; }
+  /* Badge */
+  .badge { padding: 2px 8px; border-radius: 6px; font-size: 10px; font-weight: 600; }
+  .badge.green { background: #dcfce7; color: #15803d; }
+  .badge.red { background: #fef2f2; color: #dc2626; }
+  .badge.yellow { background: #fef3c7; color: #92400e; }
+  .badge.blue { background: #dbeafe; color: #4f46e5; }
+  /* Agent Status Grid */
+  .agents-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 20px; }
+  .agent-card { background: white; border-radius: 12px; border: 1px solid #e5e7eb; padding: 12px 14px; display: flex; align-items: center; gap: 10px; }
+  .agent-avatar { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; color: white; flex-shrink: 0; }
+  .agent-name { font-size: 13px; font-weight: 600; color: #1e293b; }
+  .agent-status { font-size: 11px; margin-top: 2px; font-weight: 500; }
+  .agent-status.busy{color:#ea580c} .agent-status.idle{color:#15803d} .agent-status.pause{color:#d97706} .agent-status.offline{color:#9ca3af}
+  .agent-meta { font-size: 10px; color: #9ca3af; margin-top: 2px; }
+  .agent-queues { margin-left: auto; display: flex; gap: 3px; flex-shrink: 0; }
+  .agent-q-tag { padding: 2px 6px; border-radius: 5px; font-size: 9px; font-weight: 600; }
+  /* Table */
+  .tbl { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .tbl th { padding: 8px 12px; text-align: left; font-size: 10px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: .5px; border-bottom: 1px solid #e5e7eb; background: #f9fafb; white-space: nowrap; }
+  .tbl td { padding: 10px 12px; border-bottom: 1px solid #f3f4f6; color: #374151; }
+  .tbl td.fw { font-weight: 600; color: #1e293b; }
+  .tbl tr:last-child td { border-bottom: none; }
+  .tbl tr:hover td { background: #fafafa; }
+  /* Grid */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  /* Toggle */
+  .toggle-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f9fafb; }
+  .toggle-row:last-child { border-bottom: none; }
+  .toggle-label { font-size: 13px; color: #374151; }
+  .toggle { width: 38px; height: 21px; background: #e2e8f0; border-radius: 999px; position: relative; cursor: pointer; transition: background .2s; }
+  .toggle.on { background: #6366f1; }
+  .toggle::after { content: ''; position: absolute; width: 17px; height: 17px; background: white; border-radius: 50%; top: 2px; left: 2px; transition: left .2s; }
+  .toggle.on::after { left: 19px; }
+  /* Forms */
+  .form-label { font-size: 11px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 5px; }
+  .form-select, .form-input { width: 100%; padding: 8px 12px; border: 1.5px solid #e2e8f0; border-radius: 9px; font-size: 13px; font-family: 'Inter', sans-serif; color: #1e293b; outline: none; background: white; }
+  .form-row { margin-bottom: 12px; }
+  .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+  /* Buttons */
+  .btn { padding: 7px 16px; border-radius: 9px; font-size: 12px; font-weight: 600; border: none; cursor: pointer; font-family: 'Inter', sans-serif; }
+  .btn.primary { background: #6366f1; color: white; }
+  .btn.secondary { background: #f1f5f9; color: #475569; border: 1.5px solid #e2e8f0; }
+  .btn:hover { opacity: .85; }
+  .btn-row { display: flex; gap: 8px; margin-top: 14px; }
+  /* SLA Bar */
+  .sla-bar { height: 8px; background: #e2e8f0; border-radius: 999px; overflow: hidden; margin-top: 6px; }
+  .sla-fill { height: 100%; border-radius: 999px; transition: width .3s; }
+  .sla-fill.green { background: #22c55e; }
+  .sla-fill.yellow { background: #f59e0b; }
+  .sla-fill.red { background: #ef4444; }
+</style>
+</head>
+<body>
+<!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-logo" onclick="location.href='admin-dashboard.html'"><div class="icon">M</div><span>MedReception</span></div>
+        <nav class="sidebar-nav">
+            <div class="nav-group">Uebersicht</div>
+            <a href="admin-dashboard.html"><i class="fa-solid fa-gauge nav-icon"></i> Dashboard</a>
+            <div class="nav-group">Praxis</div>
+            <a href="patienten.html"><i class="fa-solid fa-users nav-icon"></i> Patienten</a>
+            <a href="aerzte.html"><i class="fa-solid fa-user-doctor nav-icon"></i> Aerzte</a>
+            <a href="termine.html"><i class="fa-solid fa-calendar-days nav-icon"></i> Termine</a>
+            <a href="wartezimmer.html"><i class="fa-solid fa-couch nav-icon"></i> Wartezimmer</a>
+            <div class="nav-group">Callcenter</div>
+            <a href="agenten.html"><i class="fa-solid fa-headset nav-icon"></i> Agenten</a>
+            <a href="voicebot.html"><i class="fa-solid fa-robot nav-icon"></i> Voicebot</a>
+            <a href="voicebot-live.html"><i class="fa-solid fa-microphone nav-icon"></i> Voicebot Live</a>
+            <a href="ansagen.html"><i class="fa-solid fa-tower-broadcast nav-icon"></i> Ansagen</a>
+            <a href="softphone.html"><i class="fa-solid fa-phone nav-icon"></i> Softphone</a>
+            <div class="nav-group">Telefonie</div>
+            <a href="asterisk.html"><i class="fa-solid fa-server nav-icon"></i> Asterisk</a>
+            <a href="acd.html" class="active"><i class="fa-solid fa-phone-volume nav-icon"></i> ACD</a>
+            <a href="standort.html"><i class="fa-solid fa-building nav-icon"></i> Standort</a>
+            <a href="callflow.html"><i class="fa-solid fa-diagram-project nav-icon"></i> Callflow</a>
+            <div class="nav-group">Analyse</div>
+            <a href="auswertung.html"><i class="fa-solid fa-chart-line nav-icon"></i> Auswertungen</a>
+            <a href="wissensdatenbank.html"><i class="fa-solid fa-book nav-icon"></i> Wissensdatenbank</a>
+            <a href="uebersetzung.html"><i class="fa-solid fa-language nav-icon"></i> Uebersetzer</a>
+            <div class="nav-group">Admin</div>
+            <a href="benutzer.html"><i class="fa-solid fa-user-gear nav-icon"></i> Benutzer</a>
+            <div class="nav-group">KI</div>
+            <a href="ai-agent.html"><i class="fa-solid fa-microchip nav-icon"></i> AI Agent Hub</a>
+
+        </nav>
+        <div class="sidebar-footer">
+            <button onclick="sessionStorage.removeItem('mr_guard_session');location.href='index.html'" type="button"><i class="fa-solid fa-right-from-bracket nav-icon"></i> Abmelden</button>
+        </div>
+    </aside>
+<!-- Main -->
+<div class="main">
+  <div class="top-bar">
+    <h1>ACD Dashboard</h1>
+    <div class="live-badge"><span class="live-dot"></span> Live · Echtzeit</div>
+  </div>
+  <p class="date">Automatic Call Distribution — Warteschlangen, Agenten, SLA</p>
+
+  <!-- KPIs -->
+  <div class="kpi-grid">
+    <div class="kpi">
+      <div class="kpi-label">Anrufe in Queue</div>
+      <div class="kpi-value">1</div>
+      <div class="kpi-sub">wartet 0:23 min</div>
+      <div class="kpi-trend up">Normal</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Ø Wartezeit</div>
+      <div class="kpi-value">0:42</div>
+      <div class="kpi-sub">Ziel: &lt; 1:00 min</div>
+      <div class="kpi-trend up">↓ 12% besser</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">SLA (20 Sek.)</div>
+      <div class="kpi-value">84%</div>
+      <div class="kpi-sub">Ziel: 80%</div>
+      <div class="kpi-trend up">↑ Ziel erreicht</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Abandon Rate</div>
+      <div class="kpi-value">4.8%</div>
+      <div class="kpi-sub">3 Abbrecher heute</div>
+      <div class="kpi-trend up">↓ gut</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Agenten aktiv</div>
+      <div class="kpi-value">4 / 5</div>
+      <div class="kpi-sub">1 in Pause</div>
+      <div class="kpi-trend up">80% Auslastung</div>
+    </div>
+  </div>
+
+  <!-- Queues Live -->
+  <div class="section-title">📡 Warteschlangen Live</div>
+  <div class="queue-grid">
+    <!-- Queue: Allgemein -->
+    <div class="queue-card">
+      <div class="queue-card-head">
+        <div>
+          <div class="queue-name">Allgemein</div>
+          <div class="queue-ext">Ext. 200 · Round Robin</div>
+        </div>
+        <span class="badge green">Aktiv</span>
+      </div>
+      <div class="queue-stats">
+        <div class="queue-stat"><div class="queue-stat-label">Wartend</div><div class="queue-stat-val" style="color:#ea580c">1</div></div>
+        <div class="queue-stat"><div class="queue-stat-label">Ø Wartezeit</div><div class="queue-stat-val">0:38</div></div>
+        <div class="queue-stat"><div class="queue-stat-label">Bearbeitet</div><div class="queue-stat-val">42</div></div>
+        <div class="queue-stat"><div class="queue-stat-label">SLA 20s</div><div class="queue-stat-val" style="color:#15803d">86%</div></div>
+      </div>
+      <div style="font-size:10px;color:#6b7280;margin-bottom:4px">Agenten in Queue:</div>
+      <div class="queue-agents-row">
+        <div class="qa" style="background:#6366f1" title="Dr. Schmidt">DS</div>
+        <div class="qa" style="background:#16a34a" title="Anna Weber">AW</div>
+        <div class="qa" style="background:#ea580c" title="Laura Klein">LK</div>
+      </div>
+      <div class="sla-bar"><div class="sla-fill green" style="width:86%"></div></div>
+    </div>
+
+    <!-- Queue: Notfall -->
+    <div class="queue-card">
+      <div class="queue-card-head">
+        <div>
+          <div class="queue-name">Notfall</div>
+          <div class="queue-ext">Ext. 201 · Alle gleichzeitig</div>
+        </div>
+        <span class="badge green">Aktiv</span>
+      </div>
+      <div class="queue-stats">
+        <div class="queue-stat"><div class="queue-stat-label">Wartend</div><div class="queue-stat-val" style="color:#15803d">0</div></div>
+        <div class="queue-stat"><div class="queue-stat-label">Ø Wartezeit</div><div class="queue-stat-val">0:12</div></div>
+        <div class="queue-stat"><div class="queue-stat-label">Bearbeitet</div><div class="queue-stat-val">5</div></div>
+        <div class="queue-stat"><div class="queue-stat-label">SLA 20s</div><div class="queue-stat-val" style="color:#15803d">100%</div></div>
+      </div>
+      <div style="font-size:10px;color:#6b7280;margin-bottom:4px">Agenten in Queue:</div>
+      <div class="queue-agents-row">
+        <div class="qa" style="background:#6366f1" title="Dr. Schmidt">DS</div>
+        <div class="qa" style="background:#7c3aed" title="Chris Müller">CM</div>
+      </div>
+      <div class="sla-bar"><div class="sla-fill green" style="width:100%"></div></div>
+    </div>
+
+    <!-- Queue: Rezept -->
+    <div class="queue-card">
+      <div class="queue-card-head">
+        <div>
+          <div class="queue-name">Rezept & Überweisung</div>
+          <div class="queue-ext">Ext. 202 · Least Recent</div>
+        </div>
+        <span class="badge green">Aktiv</span>
+      </div>
+      <div class="queue-stats">
+        <div class="queue-stat"><div class="queue-stat-label">Wartend</div><div class="queue-stat-val" style="color:#15803d">0</div></div>
+        <div class="queue-stat"><div class="queue-stat-label">Ø Wartezeit</div><div class="queue-stat-val">0:55</div></div>
+        <div class="queue-stat"><div class="queue-stat-label">Bearbeitet</div><div class="queue-stat-val">15</div></div>
+        <div class="queue-stat"><div class="queue-stat-label">SLA 20s</div><div class="queue-stat-val" style="color:#d97706">72%</div></div>
+      </div>
+      <div style="font-size:10px;color:#6b7280;margin-bottom:4px">Agenten in Queue:</div>
+      <div class="queue-agents-row">
+        <div class="qa" style="background:#16a34a" title="Anna Weber">AW</div>
+        <div class="qa" style="background:#0369a1" title="Tom Huber">TH</div>
+      </div>
+      <div class="sla-bar"><div class="sla-fill yellow" style="width:72%"></div></div>
+    </div>
+  </div>
+
+  <!-- Agenten-Status -->
+  <div class="section-title">👤 Agenten-Status & Queue-Zuordnung</div>
+  <div class="agents-grid">
+    <div class="agent-card">
+      <div class="agent-avatar" style="background:#6366f1">DS</div>
+      <div>
+        <div class="agent-name">Dr. Schmidt</div>
+        <div class="agent-status busy">🔴 Im Gespräch</div>
+        <div class="agent-meta">seit 08:31 · 8 Anrufe</div>
+      </div>
+      <div class="agent-queues">
+        <span class="agent-q-tag" style="background:#dbeafe;color:#4f46e5">Allg.</span>
+        <span class="agent-q-tag" style="background:#fef2f2;color:#dc2626">Notfall</span>
+      </div>
+    </div>
+    <div class="agent-card">
+      <div class="agent-avatar" style="background:#16a34a">AW</div>
+      <div>
+        <div class="agent-name">Anna Weber</div>
+        <div class="agent-status idle">🟢 Verfügbar</div>
+        <div class="agent-meta">online seit 07:58 · 6 Anrufe</div>
+      </div>
+      <div class="agent-queues">
+        <span class="agent-q-tag" style="background:#dbeafe;color:#4f46e5">Allg.</span>
+        <span class="agent-q-tag" style="background:#dcfce7;color:#15803d">Rezept</span>
+      </div>
+    </div>
+    <div class="agent-card">
+      <div class="agent-avatar" style="background:#7c3aed">CM</div>
+      <div>
+        <div class="agent-name">Chris Müller</div>
+        <div class="agent-status pause">⏸ Pause</div>
+        <div class="agent-meta">seit 08:20 · 4 Anrufe</div>
+      </div>
+      <div class="agent-queues">
+        <span class="agent-q-tag" style="background:#fef2f2;color:#dc2626">Notfall</span>
+      </div>
+    </div>
+    <div class="agent-card">
+      <div class="agent-avatar" style="background:#ea580c">LK</div>
+      <div>
+        <div class="agent-name">Laura Klein</div>
+        <div class="agent-status busy">🔴 Im Gespräch</div>
+        <div class="agent-meta">seit 08:29 · 3 Anrufe</div>
+      </div>
+      <div class="agent-queues">
+        <span class="agent-q-tag" style="background:#dbeafe;color:#4f46e5">Allg.</span>
+      </div>
+    </div>
+    <div class="agent-card">
+      <div class="agent-avatar" style="background:#0369a1">TH</div>
+      <div>
+        <div class="agent-name">Tom Huber</div>
+        <div class="agent-status idle">🟢 Verfügbar</div>
+        <div class="agent-meta">online seit 08:00 · 0 Anrufe</div>
+      </div>
+      <div class="agent-queues">
+        <span class="agent-q-tag" style="background:#dcfce7;color:#15803d">Rezept</span>
+      </div>
+    </div>
+    <div class="agent-card">
+      <div class="agent-avatar" style="background:#6366f1">🤖</div>
+      <div>
+        <div class="agent-name">Voicebot</div>
+        <div class="agent-status idle">🟢 Aktiv</div>
+        <div class="agent-meta">14 Anrufe bearbeitet</div>
+      </div>
+      <div class="agent-queues">
+        <span class="agent-q-tag" style="background:#ede9fe;color:#7c3aed">Overflow</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <!-- Queue-Einstellungen -->
+    <div class="card">
+      <div class="card-header">
+        <h2>⚙️ Queue-Einstellungen</h2>
+      </div>
+      <div class="card-body">
+        <div class="form-row">
+          <div class="form-label">Queue auswählen</div>
+          <select class="form-select"><option>Allgemein (Ext. 200)</option><option>Notfall (Ext. 201)</option><option>Rezept (Ext. 202)</option></select>
+        </div>
+        <div class="form-row">
+          <div class="form-label">Ring-Strategie</div>
+          <select class="form-select"><option>Round Robin</option><option>Alle gleichzeitig</option><option>Least Recent</option><option>Fewest Calls</option><option>Linear</option></select>
+        </div>
+        <div class="form-row-2">
+          <div>
+            <div class="form-label">Ring-Timeout (Sek)</div>
+            <input class="form-input" type="number" value="20">
+          </div>
+          <div>
+            <div class="form-label">Max. Wartezeit (Min)</div>
+            <input class="form-input" type="number" value="3">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-label">Warteschleifenmusik</div>
+          <select class="form-select"><option>Standard (Praxis)</option><option>Klassik</option><option>Keine Musik</option></select>
+        </div>
+        <div class="btn-row">
+          <button class="btn primary">💾 Speichern</button>
+          <button class="btn secondary">↩ Zurücksetzen</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Overflow & Optionen -->
+    <div class="card">
+      <div class="card-header">
+        <h2>↗️ Overflow & Optionen</h2>
+      </div>
+      <div class="card-body">
+        <div class="form-row">
+          <div class="form-label">Bei Überlauf weiterleiten an</div>
+          <select class="form-select"><option>Voicebot</option><option>Voicemail</option><option>Andere Queue</option><option>Externe Nummer</option></select>
+        </div>
+        <div class="form-row">
+          <div class="form-label">Ansage bei Überlauf</div>
+          <select class="form-select"><option>Überlauf-Hinweis (Bibliothek)</option><option>Willkommen Allgemein</option></select>
+        </div>
+        <div style="margin-top:14px">
+          <div class="toggle-row"><span class="toggle-label">Rückruf anbieten</span><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+          <div class="toggle-row"><span class="toggle-label">Wartezeit ansagen</span><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+          <div class="toggle-row"><span class="toggle-label">Position ansagen</span><div class="toggle" onclick="this.classList.toggle('on')"></div></div>
+          <div class="toggle-row"><span class="toggle-label">Voicebot bei Überlauf</span><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn primary">💾 Speichern</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Letzte Queue-Events -->
+  <div class="card">
+    <div class="card-header">
+      <h2>📋 Letzte Queue-Events</h2>
+      <span style="font-size:11px;color:#9ca3af">Echtzeit</span>
+    </div>
+    <div class="card-body" style="padding:0">
+      <table class="tbl">
+        <thead><tr><th>Zeit</th><th>Queue</th><th>Event</th><th>Anrufer</th><th>Agent</th><th>Wartezeit</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>08:34</td><td class="fw">Allgemein</td><td>Angenommen</td><td>+49 176 ****321</td><td>Dr. Schmidt</td><td>0:18</td><td><span class="badge green">OK</span></td></tr>
+          <tr><td>08:31</td><td class="fw">Allgemein</td><td>Overflow → Voicebot</td><td>+49 89 ****456</td><td>🤖 Voicebot</td><td>1:02</td><td><span class="badge blue">Voicebot</span></td></tr>
+          <tr><td>08:28</td><td class="fw">Rezept</td><td>Angenommen</td><td>+49 152 ****789</td><td>Anna Weber</td><td>0:35</td><td><span class="badge green">OK</span></td></tr>
+          <tr><td>08:22</td><td class="fw">Notfall</td><td>Angenommen</td><td>+49 171 ****234</td><td>Dr. Schmidt</td><td>0:05</td><td><span class="badge green">OK</span></td></tr>
+          <tr><td>08:15</td><td class="fw">Allgemein</td><td>Abbruch</td><td>+49 160 ****567</td><td>—</td><td>2:30</td><td><span class="badge red">Abandon</span></td></tr>
+          <tr><td>08:10</td><td class="fw">Rezept</td><td>Angenommen</td><td>+49 178 ****890</td><td>Tom Huber</td><td>0:22</td><td><span class="badge green">OK</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+setInterval(() => {
+  const now = new Date();
+  const t = now.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});
+  document.querySelectorAll('.live-badge').forEach(b => {
+    b.innerHTML = '<span class="live-dot"></span> Live · '+t;
+  });
+}, 30000);
+</script>
+</body>
+</html>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MED Rezeption - Voicebot Live</title>
+    <title>Voicebot Live – MedReception</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="style.css">
     <style>
@@ -162,55 +162,89 @@
 </head>
 <body>
     <aside class="sidebar" id="sidebar">
-        <div class="sidebar-logo"><h2>MED Rezeption</h2><small>Praxisverwaltung</small></div>
+        <div class="sidebar-logo" onclick="location.href='admin-dashboard.html'"><div class="icon">M</div><span>MedReception</span></div>
         <nav class="sidebar-nav">
-            <a href="dashboard.html"><i class="fa-solid fa-chart-pie nav-icon"></i> Dashboard</a>
+            <div class="nav-group">Uebersicht</div>
+            <a href="admin-dashboard.html"><i class="fa-solid fa-gauge nav-icon"></i> Dashboard</a>
+            <div class="nav-group">Praxis</div>
             <a href="patienten.html"><i class="fa-solid fa-users nav-icon"></i> Patienten</a>
             <a href="aerzte.html"><i class="fa-solid fa-user-doctor nav-icon"></i> Aerzte</a>
             <a href="termine.html"><i class="fa-solid fa-calendar-days nav-icon"></i> Termine</a>
             <a href="wartezimmer.html"><i class="fa-solid fa-couch nav-icon"></i> Wartezimmer</a>
-            <a href="wissensdatenbank.html"><i class="fa-solid fa-book nav-icon"></i> Wissensdatenbank</a>
-            <a href="ansagen.html"><i class="fa-solid fa-tower-broadcast nav-icon"></i> Ansagen Generator</a>
-            <a href="auswertung.html"><i class="fa-solid fa-chart-line nav-icon"></i> Auswertungen</a>
-            <a href="standort.html"><i class="fa-solid fa-building nav-icon"></i> Standort &amp; ACD</a>
-            <a href="callflow.html"><i class="fa-solid fa-diagram-project nav-icon"></i> Callflow Editor</a>
-            <a href="voicebot.html"><i class="fa-solid fa-robot nav-icon"></i> Voicebot</a>
+            <div class="nav-group">Callcenter</div>
             <a href="agenten.html"><i class="fa-solid fa-headset nav-icon"></i> Agenten</a>
-            <a href="softphone.html"><i class="fa-solid fa-phone nav-icon"></i> Softphone</a>
+            <a href="voicebot.html"><i class="fa-solid fa-robot nav-icon"></i> Voicebot</a>
             <a href="voicebot-live.html" class="active"><i class="fa-solid fa-microphone nav-icon"></i> Voicebot Live</a>
+            <a href="ansagen.html"><i class="fa-solid fa-tower-broadcast nav-icon"></i> Ansagen</a>
+            <a href="softphone.html"><i class="fa-solid fa-phone nav-icon"></i> Softphone</a>
+            <div class="nav-group">Telefonie</div>
+            <a href="asterisk.html"><i class="fa-solid fa-server nav-icon"></i> Asterisk</a>
+            <a href="acd.html"><i class="fa-solid fa-phone-volume nav-icon"></i> ACD</a>
+            <a href="standort.html"><i class="fa-solid fa-building nav-icon"></i> Standort</a>
+            <a href="callflow.html"><i class="fa-solid fa-diagram-project nav-icon"></i> Callflow</a>
+            <div class="nav-group">Analyse</div>
+            <a href="auswertung.html"><i class="fa-solid fa-chart-line nav-icon"></i> Auswertungen</a>
+            <a href="wissensdatenbank.html"><i class="fa-solid fa-book nav-icon"></i> Wissensdatenbank</a>
             <a href="uebersetzung.html"><i class="fa-solid fa-language nav-icon"></i> Uebersetzer</a>
+            <div class="nav-group">Admin</div>
             <a href="benutzer.html"><i class="fa-solid fa-user-gear nav-icon"></i> Benutzer</a>
+            <div class="nav-group">KI</div>
+            <a href="ai-agent.html"><i class="fa-solid fa-microchip nav-icon"></i> AI Agent Hub</a>
+
         </nav>
-        <div class="sidebar-footer"><button id="btn-demo-reset" type="button">Demo zuruecksetzen</button></div>
+        <div class="sidebar-footer">
+            <button onclick="sessionStorage.removeItem('mr_guard_session');location.href='index.html'" type="button"><i class="fa-solid fa-right-from-bracket nav-icon"></i> Abmelden</button>
+        </div>
     </aside>
     <div class="main-wrapper">
         <header class="topbar">
             <button id="menu-toggle" type="button"><i class="fa-solid fa-bars"></i></button>
             <h1><i class="fa-solid fa-microphone"></i> Voicebot Live</h1>
-            <div class="topbar-right">
-                <div class="vb-live-status getrennt" id="vb-status">
+            <div class="topbar-right"><div class="vb-live-status getrennt" id="vb-status">
                     <i class="fa-solid fa-circle"></i>
-                    <span id="vb-status-text">Getrennt</span>
-                </div>
-            </div>
+                    <span id="vb-status-text">Getrennt</span></div>
         </header>
         <main>
             <div class="vb-live-container">
                 <!-- Anruf-Panel -->
                 <section class="card">
                     <div class="vb-call-panel">
-                        <div>
-                            <label for="vb-branche" style="display:block;margin-bottom:6px;font-weight:600;color:#334155">Branche waehlen</label>
-                            <select id="vb-branche" class="vb-branche-select">
-                                <option value="arztpraxis">Arztpraxis</option>
-                                <option value="zahnarzt">Zahnarztpraxis</option>
-                                <option value="anwalt">Rechtsanwaltskanzlei</option>
-                                <option value="steuerberater">Steuerberatung</option>
-                                <option value="friseur">Friseursalon</option>
-                                <option value="werkstatt">KFZ-Werkstatt</option>
-                                <option value="tierarzt">Tierarztpraxis</option>
-                                <option value="allgemein">Allgemeines Buero</option>
-                            </select>
+                        <div style="display:flex;flex-wrap:wrap;gap:16px;justify-content:center;margin-bottom:16px">
+                            <div style="flex:1;min-width:200px;max-width:360px">
+                                <label for="vb-branche" style="display:block;margin-bottom:6px;font-weight:600;color:#334155"><i class="fa-solid fa-building"></i> Branche</label>
+                                <select id="vb-branche" class="vb-branche-select">
+                                    <option value="arztpraxis">Arztpraxis</option>
+                                    <option value="zahnarzt">Zahnarztpraxis</option>
+                                    <option value="anwalt">Rechtsanwaltskanzlei</option>
+                                    <option value="steuerberater">Steuerberatung</option>
+                                    <option value="friseur">Friseursalon</option>
+                                    <option value="werkstatt">KFZ-Werkstatt</option>
+                                    <option value="tierarzt">Tierarztpraxis</option>
+                                    <option value="allgemein">Allgemeines Buero</option>
+                                </select>
+                            </div>
+                            <div style="flex:1;min-width:200px;max-width:360px">
+                                <label for="vb-stimme" style="display:block;margin-bottom:6px;font-weight:600;color:#334155"><i class="fa-solid fa-microphone-lines"></i> Stimme</label>
+                                <select id="vb-stimme" class="vb-branche-select">
+                                    <option value="seraphina">Seraphina — Warm, natuerlich (Premium)</option>
+                                    <option value="florian">Florian — Professionell, klar (Premium)</option>
+                                    <option value="katja">Katja — Freundlich, klassisch</option>
+                                    <option value="conrad">Conrad — Sachlich, kompetent</option>
+                                    <option value="amala">Amala — Sanft, einfuehlsam</option>
+                                    <option value="killian">Killian — Dynamisch, jung</option>
+                                    <option value="louisa">Louisa — Herzlich, vertrauensvoll</option>
+                                    <option value="ralf">Ralf — Ruhig, gelassen</option>
+                                </select>
+                            </div>
+                            <div style="flex:1;min-width:200px;max-width:360px">
+                                <label for="vb-hintergrund" style="display:block;margin-bottom:6px;font-weight:600;color:#334155"><i class="fa-solid fa-volume-low"></i> Hintergrund</label>
+                                <select id="vb-hintergrund" class="vb-branche-select">
+                                    <option value="buero">Buero — Leises Ambiente</option>
+                                    <option value="praxis">Arztpraxis — Ruhige Atmosphaere</option>
+                                    <option value="ruhig">Sehr ruhig — Minimales Rauschen</option>
+                                    <option value="keine">Kein Hintergrund — Stille</option>
+                                </select>
+                            </div>
                         </div>
 
                         <div class="vb-audio-viz inaktiv" id="vb-viz">
@@ -267,8 +301,18 @@
             </div>
         </main>
     </div>
-
-    <script>
+    <button id="chat-toggle" type="button"><i class="fa-solid fa-comment-dots"></i></button>
+    <div id="chat-fenster">
+        <div class="chat-header"><span><i class="fa-solid fa-robot"></i> Praxis-Assistent</span><button id="chat-schliessen" type="button"><i class="fa-solid fa-xmark"></i></button></div>
+        <div id="chat-nachrichten"></div>
+        <div class="chat-eingabe">
+            <input id="chat-input" type="text" placeholder="Frage stellen oder sprechen...">
+            <button id="chat-mikrofon" type="button" title="Sprechen"><i class="fa-solid fa-microphone"></i></button>
+            <button id="chat-senden" type="button"><i class="fa-solid fa-paper-plane"></i></button>
+        </div>
+    </div>
+    <script src="app.js"></script>
+<script>
     (function() {
         "use strict";
 
@@ -288,6 +332,8 @@
         var infoMsgs = document.getElementById("vb-info-msgs");
         var infoWords = document.getElementById("vb-info-words");
         var zusammenfassungBereich = document.getElementById("vb-zusammenfassung-bereich");
+        var stimmeSelect = document.getElementById("vb-stimme");
+        var hintergrundSelect = document.getElementById("vb-hintergrund");
 
         // --- State ---
         var ws = null;
@@ -459,6 +505,8 @@
             btnAuflegen.hidden = false;
             callLabel.textContent = "Auflegen";
             brancheSelect.disabled = true;
+            stimmeSelect.disabled = true;
+            hintergrundSelect.disabled = true;
             setStatus("verbindet", "Verbinde...");
             transcriptEl.innerHTML = "";
             zusammenfassungBereich.innerHTML = "";
@@ -469,12 +517,25 @@
 
             var kanalId = "webrtc-" + Date.now();
             var branche = brancheSelect.value;
+            var stimme = stimmeSelect.value;
+            var hintergrund = hintergrundSelect.value;
 
             // AudioContext erstellen
             audioContext = new (window.AudioContext || window.webkitAudioContext)();
             SOURCE_RATE = audioContext.sampleRate;
 
-            // Mikrofon anfordern
+            // Mikrofon anfordern (erfordert HTTPS oder localhost)
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                setStatus("getrennt", "HTTPS erforderlich");
+                msgHinzufuegen("system", "Mikrofon-Zugriff erfordert HTTPS. Bitte mit https:// aufrufen oder Chrome-Flag setzen: chrome://flags/#unsafely-treat-insecure-origin-as-secure");
+                btnAnrufen.hidden = false;
+                btnAuflegen.hidden = true;
+                callLabel.textContent = "Anruf starten";
+                brancheSelect.disabled = false;
+                stimmeSelect.disabled = false;
+                hintergrundSelect.disabled = false;
+                return;
+            }
             navigator.mediaDevices.getUserMedia({ audio: true, video: false })
                 .then(function(stream) {
                     mediaStream = stream;
@@ -489,8 +550,13 @@
                         timerStarten();
                         msgHinzufuegen("system", "Verbindung hergestellt — Branche: " + brancheSelect.options[brancheSelect.selectedIndex].text);
 
-                        // Start-Nachricht mit Branche senden
-                        ws.send(JSON.stringify({ typ: "start", branche: branche }));
+                        // Start-Nachricht mit Branche, Stimme und Hintergrund senden
+                        ws.send(JSON.stringify({
+                            typ: "start",
+                            branche: branche,
+                            stimme: stimme,
+                            hintergrund: hintergrund
+                        }));
 
                         // Audio-Streaming starten
                         audioStreamStarten(stream);
@@ -546,6 +612,8 @@
                     btnAuflegen.hidden = true;
                     callLabel.textContent = "Anruf starten";
                     brancheSelect.disabled = false;
+                    stimmeSelect.disabled = false;
+                    hintergrundSelect.disabled = false;
                 });
         }
 
@@ -615,6 +683,8 @@
             btnAuflegen.hidden = true;
             callLabel.textContent = "Anruf starten";
             brancheSelect.disabled = false;
+            stimmeSelect.disabled = false;
+            hintergrundSelect.disabled = false;
         }
 
         // --- Event-Listener ---

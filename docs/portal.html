@@ -289,13 +289,13 @@
 </div>
 <script>
   const ACCESS_PASSWORD = 'MedReception2025!';
-  const REDIRECT_URL    = 'uebersicht.html';
+  const REDIRECT_URL    = 'guard.html';
   const SESSION_HOURS   = 8;
   const SESSION_KEY     = 'mr_guard_session';
   function checkSession() {
     try {
       const s = JSON.parse(sessionStorage.getItem(SESSION_KEY) || 'null');
-      if (s && s.expires > Date.now()) { window.location.replace(REDIRECT_URL); return true; }
+      if (s && s.expires > Date.now()) { sessionStorage.setItem("med_portal_ok", "1"); window.location.replace(REDIRECT_URL); return true; }
     } catch {}
     return false;
   }
@@ -313,6 +313,7 @@
     setTimeout(() => {
       if (input.value === ACCESS_PASSWORD) {
         sessionStorage.setItem(SESSION_KEY, JSON.stringify({ expires: Date.now() + SESSION_HOURS * 3600000 }));
+        sessionStorage.setItem("med_portal_ok", "1");
         document.getElementById('successOverlay').classList.add('show');
         setTimeout(() => window.location.replace(REDIRECT_URL), 1200);
       } else {

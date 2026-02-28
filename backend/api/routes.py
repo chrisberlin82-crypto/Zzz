@@ -8,8 +8,9 @@ from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel
 
-from database import get_db, Anruf, Agent, Queue, Callflow, Patient, Termin, KBArtikel, Einstellung
+from database import get_db, Anruf, Agent, Queue, Callflow, Patient, Termin, KBArtikel, Einstellung, Arzt
 from config import settings
+from api.auth import auth_erforderlich, admin_erforderlich
 
 router = APIRouter()
 
@@ -52,6 +53,22 @@ class KBSchema(BaseModel):
     antwort: str = ""
     voicebot_aktiv: bool = True
     clickbot_aktiv: bool = True
+
+class PatientSchema(BaseModel):
+    name: str
+    telefon: str = ""
+    email: str = ""
+    geburtsdatum: str = ""
+    versichertennr: str = ""
+    notizen: str = ""
+
+class ArztSchema(BaseModel):
+    titel: str = ""
+    vorname: str
+    nachname: str
+    fachrichtung: str
+    telefon: str = ""
+    email: str = ""
 
 class EinstellungSchema(BaseModel):
     schluessel: str
@@ -223,6 +240,90 @@ async def termin_erstellen(data: TerminSchema, db: AsyncSession = Depends(get_db
     return termin.__dict__
 
 
+# ===== Patienten =====
+
+@router.get("/patienten")
+async def patienten_liste(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Patient).order_by(Patient.name))
+    return [p.__dict__ for p in result.scalars().all()]
+
+@router.get("/patienten/{patient_id}")
+async def patient_detail(patient_id: int, db: AsyncSession = Depends(get_db)):
+    patient = await db.get(Patient, patient_id)
+    if not patient:
+        raise HTTPException(404, "Patient nicht gefunden")
+    return patient.__dict__
+
+@router.post("/patienten")
+async def patient_erstellen(data: PatientSchema, db: AsyncSession = Depends(get_db)):
+    patient = Patient(**data.model_dump())
+    db.add(patient)
+    await db.commit()
+    await db.refresh(patient)
+    return patient.__dict__
+
+@router.put("/patienten/{patient_id}")
+async def patient_aktualisieren(patient_id: int, data: PatientSchema, db: AsyncSession = Depends(get_db)):
+    patient = await db.get(Patient, patient_id)
+    if not patient:
+        raise HTTPException(404, "Patient nicht gefunden")
+    for key, value in data.model_dump().items():
+        setattr(patient, key, value)
+    await db.commit()
+    return patient.__dict__
+
+@router.delete("/patienten/{patient_id}")
+async def patient_loeschen(patient_id: int, db: AsyncSession = Depends(get_db)):
+    patient = await db.get(Patient, patient_id)
+    if not patient:
+        raise HTTPException(404, "Patient nicht gefunden")
+    await db.delete(patient)
+    await db.commit()
+    return {"ok": True}
+
+
+# ===== Aerzte =====
+
+@router.get("/aerzte")
+async def aerzte_liste(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Arzt).order_by(Arzt.nachname))
+    return [a.__dict__ for a in result.scalars().all()]
+
+@router.get("/aerzte/{arzt_id}")
+async def arzt_detail(arzt_id: int, db: AsyncSession = Depends(get_db)):
+    arzt = await db.get(Arzt, arzt_id)
+    if not arzt:
+        raise HTTPException(404, "Arzt nicht gefunden")
+    return arzt.__dict__
+
+@router.post("/aerzte")
+async def arzt_erstellen(data: ArztSchema, db: AsyncSession = Depends(get_db)):
+    arzt = Arzt(**data.model_dump())
+    db.add(arzt)
+    await db.commit()
+    await db.refresh(arzt)
+    return arzt.__dict__
+
+@router.put("/aerzte/{arzt_id}")
+async def arzt_aktualisieren(arzt_id: int, data: ArztSchema, db: AsyncSession = Depends(get_db)):
+    arzt = await db.get(Arzt, arzt_id)
+    if not arzt:
+        raise HTTPException(404, "Arzt nicht gefunden")
+    for key, value in data.model_dump().items():
+        setattr(arzt, key, value)
+    await db.commit()
+    return arzt.__dict__
+
+@router.delete("/aerzte/{arzt_id}")
+async def arzt_loeschen(arzt_id: int, db: AsyncSession = Depends(get_db)):
+    arzt = await db.get(Arzt, arzt_id)
+    if not arzt:
+        raise HTTPException(404, "Arzt nicht gefunden")
+    await db.delete(arzt)
+    await db.commit()
+    return {"ok": True}
+
+
 # ===== Wissensdatenbank =====
 
 @router.get("/kb")
@@ -263,21 +364,36 @@ async def voicebot_config():
     return {
         "llm_model": settings.llm_model,
         "stt_model": settings.stt_model,
-        "tts_model": settings.tts_model,
-        "tts_speed": settings.tts_speed,
+        "tts_stimme": settings.tts_stimme,
+        "tts_rate": settings.tts_rate,
         "hintergrund_typ": settings.audio_hintergrund_typ,
         "hintergrund_aktiv": settings.audio_hintergrund_aktiv,
         "hintergrund_lautstaerke": settings.audio_hintergrund_lautstaerke,
         "barge_in": True,
     }
 
+@router.get("/voicebot/stimmen")
+async def voicebot_stimmen():
+    """Alle verfuegbaren TTS-Stimmen."""
+    stimmen = settings.verfuegbare_stimmen()
+    return [
+        {
+            "id": k,
+            "name": v["name"],
+            "voice_id": v["voice_id"],
+            "geschlecht": v["geschlecht"],
+            "beschreibung": v["beschreibung"],
+        }
+        for k, v in stimmen.items()
+    ]
+
 @router.get("/voicebot/hintergruende")
 async def voicebot_hintergruende():
     """Verfuegbare Hintergrundgeraeusch-Typen."""
-    from voicebot.audio_mixer import HINTERGRUND_TYPEN
+    hintergruende = settings.verfuegbare_hintergruende()
     return [
         {"id": k, "name": v["name"], "beschreibung": v["beschreibung"]}
-        for k, v in HINTERGRUND_TYPEN.items()
+        for k, v in hintergruende.items()
     ]
 
 
@@ -289,7 +405,9 @@ async def einstellungen_liste(db: AsyncSession = Depends(get_db)):
     return [e.__dict__ for e in result.scalars().all()]
 
 @router.put("/einstellungen/{schluessel}")
-async def einstellung_setzen(schluessel: str, wert: str, kategorie: str = "allgemein", db: AsyncSession = Depends(get_db)):
+async def einstellung_setzen(schluessel: str, wert: str, kategorie: str = "allgemein",
+                             agent: Agent = Depends(admin_erforderlich),
+                             db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Einstellung).where(Einstellung.schluessel == schluessel))
     e = result.scalar_one_or_none()
     if e:
@@ -313,6 +431,44 @@ async def llm_status():
     }
 
 
+# ===== AI Agent Engineering =====
+
+class AIChatRequest(BaseModel):
+    messages: list
+
+@router.post("/ai-agent/chat")
+async def ai_agent_chat(data: AIChatRequest):
+    """Test-Chat fuer AI Agent Engineering — sendet Nachrichten ans LLM."""
+    from main import app
+    engine = app.state.voicebot
+
+    if not engine.llm or not engine.llm.client:
+        return {"antwort": "LLM nicht verfuegbar. Bitte Ollama starten."}
+
+    import asyncio
+    try:
+        response = await asyncio.wait_for(
+            engine.llm.client.chat(
+                model=settings.llm_model,
+                messages=data.messages,
+                options={
+                    "temperature": 0.7,
+                    "num_predict": 256,
+                    "top_p": 0.9,
+                    "repeat_penalty": 1.1,
+                },
+            ),
+            timeout=30.0,
+        )
+        antwort = response.message.content.strip()
+        antwort = antwort.replace("*", "").replace("#", "").replace("`", "")
+        return {"antwort": antwort}
+    except asyncio.TimeoutError:
+        return {"antwort": "Timeout — LLM hat nicht rechtzeitig geantwortet."}
+    except Exception as e:
+        return {"antwort": f"Fehler: {e}"}
+
+
 # ===== System =====
 
 @router.get("/system/status")
@@ -324,5 +480,5 @@ async def system_status():
         "asterisk": "pruefen...",
         "llm": settings.llm_model,
         "stt": settings.stt_model,
-        "tts": settings.tts_model,
+        "tts": settings.tts_stimme,
     }

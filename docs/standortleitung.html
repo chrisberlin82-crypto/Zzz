@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Standortleitung Dashboard – MedReception</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: #f8fafc; display: flex; height: 100vh; overflow: hidden; }
+  .sidebar { width: 220px; background: white; border-right: 1px solid #e5e7eb; padding: 16px 12px; flex-shrink: 0; overflow-y: auto; }
+  .sidebar-logo { display: flex; align-items: center; gap: 10px; padding: 8px 10px; margin-bottom: 8px; }
+  .sidebar-logo .icon { width: 32px; height: 32px; background: #0369a1; border-radius: 9px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 14px; }
+  .sidebar-logo span { font-weight: 700; font-size: 14px; color: #111827; }
+  .role-badge { margin: 0 10px 8px; padding: 5px 10px; background: #e0f2fe; border: 1px solid #7dd3fc; border-radius: 8px; font-size: 11px; font-weight: 600; color: #0369a1; text-align: center; }
+  .scope-badge { margin: 0 10px 16px; padding: 7px 10px; background: #fefce8; border: 1px solid #fde047; border-radius: 8px; font-size: 11px; color: #92400e; font-weight: 500; }
+  .nav-group { font-size: 10px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; padding: 0 10px; margin: 12px 0 5px; }
+  .nav-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 9px; font-size: 12px; font-weight: 500; color: #6b7280; cursor: pointer; margin-bottom: 2px; }
+  .nav-item.active { background: #e0f2fe; color: #0369a1; }
+  .nav-item:hover:not(.active) { background: #f9fafb; color: #374151; }
+  .nav-item .badge-count { margin-left: auto; background: #dc2626; color: white; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 999px; }
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .main-header { background: white; border-bottom: 1px solid #e5e7eb; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+  .main-header-left h1 { font-size: 18px; font-weight: 700; color: #111827; }
+  .main-header-left p  { font-size: 12px; color: #6b7280; margin-top: 2px; }
+  .live-badge { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #15803d; font-weight: 600; background: #dcfce7; padding: 4px 10px; border-radius: 999px; }
+  .live-dot { width: 7px; height: 7px; background: #22c55e; border-radius: 50%; animation: blink 1.2s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+  .tabs-bar { background: white; border-bottom: 1px solid #e5e7eb; padding: 0 24px; display: flex; gap: 0; flex-shrink: 0; overflow-x: auto; }
+  .tab { padding: 12px 14px; font-size: 12px; font-weight: 600; color: #6b7280; cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; display: flex; align-items: center; gap: 5px; }
+  .tab.active { color: #0369a1; border-bottom-color: #0369a1; }
+  .tab:hover:not(.active) { color: #374151; }
+  .tab-count { background: #dc2626; color: white; font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 999px; }
+  .content { flex: 1; overflow-y: auto; padding: 20px 24px; }
+  .card { background: white; border-radius: 12px; border: 1px solid #e5e7eb; margin-bottom: 16px; }
+  .card-header { padding: 13px 18px; border-bottom: 1px solid #f3f4f6; display: flex; justify-content: space-between; align-items: center; }
+  .card-header h2 { font-size: 13px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 6px; }
+  .card-body { padding: 16px 18px; }
+  .btn { padding: 7px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; border: none; cursor: pointer; font-family: 'Inter', sans-serif; transition: opacity .1s; }
+  .btn.primary   { background: #0369a1; color: white; }
+  .btn.blue      { background: #2563eb; color: white; }
+  .btn.green     { background: #16a34a; color: white; }
+  .btn.red       { background: #dc2626; color: white; }
+  .btn.secondary { background: #f1f5f9; color: #475569; border: 1.5px solid #e2e8f0; }
+  .btn.sm        { padding: 5px 10px; font-size: 11px; }
+  .btn:hover     { opacity: .82; }
+  .kpi-row { display: grid; gap: 12px; margin-bottom: 16px; }
+  .kpi-row.c5 { grid-template-columns: repeat(5,1fr); }
+  .kpi-row.c4 { grid-template-columns: repeat(4,1fr); }
+  .kpi-row.c3 { grid-template-columns: repeat(3,1fr); }
+  .kpi { background: white; border-radius: 11px; border: 1px solid #e5e7eb; padding: 14px 16px; }
+  .kpi-label { font-size: 10px; color: #6b7280; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; }
+  .kpi-value { font-size: 24px; font-weight: 800; color: #111827; }
+  .kpi-sub { font-size: 10px; color: #9ca3af; margin-top: 3px; }
+  .kpi-trend { font-size: 10px; font-weight: 600; margin-top: 4px; }
+  .kpi-trend.up{color:#15803d} .kpi-trend.down{color:#dc2626}
+  .section-title { font-size: 12px; font-weight: 700; color: #374151; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+  .scope-note { background: #e0f2fe; border: 1px solid #7dd3fc; border-radius: 9px; padding: 8px 14px; font-size: 11px; color: #0369a1; font-weight: 500; margin-bottom: 12px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { padding: 9px 12px; text-align: left; font-size: 10px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: .5px; border-bottom: 1px solid #e5e7eb; background: #f9fafb; }
+  td { padding: 10px 12px; border-bottom: 1px solid #f3f4f6; vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #fafafa; }
+  .status-pill { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+  .status-pill.active  { background: #dcfce7; color: #15803d; }
+  .status-pill.busy    { background: #ffedd5; color: #ea580c; }
+  .status-pill.pause   { background: #fef3c7; color: #d97706; }
+  .status-pill.offline { background: #f1f5f9; color: #9ca3af; }
+  .status-pill.new     { background: #dbeafe; color: #1d4ed8; }
+  .status-pill.done    { background: #dcfce7; color: #15803d; }
+  .status-pill.pending { background: #fef3c7; color: #92400e; }
+  .status-pill.failed  { background: #fef2f2; color: #dc2626; }
+  .avatar { width: 28px; height: 28px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 11px; color: white; }
+  .bar-wrap { flex: 1; background: #f1f5f9; border-radius: 999px; height: 8px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 999px; }
+  .bar-fill.low{background:#22c55e} .bar-fill.mid{background:#f59e0b} .bar-fill.high{background:#ef4444}
+  /* ── Postfach ── */
+  .inbox-filters { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; }
+  .filter-btn { padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; border: 1.5px solid #e2e8f0; background: #f9fafb; color: #475569; cursor: pointer; }
+  .filter-btn.active { background: #0369a1; color: white; border-color: #0369a1; }
+  .filter-btn:hover:not(.active) { background: #f1f5f9; }
+  .inbox-item { background: white; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 14px 16px; margin-bottom: 10px; display: flex; gap: 12px; transition: box-shadow .15s; }
+  .inbox-item:hover { box-shadow: 0 2px 10px rgba(0,0,0,.06); }
+  .inbox-item.unread { border-left: 4px solid #0369a1; background: #f0f9ff; }
+  .inbox-item.unread .inbox-title { font-weight: 700; }
+  .inbox-icon { font-size: 22px; flex-shrink: 0; margin-top: 2px; }
+  .inbox-main { flex: 1; }
+  .inbox-title { font-size: 13px; color: #1e293b; margin-bottom: 3px; }
+  .inbox-meta  { font-size: 11px; color: #6b7280; margin-bottom: 6px; line-height: 1.5; }
+  .inbox-tags  { display: flex; gap: 5px; flex-wrap: wrap; }
+  .inbox-tag   { padding: 2px 8px; border-radius: 6px; font-size: 10px; font-weight: 600; }
+  .inbox-tag.termin    { background: #dbeafe; color: #1d4ed8; }
+  .inbox-tag.rezept    { background: #dcfce7; color: #15803d; }
+  .inbox-tag.anruf     { background: #f5f3ff; color: #6d28d9; }
+  .inbox-tag.ticket    { background: #fff7ed; color: #c2410c; }
+  .inbox-right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0; }
+  .inbox-time  { font-size: 10px; color: #9ca3af; }
+  .inbox-actions { display: flex; gap: 5px; }
+  /* Detail-Modal (inline expand) */
+  .inbox-detail { display: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid #f1f5f9; }
+  .inbox-detail.open { display: block; }
+  .detail-row { display: flex; gap: 8px; margin-bottom: 6px; font-size: 12px; }
+  .detail-label { color: #9ca3af; font-weight: 500; min-width: 120px; }
+  .detail-value { color: #1e293b; font-weight: 500; }
+  /* Call timeline */
+  .call-timeline { position: relative; padding-left: 24px; }
+  .call-timeline::before { content: ''; position: absolute; left: 8px; top: 0; bottom: 0; width: 2px; background: #e2e8f0; }
+  .tl-event { position: relative; margin-bottom: 12px; }
+  .tl-dot { position: absolute; left: -20px; width: 11px; height: 11px; border-radius: 50%; border: 2px solid white; top: 3px; }
+  .tl-dot.green{background:#22c55e} .tl-dot.blue{background:#2563eb} .tl-dot.orange{background:#f97316} .tl-dot.red{background:#ef4444} .tl-dot.gray{background:#9ca3af}
+  .tl-time   { font-size: 10px; color: #9ca3af; }
+  .tl-title  { font-size: 12px; font-weight: 600; color: #1e293b; }
+  .tl-detail { font-size: 11px; color: #6b7280; margin-top: 1px; }
+  .form-label { font-size: 11px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 5px; }
+  .form-input, .form-select, .form-textarea { width: 100%; padding: 8px 12px; border: 1.5px solid #e2e8f0; border-radius: 9px; font-size: 13px; font-family: 'Inter', sans-serif; color: #1e293b; outline: none; background: white; }
+  .form-textarea { min-height: 80px; resize: vertical; }
+  .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: #0369a1; }
+  .form-row { margin-bottom: 12px; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .skill-tag { padding: 4px 10px; border-radius: 7px; font-size: 11px; font-weight: 600; cursor: pointer; }
+  .skill-tag.on  { background: #dbeafe; color: #1d4ed8; }
+  .skill-tag.off { background: #f1f5f9; color: #9ca3af; border: 1px dashed #d1d5db; }
+  .flow-canvas { background: #f8fafc; border: 1.5px dashed #e2e8f0; border-radius: 12px; padding: 20px; min-height: 180px; }
+  .flow-node { background: white; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 9px 13px; display: inline-flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 500; cursor: grab; margin: 5px; }
+  .flow-node.start    { border-color: #22c55e; background: #f0fdf4; color: #15803d; }
+  .flow-node.question { border-color: #2563eb; background: #eff6ff; color: #1d4ed8; }
+  .flow-node.answer   { border-color: #7c3aed; background: #f5f3ff; color: #6d28d9; }
+  .flow-node.action   { border-color: #ea580c; background: #fff7ed; color: #c2410c; }
+  .flow-node.end      { border-color: #6b7280; background: #f9fafb; color: #374151; }
+  .flow-arrow { display: inline-block; margin: 0 3px; color: #9ca3af; font-size: 16px; }
+  .search-bar { display: flex; gap: 8px; margin-bottom: 16px; }
+  .search-input { flex: 1; padding: 10px 14px; border: 1.5px solid #e2e8f0; border-radius: 10px; font-size: 13px; font-family: 'Inter',sans-serif; outline: none; }
+  .search-input:focus { border-color: #0369a1; }
+  .hotline-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f3f4f6; }
+  .hotline-row:last-child { border-bottom: none; }
+</style>
+</head>
+<body>
+<!-- Sidebar -->
+<div class="sidebar">
+  <div class="sidebar-logo" onclick="location.href='uebersicht.html'" style="cursor:pointer"><div class="icon">SL</div><span>MedReception</span></div>
+  <div class="role-badge">🏢 Standort-/Projektleitung</div>
+  <div class="scope-badge">📍 <strong>Praxis Dr. Schmidt</strong><br>München · Nur Ihr Standort</div>
+  <div class="nav-group">Mein Board</div>
+  <div class="nav-item" onclick="location.href='uebersicht.html'" style="cursor:pointer">🗺 Projektübersicht</div>
+  <div class="nav-item active" onclick="showTab('live')">📊 SL Dashboard</div>
+  <div class="nav-item" onclick="location.href='agent-board.html'" style="cursor:pointer">📞 Agent Board</div>
+  <div class="nav-group">Postfach</div>
+  <div class="nav-item" onclick="showTab('postfach')">📬 Postfach <span class="badge-count">5</span></div>
+  <div class="nav-group">Team</div>
+  <div class="nav-item" onclick="showTab('agents')">👥 Agenten</div>
+  <div class="nav-item" onclick="showTab('agents')">🗂 Queues & Skills</div>
+  <div class="nav-group">Konfiguration</div>
+  <div class="nav-item" onclick="showTab('clickbot')">🤖 Clickbot Builder</div>
+  <div class="nav-item" onclick="showTab('standort')">📍 Standort & KB</div>
+  <div class="nav-item" onclick="location.href='flow-editor.html'" style="cursor:pointer">🧠 Flow Editor</div>
+  <div class="nav-group">Auswertung</div>
+  <div class="nav-item" onclick="showTab('live')">📡 Live-Auslastung</div>
+  <div class="nav-item" onclick="showTab('kpi')">📈 KPI Berichte</div>
+  <div class="nav-item" onclick="showTab('search')">🔍 Anruf-Suche</div>
+  <div class="nav-group">Navigation</div>
+  <div class="nav-item" onclick="location.href='admin-dashboard.html'" style="cursor:pointer">📊 Admin Dashboard</div>
+  <div class="nav-item" onclick="location.href='teamleiter.html'" style="cursor:pointer">👥 Teamleiter</div>
+  <div class="nav-item" onclick="sessionStorage.removeItem('mr_guard_session');location.href='index.html'" style="cursor:pointer">🔓 Abmelden</div>
+</div>
+<!-- Main -->
+<div class="main">
+  <div class="main-header">
+    <div class="main-header-left">
+      <h1>Standort- / Projektleitung</h1>
+      <p>📍 Praxis Dr. Schmidt · München · Nur Ihr Standort/Projekt</p>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <div class="live-badge"><span class="live-dot"></span> Live · 08:34 Uhr</div>
+      <button class="btn blue" style="font-size:12px">📞 Agent Board</button>
+    </div>
+  </div>
+  <div class="tabs-bar">
+    <div class="tab active" onclick="showTab('live')">📡 Live-Auslastung</div>
+    <div class="tab" onclick="showTab('kpi')">📈 KPI & Berichte</div>
+    <div class="tab" onclick="showTab('postfach')">📬 Postfach <span class="tab-count">5</span></div>
+    <div class="tab" onclick="showTab('agents')">👥 Agenten</div>
+    <div class="tab" onclick="showTab('clickbot')">🤖 Clickbot Builder</div>
+    <div class="tab" onclick="showTab('standort')">📍 Standort & KB</div>
+    <div class="tab" onclick="showTab('search')">🔍 Anruf-Suche</div>
+  </div>
+  <div class="content">
+    <!-- ═══ LIVE ═══ -->
+    <div id="tab-live">
+      <div class="scope-note">📍 Alle Daten gefiltert auf: <strong>Praxis Dr. Schmidt – München</strong></div>
+      <div class="kpi-row c5">
+        <div class="kpi"><div class="kpi-label">Aktive Gespräche</div><div class="kpi-value" style="color:#2563eb">2</div><div class="kpi-sub">gerade jetzt</div></div>
+        <div class="kpi"><div class="kpi-label">In Warteschleife</div><div class="kpi-value" style="color:#ea580c">1</div><div class="kpi-sub">wartet 0:23 min</div></div>
+        <div class="kpi"><div class="kpi-label">Agenten frei</div><div class="kpi-value" style="color:#15803d">3</div><div class="kpi-sub">von 6 online</div></div>
+        <div class="kpi"><div class="kpi-label">Anrufe heute</div><div class="kpi-value">24</div><div class="kpi-trend up">↑ +3 letzte Stunde</div></div>
+        <div class="kpi"><div class="kpi-label">Ø Wartezeit</div><div class="kpi-value">0:42</div><div class="kpi-sub">Minuten</div></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h2>📡 Hotline Auslastung — Live</h2><div class="live-badge" style="font-size:10px"><span class="live-dot"></span> Echtzeit</div></div>
+        <div class="card-body">
+          <div class="hotline-row">
+            <div style="min-width:160px"><div style="font-size:13px;font-weight:600;color:#1e293b">Allgemein</div><div style="font-size:11px;color:#6b7280">+49 89 1234-0 · Ext. 200</div></div>
+            <div class="bar-wrap"><div class="bar-fill high" style="width:85%"></div></div>
+            <div style="font-size:12px;font-weight:700;color:#ef4444;min-width:36px;text-align:right">85%</div>
+            <div style="display:flex;gap:14px;font-size:11px;color:#6b7280"><span><strong>2</strong> aktiv</span><span><strong>1</strong> warten</span><span><strong>14</strong> heute</span></div>
+          </div>
+          <div class="hotline-row">
+            <div style="min-width:160px"><div style="font-size:13px;font-weight:600;color:#1e293b">Notfall</div><div style="font-size:11px;color:#6b7280">+49 89 1234-1 · Ext. 201</div></div>
+            <div class="bar-wrap"><div class="bar-fill low" style="width:20%"></div></div>
+            <div style="font-size:12px;font-weight:700;color:#15803d;min-width:36px;text-align:right">20%</div>
+            <div style="display:flex;gap:14px;font-size:11px;color:#6b7280"><span><strong>0</strong> aktiv</span><span><strong>0</strong> warten</span><span><strong>3</strong> heute</span></div>
+          </div>
+          <div class="hotline-row">
+            <div style="min-width:160px"><div style="font-size:13px;font-weight:600;color:#1e293b">Rezept</div><div style="font-size:11px;color:#6b7280">+49 89 1234-2 · Ext. 202</div></div>
+            <div class="bar-wrap"><div class="bar-fill mid" style="width:55%"></div></div>
+            <div style="font-size:12px;font-weight:700;color:#f59e0b;min-width:36px;text-align:right">55%</div>
+            <div style="display:flex;gap:14px;font-size:11px;color:#6b7280"><span><strong>1</strong> aktiv</span><span><strong>0</strong> warten</span><span><strong>7</strong> heute</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h2>👤 Agenten Live-Status</h2><div class="live-badge" style="font-size:10px"><span class="live-dot"></span> auf die Sekunde</div></div>
+        <div class="card-body" style="padding:0">
+          <table>
+            <thead><tr><th>Agent</th><th>Status</th><th>Hotline</th><th>Gesprächsdauer</th><th>Anrufe heute</th><th>Angenommen</th><th>Verpasst</th><th>Ø Dauer</th><th>Login seit</th></tr></thead>
+            <tbody>
+              <tr><td><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="background:#2563eb">DS</div>Dr. Schmidt</div></td><td><span class="status-pill busy">🔴 Im Gespräch</span></td><td>Allgemein</td><td style="font-weight:700;color:#ea580c">3:24</td><td>8</td><td style="color:#15803d;font-weight:600">7</td><td style="color:#dc2626">1</td><td>4:12</td><td>07:45</td></tr>
+              <tr><td><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="background:#16a34a">AW</div>Anna Weber</div></td><td><span class="status-pill active">🟢 Verfügbar</span></td><td>—</td><td>—</td><td>6</td><td style="color:#15803d;font-weight:600">6</td><td style="color:#dc2626">0</td><td>3:50</td><td>07:58</td></tr>
+              <tr><td><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="background:#7c3aed">CM</div>Chris Müller</div></td><td><span class="status-pill pause">⏸ Pause</span></td><td>—</td><td>Pause: 0:08</td><td>4</td><td style="color:#15803d;font-weight:600">4</td><td style="color:#dc2626">0</td><td>2:55</td><td>08:00</td></tr>
+              <tr><td><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="background:#ea580c">LK</div>Laura Klein</div></td><td><span class="status-pill busy">🔴 Im Gespräch</span></td><td>Rezept</td><td style="font-weight:700;color:#ea580c">1:12</td><td>3</td><td style="color:#15803d;font-weight:600">3</td><td style="color:#dc2626">0</td><td>3:10</td><td>08:15</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <!-- ═══ KPI ═══ -->
+    <div id="tab-kpi" style="display:none">
+      <div class="scope-note">📍 Alle KPIs gefiltert auf: <strong>Praxis Dr. Schmidt – München</strong></div>
+      <div class="kpi-row c4">
+        <div class="kpi"><div class="kpi-label">Service Level</div><div class="kpi-value" style="color:#15803d">87.5%</div><div class="kpi-sub">Ziel: 80%</div><div class="kpi-trend up">↑ über Ziel</div></div>
+        <div class="kpi"><div class="kpi-label">Abandon Rate</div><div class="kpi-value" style="color:#ea580c">12.5%</div><div class="kpi-trend down">↑ über Ziel</div></div>
+        <div class="kpi"><div class="kpi-label">Ø Bearbeitungszeit</div><div class="kpi-value">3:42</div><div class="kpi-trend up">↓ besser als gestern</div></div>
+        <div class="kpi"><div class="kpi-label">Ø Wartezeit (ASA)</div><div class="kpi-value">0:42</div><div class="kpi-trend up">↓ gut</div></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h2>📞 Hotline KPIs — Heute</h2></div>
+        <div class="card-body" style="padding:0">
+          <table>
+            <thead><tr><th>Hotline</th><th>Eingehend</th><th>Angenommen</th><th>Verpasst</th><th>Abandon %</th><th>Ø Wartezeit</th><th>Ø Dauer</th><th>Voicebot</th></tr></thead>
+            <tbody>
+              <tr><td style="font-weight:600">Allgemein</td><td>14</td><td style="color:#15803d;font-weight:600">12</td><td style="color:#dc2626;font-weight:600">2</td><td style="color:#ea580c">14.3%</td><td>0:55</td><td>4:12</td><td>8</td></tr>
+              <tr><td style="font-weight:600">Notfall</td><td>3</td><td style="color:#15803d;font-weight:600">3</td><td style="color:#dc2626;font-weight:600">0</td><td style="color:#15803d">0%</td><td>0:12</td><td>6:30</td><td>0</td></tr>
+              <tr><td style="font-weight:600">Rezept</td><td>7</td><td style="color:#15803d;font-weight:600">6</td><td style="color:#dc2626;font-weight:600">1</td><td style="color:#ea580c">14.3%</td><td>0:38</td><td>2:45</td><td>6</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <!-- ═══ POSTFACH ═══ -->
+    <div id="tab-postfach" style="display:none">
+      <div class="scope-note">📬 Eingehende Nachrichten für: <strong>Praxis Dr. Schmidt – München</strong></div>
+      <!-- KPI Zeile -->
+      <div class="kpi-row c4" style="margin-bottom:14px">
+        <div class="kpi"><div class="kpi-label">Ungelesen</div><div class="kpi-value" style="color:#0369a1">5</div></div>
+        <div class="kpi"><div class="kpi-label">Offen</div><div class="kpi-value" style="color:#ea580c">8</div></div>
+        <div class="kpi"><div class="kpi-label">Bearbeitet heute</div><div class="kpi-value" style="color:#15803d">12</div></div>
+        <div class="kpi"><div class="kpi-label">Gesamt</div><div class="kpi-value">47</div></div>
+      </div>
+      <!-- Filter -->
+      <div class="inbox-filters">
+        <button class="filter-btn active" onclick="filterInbox('all',this)">Alle (13)</button>
+        <button class="filter-btn" onclick="filterInbox('new',this)">🔵 Neu (5)</button>
+        <button class="filter-btn" onclick="filterInbox('open',this)">🟡 Offen (3)</button>
+        <button class="filter-btn" onclick="filterInbox('done',this)">✅ Erledigt (4)</button>
+        <button class="filter-btn" onclick="filterInbox('deleted',this)">🗑 Gelöscht (1)</button>
+        <input style="margin-left:auto;padding:6px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;outline:none;width:200px" placeholder="Suchen…">
+      </div>
+      <!-- Nachrichten -->
+      <div id="inbox-list">
+        <!-- Nachricht 1 – ungelesen/neu -->
+        <div class="inbox-item unread" data-status="new" id="msg-1">
+          <div class="inbox-icon">📞</div>
+          <div class="inbox-main">
+            <div class="inbox-title">Anrufzusammenfassung — Max Mustermann</div>
+            <div class="inbox-meta">
+              Von: Agent Dr. Schmidt · Eingang: 08:34 · Ticket #1042<br>
+              <strong>Anliegen:</strong> Terminbuchung · <strong>Ergebnis:</strong> Termin gebucht 24.02. 14:30 · <strong>Dauer:</strong> 3:22 min
+            </div>
+            <div class="inbox-tags">
+              <span class="inbox-tag termin">Termin</span>
+              <span class="inbox-tag anruf">Anruf</span>
+              <span class="inbox-tag ticket">Ticket #1042</span>
+            </div>
+            <!-- Detail expand -->
+            <div class="inbox-detail" id="detail-1">
+              <div class="detail-row"><span class="detail-label">Patient</span><span class="detail-value">Max Mustermann · +49 89 123 456 789</span></div>
+              <div class="detail-row"><span class="detail-label">Agent</span><span class="detail-value">Dr. Schmidt (Ext. 101)</span></div>
+              <div class="detail-row"><span class="detail-label">Hotline</span><span class="detail-value">Allgemein · +49 89 1234-0</span></div>
+              <div class="detail-row"><span class="detail-label">Gesprächsdauer</span><span class="detail-value">3:22 min</span></div>
+              <div class="detail-row"><span class="detail-label">Ergebnis</span><span class="detail-value">Termin gebucht: 24.02.2026 · 14:30 Uhr</span></div>
+              <div class="detail-row"><span class="detail-label">Aufgelegt durch</span><span class="detail-value">Patient</span></div>
+              <div class="detail-row"><span class="detail-label">Weitergeleitet an</span><span class="detail-value">praxis@dr-schmidt.de ✓</span></div>
+              <div style="margin-top:10px">
+                <div class="form-label" style="margin-bottom:6px">Interne Notiz</div>
+                <textarea class="form-textarea" style="min-height:60px" placeholder="Notiz hinzufügen…"></textarea>
+                <div style="display:flex;gap:6px;margin-top:6px">
+                  <button class="btn primary sm">Notiz speichern</button>
+                  <button class="btn secondary sm" onclick="setStatus('msg-1','done')">✓ Als erledigt markieren</button>
+                  <button class="btn secondary sm" onclick="deleteMsg('msg-1')" style="color:#dc2626">🗑 Löschen</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="inbox-right">
+            <div class="inbox-time">08:34</div>
+            <span class="status-pill new" id="status-1">🔵 Neu</span>
+            <div class="inbox-actions">
+              <button class="btn secondary sm" onclick="toggleDetail('detail-1', this)">▼ Details</button>
+              <button class="btn primary sm" onclick="setStatus('msg-1','done')">✓ Erledigt</button>
+            </div>
+          </div>
+        </div>
+        <!-- Nachricht 2 -->
+        <div class="inbox-item unread" data-status="new" id="msg-2">
+          <div class="inbox-icon">📧</div>
+          <div class="inbox-main">
+            <div class="inbox-title">Rezeptanfrage — Maria Müller</div>
+            <div class="inbox-meta">
+              Von: Agent Anna Weber · Eingang: 08:12 · Ticket #1038<br>
+              <strong>Anliegen:</strong> Rezept Metformin 500mg · <strong>Arzt:</strong> Dr. Schmidt · <strong>Dauer:</strong> 2:10 min
+            </div>
+            <div class="inbox-tags">
+              <span class="inbox-tag rezept">Rezept</span>
+              <span class="inbox-tag anruf">Anruf</span>
+            </div>
+            <div class="inbox-detail" id="detail-2">
+              <div class="detail-row"><span class="detail-label">Patient</span><span class="detail-value">Maria Müller · +49 89 987 654</span></div>
+              <div class="detail-row"><span class="detail-label">Agent</span><span class="detail-value">Anna Weber (Ext. 102)</span></div>
+              <div class="detail-row"><span class="detail-label">Medikament</span><span class="detail-value">Metformin 500mg · 3x tägl.</span></div>
+              <div style="margin-top:10px;display:flex;gap:6px">
+                <button class="btn primary sm">Notiz speichern</button>
+                <button class="btn secondary sm" onclick="setStatus('msg-2','done')">✓ Erledigt</button>
+                <button class="btn secondary sm" onclick="deleteMsg('msg-2')" style="color:#dc2626">🗑 Löschen</button>
+              </div>
+            </div>
+          </div>
+          <div class="inbox-right">
+            <div class="inbox-time">08:12</div>
+            <span class="status-pill new" id="status-2">🔵 Neu</span>
+            <div class="inbox-actions">
+              <button class="btn secondary sm" onclick="toggleDetail('detail-2', this)">▼ Details</button>
+              <button class="btn primary sm" onclick="setStatus('msg-2','done')">✓ Erledigt</button>
+            </div>
+          </div>
+        </div>
+        <!-- Nachricht 3 – offen -->
+        <div class="inbox-item" data-status="open" id="msg-3">
+          <div class="inbox-icon">💬</div>
+          <div class="inbox-main">
+            <div class="inbox-title">SMS Rückrufanfrage — +49 176 12345678</div>
+            <div class="inbox-meta">Rückruf angefragt für: 13:00 Uhr · Agent: Anna Weber · Grund: Termin-Rückfrage</div>
+            <div class="inbox-tags"><span class="inbox-tag anruf">SMS</span></div>
+            <div class="inbox-detail" id="detail-3">
+              <div class="detail-row"><span class="detail-label">Nummer</span><span class="detail-value">+49 176 12345678</span></div>
+              <div class="detail-row"><span class="detail-label">Rückruf um</span><span class="detail-value">13:00 Uhr heute</span></div>
+              <div style="margin-top:10px;display:flex;gap:6px">
+                <button class="btn secondary sm" onclick="setStatus('msg-3','done')">✓ Erledigt</button>
+                <button class="btn secondary sm" onclick="deleteMsg('msg-3')" style="color:#dc2626">🗑 Löschen</button>
+              </div>
+            </div>
+          </div>
+          <div class="inbox-right">
+            <div class="inbox-time">07:55</div>
+            <span class="status-pill pending" id="status-3">🟡 Offen</span>
+            <div class="inbox-actions">
+              <button class="btn secondary sm" onclick="toggleDetail('detail-3', this)">▼ Details</button>
+              <button class="btn primary sm" onclick="setStatus('msg-3','done')">✓ Erledigt</button>
+            </div>
+          </div>
+        </div>
+        <!-- Nachricht 4 – erledigt -->
+        <div class="inbox-item" data-status="done" id="msg-4" style="opacity:.7">
+          <div class="inbox-icon">📧</div>
+          <div class="inbox-main">
+            <div class="inbox-title">Überweisung Kardiologie — Thomas Schmidt</div>
+            <div class="inbox-meta">Agent: Chris Müller · 07:30 · Weitergeleitet an: Dr. Meier</div>
+            <div class="inbox-tags"><span class="inbox-tag ticket">Überweisung</span></div>
+          </div>
+          <div class="inbox-right">
+            <div class="inbox-time">07:30</div>
+            <span class="status-pill done" id="status-4">✅ Erledigt</span>
+            <div class="inbox-actions">
+              <button class="btn secondary sm" onclick="setStatus('msg-4','open')">Wiedereröffnen</button>
+              <button class="btn secondary sm" onclick="deleteMsg('msg-4')" style="color:#dc2626">🗑</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- ═══ AGENTEN ═══ -->
+    <div id="tab-agents" style="display:none">
+      <div class="scope-note">👥 Agenten Ihres Standorts: <strong>Praxis Dr. Schmidt</strong></div>
+      <div class="card">
+        <div class="card-header"><h2>Agenten-Liste</h2><span style="font-size:11px;color:#9ca3af">Neue Agenten werden vom Admin angelegt</span></div>
+        <div class="card-body" style="padding:0">
+          <table>
+            <thead><tr><th>Name</th><th>Extension</th><th>E-Mail</th><th>Queues / Skills</th><th>Status</th><th>Aktion</th></tr></thead>
+            <tbody>
+              <tr><td><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="background:#2563eb">DS</div>Dr. Schmidt</div></td><td>101</td><td>d.schmidt@praxis.de</td><td><div style="display:flex;gap:4px;flex-wrap:wrap"><span class="skill-tag on">Allgemein</span><span class="skill-tag on">Notfall</span></div></td><td><span class="status-pill busy">Im Gespräch</span></td><td><button class="btn secondary sm">Bearbeiten</button></td></tr>
+              <tr><td><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="background:#16a34a">AW</div>Anna Weber</div></td><td>102</td><td>a.weber@praxis.de</td><td><div style="display:flex;gap:4px;flex-wrap:wrap"><span class="skill-tag on">Allgemein</span><span class="skill-tag on">Rezept</span></div></td><td><span class="status-pill active">Verfügbar</span></td><td><button class="btn secondary sm">Bearbeiten</button></td></tr>
+              <tr><td><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="background:#7c3aed">CM</div>Chris Müller</div></td><td>103</td><td>c.mueller@praxis.de</td><td><div style="display:flex;gap:4px;flex-wrap:wrap"><span class="skill-tag on">Allgemein</span></div></td><td><span class="status-pill pause">Pause</span></td><td><button class="btn secondary sm">Bearbeiten</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <!-- ═══ CLICKBOT ═══ -->
+    <div id="tab-clickbot" style="display:none">
+      <div class="card">
+        <div class="card-header"><h2>🤖 Clickbot Flow Builder</h2><div style="display:flex;gap:6px"><button class="btn green sm">▶ Veröffentlichen</button><button class="btn secondary sm">Vorschau</button></div></div>
+        <div class="card-body">
+          <div class="form-row"><div class="form-label">Projekt</div><select class="form-select"><option>Praxis Dr. Schmidt — Allgemein</option><option>Notfall-Hotline</option></select></div>
+          <div class="form-label" style="margin-bottom:8px">Bausteine</div>
+          <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px">
+            <span style="padding:6px 12px;background:#f0fdf4;border:1.5px solid #22c55e;color:#15803d;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer">🟢 Start</span>
+            <span style="padding:6px 12px;background:#eff6ff;border:1.5px solid #2563eb;color:#1d4ed8;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer">❓ Frage</span>
+            <span style="padding:6px 12px;background:#f5f3ff;border:1.5px solid #7c3aed;color:#6d28d9;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer">💬 Antwort</span>
+            <span style="padding:6px 12px;background:#fff7ed;border:1.5px solid #ea580c;color:#c2410c;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer">⚡ Aktion</span>
+            <span style="padding:6px 12px;background:#f9fafb;border:1.5px solid #6b7280;color:#374151;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer">🔴 Ende</span>
+          </div>
+          <div class="flow-canvas">
+            <div style="font-size:11px;color:#9ca3af;margin-bottom:10px">Flow: Begrüßungs-Szenario</div>
+            <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px">
+              <div class="flow-node start">🟢 Anruf eingehend</div>
+              <span class="flow-arrow">→</span>
+              <div class="flow-node question">❓ „Wie kann ich helfen?"</div>
+            </div>
+            <div style="margin:8px 0 0 40px;display:flex;gap:6px;flex-wrap:wrap">
+              <div class="flow-node answer">💬 Termin</div><span class="flow-arrow">→</span><div class="flow-node action">⚡ Kalender</div>
+              &nbsp;|&nbsp;
+              <div class="flow-node answer">💬 Rezept</div><span class="flow-arrow">→</span><div class="flow-node action">⚡ Ticket</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:12px">
+            <button class="btn primary">Speichern</button>
+            <button class="btn secondary">+ Schritt</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- ═══ STANDORT ═══ -->
+    <div id="tab-standort" style="display:none">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="card">
+          <div class="card-header"><h2>📍 Standort-Informationen</h2></div>
+          <div class="card-body">
+            <div class="form-row"><div class="form-label">Praxisname</div><input class="form-input" value="Praxis Dr. Schmidt"></div>
+            <div class="form-row"><div class="form-label">Adresse</div><input class="form-input" value="Musterstraße 12, 80331 München"></div>
+            <div class="form-grid" style="margin-bottom:12px">
+              <div><div class="form-label">Telefon</div><input class="form-input" value="+49 89 123456"></div>
+              <div><div class="form-label">E-Mail</div><input class="form-input" value="praxis@dr-schmidt.de"></div>
+            </div>
+            <div class="form-row"><div class="form-label">Fachbereich</div><select class="form-select"><option>Allgemeinmedizin</option><option>Innere Medizin</option></select></div>
+            <button class="btn primary">Speichern</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h2>📚 Wissensdatenbank</h2><button class="btn primary sm">+ Artikel</button></div>
+          <div class="card-body">
+            <div class="form-row"><div class="form-label">Projekt</div><select class="form-select"><option>Praxis Dr. Schmidt</option></select></div>
+            <div style="margin-bottom:12px">
+              <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #f3f4f6"><span style="font-size:12px;font-weight:500">Öffnungszeiten FAQ</span><button class="btn secondary sm">Bearbeiten</button></div>
+              <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #f3f4f6"><span style="font-size:12px;font-weight:500">Rezept anfragen — Ablauf</span><button class="btn secondary sm">Bearbeiten</button></div>
+              <div style="display:flex;justify-content:space-between;padding:7px 0"><span style="font-size:12px;font-weight:500">Notfall-Richtlinien</span><button class="btn secondary sm">Bearbeiten</button></div>
+            </div>
+            <div class="form-row"><div class="form-label">Neuer Artikel</div><input class="form-input" placeholder="Titel…"></div>
+            <textarea class="form-textarea" placeholder="Inhalt…"></textarea>
+            <button class="btn primary" style="margin-top:8px">Speichern</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- ═══ ANRUF-SUCHE ═══ -->
+    <div id="tab-search" style="display:none">
+      <div class="scope-note">🔍 Anruf-Suche: Nur Anrufe Ihres Standorts — <strong>Praxis Dr. Schmidt</strong></div>
+      <div class="card">
+        <div class="card-header"><h2>🔍 Anruf-Suche nach Rufnummer</h2></div>
+        <div class="card-body">
+          <div class="search-bar">
+            <input class="search-input" placeholder="Rufnummer eingeben z.B. +49 89 123456…">
+            <button class="btn primary" onclick="showSearchResult()">Suchen</button>
+          </div>
+          <div id="search-result" style="display:none">
+            <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:12px 16px;margin-bottom:14px;display:flex;gap:12px;align-items:center">
+              <div style="font-size:20px">📞</div>
+              <div><div style="font-size:14px;font-weight:700;color:#1e293b">+49 89 123 456 789 — Max Mustermann</div><div style="font-size:11px;color:#6b7280;margin-top:2px">6 Anrufe gesamt · letzter Anruf heute 08:32</div></div>
+            </div>
+            <div class="section-title">Anruf-Zeitstrahl</div>
+            <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px 16px 16px 32px;margin-bottom:14px">
+              <div class="call-timeline">
+                <div class="tl-event"><div class="tl-dot green"></div><div class="tl-time">08:32:04</div><div class="tl-title">Anruf eingegangen</div><div class="tl-detail">Hotline: Allgemein · IVR gestartet</div></div>
+                <div class="tl-event"><div class="tl-dot blue"></div><div class="tl-time">08:32:18</div><div class="tl-title">In Warteschleife</div><div class="tl-detail">Wartezeit: 0:24 min</div></div>
+                <div class="tl-event"><div class="tl-dot blue"></div><div class="tl-time">08:32:42</div><div class="tl-title">Angenommen — Dr. Schmidt (Ext. 101)</div></div>
+                <div class="tl-event"><div class="tl-dot blue"></div><div class="tl-time">08:35:22</div><div class="tl-title">Termin gebucht</div><div class="tl-detail">24.02.2026 · 14:30 Uhr</div></div>
+                <div class="tl-event"><div class="tl-dot red"></div><div class="tl-time">08:36:04</div><div class="tl-title">Gespräch beendet — aufgelegt durch: Patient</div><div class="tl-detail">Dauer: 3:22 min · Status: Gelöst</div></div>
+              </div>
+            </div>
+            <table style="font-size:12px">
+              <thead><tr><th>Datum</th><th>Zeit</th><th>Hotline</th><th>Dauer</th><th>Agent</th><th>Anliegen</th><th>Aufgelegt</th><th>Status</th></tr></thead>
+              <tbody>
+                <tr><td>22.02.2026</td><td>08:32</td><td>Allgemein</td><td>3:22</td><td>Dr. Schmidt</td><td>Termin</td><td>Patient</td><td><span class="status-pill active" style="font-size:10px">Gelöst</span></td></tr>
+                <tr><td>18.02.2026</td><td>10:15</td><td>Rezept</td><td>2:10</td><td>Anna Weber</td><td>Rezept</td><td>Agent</td><td><span class="status-pill active" style="font-size:10px">Gelöst</span></td></tr>
+                <tr><td>10.02.2026</td><td>09:00</td><td>Allgemein</td><td>0:00</td><td>—</td><td>—</td><td>—</td><td><span class="status-pill offline" style="font-size:10px">Verpasst</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  const TABS = ['live','kpi','postfach','agents','clickbot','standort','search'];
+  function showTab(t) {
+    TABS.forEach(id => {
+      const el = document.getElementById('tab-' + id);
+      if (el) el.style.display = id === t ? 'block' : 'none';
+    });
+    document.querySelectorAll('.tab').forEach((el, i) => {
+      el.classList.toggle('active', TABS[i] === t);
+    });
+  }
+  function toggleDetail(id, btn) {
+    const d = document.getElementById(id);
+    if (d.classList.contains('open')) {
+      d.classList.remove('open');
+      btn.textContent = '▼ Details';
+    } else {
+      d.classList.add('open');
+      btn.textContent = '▲ Schließen';
+    }
+  }
+  function setStatus(msgId, newStatus) {
+    const msg = document.getElementById(msgId);
+    const pill = document.getElementById('status-' + msgId.split('-')[1]);
+    if (!msg || !pill) return;
+    msg.classList.remove('unread');
+    if (newStatus === 'done') {
+      pill.className = 'status-pill done';
+      pill.textContent = '✅ Erledigt';
+      msg.style.opacity = '.7';
+      msg.dataset.status = 'done';
+    } else if (newStatus === 'open') {
+      pill.className = 'status-pill pending';
+      pill.textContent = '🟡 Offen';
+      msg.style.opacity = '1';
+      msg.dataset.status = 'open';
+    }
+  }
+  function deleteMsg(msgId) {
+    const msg = document.getElementById(msgId);
+    if (msg) {
+      msg.style.transition = 'opacity .3s';
+      msg.style.opacity = '0';
+      setTimeout(() => msg.remove(), 300);
+    }
+  }
+  function filterInbox(filter, btn) {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('#inbox-list .inbox-item').forEach(item => {
+      if (filter === 'all') {
+        item.style.display = 'flex';
+      } else {
+        item.style.display = item.dataset.status === filter ? 'flex' : 'none';
+      }
+    });
+  }
+  function showSearchResult() {
+    document.getElementById('search-result').style.display = 'block';
+  }
+  // Live time update
+  setInterval(() => {
+    const now = new Date();
+    const t = now.getHours() + ':' + String(now.getMinutes()).padStart(2,'0') + ' Uhr';
+    document.querySelectorAll('.live-badge').forEach(el => {
+      const dot = el.querySelector('.live-dot');
+      if (dot) el.lastChild.textContent = ' Live · ' + t;
+    });
+  }, 30000);
+</script>
+</body>
+</html>

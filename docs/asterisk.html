@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Asterisk Dashboard – MedReception</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="stylesheet" href="style.css">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: #f8fafc; display: flex; }
+  .main { flex: 1; padding: 28px; overflow: auto; margin-left: 240px; }
+  .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+  h1 { font-size: 22px; font-weight: 700; color: #111827; }
+  .live-badge { display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 999px; }
+  .live-badge.green { color: #15803d; background: #dcfce7; }
+  .live-badge.red { color: #dc2626; background: #fef2f2; }
+  .live-dot { width: 7px; height: 7px; border-radius: 50%; animation: blink 1.2s infinite; }
+  .live-dot.green { background: #22c55e; }
+  .live-dot.red { background: #ef4444; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+  .date { font-size: 13px; color: #6b7280; margin-bottom: 20px; }
+  /* KPI */
+  .kpi-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 20px; }
+  .kpi { background: white; border-radius: 14px; border: 1px solid #e5e7eb; padding: 16px 18px; }
+  .kpi-label { font-size: 11px; color: #6b7280; font-weight: 500; margin-bottom: 8px; }
+  .kpi-value { font-size: 26px; font-weight: 700; color: #111827; }
+  .kpi-sub { font-size: 10px; color: #9ca3af; margin-top: 2px; }
+  .kpi-trend { font-size: 10px; font-weight: 600; margin-top: 4px; }
+  .kpi-trend.up{color:#15803d} .kpi-trend.down{color:#dc2626}
+  /* Cards */
+  .card { background: white; border-radius: 14px; border: 1px solid #e5e7eb; margin-bottom: 20px; }
+  .card-header { padding: 14px 20px; border-bottom: 1px solid #f3f4f6; display: flex; justify-content: space-between; align-items: center; }
+  .card-header h2 { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .card-body { padding: 16px 20px; }
+  .section-title { font-size: 13px; font-weight: 700; color: #374151; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  /* Status */
+  .status-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f3f4f6; }
+  .status-row:last-child { border-bottom: none; }
+  .status-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  .status-dot.green { background: #22c55e; box-shadow: 0 0 0 3px rgba(34,197,94,.15); }
+  .status-dot.red { background: #ef4444; box-shadow: 0 0 0 3px rgba(239,68,68,.15); }
+  .status-dot.yellow { background: #f59e0b; box-shadow: 0 0 0 3px rgba(245,158,11,.15); }
+  .status-dot.gray { background: #d1d5db; box-shadow: 0 0 0 3px rgba(209,213,219,.15); }
+  .status-name { font-size: 13px; font-weight: 500; color: #374151; flex: 1; }
+  .status-detail { font-size: 11px; color: #9ca3af; }
+  /* Table */
+  .tbl { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .tbl th { padding: 8px 12px; text-align: left; font-size: 10px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: .5px; border-bottom: 1px solid #e5e7eb; background: #f9fafb; white-space: nowrap; }
+  .tbl td { padding: 10px 12px; border-bottom: 1px solid #f3f4f6; color: #374151; }
+  .tbl td.fw { font-weight: 600; color: #1e293b; }
+  .tbl tr:last-child td { border-bottom: none; }
+  .tbl tr:hover td { background: #fafafa; }
+  .badge { padding: 2px 8px; border-radius: 6px; font-size: 10px; font-weight: 600; }
+  .badge.green { background: #dcfce7; color: #15803d; }
+  .badge.red { background: #fef2f2; color: #dc2626; }
+  .badge.yellow { background: #fef3c7; color: #92400e; }
+  .badge.blue { background: #dbeafe; color: #4f46e5; }
+  .badge.gray { background: #f3f4f6; color: #6b7280; }
+  /* Grid */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+  /* Buttons */
+  .btn { padding: 7px 16px; border-radius: 9px; font-size: 12px; font-weight: 600; border: none; cursor: pointer; font-family: 'Inter', sans-serif; }
+  .btn.primary { background: #6366f1; color: white; }
+  .btn.secondary { background: #f1f5f9; color: #475569; border: 1.5px solid #e2e8f0; }
+  .btn.red { background: #dc2626; color: white; }
+  .btn.green { background: #16a34a; color: white; }
+  .btn:hover { opacity: .85; }
+  .btn-row { display: flex; gap: 8px; }
+  /* Channel Bar */
+  .ch-bar { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: #f8fafc; border-radius: 10px; margin-bottom: 8px; border: 1px solid #e2e8f0; }
+  .ch-num { font-size: 13px; font-weight: 700; color: #4f46e5; min-width: 50px; }
+  .ch-info { flex: 1; font-size: 12px; color: #374151; }
+  .ch-dur { font-size: 11px; color: #9ca3af; min-width: 50px; text-align: right; }
+  /* Log entry */
+  .log-entry { font-family: 'Fira Code', 'Courier New', monospace; font-size: 11px; padding: 3px 0; color: #475569; border-bottom: 1px solid #f9fafb; }
+  .log-time { color: #9ca3af; }
+  .log-warn { color: #d97706; }
+  .log-err { color: #dc2626; }
+  .log-ok { color: #15803d; }
+  .log-box { background: #0f172a; border-radius: 10px; padding: 14px 16px; max-height: 300px; overflow-y: auto; }
+  .log-box .log-entry { color: #94a3b8; border-bottom: none; }
+  .log-box .log-time { color: #64748b; }
+  .log-box .log-warn { color: #fbbf24; }
+  .log-box .log-err { color: #f87171; }
+  .log-box .log-ok { color: #4ade80; }
+</style>
+</head>
+<body>
+<!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-logo" onclick="location.href='admin-dashboard.html'"><div class="icon">M</div><span>MedReception</span></div>
+        <nav class="sidebar-nav">
+            <div class="nav-group">Uebersicht</div>
+            <a href="admin-dashboard.html"><i class="fa-solid fa-gauge nav-icon"></i> Dashboard</a>
+            <div class="nav-group">Praxis</div>
+            <a href="patienten.html"><i class="fa-solid fa-users nav-icon"></i> Patienten</a>
+            <a href="aerzte.html"><i class="fa-solid fa-user-doctor nav-icon"></i> Aerzte</a>
+            <a href="termine.html"><i class="fa-solid fa-calendar-days nav-icon"></i> Termine</a>
+            <a href="wartezimmer.html"><i class="fa-solid fa-couch nav-icon"></i> Wartezimmer</a>
+            <div class="nav-group">Callcenter</div>
+            <a href="agenten.html"><i class="fa-solid fa-headset nav-icon"></i> Agenten</a>
+            <a href="voicebot.html"><i class="fa-solid fa-robot nav-icon"></i> Voicebot</a>
+            <a href="voicebot-live.html"><i class="fa-solid fa-microphone nav-icon"></i> Voicebot Live</a>
+            <a href="ansagen.html"><i class="fa-solid fa-tower-broadcast nav-icon"></i> Ansagen</a>
+            <a href="softphone.html"><i class="fa-solid fa-phone nav-icon"></i> Softphone</a>
+            <div class="nav-group">Telefonie</div>
+            <a href="asterisk.html" class="active"><i class="fa-solid fa-server nav-icon"></i> Asterisk</a>
+            <a href="acd.html"><i class="fa-solid fa-phone-volume nav-icon"></i> ACD</a>
+            <a href="standort.html"><i class="fa-solid fa-building nav-icon"></i> Standort</a>
+            <a href="callflow.html"><i class="fa-solid fa-diagram-project nav-icon"></i> Callflow</a>
+            <div class="nav-group">Analyse</div>
+            <a href="auswertung.html"><i class="fa-solid fa-chart-line nav-icon"></i> Auswertungen</a>
+            <a href="wissensdatenbank.html"><i class="fa-solid fa-book nav-icon"></i> Wissensdatenbank</a>
+            <a href="uebersetzung.html"><i class="fa-solid fa-language nav-icon"></i> Uebersetzer</a>
+            <div class="nav-group">Admin</div>
+            <a href="benutzer.html"><i class="fa-solid fa-user-gear nav-icon"></i> Benutzer</a>
+            <div class="nav-group">KI</div>
+            <a href="ai-agent.html"><i class="fa-solid fa-microchip nav-icon"></i> AI Agent Hub</a>
+
+        </nav>
+        <div class="sidebar-footer">
+            <button onclick="sessionStorage.removeItem('mr_guard_session');location.href='index.html'" type="button"><i class="fa-solid fa-right-from-bracket nav-icon"></i> Abmelden</button>
+        </div>
+    </aside>
+<!-- Main -->
+<div class="main">
+  <div class="top-bar">
+    <h1>Asterisk Dashboard</h1>
+    <div class="live-badge green"><span class="live-dot green"></span> Asterisk Online</div>
+  </div>
+  <p class="date">PBX-Status, SIP-Peers, Kanäle und Logs</p>
+
+  <!-- KPIs -->
+  <div class="kpi-grid">
+    <div class="kpi">
+      <div class="kpi-label">SIP-Peers Online</div>
+      <div class="kpi-value">5 / 6</div>
+      <div class="kpi-sub">1 offline (Ext. 106)</div>
+      <div class="kpi-trend up">83% Verfügbarkeit</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Aktive Kanäle</div>
+      <div class="kpi-value">4</div>
+      <div class="kpi-sub">2 Gespräche · 2 Warteschleife</div>
+      <div class="kpi-trend up">Normal</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Anrufe heute</div>
+      <div class="kpi-value">87</div>
+      <div class="kpi-sub">62 inbound · 25 outbound</div>
+      <div class="kpi-trend up">↑ +12% vs. gestern</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Uptime</div>
+      <div class="kpi-value">14d 6h</div>
+      <div class="kpi-sub">Letzter Restart: 14.02.2026</div>
+      <div class="kpi-trend up">Stabil</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <!-- SIP Peers -->
+    <div class="card">
+      <div class="card-header">
+        <h2>📱 SIP-Peers</h2>
+        <button class="btn secondary" style="font-size:11px;padding:5px 12px">🔄 Refresh</button>
+      </div>
+      <div class="card-body" style="padding:0">
+        <table class="tbl">
+          <thead><tr><th>Peer</th><th>IP-Adresse</th><th>Latenz</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td class="fw">101 / Dr. Schmidt</td><td>192.168.1.101</td><td>2 ms</td><td><span class="badge green">OK</span></td></tr>
+            <tr><td class="fw">102 / Anna Weber</td><td>192.168.1.102</td><td>3 ms</td><td><span class="badge green">OK</span></td></tr>
+            <tr><td class="fw">103 / Chris Müller</td><td>192.168.1.103</td><td>1 ms</td><td><span class="badge green">OK</span></td></tr>
+            <tr><td class="fw">104 / Laura Klein</td><td>192.168.1.104</td><td>4 ms</td><td><span class="badge green">OK</span></td></tr>
+            <tr><td class="fw">105 / Tom Huber</td><td>192.168.1.105</td><td>2 ms</td><td><span class="badge green">OK</span></td></tr>
+            <tr><td class="fw">106 / Empfang 2</td><td>—</td><td>—</td><td><span class="badge red">Offline</span></td></tr>
+            <tr><td class="fw">200 / Voicebot</td><td>127.0.0.1</td><td>&lt;1 ms</td><td><span class="badge green">OK</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Trunk & Provider -->
+    <div class="card">
+      <div class="card-header">
+        <h2>🌐 SIP-Trunks</h2>
+      </div>
+      <div class="card-body">
+        <div class="status-row">
+          <span class="status-dot green"></span>
+          <span class="status-name">Telekom SIP-Trunk (Primär)</span>
+          <span class="status-detail">+49 89 123456 · 10 Kanäle · Latenz: 18ms</span>
+        </div>
+        <div class="status-row">
+          <span class="status-dot green"></span>
+          <span class="status-name">sipgate (Backup)</span>
+          <span class="status-detail">+49 89 654321 · 5 Kanäle · Standby</span>
+        </div>
+        <div class="status-row">
+          <span class="status-dot yellow"></span>
+          <span class="status-name">Placetel (Voicebot-DID)</span>
+          <span class="status-detail">+49 89 999888 · 2 Kanäle · Latenz: 42ms</span>
+        </div>
+        <div style="margin-top:14px">
+          <div class="section-title">🔒 Codecs</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <span class="badge blue">G.711a (alaw)</span>
+            <span class="badge blue">G.711u (ulaw)</span>
+            <span class="badge green">G.722 (HD)</span>
+            <span class="badge gray">G.729 (deaktiviert)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Aktive Kanäle -->
+  <div class="card">
+    <div class="card-header">
+      <h2>📞 Aktive Kanäle</h2>
+      <span style="font-size:11px;color:#9ca3af">4 aktive Kanäle</span>
+    </div>
+    <div class="card-body">
+      <div class="ch-bar">
+        <span class="badge green">AKTIV</span>
+        <span class="ch-num">SIP/101</span>
+        <span class="ch-info">Dr. Schmidt ↔ +49 176 ****321 (Inbound)</span>
+        <span class="ch-dur">03:42</span>
+      </div>
+      <div class="ch-bar">
+        <span class="badge green">AKTIV</span>
+        <span class="ch-num">SIP/104</span>
+        <span class="ch-info">Laura Klein ↔ +49 89 ****456 (Inbound)</span>
+        <span class="ch-dur">01:18</span>
+      </div>
+      <div class="ch-bar">
+        <span class="badge yellow">QUEUE</span>
+        <span class="ch-num">SIP/200</span>
+        <span class="ch-info">Voicebot ↔ +49 152 ****789 (IVR Menü)</span>
+        <span class="ch-dur">00:23</span>
+      </div>
+      <div class="ch-bar">
+        <span class="badge yellow">HOLD</span>
+        <span class="ch-num">SIP/102</span>
+        <span class="ch-info">Anna Weber — +49 171 ****234 (Warteschleife Allgemein)</span>
+        <span class="ch-dur">00:45</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <!-- Anruf-Statistik -->
+    <div class="card">
+      <div class="card-header"><h2>📊 Anruf-Statistik (heute)</h2></div>
+      <div class="card-body" style="padding:0">
+        <table class="tbl">
+          <thead><tr><th>Metrik</th><th style="text-align:right">Wert</th></tr></thead>
+          <tbody>
+            <tr><td>Eingehende Anrufe</td><td style="text-align:right" class="fw">62</td></tr>
+            <tr><td>Ausgehende Anrufe</td><td style="text-align:right" class="fw">25</td></tr>
+            <tr><td>Angenommen</td><td style="text-align:right;color:#15803d;font-weight:600">54 (87%)</td></tr>
+            <tr><td>Verpasst / Abgebrochen</td><td style="text-align:right;color:#dc2626;font-weight:600">8 (13%)</td></tr>
+            <tr><td>Voicebot bearbeitet</td><td style="text-align:right;color:#7c3aed;font-weight:600">14</td></tr>
+            <tr><td>Ø Gesprächsdauer</td><td style="text-align:right" class="fw">2:34 min</td></tr>
+            <tr><td>Ø Wartezeit</td><td style="text-align:right" class="fw">0:42 min</td></tr>
+            <tr><td>Max. gleichzeitige Kanäle</td><td style="text-align:right" class="fw">6</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Dienste -->
+    <div class="card">
+      <div class="card-header">
+        <h2>⚙️ Asterisk-Dienste</h2>
+      </div>
+      <div class="card-body">
+        <div class="status-row">
+          <span class="status-dot green"></span>
+          <span class="status-name">Asterisk Core</span>
+          <span class="status-detail">Version 20.7.0 · PID 1842</span>
+        </div>
+        <div class="status-row">
+          <span class="status-dot green"></span>
+          <span class="status-name">PJSIP Module</span>
+          <span class="status-detail">7 Endpoints registriert</span>
+        </div>
+        <div class="status-row">
+          <span class="status-dot green"></span>
+          <span class="status-name">AGI (Voicebot)</span>
+          <span class="status-detail">FastAGI auf Port 4573</span>
+        </div>
+        <div class="status-row">
+          <span class="status-dot green"></span>
+          <span class="status-name">AMI (Manager)</span>
+          <span class="status-detail">Port 5038 · 1 Client verbunden</span>
+        </div>
+        <div class="status-row">
+          <span class="status-dot green"></span>
+          <span class="status-name">CDR / CEL</span>
+          <span class="status-detail">SQLite3 · 87 Einträge heute</span>
+        </div>
+        <div class="status-row">
+          <span class="status-dot yellow"></span>
+          <span class="status-name">Voicemail</span>
+          <span class="status-detail">3 neue Nachrichten</span>
+        </div>
+        <div class="btn-row" style="margin-top:14px">
+          <button class="btn primary">🔄 Reload Config</button>
+          <button class="btn red">⟳ Asterisk Restart</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Asterisk CLI Log -->
+  <div class="card">
+    <div class="card-header">
+      <h2>🖥 Asterisk CLI Log</h2>
+      <div class="btn-row">
+        <button class="btn secondary" style="font-size:11px;padding:5px 12px">⏸ Pause</button>
+        <button class="btn secondary" style="font-size:11px;padding:5px 12px">🗑 Leeren</button>
+      </div>
+    </div>
+    <div class="card-body" style="padding:12px 16px">
+      <div class="log-box">
+        <div class="log-entry"><span class="log-time">[08:34:12]</span> <span class="log-ok">NOTICE</span> chan_pjsip: Incoming call from +49 176 ****321 to extension 200</div>
+        <div class="log-entry"><span class="log-time">[08:34:12]</span> <span class="log-ok">NOTICE</span> app_queue: Added caller to queue 'allgemein' (pos 1)</div>
+        <div class="log-entry"><span class="log-time">[08:34:14]</span> <span class="log-ok">NOTICE</span> app_queue: Agent SIP/101 answered queue 'allgemein'</div>
+        <div class="log-entry"><span class="log-time">[08:31:45]</span> <span class="log-ok">NOTICE</span> chan_pjsip: Call from +49 89 ****456 routed to Voicebot AGI</div>
+        <div class="log-entry"><span class="log-time">[08:31:46]</span> <span class="log-ok">NOTICE</span> res_agi: AGI Script agi://127.0.0.1:4573/voicebot started</div>
+        <div class="log-entry"><span class="log-time">[08:31:48]</span> <span class="log-ok">NOTICE</span> res_agi: Voicebot session started, channel SIP/200-00000042</div>
+        <div class="log-entry"><span class="log-time">[08:28:30]</span> <span class="log-warn">WARNING</span> chan_pjsip: Peer 106 (Empfang 2) unreachable — no response to OPTIONS</div>
+        <div class="log-entry"><span class="log-time">[08:22:10]</span> <span class="log-ok">NOTICE</span> chan_pjsip: Registration of SIP/105 (Tom Huber) successful</div>
+        <div class="log-entry"><span class="log-time">[08:00:01]</span> <span class="log-ok">NOTICE</span> pbx_config: Dialplan reloaded — 42 contexts, 187 extensions</div>
+        <div class="log-entry"><span class="log-time">[07:59:58]</span> <span class="log-ok">NOTICE</span> res_pjsip: Loaded 7 endpoints, 3 trunks</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+setInterval(() => {
+  const now = new Date();
+  const t = now.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});
+  document.querySelectorAll('.live-badge').forEach(b => {
+    if(b.textContent.includes('Online')) b.innerHTML = '<span class="live-dot green"></span> Asterisk Online · '+t;
+  });
+}, 30000);
+</script>
+</body>
+</html>

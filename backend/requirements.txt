@@ -10,7 +10,7 @@ aiosqlite==0.20.0
 panoramisk==1.4
 faster-whisper==1.0.3
 requests>=2.31.0
-# piper-tts wird als Standalone-Binary installiert (nicht als pip-Paket)
+edge-tts>=6.1.0
 ollama==0.3.3
 pydub==0.25.1
 numpy==1.26.4

@@ -237,7 +237,7 @@ def dialog_rezept(agi_vars):
         agi_set_variable("VOICEBOT_RESULT", "TRANSFER")
         return
 
-    agi_verbose("Voicebot: Versicherungsnummer eingegeben: {}".format(vnr), 1)
+    agi_verbose("Voicebot: Versicherungsnummer eingegeben: ***{}".format(vnr[-3:] if len(vnr) >= 3 else "***"), 1)
 
     # Bestaetigung
     agi_playback("voicebot-rezept-bestaetigt")

@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Dashboard – MedReception</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="stylesheet" href="style.css">
+<style>
+  /* ── System Status Cards ── */
+  .sys-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 24px; }
+  .sys-card { background: white; border-radius: 14px; border: 1px solid #e5e7eb; padding: 18px 20px; position: relative; overflow: hidden; }
+  .sys-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+  .sys-card.ok::before { background: #22c55e; }
+  .sys-card.warn::before { background: #f59e0b; }
+  .sys-card.err::before { background: #ef4444; }
+  .sys-card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .sys-card-title { font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: .5px; }
+  .sys-card-badge { display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 999px; }
+  .sys-card-badge.ok { background: #dcfce7; color: #15803d; }
+  .sys-card-badge.warn { background: #fef3c7; color: #92400e; }
+  .sys-card-badge.err { background: #fef2f2; color: #dc2626; }
+  .sys-card-val { font-size: 22px; font-weight: 800; color: #0f172a; margin-bottom: 2px; }
+  .sys-card-sub { font-size: 11px; color: #9ca3af; }
+  .sys-dot { width: 7px; height: 7px; border-radius: 50%; }
+  .sys-dot.green { background: #22c55e; animation: pulse-live 1.5s infinite; }
+  .sys-dot.yellow { background: #f59e0b; animation: pulse-live 1.5s infinite; }
+  .sys-dot.red { background: #ef4444; animation: pulse-live 1.5s infinite; }
+  @keyframes pulse-live { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+  /* ── Detail Sections ── */
+  .mon-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  .mon-card { background: white; border-radius: 14px; border: 1px solid #e5e7eb; overflow: hidden; }
+  .mon-card-head { padding: 14px 20px; border-bottom: 1px solid #f3f4f6; display: flex; align-items: center; justify-content: space-between; }
+  .mon-card-head h3 { font-size: 13px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 8px; }
+  .mon-card-body { padding: 16px 20px; }
+
+  /* ── Usage Bars ── */
+  .usage-row { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .usage-row:last-child { margin-bottom: 0; }
+  .usage-label { font-size: 12px; font-weight: 600; color: #374151; min-width: 70px; }
+  .usage-bar-wrap { flex: 1; height: 8px; background: #f1f5f9; border-radius: 999px; overflow: hidden; }
+  .usage-bar-fill { height: 100%; border-radius: 999px; transition: width .5s ease; }
+  .usage-bar-fill.green { background: #22c55e; }
+  .usage-bar-fill.yellow { background: #f59e0b; }
+  .usage-bar-fill.red { background: #ef4444; }
+  .usage-bar-fill.blue { background: #6366f1; }
+  .usage-val { font-size: 12px; font-weight: 700; color: #1e293b; min-width: 45px; text-align: right; }
+
+  /* ── Metric Rows ── */
+  .met-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f9fafb; }
+  .met-row:last-child { border-bottom: none; }
+  .met-label { font-size: 12px; color: #6b7280; display: flex; align-items: center; gap: 6px; }
+  .met-val { font-size: 12px; font-weight: 700; color: #1e293b; }
+  .met-val.green { color: #15803d; }
+  .met-val.red { color: #dc2626; }
+  .met-val.yellow { color: #d97706; }
+
+  /* ── Service List ── */
+  .svc-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid #f3f4f6; }
+  .svc-row:last-child { border-bottom: none; }
+  .svc-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  .svc-dot.green { background: #22c55e; box-shadow: 0 0 0 3px rgba(34,197,94,.15); }
+  .svc-dot.red { background: #ef4444; box-shadow: 0 0 0 3px rgba(239,68,68,.15); }
+  .svc-dot.yellow { background: #f59e0b; box-shadow: 0 0 0 3px rgba(245,158,11,.15); }
+  .svc-name { font-size: 12px; font-weight: 600; color: #1e293b; flex: 1; }
+  .svc-detail { font-size: 11px; color: #9ca3af; }
+  .svc-badge { padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 600; }
+  .svc-badge.ok { background: #dcfce7; color: #15803d; }
+  .svc-badge.err { background: #fef2f2; color: #dc2626; }
+  .svc-badge.warn { background: #fef3c7; color: #92400e; }
+
+  /* ── Log ── */
+  .log-box { background: #0f172a; border-radius: 10px; padding: 14px 16px; max-height: 220px; overflow-y: auto; font-family: 'Courier New', monospace; font-size: 11px; line-height: 1.7; }
+  .log-line { color: #94a3b8; }
+  .log-line .ts { color: #475569; }
+  .log-line .ok { color: #4ade80; }
+  .log-line .warn { color: #fbbf24; }
+  .log-line .err { color: #f87171; }
+  .log-line .info { color: #93c5fd; }
+
+  /* ── Responsive ── */
+  @media (max-width: 1100px) { .sys-grid { grid-template-columns: repeat(2,1fr); } }
+  @media (max-width: 768px) {
+    .sys-grid { grid-template-columns: 1fr; }
+    .mon-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-logo" onclick="location.href='admin-dashboard.html'"><div class="icon">M</div><span>MedReception</span></div>
+        <nav class="sidebar-nav">
+            <div class="nav-group">Uebersicht</div>
+            <a href="admin-dashboard.html" class="active"><i class="fa-solid fa-gauge nav-icon"></i> Dashboard</a>
+            <div class="nav-group">Praxis</div>
+            <a href="patienten.html"><i class="fa-solid fa-users nav-icon"></i> Patienten</a>
+            <a href="aerzte.html"><i class="fa-solid fa-user-doctor nav-icon"></i> Aerzte</a>
+            <a href="termine.html"><i class="fa-solid fa-calendar-days nav-icon"></i> Termine</a>
+            <a href="wartezimmer.html"><i class="fa-solid fa-couch nav-icon"></i> Wartezimmer</a>
+            <div class="nav-group">Callcenter</div>
+            <a href="agenten.html"><i class="fa-solid fa-headset nav-icon"></i> Agenten</a>
+            <a href="voicebot.html"><i class="fa-solid fa-robot nav-icon"></i> Voicebot</a>
+            <a href="voicebot-live.html"><i class="fa-solid fa-microphone nav-icon"></i> Voicebot Live</a>
+            <a href="ansagen.html"><i class="fa-solid fa-tower-broadcast nav-icon"></i> Ansagen</a>
+            <a href="softphone.html"><i class="fa-solid fa-phone nav-icon"></i> Softphone</a>
+            <div class="nav-group">Telefonie</div>
+            <a href="asterisk.html"><i class="fa-solid fa-server nav-icon"></i> Asterisk</a>
+            <a href="acd.html"><i class="fa-solid fa-phone-volume nav-icon"></i> ACD</a>
+            <a href="standort.html"><i class="fa-solid fa-building nav-icon"></i> Standort</a>
+            <a href="callflow.html"><i class="fa-solid fa-diagram-project nav-icon"></i> Callflow</a>
+            <div class="nav-group">Analyse</div>
+            <a href="auswertung.html"><i class="fa-solid fa-chart-line nav-icon"></i> Auswertungen</a>
+            <a href="wissensdatenbank.html"><i class="fa-solid fa-book nav-icon"></i> Wissensdatenbank</a>
+            <a href="uebersetzung.html"><i class="fa-solid fa-language nav-icon"></i> Uebersetzer</a>
+            <div class="nav-group">Admin</div>
+            <a href="benutzer.html"><i class="fa-solid fa-user-gear nav-icon"></i> Benutzer</a>
+            <div class="nav-group">KI</div>
+            <a href="ai-agent.html"><i class="fa-solid fa-microchip nav-icon"></i> AI Agent Hub</a>
+
+        </nav>
+        <div class="sidebar-footer">
+            <button onclick="sessionStorage.removeItem('mr_guard_session');location.href='index.html'" type="button"><i class="fa-solid fa-right-from-bracket nav-icon"></i> Abmelden</button>
+        </div>
+    </aside>
+
+<!-- Main -->
+<div class="main" style="margin-left:240px">
+  <!-- Top Bar -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+    <h1 style="font-size:22px;font-weight:700;color:#111827">System Dashboard</h1>
+    <div style="display:flex;align-items:center;gap:12px">
+      <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:#15803d;font-weight:600;background:#dcfce7;padding:4px 10px;border-radius:999px"><span class="sys-dot green"></span> Alle Systeme Online</div>
+      <span id="live-clock" style="font-size:12px;color:#6b7280;font-weight:500"></span>
+    </div>
+  </div>
+  <p style="font-size:13px;color:#6b7280;margin-bottom:20px" id="live-date"></p>
+
+  <!-- ══════ SYSTEM STATUS CARDS ══════ -->
+  <div class="sys-grid">
+    <!-- Server -->
+    <div class="sys-card ok">
+      <div class="sys-card-head">
+        <span class="sys-card-title"><i class="fa-solid fa-server" style="margin-right:4px"></i> Server</span>
+        <span class="sys-card-badge ok"><span class="sys-dot green"></span> Online</span>
+      </div>
+      <div class="sys-card-val">99.98%</div>
+      <div class="sys-card-sub">Uptime · seit 42 Tagen</div>
+    </div>
+    <!-- Datenbank -->
+    <div class="sys-card ok">
+      <div class="sys-card-head">
+        <span class="sys-card-title"><i class="fa-solid fa-database" style="margin-right:4px"></i> Datenbank</span>
+        <span class="sys-card-badge ok"><span class="sys-dot green"></span> Online</span>
+      </div>
+      <div class="sys-card-val">12 ms</div>
+      <div class="sys-card-sub">Ø Antwortzeit · PostgreSQL 16</div>
+    </div>
+    <!-- Asterisk -->
+    <div class="sys-card ok">
+      <div class="sys-card-head">
+        <span class="sys-card-title"><i class="fa-solid fa-phone" style="margin-right:4px"></i> Asterisk</span>
+        <span class="sys-card-badge ok"><span class="sys-dot green"></span> Online</span>
+      </div>
+      <div class="sys-card-val">2 / 5</div>
+      <div class="sys-card-sub">Aktive Kanäle · v20.5 Docker</div>
+    </div>
+    <!-- ACD -->
+    <div class="sys-card ok">
+      <div class="sys-card-head">
+        <span class="sys-card-title"><i class="fa-solid fa-headset" style="margin-right:4px"></i> ACD</span>
+        <span class="sys-card-badge ok"><span class="sys-dot green"></span> Aktiv</span>
+      </div>
+      <div class="sys-card-val">3 / 3</div>
+      <div class="sys-card-sub">Queues aktiv · 4 Agenten online</div>
+    </div>
+  </div>
+
+  <!-- ══════ SERVER & INFRASTRUKTUR ══════ -->
+  <div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px"><i class="fa-solid fa-server" style="margin-right:4px"></i> Server & Infrastruktur</div>
+  <div class="mon-grid">
+    <!-- Server Ressourcen -->
+    <div class="mon-card">
+      <div class="mon-card-head">
+        <h3><i class="fa-solid fa-microchip" style="color:#6366f1"></i> Ressourcen</h3>
+        <span style="font-size:11px;color:#9ca3af">Ubuntu 22.04 · 46.225.86.170</span>
+      </div>
+      <div class="mon-card-body">
+        <div class="usage-row">
+          <span class="usage-label">CPU</span>
+          <div class="usage-bar-wrap"><div class="usage-bar-fill green" style="width:23%"></div></div>
+          <span class="usage-val">23%</span>
+        </div>
+        <div class="usage-row">
+          <span class="usage-label">RAM</span>
+          <div class="usage-bar-wrap"><div class="usage-bar-fill blue" style="width:61%"></div></div>
+          <span class="usage-val">61%</span>
+        </div>
+        <div class="usage-row">
+          <span class="usage-label">Disk</span>
+          <div class="usage-bar-wrap"><div class="usage-bar-fill yellow" style="width:47%"></div></div>
+          <span class="usage-val">47%</span>
+        </div>
+        <div class="usage-row">
+          <span class="usage-label">Netzwerk</span>
+          <div class="usage-bar-wrap"><div class="usage-bar-fill green" style="width:12%"></div></div>
+          <span class="usage-val">12 MB/s</span>
+        </div>
+        <div style="display:flex;gap:16px;margin-top:14px;padding-top:12px;border-top:1px solid #f3f4f6">
+          <div><div style="font-size:10px;color:#9ca3af;font-weight:600">UPTIME</div><div style="font-size:13px;font-weight:700;color:#1e293b">42d 7h 23m</div></div>
+          <div><div style="font-size:10px;color:#9ca3af;font-weight:600">LOAD AVG</div><div style="font-size:13px;font-weight:700;color:#1e293b">0.42 / 0.38 / 0.35</div></div>
+          <div><div style="font-size:10px;color:#9ca3af;font-weight:600">KERNEL</div><div style="font-size:13px;font-weight:700;color:#1e293b">5.15.0-91</div></div>
+        </div>
+      </div>
+    </div>
+    <!-- Docker Container -->
+    <div class="mon-card">
+      <div class="mon-card-head">
+        <h3><i class="fa-brands fa-docker" style="color:#0891b2"></i> Docker Container</h3>
+        <span style="font-size:11px;color:#15803d;font-weight:600">6/6 Running</span>
+      </div>
+      <div class="mon-card-body">
+        <div class="svc-row"><span class="svc-dot green"></span><span class="svc-name">medreception-nginx</span><span class="svc-detail">:443, :80</span><span class="svc-badge ok">Running</span></div>
+        <div class="svc-row"><span class="svc-dot green"></span><span class="svc-name">medreception-asterisk</span><span class="svc-detail">:5060 SIP</span><span class="svc-badge ok">Running</span></div>
+        <div class="svc-row"><span class="svc-dot green"></span><span class="svc-name">medreception-postgres</span><span class="svc-detail">:5432</span><span class="svc-badge ok">Running</span></div>
+        <div class="svc-row"><span class="svc-dot green"></span><span class="svc-name">medreception-redis</span><span class="svc-detail">:6379</span><span class="svc-badge ok">Running</span></div>
+        <div class="svc-row"><span class="svc-dot green"></span><span class="svc-name">medreception-api</span><span class="svc-detail">:3000</span><span class="svc-badge ok">Running</span></div>
+        <div class="svc-row"><span class="svc-dot green"></span><span class="svc-name">medreception-voicebot</span><span class="svc-detail">:8080 WS</span><span class="svc-badge ok">Running</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════ DATENBANK ══════ -->
+  <div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px"><i class="fa-solid fa-database" style="margin-right:4px"></i> Datenbank</div>
+  <div class="mon-grid">
+    <!-- DB Status -->
+    <div class="mon-card">
+      <div class="mon-card-head">
+        <h3><i class="fa-solid fa-database" style="color:#6366f1"></i> PostgreSQL 16</h3>
+        <span class="svc-badge ok">Connected</span>
+      </div>
+      <div class="mon-card-body">
+        <div class="met-row"><span class="met-label"><i class="fa-solid fa-clock" style="color:#9ca3af"></i> Antwortzeit (Ø)</span><span class="met-val green">12 ms</span></div>
+        <div class="met-row"><span class="met-label"><i class="fa-solid fa-link" style="color:#9ca3af"></i> Aktive Verbindungen</span><span class="met-val">14 / 100</span></div>
+        <div class="met-row"><span class="met-label"><i class="fa-solid fa-hard-drive" style="color:#9ca3af"></i> Datenbankgröße</span><span class="met-val">2.4 GB</span></div>
+        <div class="met-row"><span class="met-label"><i class="fa-solid fa-table" style="color:#9ca3af"></i> Tabellen</span><span class="met-val">38</span></div>
+        <div class="met-row"><span class="met-label"><i class="fa-solid fa-bolt" style="color:#9ca3af"></i> Queries / Sek</span><span class="met-val">127</span></div>
+        <div class="met-row"><span class="met-label"><i class="fa-solid fa-arrow-up" style="color:#9ca3af"></i> Uptime</span><span class="met-val green">42d 7h</span></div>
+      </div>
+    </div>
+    <!-- DB Backup -->
+    <div class="mon-card">
+      <div class="mon-card-head">
+        <h3><i class="fa-solid fa-shield-halved" style="color:#22c55e"></i> Backup & Integrität</h3>
+        <span class="svc-badge ok">Healthy</span>
+      </div>
+      <div class="mon-card-body">
+        <div class="met-row"><span class="met-label"><i class="fa-solid fa-download" style="color:#9ca3af"></i> Letztes Backup</span><span class="met-val green">Heute 03:00</span></div>
+        <div class="met-row"><span class="met-label"><i class="fa-solid fa-file-zipper" style="color:#9ca3af"></i> Backup-Größe</span><span class="met-val">1.8 GB</span></div>
+        <div class="met-row"><span class="met-label"><i class="fa-solid fa-rotate" style="color:#9ca3af"></i> Nächstes Backup</span><span class="met-val">Morgen 03:00</span></div>
+        <div class="met-row"><span class="met-label"><i class="fa-solid fa-check-double" style="color:#9ca3af"></i> Replikation</span><span class="met-val green">Synchron</span></div>
+        <div class="met-row"><span class="met-label"><i class="fa-solid fa-triangle-exclamation" style="color:#9ca3af"></i> Slow Queries (24h)</span><span class="met-val">3</span></div>
+        <div class="met-row"><span class="met-label"><i class="fa-solid fa-lock" style="color:#9ca3af"></i> Deadlocks (24h)</span><span class="met-val green">0</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════ ASTERISK ══════ -->
+  <div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px"><i class="fa-solid fa-phone" style="margin-right:4px"></i> Asterisk / Telefonie</div>
+  <div class="mon-grid">
+    <!-- Asterisk Status -->
+    <div class="mon-card">
+      <div class="mon-card-head">
+        <h3><i class="fa-solid fa-phone-volume" style="color:#6366f1"></i> Asterisk v20.5</h3>
+        <span class="svc-badge ok">Registered</span>
+      </div>
+      <div class="mon-card-body">
+        <div class="met-row"><span class="met-label"><i class="fa-solid fa-tower-broadcast" style="color:#9ca3af"></i> Aktive Kanäle</span><span class="met-val">2</span></div>
+        <div class="met-row"><span class="met-label"><i class="fa-solid fa-phone" style="color:#9ca3af"></i> Anrufe heute</span><span class="met-val">24</span></div>
+        <div class="met-row"><span class="met-label"><i class="fa-solid fa-phone-slash" style="color:#9ca3af"></i> Verpasst heute</span><span class="met-val red">3</span></div>
+        <div class="met-row"><span class="met-label"><i class="fa-solid fa-clock-rotate-left" style="color:#9ca3af"></i> Ø Gesprächsdauer</span><span class="met-val">3:48 min</span></div>
+        <div class="met-row"><span class="met-label"><i class="fa-solid fa-arrow-up" style="color:#9ca3af"></i> Uptime</span><span class="met-val green">42d 7h</span></div>
+        <div class="met-row"><span class="met-label"><i class="fa-solid fa-rotate" style="color:#9ca3af"></i> Letztes Reload</span><span class="met-val">Heute 06:00</span></div>
+      </div>
+    </div>
+    <!-- SIP Trunks & Extensions -->
+    <div class="mon-card">
+      <div class="mon-card-head">
+        <h3><i class="fa-solid fa-network-wired" style="color:#0891b2"></i> SIP Trunks & Extensions</h3>
+        <span style="font-size:11px;color:#9ca3af">5 Extensions</span>
+      </div>
+      <div class="mon-card-body">
+        <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">SIP Trunks</div>
+        <div class="svc-row"><span class="svc-dot green"></span><span class="svc-name">Telekom SIP</span><span class="svc-detail">sip.telekom.de:5060</span><span class="svc-badge ok">OK</span></div>
+        <div class="svc-row"><span class="svc-dot red"></span><span class="svc-name">Backup Trunk</span><span class="svc-detail">sip2.provider.de:5060</span><span class="svc-badge err">Offline</span></div>
+        <div class="svc-row"><span class="svc-dot green"></span><span class="svc-name">Mobil Trunk</span><span class="svc-detail">mobile.sip.de:5061</span><span class="svc-badge ok">OK</span></div>
+        <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px;margin:14px 0 8px">Extensions</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px"><span class="svc-dot green"></span><span style="font-weight:700;color:#6366f1;min-width:28px">101</span><span style="color:#374151">Dr. Schmidt</span></div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px"><span class="svc-dot green"></span><span style="font-weight:700;color:#6366f1;min-width:28px">102</span><span style="color:#374151">Anna Weber</span></div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px"><span class="svc-dot green"></span><span style="font-weight:700;color:#6366f1;min-width:28px">103</span><span style="color:#374151">Chris Müller</span></div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px"><span class="svc-dot green"></span><span style="font-weight:700;color:#6366f1;min-width:28px">104</span><span style="color:#374151">Laura Klein</span></div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px"><span class="svc-dot green"></span><span style="font-weight:700;color:#6366f1;min-width:28px">105</span><span style="color:#374151">Tom Huber</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════ ACD ══════ -->
+  <div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px"><i class="fa-solid fa-headset" style="margin-right:4px"></i> ACD — Automatic Call Distribution</div>
+  <div class="mon-grid">
+    <!-- Queue Status -->
+    <div class="mon-card">
+      <div class="mon-card-head">
+        <h3><i class="fa-solid fa-layer-group" style="color:#6366f1"></i> Warteschlangen</h3>
+        <span class="svc-badge ok">3/3 Aktiv</span>
+      </div>
+      <div class="mon-card-body">
+        <div class="svc-row">
+          <span class="svc-dot green"></span>
+          <span class="svc-name">Allgemein (Ext. 200)</span>
+          <span class="svc-detail">3 Agenten · 0 wartend</span>
+          <span class="svc-badge ok">Aktiv</span>
+        </div>
+        <div class="svc-row">
+          <span class="svc-dot green"></span>
+          <span class="svc-name">Notfall (Ext. 201)</span>
+          <span class="svc-detail">2 Agenten · 0 wartend</span>
+          <span class="svc-badge ok">Aktiv</span>
+        </div>
+        <div class="svc-row">
+          <span class="svc-dot green"></span>
+          <span class="svc-name">Rezept (Ext. 202)</span>
+          <span class="svc-detail">2 Agenten · 1 wartend</span>
+          <span class="svc-badge ok">Aktiv</span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;padding-top:12px;border-top:1px solid #f3f4f6">
+          <div style="text-align:center"><div style="font-size:10px;color:#9ca3af;font-weight:600">ANRUFE HEUTE</div><div style="font-size:18px;font-weight:800;color:#1e293b">24</div></div>
+          <div style="text-align:center"><div style="font-size:10px;color:#9ca3af;font-weight:600">Ø WARTEZEIT</div><div style="font-size:18px;font-weight:800;color:#1e293b">0:42</div></div>
+          <div style="text-align:center"><div style="font-size:10px;color:#9ca3af;font-weight:600">SERVICE LEVEL</div><div style="font-size:18px;font-weight:800;color:#15803d">87.5%</div></div>
+        </div>
+      </div>
+    </div>
+    <!-- Agenten Status -->
+    <div class="mon-card">
+      <div class="mon-card-head">
+        <h3><i class="fa-solid fa-users" style="color:#22c55e"></i> Agenten Live</h3>
+        <span style="font-size:11px;color:#15803d;font-weight:600">4/5 Online</span>
+      </div>
+      <div class="mon-card-body">
+        <div class="svc-row">
+          <span class="svc-dot" style="background:#ea580c;box-shadow:0 0 0 3px rgba(234,88,12,.15)"></span>
+          <span class="svc-name">Dr. Schmidt</span>
+          <span class="svc-detail">Ext. 101 · seit 08:31</span>
+          <span class="svc-badge warn">Im Gespräch</span>
+        </div>
+        <div class="svc-row">
+          <span class="svc-dot green"></span>
+          <span class="svc-name">Anna Weber</span>
+          <span class="svc-detail">Ext. 102 · 6 Anrufe</span>
+          <span class="svc-badge ok">Verfügbar</span>
+        </div>
+        <div class="svc-row">
+          <span class="svc-dot yellow"></span>
+          <span class="svc-name">Chris Müller</span>
+          <span class="svc-detail">Ext. 103 · seit 08:20</span>
+          <span class="svc-badge warn">Pause</span>
+        </div>
+        <div class="svc-row">
+          <span class="svc-dot" style="background:#ea580c;box-shadow:0 0 0 3px rgba(234,88,12,.15)"></span>
+          <span class="svc-name">Laura Klein</span>
+          <span class="svc-detail">Ext. 104 · seit 08:29</span>
+          <span class="svc-badge warn">Im Gespräch</span>
+        </div>
+        <div class="svc-row">
+          <span class="svc-dot green"></span>
+          <span class="svc-name">Tom Huber</span>
+          <span class="svc-detail">Ext. 105 · 0 Anrufe</span>
+          <span class="svc-badge ok">Verfügbar</span>
+        </div>
+        <div class="svc-row">
+          <span class="svc-dot green"></span>
+          <span class="svc-name">Voicebot</span>
+          <span class="svc-detail">14 Anrufe bearbeitet</span>
+          <span class="svc-badge ok">Aktiv</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════ SYSTEM LOG ══════ -->
+  <div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px"><i class="fa-solid fa-terminal" style="margin-right:4px"></i> System Log (Live)</div>
+  <div class="log-box" id="sys-log">
+    <div class="log-line"><span class="ts">[08:34:12]</span> <span class="ok">OK</span> — Asterisk: Anruf +49 89 123456 → Queue Allgemein (Agent: Dr. Schmidt)</div>
+    <div class="log-line"><span class="ts">[08:33:45]</span> <span class="info">INFO</span> — ACD: Agent Laura Klein → Status: Im Gespräch (Ext. 104)</div>
+    <div class="log-line"><span class="ts">[08:31:02]</span> <span class="ok">OK</span> — Voicebot: Anruf bearbeitet → Termin gebucht (Szenario: Terminbuchung)</div>
+    <div class="log-line"><span class="ts">[08:28:15]</span> <span class="info">INFO</span> — PostgreSQL: Backup-Check bestanden · nächstes Backup: 03:00</div>
+    <div class="log-line"><span class="ts">[08:25:30]</span> <span class="warn">WARN</span> — SIP: Backup Trunk (sip2.provider.de) — Registrierung fehlgeschlagen, Retry in 60s</div>
+    <div class="log-line"><span class="ts">[08:20:01]</span> <span class="info">INFO</span> — ACD: Agent Chris Müller → Status: Pause</div>
+    <div class="log-line"><span class="ts">[08:15:44]</span> <span class="ok">OK</span> — Nginx: SSL-Zertifikat gültig bis 14.05.2026</div>
+    <div class="log-line"><span class="ts">[08:10:00]</span> <span class="ok">OK</span> — System Health Check: Alle 6 Container running · CPU 23% · RAM 61%</div>
+    <div class="log-line"><span class="ts">[08:00:00]</span> <span class="ok">OK</span> — Schichtbeginn: 4 Agenten angemeldet (Dr. Schmidt, Anna Weber, Chris Müller, Laura Klein)</div>
+    <div class="log-line"><span class="ts">[06:00:00]</span> <span class="info">INFO</span> — Asterisk: Konfiguration neu geladen (dialplan reload)</div>
+    <div class="log-line"><span class="ts">[03:00:15]</span> <span class="ok">OK</span> — PostgreSQL: Backup abgeschlossen · 1.8 GB · Dauer: 2m 14s</div>
+    <div class="log-line"><span class="ts">[03:00:00]</span> <span class="info">INFO</span> — Cron: Tägliches Backup gestartet</div>
+  </div>
+
+</div>
+
+<script>
+  // Live Uhr
+  function updateClock() {
+    var now = new Date();
+    var days = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
+    var months = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+    var h = String(now.getHours()).padStart(2,'0');
+    var m = String(now.getMinutes()).padStart(2,'0');
+    var s = String(now.getSeconds()).padStart(2,'0');
+    var el = document.getElementById('live-clock');
+    if(el) el.textContent = h + ':' + m + ':' + s + ' Uhr';
+    var dl = document.getElementById('live-date');
+    if(dl) dl.textContent = days[now.getDay()] + ', ' + now.getDate() + '. ' + months[now.getMonth()] + ' ' + now.getFullYear();
+  }
+  updateClock();
+  setInterval(updateClock, 1000);
+</script>
+</body>
+</html>

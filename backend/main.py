@@ -14,6 +14,7 @@ from fastapi.staticfiles import StaticFiles
 from config import settings
 from api.routes import router as api_router
 from api.ws import router as ws_router
+from api.auth import router as auth_router
 from database import init_db
 
 logging.basicConfig(
@@ -30,7 +31,7 @@ async def lifespan(app: FastAPI):
 
     # Verzeichnisse anlegen
     for d in [settings.data_dir, settings.log_dir, settings.audio_dir,
-              settings.audio_hintergrund_dir, settings.tts_models_dir]:
+              settings.audio_hintergrund_dir]:
         Path(d).mkdir(parents=True, exist_ok=True)
 
     # Datenbank initialisieren
@@ -59,13 +60,14 @@ app = FastAPI(
 # CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.frontend_url, "http://localhost", "*"],
+    allow_origins=[settings.frontend_url, "http://localhost", "http://localhost:8000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # API Routes
+app.include_router(auth_router, prefix="/api")
 app.include_router(api_router, prefix="/api")
 app.include_router(ws_router, prefix="/ws")
 

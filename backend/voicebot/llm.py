@@ -21,7 +21,13 @@ class LLMProcessor:
             self.client = ollama.AsyncClient(host=settings.llm_base_url)
             # Pruefen ob Modell verfuegbar
             models = await self.client.list()
-            modell_namen = [m.model for m in models.models]
+            # Ollama >=0.4: models is a dict with 'models' key
+            # Ollama <0.4: models is an object with .models attribute
+            if isinstance(models, dict):
+                modell_liste = models.get("models", [])
+                modell_namen = [m.get("model", m.get("name", "")) for m in modell_liste]
+            else:
+                modell_namen = [m.model for m in models.models]
             if settings.llm_model not in modell_namen:
                 log.warning(
                     "LLM-Modell '%s' nicht gefunden. Verfuegbar: %s. "
@@ -80,15 +86,18 @@ class LLMProcessor:
             messages.append({"role": rolle, "content": msg["text"]})
 
         try:
-            response = await self.client.chat(
-                model=settings.llm_model,
-                messages=messages,
-                options={
-                    "temperature": settings.llm_temperature,
-                    "num_predict": max_tokens or settings.llm_max_tokens,
-                    "top_p": 0.9,
-                    "repeat_penalty": 1.1,
-                },
+            response = await asyncio.wait_for(
+                self.client.chat(
+                    model=settings.llm_model,
+                    messages=messages,
+                    options={
+                        "temperature": settings.llm_temperature,
+                        "num_predict": max_tokens or settings.llm_max_tokens,
+                        "top_p": 0.9,
+                        "repeat_penalty": 1.1,
+                    },
+                ),
+                timeout=30.0,
             )
             antwort = response.message.content.strip()
 
@@ -96,6 +105,9 @@ class LLMProcessor:
             antwort = antwort.replace("*", "").replace("#", "").replace("`", "")
 
             return antwort
+        except asyncio.TimeoutError:
+            log.error("LLM Timeout (>30s)")
+            return "Entschuldigung, das dauert gerade etwas laenger. Einen Moment bitte."
         except Exception as e:
             log.error("LLM Fehler: %s", e)
             return "Einen Moment bitte, ich verbinde Sie."
@@ -127,12 +139,18 @@ class LLMProcessor:
         ]
 
         try:
-            response = await self.client.chat(
-                model=settings.llm_model,
-                messages=messages,
-                options={"temperature": 0.3, "num_predict": 200},
+            response = await asyncio.wait_for(
+                self.client.chat(
+                    model=settings.llm_model,
+                    messages=messages,
+                    options={"temperature": 0.3, "num_predict": 200},
+                ),
+                timeout=30.0,
             )
             return response.message.content.strip()
+        except asyncio.TimeoutError:
+            log.error("Zusammenfassung Timeout (>30s)")
+            return ""
         except Exception as e:
             log.error("Zusammenfassung Fehler: %s", e)
             return ""
@@ -164,12 +182,18 @@ class LLMProcessor:
         ]
 
         try:
-            response = await self.client.chat(
-                model=settings.llm_model,
-                messages=messages,
-                options={"temperature": 0.4, "num_predict": 150},
+            response = await asyncio.wait_for(
+                self.client.chat(
+                    model=settings.llm_model,
+                    messages=messages,
+                    options={"temperature": 0.4, "num_predict": 150},
+                ),
+                timeout=30.0,
             )
             return response.message.content.strip()
+        except asyncio.TimeoutError:
+            log.error("KB-Antwort Timeout (>30s)")
+            return ""
         except Exception as e:
             log.error("KB-Antwort Fehler: %s", e)
             return ""

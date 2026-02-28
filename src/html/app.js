@@ -28,7 +28,7 @@ function brancheLaden() {
             MED_FIRMEN_NAME = daten.firmen_name || "";
             MED_BRANCHE = BRANCHEN[MED_BRANCHE_KEY] || BRANCHEN.arztpraxis;
         }
-    } catch (e) {}
+    } catch (e) { console.warn("brancheLaden:", e); }
 }
 
 function brancheSpeichern(key, firmenName) {
@@ -85,11 +85,11 @@ function modusPruefen() {
                         MED_LLM_VERFUEGBAR = true;
                         modusAnzeigeAktualisieren();
                     }
-                } catch (e) {}
+                } catch (e) { console.warn("modusPruefen JSON:", e); }
             }
         };
         xhr.send();
-    } catch (e) {}
+    } catch (e) { console.warn("modusPruefen:", e); }
 }
 
 function modusAnzeigeAktualisieren() {
@@ -102,36 +102,20 @@ function modusAnzeigeAktualisieren() {
     }
 }
 
-// ===== Guard / Auth Check =====
+// ===== Guard / Auth Check (DEAKTIVIERT) =====
+// Anmeldung wurde entfernt — alle Seiten sind direkt zugaenglich.
 
 function guardPruefen() {
-    // Portal-Check: Zutrittscode muss eingegeben sein
-    if (!sessionStorage.getItem("med_portal_ok")) {
-        window.location.href = "portal.html";
-        return null;
-    }
-    var auth = sessionStorage.getItem("med_guard_auth") || localStorage.getItem("med_guard_auth");
-    if (!auth) {
-        window.location.href = "guard.html";
-        return null;
-    }
-    try {
-        return JSON.parse(auth);
-    } catch (e) {
-        window.location.href = "guard.html";
-        return null;
-    }
+    // Auth deaktiviert — Standardbenutzer zurueckgeben
+    return { benutzer: "admin", name: "Administrator", rolle: "admin" };
 }
 
 function guardAbmelden() {
-    sessionStorage.removeItem("med_guard_auth");
-    localStorage.removeItem("med_guard_auth");
-    sessionStorage.removeItem("med_portal_ok");
-    window.location.href = "portal.html";
+    // Auth deaktiviert — nichts zu tun
 }
 
 // Rollen-Konfiguration: Wer darf was sehen
-var ALLE_SEITEN = ["index.html","patienten.html","aerzte.html","termine.html","wartezimmer.html","wissensdatenbank.html","ansagen.html","auswertung.html","agenten.html","softphone.html","voicebot.html","callflow.html","uebersetzung.html","standort.html","benutzer.html"];
+var ALLE_SEITEN = ["index.html","dashboard.html","patienten.html","aerzte.html","termine.html","wartezimmer.html","wissensdatenbank.html","ansagen.html","auswertung.html","agenten.html","softphone.html","voicebot.html","callflow.html","uebersetzung.html","standort.html","benutzer.html","ai-agent.html"];
 var ROLLEN = {
     admin:           { label: "Admin",           icon: "fa-user-gear",   farbe: "#dc2626", seiten: ALLE_SEITEN },
     standortleitung: { label: "Standortleitung", icon: "fa-building",    farbe: "#7c3aed", seiten: ALLE_SEITEN },
@@ -140,29 +124,14 @@ var ROLLEN = {
 };
 
 function guardInfoAnzeigen() {
-    var auth = sessionStorage.getItem("med_guard_auth") || localStorage.getItem("med_guard_auth");
-    if (!auth) return;
-    try {
-        var daten = JSON.parse(auth);
-        var rolle = ROLLEN[daten.rolle] || ROLLEN.agent;
-
-        // Topbar: Name + Rolle + Abmelden
-        var topbar = document.querySelector(".topbar-right");
-        if (topbar) {
-            topbar.innerHTML = '<span style="margin-right:0.5rem"><i class="fa-solid ' + rolle.icon + '" style="color:' + rolle.farbe + '"></i> ' +
-                escapeHtmlSafe(daten.name) + ' <small style="background:' + rolle.farbe + ';color:#fff;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem">' + escapeHtmlSafe(rolle.label) + '</small></span>' +
-                '<button type="button" id="btn-abmelden" style="padding:0.3rem 0.7rem;font-size:0.8rem;background:#64748b;border-radius:6px">' +
-                '<i class="fa-solid fa-right-from-bracket"></i> Abmelden</button>';
-            var btn = document.getElementById("btn-abmelden");
-            if (btn) btn.addEventListener("click", guardAbmelden);
-        }
-
-        // Sidebar: Nur erlaubte Seiten anzeigen
-        rollenSidebarAnpassen(daten.rolle);
-
-        // Seitenzugriff pruefen
-        rollenSeitePruefen(daten.rolle);
-    } catch (e) {}
+    // Auth deaktiviert — Standardbenutzer anzeigen
+    var rolle = ROLLEN.admin;
+    var topbar = document.querySelector(".topbar-right");
+    if (topbar) {
+        topbar.innerHTML = '<span style="margin-right:0.5rem"><i class="fa-solid ' + rolle.icon + '" style="color:' + rolle.farbe + '"></i> ' +
+            'Administrator <small style="background:' + rolle.farbe + ';color:#fff;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem">' + rolle.label + '</small></span>';
+    }
+    rollenSidebarAnpassen("admin");
 }
 
 function rollenSidebarAnpassen(rolleKey) {
@@ -183,19 +152,8 @@ function rollenSidebarAnpassen(rolleKey) {
 }
 
 function rollenSeitePruefen(rolleKey) {
-    var rolle = ROLLEN[rolleKey];
-    if (!rolle) return;
-    var erlaubteSeiten = rolle.seiten;
-
-    // Aktuelle Seite ermitteln
-    var aktuelleSeite = window.location.pathname.split("/").pop() || "index.html";
-    if (aktuelleSeite === "") aktuelleSeite = "index.html";
-
-    // Ist diese Seite fuer die Rolle erlaubt?
-    if (erlaubteSeiten.indexOf(aktuelleSeite) === -1) {
-        // Zurueck zum Dashboard
-        window.location.href = "index.html";
-    }
+    // Sidebar-Links werden bereits von rollenSidebarAnpassen() versteckt.
+    // Kein Redirect noetig — alle Rollen haben aktuell gleiche Berechtigung.
 }
 
 function escapeHtmlSafe(text) {
@@ -477,7 +435,7 @@ function initVerlauf() {
     var btn = document.getElementById("btn-verlauf-loeschen");
     if (btn) {
         btn.addEventListener("click", async function () {
-            try { await verlaufLoeschenApi(); verlaufAktualisieren(); } catch (_) {}
+            try { await verlaufLoeschenApi(); verlaufAktualisieren(); } catch (_) { console.warn("verlaufLoeschen:", _); }
         });
     }
 }
@@ -497,7 +455,7 @@ async function verlaufAktualisieren() {
                 "<td>" + escapeHtml(e.erstellt_am || "") + "</td>";
             tbody.appendChild(tr);
         });
-    } catch (_) {}
+    } catch (_) { console.warn("Fehler:", _); }
 }
 
 // ===== Benutzer-Formular =====
@@ -602,7 +560,7 @@ async function benutzerListeAktualisieren(suche) {
         if (!tbody) return;
         tbody.innerHTML = "";
         benutzer.forEach(function (b) { benutzerZurTabelle(b); });
-    } catch (_) {}
+    } catch (_) { console.warn("Fehler:", _); }
 }
 
 function benutzerZurTabelle(daten) {
@@ -778,7 +736,7 @@ async function patientenListeAktualisieren(suche) {
             });
             tbody.appendChild(tr);
         });
-    } catch (_) {}
+    } catch (_) { console.warn("Fehler:", _); }
 }
 
 // ===== Aerzte API (localStorage) =====
@@ -908,7 +866,7 @@ async function aerzteListeAktualisieren() {
             });
             tbody.appendChild(tr);
         });
-    } catch (_) {}
+    } catch (_) { console.warn("Fehler:", _); }
 }
 
 // ===== Termine API (localStorage) =====
@@ -1019,7 +977,7 @@ async function terminDropdownsLaden() {
                 sel.appendChild(opt);
             });
         }
-    } catch (_) {}
+    } catch (_) { console.warn("Fehler:", _); }
     try {
         var aerzte = await aerzteLadenApi();
         var sel2 = document.getElementById("termin-arzt");
@@ -1031,7 +989,7 @@ async function terminDropdownsLaden() {
                 sel2.appendChild(opt);
             });
         }
-    } catch (_) {}
+    } catch (_) { console.warn("Fehler:", _); }
 }
 
 function terminFormZuruecksetzen() {
@@ -1093,7 +1051,7 @@ async function termineListeAktualisieren(datum) {
             });
             tbody.appendChild(tr);
         });
-    } catch (_) {}
+    } catch (_) { console.warn("Fehler:", _); }
 }
 
 // ===== Wartezimmer API (localStorage) =====
@@ -1181,7 +1139,7 @@ async function wartezimmerDropdownsLaden() {
                 sel.appendChild(opt);
             });
         }
-    } catch (_) {}
+    } catch (_) { console.warn("Fehler:", _); }
 }
 
 async function wartezimmerTermineLaden(patientId) {
@@ -1200,7 +1158,7 @@ async function wartezimmerTermineLaden(patientId) {
                 sel.appendChild(opt);
             }
         });
-    } catch (_) {}
+    } catch (_) { console.warn("Fehler:", _); }
 }
 
 function wartezeitBerechnen(ankunftZeit) {
@@ -1247,19 +1205,19 @@ async function wartezimmerAktualisieren() {
 
             var btnAufrufen = karte.querySelector(".btn-aufrufen");
             if (btnAufrufen) btnAufrufen.addEventListener("click", async function () {
-                try { await wartezimmerStatusApi(e.id, "aufgerufen"); wartezimmerAktualisieren(); } catch (_) {}
+                try { await wartezimmerStatusApi(e.id, "aufgerufen"); wartezimmerAktualisieren(); } catch (_) { console.warn("Fehler:", _); }
             });
             var btnFertig = karte.querySelector(".btn-fertig");
             if (btnFertig) btnFertig.addEventListener("click", async function () {
-                try { await wartezimmerStatusApi(e.id, "fertig"); wartezimmerAktualisieren(); } catch (_) {}
+                try { await wartezimmerStatusApi(e.id, "fertig"); wartezimmerAktualisieren(); } catch (_) { console.warn("Fehler:", _); }
             });
             karte.querySelector(".btn-loeschen").addEventListener("click", async function () {
-                try { await wartezimmerEntfernenApi(e.id); wartezimmerAktualisieren(); } catch (_) {}
+                try { await wartezimmerEntfernenApi(e.id); wartezimmerAktualisieren(); } catch (_) { console.warn("Fehler:", _); }
             });
 
             container.appendChild(karte);
         });
-    } catch (_) {}
+    } catch (_) { console.warn("Fehler:", _); }
 }
 
 // ===== Agenten API (localStorage) =====
@@ -1422,7 +1380,7 @@ async function agentenBoardAktualisieren() {
             ["online", "im_gespraech", "pause", "azu", "meeting", "at_chris", "offline"].forEach(function (s) {
                 var btn = karte.querySelector(".btn-" + s);
                 if (btn) btn.addEventListener("click", async function () {
-                    try { await agentStatusSetzenApi(a.id, s); agentenBoardAktualisieren(); } catch (_) {}
+                    try { await agentStatusSetzenApi(a.id, s); agentenBoardAktualisieren(); } catch (_) { console.warn("Fehler:", _); }
                 });
             });
             karte.querySelector(".btn-bearbeiten").addEventListener("click", function () { agentBearbeiten(a); });
@@ -1433,7 +1391,7 @@ async function agentenBoardAktualisieren() {
 
             container.appendChild(karte);
         });
-    } catch (_) {}
+    } catch (_) { console.warn("Fehler:", _); }
 }
 
 async function aktiveAnrufeAktualisieren() {
@@ -1461,7 +1419,7 @@ async function aktiveAnrufeAktualisieren() {
                 '<span class="status-badge status-' + a.status + '">' + escapeHtml(a.status) + '</span>';
             container.appendChild(karte);
         });
-    } catch (_) {}
+    } catch (_) { console.warn("Fehler:", _); }
 }
 
 async function anrufprotokollAktualisieren() {
@@ -1485,7 +1443,7 @@ async function anrufprotokollAktualisieren() {
                 "<td>" + dauerText + "</td>";
             tbody.appendChild(tr);
         });
-    } catch (_) {}
+    } catch (_) { console.warn("Fehler:", _); }
 }
 
 // ===== Softphone =====
@@ -3021,7 +2979,7 @@ function initStandortSeite() {
             if (info.telefon) document.getElementById("standort-telefon").value = info.telefon;
             if (info.strasse) document.getElementById("standort-strasse").value = info.strasse;
             if (info.notfall) document.getElementById("standort-notfall").value = info.notfall;
-        } catch (e) {}
+        } catch (e) { console.warn("standort laden:", e); }
         infoForm.addEventListener("submit", function (e) {
             e.preventDefault();
             localStorage.setItem("med_standort_info", JSON.stringify({ name: document.getElementById("standort-name").value, telefon: document.getElementById("standort-telefon").value, strasse: document.getElementById("standort-strasse").value, notfall: document.getElementById("standort-notfall").value }));
@@ -3964,6 +3922,359 @@ function initAuswertungen() {
     allesAktualisieren();
 }
 
+// ===== AI Agent Engineering =====
+
+var aiAgents = [];
+
+function initAiAgentEngineering() {
+    var container = document.getElementById("ai-agent");
+    if (!container) return;
+
+    // Tab-Navigation
+    var tabs = container.querySelectorAll(".ai-tab");
+    tabs.forEach(function (tab) {
+        tab.addEventListener("click", function () {
+            tabs.forEach(function (t) { t.classList.remove("active"); });
+            container.querySelectorAll(".ai-tab-content").forEach(function (c) { c.classList.remove("active"); });
+            tab.classList.add("active");
+            var target = document.getElementById("tab-" + tab.getAttribute("data-tab"));
+            if (target) target.classList.add("active");
+        });
+    });
+
+    // Stimmen laden
+    aiStimmenLaden();
+
+    // Temperatur-Slider
+    var tempSlider = document.getElementById("ab-temperatur");
+    var tempWert = document.getElementById("ab-temp-wert");
+    if (tempSlider && tempWert) {
+        tempSlider.addEventListener("input", function () {
+            tempWert.textContent = tempSlider.value;
+        });
+    }
+
+    // Agent Builder Form
+    var builderForm = document.getElementById("agent-builder-form");
+    if (builderForm) {
+        builderForm.addEventListener("submit", function (e) {
+            e.preventDefault();
+            aiAgentSpeichern();
+        });
+    }
+
+    // Test-Button
+    var testBtn = document.getElementById("ab-testen");
+    if (testBtn) {
+        testBtn.addEventListener("click", function () {
+            // Zu Prompt-Tab wechseln und Chat oeffnen
+            tabs.forEach(function (t) { t.classList.remove("active"); });
+            container.querySelectorAll(".ai-tab-content").forEach(function (c) { c.classList.remove("active"); });
+            var promptTab = container.querySelector('[data-tab="prompts"]');
+            if (promptTab) promptTab.classList.add("active");
+            var promptContent = document.getElementById("tab-prompts");
+            if (promptContent) promptContent.classList.add("active");
+            document.getElementById("pe-chat-input").focus();
+        });
+    }
+
+    // Prompt Engineering: Speichern
+    var peSpeichern = document.getElementById("pe-speichern");
+    if (peSpeichern) {
+        peSpeichern.addEventListener("click", aiPromptSpeichern);
+    }
+
+    // Prompt Engineering: Zuruecksetzen
+    var peZurueck = document.getElementById("pe-zuruecksetzen");
+    if (peZurueck) {
+        peZurueck.addEventListener("click", function () {
+            document.getElementById("pe-system-prompt").value = "Du bist eine freundliche Telefonistin in einer Arztpraxis. Antworte kurz, natuerlich und hilfsbereit. Sprich den Anrufer mit Sie an. Sei professionell aber warm.";
+            document.getElementById("pe-regeln").value = "WICHTIG fuer dein Verhalten am Telefon:\n- Antworte KURZ (1-3 Saetze). Kein Anrufer will lange Monologe.\n- Benutze natuerliche Fuellwoerter: 'Ach so', 'Alles klar', 'Moment'.\n- Stelle eine Frage pro Antwort, nicht mehrere.\n- Wenn du etwas nicht verstehst, frag hoeflich nach.\n- Nenne NIE technische Details (API, Datenbank, etc.).\n- Sprich wie eine echte Person, nicht wie ein Computer.";
+            aiErfolg("pe-erfolg", "Standard-Prompt wiederhergestellt");
+        });
+    }
+
+    // Test-Chat senden
+    var chatSenden = document.getElementById("pe-chat-senden");
+    var chatInput = document.getElementById("pe-chat-input");
+    if (chatSenden && chatInput) {
+        chatSenden.addEventListener("click", function () { aiTestChatSenden(); });
+        chatInput.addEventListener("keydown", function (e) {
+            if (e.key === "Enter") aiTestChatSenden();
+        });
+    }
+
+    // Chat leeren
+    var chatLeeren = document.getElementById("pe-chat-leeren");
+    if (chatLeeren) {
+        chatLeeren.addEventListener("click", function () {
+            var verlauf = document.getElementById("pe-chat-verlauf");
+            if (verlauf) verlauf.innerHTML = "";
+            aiTestVerlauf = [];
+        });
+    }
+
+    // Daten laden
+    aiAgentsLaden();
+    aiVorlagenAnzeigen();
+    aiMonitoringLaden();
+    aiSystemStatusPruefen();
+}
+
+async function aiStimmenLaden() {
+    var select = document.getElementById("ab-stimme");
+    if (!select) return;
+    try {
+        var res = await fetch(API_BASE + "/voicebot/stimmen");
+        var stimmen = await res.json();
+        select.innerHTML = "";
+        stimmen.forEach(function (s) {
+            var opt = document.createElement("option");
+            opt.value = s.id;
+            opt.textContent = s.name + " (" + s.geschlecht + ") — " + s.beschreibung;
+            select.appendChild(opt);
+        });
+    } catch (_) { console.warn("Stimmen laden:", _); }
+}
+
+function aiAgentSpeichern() {
+    var agent = {
+        id: Date.now(),
+        name: document.getElementById("ab-name").value,
+        branche: document.getElementById("ab-branche").value,
+        stimme: document.getElementById("ab-stimme").value,
+        hintergrund: document.getElementById("ab-hintergrund").value,
+        persoenlichkeit: document.getElementById("ab-persoenlichkeit").value,
+        begruessung: document.getElementById("ab-begruessung").value,
+        regeln: document.getElementById("ab-regeln").value,
+        llm_model: document.getElementById("ab-llm-model").value,
+        temperatur: parseFloat(document.getElementById("ab-temperatur").value),
+        skills: {
+            termine: document.getElementById("ab-skill-termine").checked,
+            rezept: document.getElementById("ab-skill-rezept").checked,
+            weiterleitung: document.getElementById("ab-skill-weiterleitung").checked,
+            kb: document.getElementById("ab-skill-kb").checked,
+            rueckruf: document.getElementById("ab-skill-rueckruf").checked,
+            notfall: document.getElementById("ab-skill-notfall").checked,
+        },
+        status: "aktiv",
+        erstellt: new Date().toISOString(),
+    };
+
+    // In localStorage speichern (Demo) oder API
+    var agents = JSON.parse(localStorage.getItem("ai_agents") || "[]");
+    agents.push(agent);
+    localStorage.setItem("ai_agents", JSON.stringify(agents));
+
+    // Auch als Backend-Config speichern versuchen
+    aiAgentZumBackendSenden(agent);
+
+    aiErfolg("ab-erfolg", "AI-Agent '" + escapeHtml(agent.name) + "' gespeichert!");
+    document.getElementById("agent-builder-form").reset();
+    document.getElementById("ab-temp-wert").textContent = "0.7";
+    aiAgentsLaden();
+}
+
+async function aiAgentZumBackendSenden(agent) {
+    try {
+        await fetch(API_BASE + "/einstellungen/ai_agent_" + agent.id + "?wert=" + encodeURIComponent(JSON.stringify(agent)) + "&kategorie=ai_agent", { method: "PUT" });
+    } catch (_) { console.warn("Agent Backend-Sync:", _); }
+}
+
+function aiAgentsLaden() {
+    var agents = JSON.parse(localStorage.getItem("ai_agents") || "[]");
+    aiAgents = agents;
+
+    var tbody = document.querySelector("#ai-agents-tabelle tbody");
+    if (!tbody) return;
+    tbody.innerHTML = "";
+
+    var peSelect = document.getElementById("pe-agent-select");
+    if (peSelect) {
+        peSelect.innerHTML = '<option value="">— Agent waehlen —</option>';
+    }
+
+    agents.forEach(function (a, idx) {
+        var tr = document.createElement("tr");
+        var brancheLabel = BRANCHEN[a.branche] ? BRANCHEN[a.branche].label : a.branche;
+        tr.innerHTML =
+            "<td>" + escapeHtml(a.name) + "</td>" +
+            "<td>" + escapeHtml(brancheLabel) + "</td>" +
+            "<td>" + escapeHtml(a.stimme) + "</td>" +
+            "<td>" + escapeHtml(a.llm_model || "Standard") + "</td>" +
+            '<td><span class="badge badge-gruen">' + escapeHtml(a.status) + "</span></td>" +
+            '<td><button class="btn-text ai-agent-loeschen" data-idx="' + idx + '"><i class="fa-solid fa-trash"></i></button>' +
+            ' <button class="btn-text ai-agent-bearbeiten" data-idx="' + idx + '"><i class="fa-solid fa-pen"></i></button></td>';
+        tbody.appendChild(tr);
+
+        if (peSelect) {
+            var opt = document.createElement("option");
+            opt.value = idx;
+            opt.textContent = a.name;
+            peSelect.appendChild(opt);
+        }
+    });
+
+    // Loeschen-Handler
+    tbody.querySelectorAll(".ai-agent-loeschen").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+            var i = parseInt(btn.getAttribute("data-idx"));
+            agents.splice(i, 1);
+            localStorage.setItem("ai_agents", JSON.stringify(agents));
+            aiAgentsLaden();
+        });
+    });
+
+    // Bearbeiten -> Prompt-Tab fuellen
+    tbody.querySelectorAll(".ai-agent-bearbeiten").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+            var i = parseInt(btn.getAttribute("data-idx"));
+            var a = agents[i];
+            if (!a) return;
+            var pePrompt = document.getElementById("pe-system-prompt");
+            var peKontext = document.getElementById("pe-kontext");
+            var peRegeln = document.getElementById("pe-regeln");
+            if (pePrompt) pePrompt.value = a.persoenlichkeit || "";
+            if (peKontext) peKontext.value = "Branche: " + (BRANCHEN[a.branche] ? BRANCHEN[a.branche].label : a.branche) + "\nBegruessung: " + (a.begruessung || "");
+            if (peRegeln) peRegeln.value = a.regeln || "";
+            // Tab wechseln
+            document.querySelectorAll(".ai-tab").forEach(function (t) { t.classList.remove("active"); });
+            document.querySelectorAll(".ai-tab-content").forEach(function (c) { c.classList.remove("active"); });
+            document.querySelector('[data-tab="prompts"]').classList.add("active");
+            document.getElementById("tab-prompts").classList.add("active");
+        });
+    });
+}
+
+function aiPromptSpeichern() {
+    var prompt = document.getElementById("pe-system-prompt").value;
+    var kontext = document.getElementById("pe-kontext").value;
+    var regeln = document.getElementById("pe-regeln").value;
+
+    localStorage.setItem("ai_custom_prompt", JSON.stringify({ prompt: prompt, kontext: kontext, regeln: regeln }));
+    aiErfolg("pe-erfolg", "Prompt gespeichert!");
+}
+
+var aiTestVerlauf = [];
+
+async function aiTestChatSenden() {
+    var input = document.getElementById("pe-chat-input");
+    var verlauf = document.getElementById("pe-chat-verlauf");
+    if (!input || !verlauf || !input.value.trim()) return;
+
+    var text = input.value.trim();
+    input.value = "";
+
+    // Anrufer-Nachricht anzeigen
+    verlauf.innerHTML += '<div class="ai-chat-msg anrufer"><div class="ai-chat-bubble">' + escapeHtml(text) + '</div></div>';
+    aiTestVerlauf.push({ rolle: "anrufer", text: text });
+    verlauf.scrollTop = verlauf.scrollHeight;
+
+    // An LLM senden
+    var tokenEl = document.getElementById("pe-chat-tokens");
+    var latenzEl = document.getElementById("pe-chat-latenz");
+    var startTime = Date.now();
+
+    try {
+        var systemPrompt = (document.getElementById("pe-system-prompt").value || "") +
+            "\n\n" + (document.getElementById("pe-kontext").value || "") +
+            "\n\n" + (document.getElementById("pe-regeln").value || "");
+
+        var messages = [{ role: "system", content: systemPrompt }];
+        aiTestVerlauf.forEach(function (m) {
+            messages.push({ role: m.rolle === "anrufer" ? "user" : "assistant", content: m.text });
+        });
+
+        var res = await fetch(API_BASE + "/ai-agent/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ messages: messages }),
+        });
+
+        var daten = await res.json();
+        var latenz = Date.now() - startTime;
+
+        var antwort = daten.antwort || daten.text || "Keine Antwort erhalten.";
+        aiTestVerlauf.push({ rolle: "bot", text: antwort });
+
+        verlauf.innerHTML += '<div class="ai-chat-msg bot"><div class="ai-chat-bubble">' + escapeHtml(antwort) + '</div></div>';
+        verlauf.scrollTop = verlauf.scrollHeight;
+
+        if (latenzEl) latenzEl.textContent = "Latenz: " + latenz + " ms";
+        if (tokenEl) tokenEl.textContent = "Tokens: ~" + (antwort.split(" ").length * 2);
+    } catch (err) {
+        console.warn("AI Chat Fehler:", err);
+        verlauf.innerHTML += '<div class="ai-chat-msg bot"><div class="ai-chat-bubble">Fehler: LLM nicht erreichbar. Im Demo-Modus ist der Test-Chat nicht verfuegbar.</div></div>';
+        verlauf.scrollTop = verlauf.scrollHeight;
+    }
+}
+
+function aiVorlagenAnzeigen() {
+    var container = document.getElementById("pe-vorlagen");
+    if (!container) return;
+
+    var vorlagen = [
+        { name: "Arztpraxis Standard", desc: "Freundliche Rezeptionistin, Terminvergabe, Rezeptbestellung", prompt: "Du bist eine freundliche Telefonistin in einer Arztpraxis. Antworte kurz, natuerlich und hilfsbereit. Sprich den Anrufer mit Sie an.", regeln: "- Antworte KURZ (1-3 Saetze)\n- Stelle eine Frage pro Antwort\n- Bei Notfaellen: 112 empfehlen" },
+        { name: "Kanzlei formell", desc: "Formeller Ton, Mandantenannahme, Terminvereinbarung", prompt: "Du bist die Sekretaerin einer Rechtsanwaltskanzlei. Sprich formell und praezise. Notiere Anliegen und biete Rueckruf an.", regeln: "- Keine Rechtsberatung erteilen\n- Immer Rueckrufnummer fragen\n- Dringlichkeit erfassen" },
+        { name: "Werkstatt locker", desc: "Lockerer Umgangston, KFZ-Terminvergabe", prompt: "Du bist der Annahme-Mitarbeiter einer KFZ-Werkstatt. Sprich freundlich und unkompliziert. Duzen ist OK wenn der Kunde duzt.", regeln: "- Fahrzeug und Kennzeichen fragen\n- Terminvorschlag machen\n- Bei Pannen: ADAC empfehlen" },
+        { name: "Minimal (nur weiterleiten)", desc: "Nimmt nur Name und Anliegen auf, leitet weiter", prompt: "Du bist eine automatische Telefonzentrale. Nimm den Namen und das Anliegen des Anrufers auf und sage, dass du einen Mitarbeiter verbindest.", regeln: "- Maximal 2 Fragen\n- Nie inhaltlich antworten\n- Immer weiterleiten" },
+    ];
+
+    container.innerHTML = "";
+    vorlagen.forEach(function (v) {
+        var card = document.createElement("div");
+        card.className = "ai-vorlage-card";
+        card.innerHTML = '<h4><i class="fa-solid fa-file-lines"></i> ' + escapeHtml(v.name) + '</h4><p>' + escapeHtml(v.desc) + '</p>';
+        card.addEventListener("click", function () {
+            document.getElementById("pe-system-prompt").value = v.prompt;
+            document.getElementById("pe-regeln").value = v.regeln;
+            aiErfolg("pe-erfolg", "Vorlage '" + v.name + "' geladen");
+        });
+        container.appendChild(card);
+    });
+}
+
+async function aiMonitoringLaden() {
+    try {
+        var res = await fetch(API_BASE + "/dashboard");
+        var d = await res.json();
+        var el = document.getElementById("mon-gespraeche");
+        if (el) el.textContent = d.anrufe_heute || 0;
+    } catch (_) { console.warn("Monitoring laden:", _); }
+}
+
+async function aiSystemStatusPruefen() {
+    try {
+        var res = await fetch(API_BASE + "/system/status");
+        var d = await res.json();
+
+        var llmDot = document.getElementById("mon-llm-dot");
+        var sttDot = document.getElementById("mon-stt-dot");
+        var ttsDot = document.getElementById("mon-tts-dot");
+        var llmInfo = document.getElementById("mon-llm-info");
+        var sttInfo = document.getElementById("mon-stt-info");
+        var ttsInfo = document.getElementById("mon-tts-info");
+
+        if (llmDot) llmDot.classList.add("online");
+        if (sttDot) sttDot.classList.add("online");
+        if (ttsDot) ttsDot.classList.add("online");
+        if (llmInfo) llmInfo.textContent = d.llm || "—";
+        if (sttInfo) sttInfo.textContent = d.stt || "—";
+        if (ttsInfo) ttsInfo.textContent = d.tts || "—";
+    } catch (_) {
+        console.warn("System-Status:", _);
+    }
+}
+
+function aiErfolg(elementId, text) {
+    var el = document.getElementById(elementId);
+    if (el) {
+        el.textContent = text;
+        el.hidden = false;
+        setTimeout(function () { el.hidden = true; }, 3000);
+    }
+}
+
 // Globale Funktionen fuer onclick-Handler im HTML
 if (typeof window !== "undefined") {
     window.callflowPropsSpeichern = callflowPropsSpeichern;
@@ -3975,13 +4286,8 @@ if (typeof window !== "undefined") {
 /** Init (nur im Browser) */
 if (typeof document !== "undefined") {
     document.addEventListener("DOMContentLoaded", function () {
-        // Guard: Auth-Check auf allen Seiten ausser guard.html
-        var istGuardSeite = window.location.pathname.indexOf("guard.html") !== -1;
-        if (!istGuardSeite) {
-            var auth = guardPruefen();
-            if (!auth) return; // Redirect zur Guard-Seite
-            guardInfoAnzeigen();
-        }
+        // Auth deaktiviert — keine Anmeldung noetig
+        guardInfoAnzeigen();
 
         brancheLaden();
         brancheAnwenden();
@@ -4005,6 +4311,7 @@ if (typeof document !== "undefined") {
         initWissensdatenbank();
         initAnsagenGenerator();
         initAuswertungen();
+        initAiAgentEngineering();
         initDemoReset();
 
         // Mobile Sidebar Toggle

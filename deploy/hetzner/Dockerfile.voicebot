@@ -1,6 +1,6 @@
 # ============================================================
 # MED Rezeption — Voicebot Container
-# FastAPI + Faster-Whisper (STT) + Piper TTS
+# FastAPI + Faster-Whisper (STT) + Edge TTS (Microsoft Neural)
 # ============================================================
 FROM python:3.11-slim
 
@@ -11,24 +11,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     sqlite3 wget sox libsox-fmt-all ffmpeg curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Piper TTS Binary herunterladen
-RUN mkdir -p /opt/piper && \
-    wget -q -O /tmp/piper.tar.gz \
-    "https://github.com/rhasspy/piper/releases/download/2023.11.14-2/piper_linux_x86_64.tar.gz" && \
-    tar -xzf /tmp/piper.tar.gz -C /opt/ && \
-    rm /tmp/piper.tar.gz && \
-    ln -sf /opt/piper/piper /usr/local/bin/piper
-
-# Piper Deutsche Stimme (Thorsten High)
-RUN mkdir -p /app/models/tts && \
-    wget -q -O /app/models/tts/de_DE-thorsten-high.onnx \
-    "https://huggingface.co/rhasspy/piper-voices/resolve/main/de/de_DE/thorsten/high/de_DE-thorsten-high.onnx" && \
-    wget -q -O /app/models/tts/de_DE-thorsten-high.onnx.json \
-    "https://huggingface.co/rhasspy/piper-voices/resolve/main/de/de_DE/thorsten/high/de_DE-thorsten-high.onnx.json"
-
 # Python-Abhaengigkeiten
 COPY backend/requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir edge-tts pydub
 
 # Backend-Code
 COPY backend/ ./
@@ -38,9 +24,9 @@ COPY docs/ /app/docs/
 
 # Audio-Verzeichnisse + Standard-Hintergrundgeraeusche
 RUN mkdir -p /app/audio/hintergrund /app/audio/ansagen /app/data /app/logs && \
-    sox -n /app/audio/hintergrund/buero.wav synth 60 brownnoise vol 0.02 && \
-    sox -n /app/audio/hintergrund/praxis.wav synth 60 brownnoise vol 0.015 && \
-    sox -n /app/audio/hintergrund/ruhig.wav synth 60 brownnoise vol 0.005
+    sox -n -r 16000 -e signed-integer -b 16 -c 1 /app/audio/hintergrund/buero.wav synth 60 brownnoise vol 0.02 && \
+    sox -n -r 16000 -e signed-integer -b 16 -c 1 /app/audio/hintergrund/praxis.wav synth 60 brownnoise vol 0.015 && \
+    sox -n -r 16000 -e signed-integer -b 16 -c 1 /app/audio/hintergrund/ruhig.wav synth 60 brownnoise vol 0.005
 
 EXPOSE 8000
 

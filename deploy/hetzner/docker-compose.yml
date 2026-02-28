@@ -45,7 +45,6 @@ services:
     environment:
       - MR_LLM_BASE_URL=http://ollama:11434
       - MR_API_PORT=8000
-      - MR_TTS_MODELS_DIR=/app/models/tts
       - MR_AUDIO_HINTERGRUND_DIR=/app/audio/hintergrund
     depends_on:
       ollama:

@@ -18,17 +18,17 @@ HINTERGRUND_TYPEN = {
     "buero": {
         "name": "Buero / Empfang",
         "beschreibung": "Leise Buerogeraeusche, Tastatur, Telefon im Hintergrund",
-        "dateien": ["buero_ambient.wav", "tastatur.wav", "telefon_leise.wav"],
+        "dateien": ["buero.wav"],
     },
     "praxis": {
         "name": "Arztpraxis",
         "beschreibung": "Leise Praxis-Atmosphaere, Wartezimmer",
-        "dateien": ["praxis_ambient.wav", "papier.wav"],
+        "dateien": ["praxis.wav"],
     },
     "ruhig": {
         "name": "Ruhig",
         "beschreibung": "Sehr leise Hintergrundgeraeusche",
-        "dateien": ["raum_ambient.wav"],
+        "dateien": ["ruhig.wav"],
     },
     "keine": {
         "name": "Keine Hintergrundgeraeusche",
@@ -86,7 +86,7 @@ class AudioMixer:
         if hintergrund_typ == "keine" or not self._hintergrund_cache:
             return tts_audio
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         return await loop.run_in_executor(
             None, self._mischen_sync, tts_audio, hintergrund_typ, lautstaerke
         )
