@@ -1,95 +1,505 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MED Rezeption - Softphone</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zzz Platform - Softphone</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="stylesheet" href="style.css">
+<style>
+  .softphone-display {
+    text-align: center;
+    padding: 24px 16px 16px;
+    margin-bottom: 8px;
+  }
+  .softphone-number {
+    width: 100%;
+    text-align: center;
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--text);
+    border: none;
+    background: transparent;
+    outline: none;
+    letter-spacing: 1px;
+    font-family: var(--font);
+  }
+  .softphone-status {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-top: 6px;
+    font-weight: 500;
+  }
+  .call-timer {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--primary);
+    margin-top: 6px;
+    font-family: 'Courier New', monospace;
+  }
+  .number-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .btn-backspace {
+    background: none;
+    border: none;
+    font-size: 18px;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: all .15s;
+  }
+  .btn-backspace:hover {
+    color: var(--danger);
+    background: var(--danger-light);
+  }
+  .call-btn-row {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+  .call-btn-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .call-btn-wrap span {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-muted);
+  }
+  .call-btn.green { background: var(--success); color: white; }
+  .call-btn.green:hover { background: #16a34a; }
+  .call-btn.red { background: var(--danger); color: white; }
+  .call-btn.red:hover { background: #dc2626; }
+  .call-actions {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 20px;
+    padding: 0 10px;
+  }
+  .call-history {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .sip-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .sip-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+  }
+  .sip-dot.connected {
+    background: var(--success);
+    box-shadow: 0 0 0 3px rgba(34,197,94,.15);
+  }
+  .sip-dot.disconnected {
+    background: var(--danger);
+    box-shadow: 0 0 0 3px rgba(239,68,68,.15);
+  }
+  .quick-dial-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border-light);
+    cursor: pointer;
+    transition: background .12s;
+  }
+  .quick-dial-item:last-child { border-bottom: none; }
+  .quick-dial-item:hover { background: #fafafa; border-radius: 8px; padding: 10px 8px; margin: 0 -8px; }
+  .quick-dial-item .qd-name { font-size: 13px; font-weight: 600; color: var(--text); }
+  .quick-dial-item .qd-ext { font-size: 12px; color: var(--text-muted); }
+</style>
 </head>
 <body>
-    <aside class="sidebar" id="sidebar">
-        <div class="sidebar-logo"><h2>MED Rezeption</h2><small>Praxisverwaltung</small></div>
-        <nav class="sidebar-nav">
-            <a href="dashboard.html"><i class="fa-solid fa-chart-pie nav-icon"></i> Dashboard</a>
-            <a href="patienten.html"><i class="fa-solid fa-users nav-icon"></i> Patienten</a>
-            <a href="aerzte.html"><i class="fa-solid fa-user-doctor nav-icon"></i> Aerzte</a>
-            <a href="termine.html"><i class="fa-solid fa-calendar-days nav-icon"></i> Termine</a>
-            <a href="wartezimmer.html"><i class="fa-solid fa-couch nav-icon"></i> Wartezimmer</a>
-            <a href="wissensdatenbank.html"><i class="fa-solid fa-book nav-icon"></i> Wissensdatenbank</a>
-            <a href="ansagen.html"><i class="fa-solid fa-tower-broadcast nav-icon"></i> Ansagen Generator</a>
-            <a href="auswertung.html"><i class="fa-solid fa-chart-line nav-icon"></i> Auswertungen</a>
-            <a href="standort.html"><i class="fa-solid fa-building nav-icon"></i> Standort &amp; ACD</a>
-            <a href="callflow.html"><i class="fa-solid fa-diagram-project nav-icon"></i> Callflow Editor</a>
-            <a href="voicebot.html"><i class="fa-solid fa-robot nav-icon"></i> Voicebot</a>
-            <a href="agenten.html"><i class="fa-solid fa-headset nav-icon"></i> Agenten</a>
-            <a href="softphone.html" class="active"><i class="fa-solid fa-phone nav-icon"></i> Softphone</a>
-            <a href="uebersetzung.html"><i class="fa-solid fa-language nav-icon"></i> Uebersetzer</a>
-            <a href="ai-agent.html"><i class="fa-solid fa-microchip nav-icon"></i> AI Agent Engineering</a>
-            <a href="benutzer.html"><i class="fa-solid fa-user-gear nav-icon"></i> Benutzer</a>
-        </nav>
-        <div class="sidebar-footer"><button id="btn-demo-reset" type="button">Demo zuruecksetzen</button></div>
-    </aside>
-    <div class="main-wrapper">
-        <header class="topbar">
-            <button id="menu-toggle" type="button"><i class="fa-solid fa-bars"></i></button>
-            <h1>Softphone</h1>
-            <div class="topbar-right">Demo-Modus</div>
-        </header>
-        <main>
-            <div style="max-width:400px;margin:0 auto">
-                <section class="softphone-panel">
-                    <h3>SIP-Verbindung</h3>
-                    <div id="sip-status" class="sip-status offline">Nicht verbunden</div>
-                    <form id="sip-form">
-                        <div class="form-group"><label for="sip-server">SIP-Server</label><input type="text" id="sip-server" value="sip.praxis-demo.de"></div>
-                        <div class="form-group"><label for="sip-benutzer">Benutzer</label><input type="text" id="sip-benutzer" value="100"></div>
-                        <div class="form-group"><label for="sip-passwort">Passwort</label><input type="password" id="sip-passwort" value="demo123"></div>
-                        <button type="submit" id="btn-sip-verbinden">Verbinden</button>
-                        <button type="button" id="btn-sip-trennen" hidden>Trennen</button>
-                    </form>
-                </section>
-                <section class="softphone-panel">
-                    <h3>Waehlfeld</h3>
-                    <div class="form-group"><input type="text" id="wahlnummer" placeholder="Nummer eingeben..." style="text-align:center;font-size:1.3rem"></div>
-                    <div class="dialpad">
-                        <button type="button" class="dialpad-taste" data-dtmf="1">1</button>
-                        <button type="button" class="dialpad-taste" data-dtmf="2">2</button>
-                        <button type="button" class="dialpad-taste" data-dtmf="3">3</button>
-                        <button type="button" class="dialpad-taste" data-dtmf="4">4</button>
-                        <button type="button" class="dialpad-taste" data-dtmf="5">5</button>
-                        <button type="button" class="dialpad-taste" data-dtmf="6">6</button>
-                        <button type="button" class="dialpad-taste" data-dtmf="7">7</button>
-                        <button type="button" class="dialpad-taste" data-dtmf="8">8</button>
-                        <button type="button" class="dialpad-taste" data-dtmf="9">9</button>
-                        <button type="button" class="dialpad-taste" data-dtmf="*">*</button>
-                        <button type="button" class="dialpad-taste" data-dtmf="0">0</button>
-                        <button type="button" class="dialpad-taste" data-dtmf="#">#</button>
-                    </div>
-                    <div class="button-gruppe anruf-buttons">
-                        <button type="button" id="btn-anrufen" class="btn-anrufen">Anrufen</button>
-                        <button type="button" id="btn-auflegen" class="btn-auflegen" hidden>Auflegen</button>
-                        <button type="button" id="btn-annehmen" class="btn-annehmen" hidden>Annehmen</button>
-                    </div>
-                </section>
-                <section class="softphone-panel" id="anruf-info" hidden>
-                    <div id="anruf-gegenstelle"></div>
-                    <div id="anruf-timer">00:00</div>
-                    <div id="anruf-status-anzeige"></div>
-                </section>
-            </div>
-        </main>
-    </div>
-    <button id="chat-toggle" type="button"><i class="fa-solid fa-comment-dots"></i></button>
-    <div id="chat-fenster">
-        <div class="chat-header"><span><i class="fa-solid fa-robot"></i> Praxis-Assistent</span><button id="chat-schliessen" type="button"><i class="fa-solid fa-xmark"></i></button></div>
-        <div id="chat-nachrichten"></div>
-        <div class="chat-eingabe">
-            <input id="chat-input" type="text" placeholder="Frage stellen oder sprechen...">
-            <button id="chat-mikrofon" type="button" title="Sprechen"><i class="fa-solid fa-microphone"></i></button>
-            <button id="chat-senden" type="button"><i class="fa-solid fa-paper-plane"></i></button>
+
+<!-- Sidebar -->
+<div class="sidebar">
+  <div class="sidebar-logo"><div class="icon">Z</div><span>Zzz Platform</span></div>
+  <div class="nav-group">Uebersicht</div>
+  <div class="nav-item" onclick="location.href='admin-dashboard.html'"><i class="fa-solid fa-gauge"></i> Dashboard</div>
+  <div class="nav-group">AI & Automatisierung</div>
+  <div class="nav-item" onclick="location.href='ai-agent.html'"><i class="fa-solid fa-microchip"></i> AI Agents</div>
+  <div class="nav-item" onclick="location.href='wissensdatenbank.html'"><i class="fa-solid fa-book"></i> Wissensdatenbank</div>
+  <div class="nav-item" onclick="location.href='ansagen.html'"><i class="fa-solid fa-tower-broadcast"></i> Ansagen</div>
+  <div class="nav-group">Callcenter</div>
+  <div class="nav-item" onclick="location.href='agent-board.html'"><i class="fa-solid fa-headset"></i> Agent Board</div>
+  <div class="nav-item active" onclick="location.href='softphone.html'"><i class="fa-solid fa-phone"></i> Softphone</div>
+  <div class="nav-item" onclick="location.href='agenten.html'"><i class="fa-solid fa-users-gear"></i> Agenten Verwaltung</div>
+  <div class="nav-group">System</div>
+  <div class="nav-item" onclick="location.href='auswertung.html'"><i class="fa-solid fa-chart-line"></i> Auswertungen</div>
+  <div class="nav-item" onclick="location.href='benutzer.html'"><i class="fa-solid fa-user-gear"></i> Benutzer</div>
+  <div class="nav-group"></div>
+  <div class="nav-item" onclick="sessionStorage.removeItem('mr_guard_session');location.href='index.html'"><i class="fa-solid fa-right-from-bracket"></i> Abmelden</div>
+</div>
+
+<!-- Main Content -->
+<div class="main">
+  <div class="softphone-container" style="max-width:480px;margin:0 auto;">
+
+    <!-- A) SIP Status Card -->
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-header"><h2>SIP Verbindung</h2></div>
+      <div class="card-body">
+        <div class="sip-row">
+          <span class="sip-dot disconnected" id="sipDot"></span>
+          <span id="sipStatusText" style="font-size:13px;font-weight:600;color:var(--danger);">Nicht verbunden</span>
         </div>
+        <div class="form-row-2">
+          <div class="form-row">
+            <label>Server</label>
+            <input type="text" id="sipServer" value="pbx.zzz-platform.de">
+          </div>
+          <div class="form-row">
+            <label>Benutzer</label>
+            <input type="text" id="sipUser" value="102">
+          </div>
+        </div>
+        <button class="btn-primary" id="btnSipConnect" onclick="toggleSip()">Verbinden</button>
+      </div>
     </div>
-    <script src="app.js"></script>
+
+    <!-- B) Phone Display -->
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-body" style="padding-bottom:8px;">
+        <div class="softphone-display">
+          <div class="number-row">
+            <input type="text" class="softphone-number" id="phoneNumber" readonly placeholder="Nummer eingeben...">
+            <button class="btn-backspace" id="btnBackspace" onclick="backspace()" title="Loeschen"><i class="fa-solid fa-delete-left"></i></button>
+          </div>
+          <div class="softphone-status" id="callStatus">Bereit</div>
+          <div class="call-timer" id="callTimer" style="display:none;">00:00</div>
+        </div>
+
+        <!-- C) Dialpad -->
+        <div class="dialpad">
+          <button type="button" class="dialpad-key" data-digit="1" onclick="dialDigit('1')">1<span class="sub">&nbsp;</span></button>
+          <button type="button" class="dialpad-key" data-digit="2" onclick="dialDigit('2')">2<span class="sub">ABC</span></button>
+          <button type="button" class="dialpad-key" data-digit="3" onclick="dialDigit('3')">3<span class="sub">DEF</span></button>
+          <button type="button" class="dialpad-key" data-digit="4" onclick="dialDigit('4')">4<span class="sub">GHI</span></button>
+          <button type="button" class="dialpad-key" data-digit="5" onclick="dialDigit('5')">5<span class="sub">JKL</span></button>
+          <button type="button" class="dialpad-key" data-digit="6" onclick="dialDigit('6')">6<span class="sub">MNO</span></button>
+          <button type="button" class="dialpad-key" data-digit="7" onclick="dialDigit('7')">7<span class="sub">PQRS</span></button>
+          <button type="button" class="dialpad-key" data-digit="8" onclick="dialDigit('8')">8<span class="sub">TUV</span></button>
+          <button type="button" class="dialpad-key" data-digit="9" onclick="dialDigit('9')">9<span class="sub">WXYZ</span></button>
+          <button type="button" class="dialpad-key" data-digit="*" onclick="dialDigit('*')">*<span class="sub">&nbsp;</span></button>
+          <button type="button" class="dialpad-key" data-digit="0" id="keyZero">0<span class="sub">+</span></button>
+          <button type="button" class="dialpad-key" data-digit="#" onclick="dialDigit('#')">#<span class="sub">&nbsp;</span></button>
+        </div>
+
+        <!-- D) Call Buttons -->
+        <div class="call-btn-row">
+          <div class="call-btn-wrap">
+            <button class="call-btn green" id="btnCall" onclick="startCall()"><i class="fa-solid fa-phone"></i></button>
+            <span>Anrufen</span>
+          </div>
+          <div class="call-btn-wrap">
+            <button class="call-btn red" id="btnHangup" onclick="hangUp()"><i class="fa-solid fa-phone-slash"></i></button>
+            <span>Auflegen</span>
+          </div>
+        </div>
+
+        <!-- E) Call Actions (hidden by default) -->
+        <div class="call-actions" id="callActions" style="display:none;">
+          <div class="call-action" onclick="toggleAction(this)" data-action="hold">
+            <div class="action-icon"><i class="fa-solid fa-pause"></i></div>
+            <span>Halten</span>
+          </div>
+          <div class="call-action" onclick="toggleAction(this)" data-action="mute">
+            <div class="action-icon"><i class="fa-solid fa-microphone-slash"></i></div>
+            <span>Stumm</span>
+          </div>
+          <div class="call-action" onclick="toggleAction(this)" data-action="transfer">
+            <div class="action-icon"><i class="fa-solid fa-right-left"></i></div>
+            <span>Transfer</span>
+          </div>
+          <div class="call-action" onclick="toggleAction(this)" data-action="conference">
+            <div class="action-icon"><i class="fa-solid fa-users"></i></div>
+            <span>Konferenz</span>
+          </div>
+          <div class="call-action" onclick="toggleAction(this)" data-action="dtmf">
+            <div class="action-icon"><i class="fa-solid fa-hashtag"></i></div>
+            <span>DTMF</span>
+          </div>
+          <div class="call-action" onclick="toggleAction(this)" data-action="record">
+            <div class="action-icon"><i class="fa-solid fa-circle-dot"></i></div>
+            <span>Aufnahme</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- F) Call History -->
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-header"><h2>Anruf-Historie</h2></div>
+      <div class="card-body">
+        <div class="call-history">
+          <div class="call-history-item" onclick="fillNumber('+49 176 1234567')">
+            <div class="ch-icon incoming"><i class="fa-solid fa-phone-arrow-down-left"></i></div>
+            <div class="ch-info">
+              <div class="ch-number">+49 176 1234567</div>
+              <div class="ch-time">Max Mustermann</div>
+            </div>
+            <div class="ch-duration">3:24</div>
+            <div style="font-size:11px;color:var(--text-light);white-space:nowrap;">Heute 14:32</div>
+          </div>
+          <div class="call-history-item" onclick="fillNumber('+49 89 12345')">
+            <div class="ch-icon outgoing"><i class="fa-solid fa-phone-arrow-up-right"></i></div>
+            <div class="ch-info">
+              <div class="ch-number">+49 89 12345</div>
+              <div class="ch-time">Praxis Mueller</div>
+            </div>
+            <div class="ch-duration">1:45</div>
+            <div style="font-size:11px;color:var(--text-light);white-space:nowrap;">Heute 13:15</div>
+          </div>
+          <div class="call-history-item" onclick="fillNumber('+49 151 9876543')">
+            <div class="ch-icon missed"><i class="fa-solid fa-phone-missed"></i></div>
+            <div class="ch-info">
+              <div class="ch-number">+49 151 9876543</div>
+              <div class="ch-time">Unbekannt</div>
+            </div>
+            <div class="ch-duration">-</div>
+            <div style="font-size:11px;color:var(--text-light);white-space:nowrap;">Heute 12:01</div>
+          </div>
+          <div class="call-history-item" onclick="fillNumber('+49 176 5551234')">
+            <div class="ch-icon incoming"><i class="fa-solid fa-phone-arrow-down-left"></i></div>
+            <div class="ch-info">
+              <div class="ch-number">+49 176 5551234</div>
+              <div class="ch-time">Anna Schmidt</div>
+            </div>
+            <div class="ch-duration">5:12</div>
+            <div style="font-size:11px;color:var(--text-light);white-space:nowrap;">Gestern 16:45</div>
+          </div>
+          <div class="call-history-item" onclick="fillNumber('+49 30 987654')">
+            <div class="ch-icon outgoing"><i class="fa-solid fa-phone-arrow-up-right"></i></div>
+            <div class="ch-info">
+              <div class="ch-number">+49 30 987654</div>
+              <div class="ch-time">Zentrale Berlin</div>
+            </div>
+            <div class="ch-duration">0:32</div>
+            <div style="font-size:11px;color:var(--text-light);white-space:nowrap;">Gestern 15:20</div>
+          </div>
+          <div class="call-history-item" onclick="fillNumber('+49 172 3456789')">
+            <div class="ch-icon incoming"><i class="fa-solid fa-phone-arrow-down-left"></i></div>
+            <div class="ch-info">
+              <div class="ch-number">+49 172 3456789</div>
+              <div class="ch-time">Thomas Klein</div>
+            </div>
+            <div class="ch-duration">2:18</div>
+            <div style="font-size:11px;color:var(--text-light);white-space:nowrap;">Gestern 11:05</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- G) Kurzwahl / Kontakte -->
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-header"><h2>Kurzwahl</h2></div>
+      <div class="card-body">
+        <div class="quick-dial-item" onclick="fillNumber('101')">
+          <span class="qd-name">Dr. Schmidt</span>
+          <span class="qd-ext">Ext. 101</span>
+        </div>
+        <div class="quick-dial-item" onclick="fillNumber('102')">
+          <span class="qd-name">Anna Weber</span>
+          <span class="qd-ext">Ext. 102</span>
+        </div>
+        <div class="quick-dial-item" onclick="fillNumber('103')">
+          <span class="qd-name">Chris Mueller</span>
+          <span class="qd-ext">Ext. 103</span>
+        </div>
+        <div class="quick-dial-item" onclick="fillNumber('104')">
+          <span class="qd-name">Laura Klein</span>
+          <span class="qd-ext">Ext. 104</span>
+        </div>
+        <div class="quick-dial-item" onclick="fillNumber('105')">
+          <span class="qd-name">Tom Huber</span>
+          <span class="qd-ext">Ext. 105</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// State
+let sipConnected = false;
+let inCall = false;
+let timerInterval = null;
+let timerSeconds = 0;
+let longPressTimer = null;
+
+// Elements
+const phoneNumber = document.getElementById('phoneNumber');
+const callStatus = document.getElementById('callStatus');
+const callTimer = document.getElementById('callTimer');
+const callActions = document.getElementById('callActions');
+const sipDot = document.getElementById('sipDot');
+const sipStatusText = document.getElementById('sipStatusText');
+const btnSipConnect = document.getElementById('btnSipConnect');
+const keyZero = document.getElementById('keyZero');
+
+// Dialpad digit
+function dialDigit(d) {
+  phoneNumber.value += d;
+}
+
+// Backspace
+function backspace() {
+  phoneNumber.value = phoneNumber.value.slice(0, -1);
+}
+
+// Long press on 0 for "+"
+keyZero.addEventListener('mousedown', function(e) {
+  longPressTimer = setTimeout(function() {
+    dialDigit('+');
+    longPressTimer = null;
+  }, 600);
+});
+keyZero.addEventListener('mouseup', function(e) {
+  if (longPressTimer) {
+    clearTimeout(longPressTimer);
+    longPressTimer = null;
+    dialDigit('0');
+  }
+});
+keyZero.addEventListener('mouseleave', function(e) {
+  if (longPressTimer) {
+    clearTimeout(longPressTimer);
+    longPressTimer = null;
+  }
+});
+// Touch support for long press
+keyZero.addEventListener('touchstart', function(e) {
+  e.preventDefault();
+  longPressTimer = setTimeout(function() {
+    dialDigit('+');
+    longPressTimer = null;
+  }, 600);
+});
+keyZero.addEventListener('touchend', function(e) {
+  e.preventDefault();
+  if (longPressTimer) {
+    clearTimeout(longPressTimer);
+    longPressTimer = null;
+    dialDigit('0');
+  }
+});
+
+// Fill number from history or quick-dial
+function fillNumber(num) {
+  phoneNumber.value = num;
+}
+
+// Start call
+function startCall() {
+  if (!phoneNumber.value.trim()) return;
+  inCall = true;
+  callStatus.textContent = 'Verbinde...';
+  callStatus.style.color = 'var(--warning)';
+  callActions.style.display = 'none';
+
+  setTimeout(function() {
+    if (!inCall) return;
+    callStatus.textContent = 'Verbunden';
+    callStatus.style.color = 'var(--success)';
+    callTimer.style.display = 'block';
+    callActions.style.display = 'grid';
+    timerSeconds = 0;
+    callTimer.textContent = '00:00';
+    timerInterval = setInterval(function() {
+      timerSeconds++;
+      var m = String(Math.floor(timerSeconds / 60)).padStart(2, '0');
+      var s = String(timerSeconds % 60).padStart(2, '0');
+      callTimer.textContent = m + ':' + s;
+    }, 1000);
+  }, 1500);
+}
+
+// Hang up
+function hangUp() {
+  inCall = false;
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+  timerSeconds = 0;
+  callStatus.textContent = 'Bereit';
+  callStatus.style.color = 'var(--text-muted)';
+  callTimer.style.display = 'none';
+  callTimer.textContent = '00:00';
+  callActions.style.display = 'none';
+  phoneNumber.value = '';
+
+  // Reset all call-action toggles
+  document.querySelectorAll('.call-action').forEach(function(el) {
+    el.classList.remove('active');
+  });
+}
+
+// Toggle call action (Halten, Stumm, Aufnahme)
+function toggleAction(el) {
+  var action = el.getAttribute('data-action');
+  if (action === 'hold' || action === 'mute' || action === 'record') {
+    el.classList.toggle('active');
+  }
+}
+
+// SIP connect/disconnect
+function toggleSip() {
+  sipConnected = !sipConnected;
+  if (sipConnected) {
+    sipDot.className = 'sip-dot connected';
+    sipStatusText.textContent = 'Registriert';
+    sipStatusText.style.color = '#15803d';
+    btnSipConnect.textContent = 'Trennen';
+    btnSipConnect.className = 'btn-danger';
+  } else {
+    sipDot.className = 'sip-dot disconnected';
+    sipStatusText.textContent = 'Nicht verbunden';
+    sipStatusText.style.color = 'var(--danger)';
+    btnSipConnect.textContent = 'Verbinden';
+    btnSipConnect.className = 'btn-primary';
+  }
+}
+
+// Keyboard support
+document.addEventListener('keydown', function(e) {
+  if (document.activeElement.tagName === 'INPUT' && document.activeElement.id !== 'phoneNumber') return;
+  var key = e.key;
+  if ('0123456789*#'.indexOf(key) !== -1) {
+    e.preventDefault();
+    dialDigit(key);
+  } else if (key === 'Backspace') {
+    e.preventDefault();
+    backspace();
+  } else if (key === 'Enter') {
+    e.preventDefault();
+    if (inCall) {
+      hangUp();
+    } else {
+      startCall();
+    }
+  }
+});
+</script>
+
 </body>
 </html>
