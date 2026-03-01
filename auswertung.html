@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zzz Platform - Auswertungen</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="stylesheet" href="style.css">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: #f8fafc; display: flex; }
+  .sidebar { width: 220px; background: white; border-right: 1px solid #e5e7eb; padding: 20px 12px; flex-shrink: 0; min-height: 100vh; }
+  .sidebar-logo { display: flex; align-items: center; gap: 10px; padding: 8px 10px; margin-bottom: 24px; }
+  .sidebar-logo .icon { width: 34px; height: 34px; background: #2563eb; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 16px; }
+  .sidebar-logo span { font-weight: 700; font-size: 15px; color: #111827; }
+  .nav-group { font-size: 10px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; padding: 0 12px; margin: 14px 0 6px; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 10px; font-size: 13px; font-weight: 500; color: #6b7280; cursor: pointer; margin-bottom: 2px; }
+  .nav-item.active { background: #eff6ff; color: #2563eb; }
+  .nav-item:hover:not(.active) { background: #f9fafb; color: #374151; }
+  .main { flex: 1; padding: 28px; overflow: auto; }
+  .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+  h1 { font-size: 22px; font-weight: 700; color: #111827; }
+  .date-line { font-size: 13px; color: #6b7280; margin-bottom: 20px; }
+  .period-btns { display: flex; gap: 6px; margin-bottom: 20px; }
+  .period-btn { padding: 7px 16px; border-radius: 8px; font-size: 12px; font-weight: 600; border: 1px solid #e5e7eb; background: white; color: #6b7280; cursor: pointer; }
+  .period-btn.active { background: #2563eb; color: white; border-color: #2563eb; }
+  .period-btn:hover:not(.active) { background: #f9fafb; color: #374151; }
+  .kpi-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 20px; }
+  .kpi { background: white; border-radius: 12px; border: 1px solid #e5e7eb; padding: 18px; }
+  .kpi-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .kpi-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+  .kpi-icon.blue { background: #eff6ff; color: #2563eb; }
+  .kpi-icon.green { background: #f0fdf4; color: #16a34a; }
+  .kpi-icon.red { background: #fef2f2; color: #dc2626; }
+  .kpi-icon.amber { background: #fffbeb; color: #d97706; }
+  .kpi-icon.purple { background: #faf5ff; color: #9333ea; }
+  .kpi-label { font-size: 12px; color: #6b7280; font-weight: 500; }
+  .kpi-value { font-size: 24px; font-weight: 700; color: #111827; margin-top: 4px; }
+  .kpi-sub { font-size: 11px; color: #6b7280; margin-top: 4px; }
+  .kpi-sub.positive { color: #16a34a; }
+  .kpi-sub.negative { color: #dc2626; }
+  .card { background: white; border-radius: 12px; border: 1px solid #e5e7eb; margin-bottom: 20px; }
+  .card-header { padding: 16px 20px; border-bottom: 1px solid #f3f4f6; font-weight: 600; font-size: 14px; color: #111827; }
+  .card-body { padding: 20px; }
+  .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  label { display: block; font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 6px; }
+  .table-container { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead { background: #f9fafb; }
+  th { text-align: left; padding: 10px 14px; font-weight: 600; color: #6b7280; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e5e7eb; }
+  td { padding: 12px 14px; border-bottom: 1px solid #f3f4f6; color: #374151; }
+  td.fw { font-weight: 600; color: #111827; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+  .badge-success { background: #f0fdf4; color: #16a34a; }
+  .badge-warning { background: #fffbeb; color: #d97706; }
+  .badge-info { background: #eff6ff; color: #2563eb; }
+  .badge-gray { background: #f3f4f6; color: #6b7280; }
+  .cost-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: #f9fafb; border-radius: 8px; }
+  .cost-label { font-size: 13px; color: #374151; font-weight: 500; }
+  .cost-value { font-size: 16px; font-weight: 700; color: #111827; }
+  .cost-total { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; background: #eff6ff; border-radius: 8px; margin-top: 12px; }
+  .cost-total .cost-label { font-weight: 700; color: #111827; }
+  .cost-total .cost-value { font-size: 20px; color: #2563eb; }
+  .stars { color: #f59e0b; }
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="sidebar-logo"><div class="icon">Z</div><span>Zzz Platform</span></div>
+  <div class="nav-group">Uebersicht</div>
+  <div class="nav-item" onclick="location.href='admin-dashboard.html'"><i class="fa-solid fa-gauge"></i> Dashboard</div>
+  <div class="nav-group">AI & Automatisierung</div>
+  <div class="nav-item" onclick="location.href='ai-agent.html'"><i class="fa-solid fa-microchip"></i> AI Agents</div>
+  <div class="nav-item" onclick="location.href='wissensdatenbank.html'"><i class="fa-solid fa-book"></i> Wissensdatenbank</div>
+  <div class="nav-item" onclick="location.href='ansagen.html'"><i class="fa-solid fa-tower-broadcast"></i> Ansagen</div>
+  <div class="nav-group">Callcenter</div>
+  <div class="nav-item" onclick="location.href='agent-board.html'"><i class="fa-solid fa-headset"></i> Agent Board</div>
+  <div class="nav-item" onclick="location.href='softphone.html'"><i class="fa-solid fa-phone"></i> Softphone</div>
+  <div class="nav-item" onclick="location.href='agenten.html'"><i class="fa-solid fa-users-gear"></i> Agenten Verwaltung</div>
+  <div class="nav-group">System</div>
+  <div class="nav-item active" onclick="location.href='auswertung.html'"><i class="fa-solid fa-chart-line"></i> Auswertungen</div>
+  <div class="nav-item" onclick="location.href='benutzer.html'"><i class="fa-solid fa-user-gear"></i> Benutzer</div>
+  <div class="nav-group"></div>
+  <div class="nav-item" onclick="sessionStorage.removeItem('mr_guard_session');location.href='index.html'"><i class="fa-solid fa-right-from-bracket"></i> Abmelden</div>
+</div>
+
+<div class="main">
+  <div class="top-bar">
+    <h1>Auswertungen</h1>
+  </div>
+  <div class="date-line">Samstag, 01. Maerz 2026</div>
+
+  <!-- Period Buttons -->
+  <div class="period-btns">
+    <button class="period-btn active">Heute</button>
+    <button class="period-btn">Woche</button>
+    <button class="period-btn">Monat</button>
+    <button class="period-btn">Quartal</button>
+    <button class="period-btn">Jahr</button>
+  </div>
+
+  <!-- KPI Grid -->
+  <div class="kpi-grid">
+    <div class="kpi">
+      <div class="kpi-header">
+        <div class="kpi-label">Anrufe gesamt</div>
+        <div class="kpi-icon blue"><i class="fa-solid fa-phone"></i></div>
+      </div>
+      <div class="kpi-value">1.247</div>
+      <div class="kpi-sub positive">+12%</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-header">
+        <div class="kpi-label">Angenommen</div>
+        <div class="kpi-icon green"><i class="fa-solid fa-phone-volume"></i></div>
+      </div>
+      <div class="kpi-value">1.108</div>
+      <div class="kpi-sub">88.9%</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-header">
+        <div class="kpi-label">Verpasst</div>
+        <div class="kpi-icon red"><i class="fa-solid fa-phone-slash"></i></div>
+      </div>
+      <div class="kpi-value">139</div>
+      <div class="kpi-sub">11.1%</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-header">
+        <div class="kpi-label">Avg Wartezeit</div>
+        <div class="kpi-icon amber"><i class="fa-solid fa-clock"></i></div>
+      </div>
+      <div class="kpi-value">0:34</div>
+      <div class="kpi-sub positive">-8%</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-header">
+        <div class="kpi-label">Avg Gespraechsdauer</div>
+        <div class="kpi-icon purple"><i class="fa-solid fa-hourglass"></i></div>
+      </div>
+      <div class="kpi-value">4:12</div>
+      <div class="kpi-sub">+0:15</div>
+    </div>
+  </div>
+
+  <!-- Anruf-Statistiken -->
+  <div class="card">
+    <div class="card-header">Anruf-Statistiken</div>
+    <div class="card-body">
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Zeitraum</th>
+              <th>Eingehend</th>
+              <th>Ausgehend</th>
+              <th>Angenommen</th>
+              <th>Verpasst</th>
+              <th>Avg Wartezeit</th>
+              <th>Avg Dauer</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="fw">Montag</td>
+              <td>287</td>
+              <td>45</td>
+              <td>261</td>
+              <td>26</td>
+              <td>0:28</td>
+              <td>3:45</td>
+            </tr>
+            <tr>
+              <td class="fw">Dienstag</td>
+              <td>312</td>
+              <td>52</td>
+              <td>278</td>
+              <td>34</td>
+              <td>0:35</td>
+              <td>4:02</td>
+            </tr>
+            <tr>
+              <td class="fw">Mittwoch</td>
+              <td>245</td>
+              <td>38</td>
+              <td>220</td>
+              <td>25</td>
+              <td>0:31</td>
+              <td>4:18</td>
+            </tr>
+            <tr>
+              <td class="fw">Donnerstag</td>
+              <td>298</td>
+              <td>41</td>
+              <td>264</td>
+              <td>34</td>
+              <td>0:38</td>
+              <td>4:25</td>
+            </tr>
+            <tr>
+              <td class="fw">Freitag</td>
+              <td>205</td>
+              <td>31</td>
+              <td>185</td>
+              <td>20</td>
+              <td>0:30</td>
+              <td>3:52</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Agent-Performance -->
+  <div class="card">
+    <div class="card-header">Agent-Performance</div>
+    <div class="card-body">
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Agent</th>
+              <th>Anrufe</th>
+              <th>Angenommen</th>
+              <th>Verpasst</th>
+              <th>Avg Dauer</th>
+              <th>Avg Nacharbeit</th>
+              <th>Bewertung</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="fw">Dr. Schmidt</td>
+              <td>312</td>
+              <td>298</td>
+              <td>14</td>
+              <td>4:35</td>
+              <td>1:20</td>
+              <td><span class="stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></span> 4.9</td>
+            </tr>
+            <tr>
+              <td class="fw">Anna Weber</td>
+              <td>285</td>
+              <td>267</td>
+              <td>18</td>
+              <td>3:50</td>
+              <td>1:05</td>
+              <td><span class="stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star-half-stroke"></i></span> 4.7</td>
+            </tr>
+            <tr>
+              <td class="fw">Chris Mueller</td>
+              <td>248</td>
+              <td>220</td>
+              <td>28</td>
+              <td>4:10</td>
+              <td>1:30</td>
+              <td><span class="stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-regular fa-star"></i></span> 4.2</td>
+            </tr>
+            <tr>
+              <td class="fw">Laura Klein</td>
+              <td>215</td>
+              <td>198</td>
+              <td>17</td>
+              <td>3:45</td>
+              <td>0:55</td>
+              <td><span class="stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></span> 4.8</td>
+            </tr>
+            <tr>
+              <td class="fw">Tom Huber</td>
+              <td>187</td>
+              <td>165</td>
+              <td>22</td>
+              <td>4:25</td>
+              <td>1:15</td>
+              <td><span class="stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-regular fa-star"></i></span> 4.0</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Kosten-Uebersicht -->
+  <div class="card">
+    <div class="card-header">Kosten-Uebersicht</div>
+    <div class="card-body">
+      <div class="form-row-3">
+        <div class="cost-item">
+          <span class="cost-label">Telefonie</span>
+          <span class="cost-value">&euro; 234.50</span>
+        </div>
+        <div class="cost-item">
+          <span class="cost-label">AI-Agent</span>
+          <span class="cost-value">&euro; 89.20</span>
+        </div>
+        <div class="cost-item">
+          <span class="cost-label">TTS/STT</span>
+          <span class="cost-value">&euro; 45.80</span>
+        </div>
+      </div>
+      <div class="cost-total">
+        <span class="cost-label">Gesamt</span>
+        <span class="cost-value">&euro; 369.50</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

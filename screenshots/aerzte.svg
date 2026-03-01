@@ -1,0 +1,113 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500">
+  <defs>
+    <style>
+      text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    </style>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="500" fill="#f1f5f9"/>
+
+  <!-- Sidebar -->
+  <rect x="0" y="0" width="180" height="500" fill="#1e293b"/>
+
+  <!-- Logo -->
+  <rect x="16" y="14" width="148" height="32" rx="6" fill="#2563eb" opacity="0.15"/>
+  <text x="90" y="35" fill="#ffffff" font-size="14" font-weight="700" text-anchor="middle">MED Rezeption</text>
+
+  <!-- Nav Items -->
+  <rect x="20" y="70" width="14" height="14" rx="3" fill="#475569"/>
+  <text x="42" y="82" fill="#94a3b8" font-size="12">Dashboard</text>
+
+  <rect x="20" y="100" width="14" height="14" rx="3" fill="#475569"/>
+  <text x="42" y="112" fill="#94a3b8" font-size="12">Patienten</text>
+
+  <!-- Aerzte - active -->
+  <rect x="10" y="126" width="160" height="34" rx="6" fill="#2563eb" opacity="0.25"/>
+  <rect x="20" y="136" width="14" height="14" rx="3" fill="#2563eb"/>
+  <text x="42" y="148" fill="#ffffff" font-size="12" font-weight="600">Aerzte</text>
+
+  <rect x="20" y="172" width="14" height="14" rx="3" fill="#475569"/>
+  <text x="42" y="184" fill="#94a3b8" font-size="12">Termine</text>
+
+  <rect x="20" y="202" width="14" height="14" rx="3" fill="#475569"/>
+  <text x="42" y="214" fill="#94a3b8" font-size="12">Wartezimmer</text>
+
+  <rect x="20" y="232" width="14" height="14" rx="3" fill="#475569"/>
+  <text x="42" y="244" fill="#94a3b8" font-size="12">Callflow Editor</text>
+
+  <!-- Topbar -->
+  <rect x="180" y="0" width="620" height="48" fill="#ffffff"/>
+  <line x1="180" y1="48" x2="800" y2="48" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="200" y="30" fill="#1e293b" font-size="16" font-weight="700">Aerzte</text>
+
+  <!-- Arzt anlegen Card -->
+  <rect x="192" y="60" width="594" height="136" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="208" y="84" fill="#1e293b" font-size="13" font-weight="700">Arzt anlegen</text>
+
+  <!-- Form Row 1 -->
+  <text x="208" y="108" fill="#64748b" font-size="10">Titel</text>
+  <rect x="208" y="112" width="88" height="28" rx="4" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="218" y="130" fill="#94a3b8" font-size="10">Dr. med.</text>
+
+  <text x="306" y="108" fill="#64748b" font-size="10">Fachrichtung</text>
+  <rect x="306" y="112" width="140" height="28" rx="4" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+
+  <text x="458" y="108" fill="#64748b" font-size="10">Vorname</text>
+  <rect x="458" y="112" width="130" height="28" rx="4" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+
+  <!-- Form Row 1 cont -->
+  <text x="600" y="108" fill="#64748b" font-size="10">Nachname</text>
+  <rect x="600" y="112" width="174" height="28" rx="4" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+
+  <!-- Form Row 2 -->
+  <text x="208" y="156" fill="#64748b" font-size="10">Telefon</text>
+  <rect x="208" y="160" width="140" height="28" rx="4" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+
+  <text x="360" y="156" fill="#64748b" font-size="10">Email</text>
+  <rect x="360" y="160" width="180" height="28" rx="4" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+
+  <!-- Save Button -->
+  <rect x="700" y="162" width="74" height="24" rx="4" fill="#22c55e"/>
+  <text x="737" y="178" fill="#ffffff" font-size="10" font-weight="600" text-anchor="middle">Speichern</text>
+
+  <!-- Aerzteliste Card -->
+  <rect x="192" y="208" width="594" height="280" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="208" y="232" fill="#1e293b" font-size="13" font-weight="700">Aerzteliste</text>
+
+  <!-- Table Header -->
+  <rect x="192" y="244" width="594" height="28" fill="#f8fafc"/>
+  <text x="208" y="262" fill="#64748b" font-size="10" font-weight="600">Name</text>
+  <text x="350" y="262" fill="#64748b" font-size="10" font-weight="600">Fachrichtung</text>
+  <text x="490" y="262" fill="#64748b" font-size="10" font-weight="600">Telefon</text>
+  <text x="600" y="262" fill="#64748b" font-size="10" font-weight="600">E-Mail</text>
+  <text x="724" y="262" fill="#64748b" font-size="10" font-weight="600">Aktionen</text>
+  <line x1="192" y1="272" x2="786" y2="272" stroke="#e2e8f0" stroke-width="1"/>
+
+  <!-- Sample rows (placeholder) -->
+  <rect x="208" y="286" width="110" height="6" rx="3" fill="#e2e8f0"/>
+  <rect x="350" y="286" width="90" height="6" rx="3" fill="#e2e8f0"/>
+  <rect x="490" y="286" width="80" height="6" rx="3" fill="#e2e8f0"/>
+  <rect x="600" y="286" width="100" height="6" rx="3" fill="#e2e8f0"/>
+  <rect x="724" y="282" width="24" height="14" rx="3" fill="#2563eb" opacity="0.15"/>
+  <rect x="752" y="282" width="24" height="14" rx="3" fill="#ef4444" opacity="0.15"/>
+  <line x1="208" y1="302" x2="774" y2="302" stroke="#f1f5f9" stroke-width="1"/>
+
+  <rect x="208" y="316" width="100" height="6" rx="3" fill="#e2e8f0"/>
+  <rect x="350" y="316" width="80" height="6" rx="3" fill="#e2e8f0"/>
+  <rect x="490" y="316" width="80" height="6" rx="3" fill="#e2e8f0"/>
+  <rect x="600" y="316" width="110" height="6" rx="3" fill="#e2e8f0"/>
+  <rect x="724" y="312" width="24" height="14" rx="3" fill="#2563eb" opacity="0.15"/>
+  <rect x="752" y="312" width="24" height="14" rx="3" fill="#ef4444" opacity="0.15"/>
+  <line x1="208" y1="332" x2="774" y2="332" stroke="#f1f5f9" stroke-width="1"/>
+
+  <rect x="208" y="346" width="95" height="6" rx="3" fill="#e2e8f0"/>
+  <rect x="350" y="346" width="70" height="6" rx="3" fill="#e2e8f0"/>
+  <rect x="490" y="346" width="80" height="6" rx="3" fill="#e2e8f0"/>
+  <rect x="600" y="346" width="90" height="6" rx="3" fill="#e2e8f0"/>
+  <rect x="724" y="342" width="24" height="14" rx="3" fill="#2563eb" opacity="0.15"/>
+  <rect x="752" y="342" width="24" height="14" rx="3" fill="#ef4444" opacity="0.15"/>
+
+  <!-- Empty state -->
+  <text x="489" y="420" fill="#94a3b8" font-size="11" text-anchor="middle">Keine Aerzte vorhanden</text>
+</svg>

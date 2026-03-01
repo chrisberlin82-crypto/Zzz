@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zzz Platform - Zugangs-Code</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="stylesheet" href="style.css">
+<style>
+    body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        background: linear-gradient(135deg, #f0f4ff 0%, #e8f0fe 100%);
+        padding: 20px;
+    }
+
+    .guard-wrapper {
+        width: 100%;
+        max-width: 400px;
+    }
+
+    .guard-card {
+        background: var(--card-bg);
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        padding: 40px 36px;
+        text-align: center;
+    }
+
+    .guard-logo {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        margin-bottom: 28px;
+    }
+
+    .guard-logo .icon {
+        width: 44px;
+        height: 44px;
+        background: var(--primary);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 800;
+        font-size: 20px;
+    }
+
+    .guard-logo span {
+        font-weight: 700;
+        font-size: 18px;
+        color: var(--text);
+    }
+
+    .guard-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 6px;
+    }
+
+    .guard-subtitle {
+        font-size: 13px;
+        color: var(--text-muted);
+        margin-bottom: 24px;
+    }
+
+    .guard-card .code-input {
+        width: 100%;
+        padding: 14px 18px;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 9px;
+        font-size: 28px;
+        font-weight: 700;
+        font-family: var(--font);
+        color: var(--text);
+        text-align: center;
+        letter-spacing: 8px;
+        outline: none;
+        background: white;
+        transition: border-color .15s, box-shadow .15s;
+    }
+
+    .guard-card .code-input:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px var(--primary-ring);
+    }
+
+    .guard-card .code-input::placeholder {
+        font-size: 16px;
+        font-weight: 400;
+        letter-spacing: 2px;
+        color: var(--text-light);
+    }
+
+    .guard-btn {
+        width: 100%;
+        padding: 11px 18px;
+        background: var(--primary);
+        color: white;
+        border: none;
+        border-radius: 9px;
+        font-size: 14px;
+        font-weight: 600;
+        font-family: var(--font);
+        cursor: pointer;
+        transition: background .15s, transform .1s;
+        margin-top: 16px;
+    }
+
+    .guard-btn:hover {
+        background: var(--primary-dark);
+    }
+
+    .guard-btn:active {
+        transform: scale(0.98);
+    }
+
+    .guard-error {
+        background: var(--danger-light);
+        border: 1px solid #fca5a5;
+        border-radius: var(--radius-xs);
+        padding: 10px 14px;
+        color: var(--danger);
+        font-size: 12px;
+        font-weight: 500;
+        margin-top: 14px;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .guard-error.show {
+        display: flex;
+    }
+</style>
+</head>
+<body>
+
+<div class="guard-wrapper">
+    <div class="guard-card">
+        <div class="guard-logo">
+            <div class="icon">Z</div>
+            <span>Zzz Platform</span>
+        </div>
+
+        <div class="guard-title">Zugangs-Code eingeben</div>
+        <div class="guard-subtitle">Bitte den 6-stelligen Code eingeben um fortzufahren.</div>
+
+        <form id="guardForm" autocomplete="off">
+            <input type="text" class="code-input" id="codeInput"
+                   maxlength="6" inputmode="numeric" pattern="[0-9]*"
+                   placeholder="------" autofocus required>
+
+            <button type="submit" class="guard-btn">
+                <i class="fa-solid fa-shield-halved"></i> Zugang pruefen
+            </button>
+        </form>
+
+        <div class="guard-error" id="guardError">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            <span>Ungueltiger Code. Bitte erneut versuchen.</span>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    var VALID_CODE = '123456';
+    var SESSION_KEY = 'zzz_guard_ok';
+
+    // Check existing session
+    try {
+        if (sessionStorage.getItem(SESSION_KEY) === '1') {
+            window.location.replace('admin-dashboard.html');
+            return;
+        }
+    } catch(e) {}
+
+    var form = document.getElementById('guardForm');
+    var input = document.getElementById('codeInput');
+    var errorEl = document.getElementById('guardError');
+
+    // Only allow numeric input
+    input.addEventListener('input', function() {
+        this.value = this.value.replace(/[^0-9]/g, '');
+    });
+
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        var code = input.value.trim();
+        errorEl.classList.remove('show');
+
+        if (code === VALID_CODE) {
+            sessionStorage.setItem(SESSION_KEY, '1');
+            window.location.href = 'admin-dashboard.html';
+        } else {
+            errorEl.classList.add('show');
+            input.value = '';
+            input.focus();
+        }
+    });
+})();
+</script>
+
+</body>
+</html>

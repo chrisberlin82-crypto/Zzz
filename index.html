@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zzz Platform - Anmelden</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="stylesheet" href="style.css">
+<style>
+    body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        background: linear-gradient(135deg, #f0f4ff 0%, #e8f0fe 100%);
+        padding: 20px;
+    }
+
+    .login-wrapper {
+        width: 100%;
+        max-width: 400px;
+    }
+
+    .login-card {
+        background: var(--card-bg);
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        padding: 40px 36px;
+    }
+
+    .login-logo {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 8px;
+    }
+
+    .login-logo .icon {
+        width: 44px;
+        height: 44px;
+        background: var(--primary);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 800;
+        font-size: 20px;
+    }
+
+    .login-logo span {
+        font-weight: 700;
+        font-size: 18px;
+        color: var(--text);
+    }
+
+    .login-subtitle {
+        font-size: 13px;
+        color: var(--text-muted);
+        margin-bottom: 28px;
+        margin-top: 4px;
+    }
+
+    .login-card .form-group {
+        margin-bottom: 16px;
+    }
+
+    .login-card .form-group label {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-transform: none;
+        letter-spacing: 0;
+        margin-bottom: 6px;
+        display: block;
+    }
+
+    .login-card .form-group input {
+        width: 100%;
+        padding: 10px 14px;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 9px;
+        font-size: 14px;
+        font-family: var(--font);
+        color: var(--text);
+        outline: none;
+        background: white;
+        transition: border-color .15s, box-shadow .15s;
+    }
+
+    .login-card .form-group input:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px var(--primary-ring);
+    }
+
+    .login-btn {
+        width: 100%;
+        padding: 11px 18px;
+        background: var(--primary);
+        color: white;
+        border: none;
+        border-radius: 9px;
+        font-size: 14px;
+        font-weight: 600;
+        font-family: var(--font);
+        cursor: pointer;
+        transition: background .15s, transform .1s;
+        margin-top: 4px;
+    }
+
+    .login-btn:hover {
+        background: var(--primary-dark);
+    }
+
+    .login-btn:active {
+        transform: scale(0.98);
+    }
+
+    .login-demo {
+        margin-top: 20px;
+        padding: 12px 14px;
+        background: var(--primary-light);
+        border-radius: var(--radius-xs);
+        text-align: center;
+        font-size: 12px;
+        color: var(--text-muted);
+        line-height: 1.6;
+    }
+
+    .login-demo strong {
+        color: var(--primary);
+    }
+
+    .login-error {
+        background: var(--danger-light);
+        border: 1px solid #fca5a5;
+        border-radius: var(--radius-xs);
+        padding: 10px 14px;
+        color: var(--danger);
+        font-size: 12px;
+        font-weight: 500;
+        margin-bottom: 16px;
+        display: none;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .login-error.show {
+        display: flex;
+    }
+</style>
+</head>
+<body>
+
+<div class="login-wrapper">
+    <div class="login-card">
+        <div class="login-logo">
+            <div class="icon">Z</div>
+            <span>Zzz Platform</span>
+        </div>
+        <div class="login-subtitle">CallCenter &amp; AI Agent Platform</div>
+
+        <form id="loginForm" autocomplete="on">
+            <div class="login-error" id="loginError">
+                <i class="fa-solid fa-circle-exclamation"></i>
+                <span>Ungueltige Zugangsdaten. Bitte erneut versuchen.</span>
+            </div>
+
+            <div class="form-group">
+                <label for="email">E-Mail</label>
+                <input type="email" id="email" placeholder="name@firma.de" autocomplete="username" required autofocus>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Passwort</label>
+                <input type="password" id="password" placeholder="Passwort eingeben" autocomplete="current-password" required>
+            </div>
+
+            <button type="submit" class="login-btn">
+                <i class="fa-solid fa-right-to-bracket"></i> Anmelden
+            </button>
+        </form>
+
+        <div class="login-demo">
+            Demo-Zugang: <strong>admin@demo.de</strong> / <strong>demo</strong>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    var SESSION_KEY = 'zzz_session';
+
+    // Check existing session
+    try {
+        var session = JSON.parse(sessionStorage.getItem(SESSION_KEY) || 'null');
+        if (session && session.authenticated) {
+            window.location.replace('admin-dashboard.html');
+            return;
+        }
+    } catch(e) {}
+
+    var form = document.getElementById('loginForm');
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        var email = document.getElementById('email').value.trim();
+        var password = document.getElementById('password').value;
+        var errorEl = document.getElementById('loginError');
+
+        errorEl.classList.remove('show');
+
+        // Simple demo validation
+        if (email === 'admin@demo.de' && password === 'demo') {
+            sessionStorage.setItem(SESSION_KEY, JSON.stringify({
+                authenticated: true,
+                email: email,
+                name: 'Administrator',
+                timestamp: new Date().toISOString()
+            }));
+            window.location.href = 'admin-dashboard.html';
+        } else {
+            errorEl.classList.add('show');
+            document.getElementById('password').value = '';
+            document.getElementById('password').focus();
+        }
+    });
+})();
+</script>
+
+</body>
+</html>

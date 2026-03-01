@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zzz Platform - Ansagen</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="stylesheet" href="style.css">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: #f8fafc; display: flex; }
+  .sidebar { width: 220px; background: white; border-right: 1px solid #e5e7eb; padding: 20px 12px; flex-shrink: 0; min-height: 100vh; }
+  .sidebar-logo { display: flex; align-items: center; gap: 10px; padding: 8px 10px; margin-bottom: 24px; }
+  .sidebar-logo .icon { width: 34px; height: 34px; background: #2563eb; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 16px; }
+  .sidebar-logo span { font-weight: 700; font-size: 15px; color: #111827; }
+  .nav-group { font-size: 10px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; padding: 0 12px; margin: 14px 0 6px; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 10px; font-size: 13px; font-weight: 500; color: #6b7280; cursor: pointer; margin-bottom: 2px; }
+  .nav-item.active { background: #eff6ff; color: #2563eb; }
+  .nav-item:hover:not(.active) { background: #f9fafb; color: #374151; }
+  .main { flex: 1; padding: 28px; overflow: auto; }
+  .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+  h1 { font-size: 22px; font-weight: 700; color: #111827; }
+  .date-line { font-size: 13px; color: #6b7280; margin-bottom: 20px; }
+  .card { background: white; border-radius: 12px; border: 1px solid #e5e7eb; margin-bottom: 20px; }
+  .card-header { padding: 16px 20px; border-bottom: 1px solid #f3f4f6; font-weight: 600; font-size: 14px; color: #111827; }
+  .card-body { padding: 20px; }
+  .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  label { display: block; font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 6px; }
+  input, select, textarea { width: 100%; padding: 9px 12px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 13px; font-family: inherit; outline: none; background: white; }
+  input:focus, select:focus, textarea:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+  textarea { resize: vertical; }
+  input[type="range"] { padding: 0; border: none; box-shadow: none; accent-color: #2563eb; }
+  input[type="range"]:focus { box-shadow: none; }
+  .range-group { display: flex; flex-direction: column; }
+  .range-row { display: flex; align-items: center; gap: 12px; }
+  .range-row input[type="range"] { flex: 1; }
+  .range-value { font-size: 13px; font-weight: 600; color: #2563eb; min-width: 36px; text-align: center; }
+  .button-gruppe { display: flex; gap: 10px; margin-top: 16px; }
+  .btn { padding: 9px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+  .btn.primary { background: #2563eb; color: white; }
+  .btn.primary:hover { background: #1d4ed8; }
+  .btn.secondary { background: #f3f4f6; color: #374151; }
+  .btn.secondary:hover { background: #e5e7eb; }
+  .btn-sm { padding: 5px 12px; font-size: 12px; border-radius: 6px; border: none; cursor: pointer; font-weight: 500; }
+  .btn-primary { background: #eff6ff; color: #2563eb; }
+  .btn-primary:hover { background: #dbeafe; }
+  .btn-danger { background: #fef2f2; color: #dc2626; }
+  .btn-danger:hover { background: #fee2e2; }
+  .btn-success { background: #f0fdf4; color: #16a34a; }
+  .btn-success:hover { background: #dcfce7; }
+  .audio-player { display: flex; align-items: center; gap: 16px; padding: 20px; background: #f9fafb; border-radius: 10px; }
+  .audio-play-btn { width: 48px; height: 48px; border-radius: 50%; background: #2563eb; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .audio-play-btn i { color: white; font-size: 16px; }
+  .audio-play-btn:hover { background: #1d4ed8; }
+  .audio-progress { flex: 1; }
+  .audio-progress-bar { height: 6px; background: #e5e7eb; border-radius: 3px; overflow: hidden; }
+  .audio-progress-fill { height: 100%; width: 0%; background: #2563eb; border-radius: 3px; }
+  .audio-time { display: flex; justify-content: space-between; margin-top: 6px; font-size: 12px; color: #9ca3af; }
+  .table-container { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead { background: #f9fafb; }
+  th { text-align: left; padding: 10px 14px; font-weight: 600; color: #6b7280; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e5e7eb; }
+  td { padding: 12px 14px; border-bottom: 1px solid #f3f4f6; color: #374151; }
+  td.fw { font-weight: 600; color: #111827; }
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="sidebar-logo"><div class="icon">Z</div><span>Zzz Platform</span></div>
+  <div class="nav-group">Uebersicht</div>
+  <div class="nav-item" onclick="location.href='admin-dashboard.html'"><i class="fa-solid fa-gauge"></i> Dashboard</div>
+  <div class="nav-group">AI & Automatisierung</div>
+  <div class="nav-item" onclick="location.href='ai-agent.html'"><i class="fa-solid fa-microchip"></i> AI Agents</div>
+  <div class="nav-item" onclick="location.href='wissensdatenbank.html'"><i class="fa-solid fa-book"></i> Wissensdatenbank</div>
+  <div class="nav-item active" onclick="location.href='ansagen.html'"><i class="fa-solid fa-tower-broadcast"></i> Ansagen</div>
+  <div class="nav-group">Callcenter</div>
+  <div class="nav-item" onclick="location.href='agent-board.html'"><i class="fa-solid fa-headset"></i> Agent Board</div>
+  <div class="nav-item" onclick="location.href='softphone.html'"><i class="fa-solid fa-phone"></i> Softphone</div>
+  <div class="nav-item" onclick="location.href='agenten.html'"><i class="fa-solid fa-users-gear"></i> Agenten Verwaltung</div>
+  <div class="nav-group">System</div>
+  <div class="nav-item" onclick="location.href='auswertung.html'"><i class="fa-solid fa-chart-line"></i> Auswertungen</div>
+  <div class="nav-item" onclick="location.href='benutzer.html'"><i class="fa-solid fa-user-gear"></i> Benutzer</div>
+  <div class="nav-group"></div>
+  <div class="nav-item" onclick="sessionStorage.removeItem('mr_guard_session');location.href='index.html'"><i class="fa-solid fa-right-from-bracket"></i> Abmelden</div>
+</div>
+
+<div class="main">
+  <div class="top-bar">
+    <h1>Ansagen Generator</h1>
+  </div>
+  <div class="date-line">Samstag, 01. Maerz 2026</div>
+
+  <!-- Neue Ansage erstellen -->
+  <div class="card">
+    <div class="card-header">Neue Ansage erstellen</div>
+    <div class="card-body">
+      <div style="margin-bottom: 16px;">
+        <label>Ansage-Text</label>
+        <textarea rows="5" placeholder="Geben Sie den Text fuer die Ansage ein..."></textarea>
+      </div>
+      <div class="form-row-3">
+        <div>
+          <label>Stimme</label>
+          <select>
+            <option>Seraphina</option>
+            <option>Florian</option>
+            <option>Katja</option>
+            <option>Conrad</option>
+            <option>Marie</option>
+          </select>
+        </div>
+        <div>
+          <label>Sprache</label>
+          <select>
+            <option>Deutsch</option>
+            <option>Englisch</option>
+            <option>Franzoesisch</option>
+            <option>Tuerkisch</option>
+            <option>Arabisch</option>
+          </select>
+        </div>
+        <div>
+          <label>Format</label>
+          <select>
+            <option>WAV</option>
+            <option>MP3</option>
+            <option>OGG</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row-2">
+        <div class="range-group">
+          <label>Geschwindigkeit</label>
+          <div class="range-row">
+            <input type="range" min="0.5" max="2.0" step="0.1" value="1.0" id="speed-range" oninput="document.getElementById('speed-val').textContent=this.value">
+            <span class="range-value" id="speed-val">1.0</span>
+          </div>
+        </div>
+        <div class="range-group">
+          <label>Lautstaerke</label>
+          <div class="range-row">
+            <input type="range" min="0" max="100" step="5" value="80" id="volume-range" oninput="document.getElementById('volume-val').textContent=this.value+'%'">
+            <span class="range-value" id="volume-val">80%</span>
+          </div>
+        </div>
+      </div>
+      <div class="button-gruppe">
+        <button class="btn primary"><i class="fa-solid fa-wand-magic-sparkles"></i> Generieren</button>
+        <button class="btn secondary"><i class="fa-solid fa-play"></i> Vorhoeren</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Audio-Vorschau -->
+  <div class="card">
+    <div class="card-header">Audio-Vorschau</div>
+    <div class="card-body">
+      <div class="audio-player">
+        <button class="audio-play-btn"><i class="fa-solid fa-play"></i></button>
+        <div class="audio-progress">
+          <div class="audio-progress-bar">
+            <div class="audio-progress-fill"></div>
+          </div>
+          <div class="audio-time">
+            <span>0:00</span>
+            <span>0:00</span>
+          </div>
+        </div>
+      </div>
+      <div class="button-gruppe">
+        <button class="btn primary"><i class="fa-solid fa-download"></i> Download</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gespeicherte Ansagen -->
+  <div class="card">
+    <div class="card-header">Gespeicherte Ansagen</div>
+    <div class="card-body">
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Stimme</th>
+              <th>Sprache</th>
+              <th>Dauer</th>
+              <th>Erstellt</th>
+              <th>Aktionen</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="fw">Willkommenansage</td>
+              <td>Seraphina</td>
+              <td>Deutsch</td>
+              <td>0:12</td>
+              <td>28.02.2026</td>
+              <td>
+                <button class="btn-sm btn-success"><i class="fa-solid fa-play"></i></button>
+                <button class="btn-sm btn-primary">Bearbeiten</button>
+                <button class="btn-sm btn-danger">Loeschen</button>
+              </td>
+            </tr>
+            <tr>
+              <td class="fw">Warteschleife</td>
+              <td>Florian</td>
+              <td>Deutsch</td>
+              <td>0:30</td>
+              <td>27.02.2026</td>
+              <td>
+                <button class="btn-sm btn-success"><i class="fa-solid fa-play"></i></button>
+                <button class="btn-sm btn-primary">Bearbeiten</button>
+                <button class="btn-sm btn-danger">Loeschen</button>
+              </td>
+            </tr>
+            <tr>
+              <td class="fw">Ausserhalb Geschaeftszeiten</td>
+              <td>Katja</td>
+              <td>Deutsch</td>
+              <td>0:18</td>
+              <td>25.02.2026</td>
+              <td>
+                <button class="btn-sm btn-success"><i class="fa-solid fa-play"></i></button>
+                <button class="btn-sm btn-primary">Bearbeiten</button>
+                <button class="btn-sm btn-danger">Loeschen</button>
+              </td>
+            </tr>
+            <tr>
+              <td class="fw">Welcome Message</td>
+              <td>Conrad</td>
+              <td>Englisch</td>
+              <td>0:15</td>
+              <td>24.02.2026</td>
+              <td>
+                <button class="btn-sm btn-success"><i class="fa-solid fa-play"></i></button>
+                <button class="btn-sm btn-primary">Bearbeiten</button>
+                <button class="btn-sm btn-danger">Loeschen</button>
+              </td>
+            </tr>
+            <tr>
+              <td class="fw">Notfall-Weiterleitung</td>
+              <td>Marie</td>
+              <td>Deutsch</td>
+              <td>0:08</td>
+              <td>23.02.2026</td>
+              <td>
+                <button class="btn-sm btn-success"><i class="fa-solid fa-play"></i></button>
+                <button class="btn-sm btn-primary">Bearbeiten</button>
+                <button class="btn-sm btn-danger">Loeschen</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

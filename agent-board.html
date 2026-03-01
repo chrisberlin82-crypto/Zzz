@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zzz Platform - Agent Board</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ===== Sidebar ===== -->
+  <div class="sidebar">
+    <div class="sidebar-logo"><div class="icon">Z</div><span>Zzz Platform</span></div>
+    <div class="nav-group">Uebersicht</div>
+    <div class="nav-item" onclick="location.href='admin-dashboard.html'"><i class="fa-solid fa-gauge"></i> Dashboard</div>
+    <div class="nav-group">AI & Automatisierung</div>
+    <div class="nav-item" onclick="location.href='ai-agent.html'"><i class="fa-solid fa-microchip"></i> AI Agents</div>
+    <div class="nav-item" onclick="location.href='wissensdatenbank.html'"><i class="fa-solid fa-book"></i> Wissensdatenbank</div>
+    <div class="nav-item" onclick="location.href='ansagen.html'"><i class="fa-solid fa-tower-broadcast"></i> Ansagen</div>
+    <div class="nav-group">Callcenter</div>
+    <div class="nav-item active" onclick="location.href='agent-board.html'"><i class="fa-solid fa-headset"></i> Agent Board</div>
+    <div class="nav-item" onclick="location.href='softphone.html'"><i class="fa-solid fa-phone"></i> Softphone</div>
+    <div class="nav-item" onclick="location.href='agenten.html'"><i class="fa-solid fa-users-gear"></i> Agenten Verwaltung</div>
+    <div class="nav-group">System</div>
+    <div class="nav-item" onclick="location.href='auswertung.html'"><i class="fa-solid fa-chart-line"></i> Auswertungen</div>
+    <div class="nav-item" onclick="location.href='benutzer.html'"><i class="fa-solid fa-user-gear"></i> Benutzer</div>
+    <div class="nav-group"></div>
+    <div class="nav-item" onclick="sessionStorage.removeItem('mr_guard_session');location.href='index.html'"><i class="fa-solid fa-right-from-bracket"></i> Abmelden</div>
+  </div>
+
+  <!-- ===== Main Content ===== -->
+  <div class="main" style="padding: 0; overflow: hidden;">
+
+    <div class="board-layout">
+
+      <!-- ========== BOARD LEFT (280px) - Agent Controls ========== -->
+      <div class="board-left">
+
+        <!-- Agent Info Card -->
+        <div class="card" style="margin-bottom: 14px;">
+          <div class="card-body" style="padding: 12px;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+              <div style="width: 42px; height: 42px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15px; flex-shrink: 0;">AW</div>
+              <div style="flex: 1; min-width: 0;">
+                <div style="font-size: 14px; font-weight: 700; color: var(--text);">Anna Weber</div>
+                <span class="badge badge-success" id="agent-status-badge" style="font-size: 10px; padding: 2px 7px;">Verfuegbar</span>
+              </div>
+            </div>
+            <div style="display: flex; gap: 12px; font-size: 11px; color: var(--text-muted);">
+              <span><i class="fa-solid fa-phone-volume" style="margin-right: 3px;"></i> Ext. 102</span>
+              <span><i class="fa-solid fa-clock" style="margin-right: 3px;"></i> Seit 07:58</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Status Buttons 2x2 Grid -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 14px;">
+          <button class="btn btn-success btn-sm status-btn" data-status="verfuegbar" style="display: inline-flex; align-items: center; justify-content: center; gap: 5px; font-size: 11px;">
+            <i class="fa-solid fa-circle-check"></i> Verfuegbar
+          </button>
+          <button class="btn btn-sm status-btn" data-status="pause" style="background: var(--warning-light); color: #92400e; border: 1.5px solid #fde68a; display: inline-flex; align-items: center; justify-content: center; gap: 5px; font-size: 11px;">
+            <i class="fa-solid fa-mug-hot"></i> Pause
+          </button>
+          <button class="btn btn-sm status-btn" data-status="nacharbeit" style="background: var(--primary-light); color: var(--primary); border: 1.5px solid #bfdbfe; display: inline-flex; align-items: center; justify-content: center; gap: 5px; font-size: 11px;">
+            <i class="fa-solid fa-pen-to-square"></i> Nacharbeit
+          </button>
+          <button class="btn btn-sm status-btn" data-status="offline" style="background: #f3f4f6; color: var(--text-muted); border: 1.5px solid var(--border); display: inline-flex; align-items: center; justify-content: center; gap: 5px; font-size: 11px;">
+            <i class="fa-solid fa-circle-xmark"></i> Offline
+          </button>
+        </div>
+
+        <!-- Schicht-Statistiken Card -->
+        <div class="card" style="margin-bottom: 14px;">
+          <div class="card-header" style="padding: 10px 12px; font-size: 12px;">Schicht-Statistiken</div>
+          <div class="card-body" style="padding: 10px 12px;">
+            <div style="display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid var(--border-light);">
+              <span style="font-size: 12px; color: var(--text-muted);">Anrufe heute</span>
+              <span style="font-size: 12px; font-weight: 700; color: var(--text);">12</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid var(--border-light);">
+              <span style="font-size: 12px; color: var(--text-muted);">Avg Gespraechsdauer</span>
+              <span style="font-size: 12px; font-weight: 700; color: var(--text);">3:24</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid var(--border-light);">
+              <span style="font-size: 12px; color: var(--text-muted);">Avg Nacharbeit</span>
+              <span style="font-size: 12px; font-weight: 700; color: var(--text);">0:45</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid var(--border-light);">
+              <span style="font-size: 12px; color: var(--text-muted);">Angenommen</span>
+              <span style="font-size: 12px; font-weight: 700; color: #15803d;">11</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 5px 0;">
+              <span style="font-size: 12px; color: var(--text-muted);">Verpasst</span>
+              <span style="font-size: 12px; font-weight: 700; color: var(--danger);">1</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dialpad -->
+        <input type="text" id="dialpad-display" placeholder="Nummer eingeben..." style="margin-bottom: 8px; text-align: center; font-size: 16px; font-weight: 700; letter-spacing: 1px; width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius-sm);" readonly>
+        <div class="dialpad" style="margin-bottom: 14px;">
+          <button class="dialpad-key" data-key="1">1</button>
+          <button class="dialpad-key" data-key="2">2</button>
+          <button class="dialpad-key" data-key="3">3</button>
+          <button class="dialpad-key" data-key="4">4</button>
+          <button class="dialpad-key" data-key="5">5</button>
+          <button class="dialpad-key" data-key="6">6</button>
+          <button class="dialpad-key" data-key="7">7</button>
+          <button class="dialpad-key" data-key="8">8</button>
+          <button class="dialpad-key" data-key="9">9</button>
+          <button class="dialpad-key" data-key="*">*</button>
+          <button class="dialpad-key" data-key="0">0</button>
+          <button class="dialpad-key" data-key="#">#</button>
+        </div>
+
+        <!-- Quick Actions -->
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-primary btn-sm" style="flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+            <i class="fa-solid fa-right-left"></i> Transfer
+          </button>
+          <button class="btn secondary btn-sm" style="flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+            <i class="fa-solid fa-users"></i> Konferenz
+          </button>
+        </div>
+
+      </div>
+
+      <!-- ========== BOARD CENTER - Main Area ========== -->
+      <div class="board-center">
+
+        <!-- Queue Status Bar -->
+        <div class="queue-status-grid">
+          <div class="card" style="padding: 12px; text-align: center;">
+            <div style="font-size: 11px; font-weight: 600; color: var(--text-muted); margin-bottom: 4px;">Allgemein</div>
+            <div style="font-size: 24px; font-weight: 800; color: #92400e;">2</div>
+            <span class="badge badge-warning" style="font-size: 10px;">wartend</span>
+            <div style="font-size: 10px; color: var(--text-light); margin-top: 4px;">Laengste Wartezeit: 2:34</div>
+            <div style="font-size: 10px; color: var(--text-light);">Agenten: 3</div>
+          </div>
+          <div class="card" style="padding: 12px; text-align: center;">
+            <div style="font-size: 11px; font-weight: 600; color: var(--text-muted); margin-bottom: 4px;">IT-Support</div>
+            <div style="font-size: 24px; font-weight: 800; color: #15803d;">0</div>
+            <span class="badge badge-success" style="font-size: 10px;">wartend</span>
+            <div style="font-size: 10px; color: var(--text-light); margin-top: 4px;">Laengste Wartezeit: 0:00</div>
+            <div style="font-size: 10px; color: var(--text-light);">Agenten: 2</div>
+          </div>
+          <div class="card" style="padding: 12px; text-align: center;">
+            <div style="font-size: 11px; font-weight: 600; color: var(--text-muted); margin-bottom: 4px;">Notfall</div>
+            <div style="font-size: 24px; font-weight: 800; color: #15803d;">0</div>
+            <span class="badge badge-success" style="font-size: 10px;">wartend</span>
+            <div style="font-size: 10px; color: var(--text-light); margin-top: 4px;">Laengste Wartezeit: 0:00</div>
+            <div style="font-size: 10px; color: var(--text-light);">Agenten: 1</div>
+          </div>
+        </div>
+
+        <!-- Active Agents List -->
+        <div style="padding: 10px 16px; border-bottom: 1px solid var(--border); background: var(--card-bg);">
+          <div style="font-size: 11px; font-weight: 700; color: var(--text-light); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">Aktive Agenten</div>
+
+          <!-- Agent 1: Dr. Schmidt - Im Gespraech (red dot) -->
+          <div class="board-agent-row" data-agent="ds">
+            <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--danger); flex-shrink: 0;"></span>
+            <div style="width: 28px; height: 28px; border-radius: 8px; background: #dbeafe; color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 11px; flex-shrink: 0;">DS</div>
+            <div style="flex: 1; min-width: 0;">
+              <div style="font-size: 12px; font-weight: 600; color: var(--text);">Dr. Schmidt</div>
+              <div style="font-size: 10px; color: var(--danger); font-weight: 500;">Im Gespraech</div>
+            </div>
+            <span style="font-size: 10px; color: var(--text-light); margin-right: 6px;">04:12</span>
+            <span style="font-size: 10px; color: var(--text-muted);">Ext. 101</span>
+          </div>
+
+          <!-- Agent 2: Anna Weber - Verfuegbar (green dot, active) -->
+          <div class="board-agent-row active" data-agent="aw">
+            <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--success); flex-shrink: 0;"></span>
+            <div style="width: 28px; height: 28px; border-radius: 8px; background: #dbeafe; color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 11px; flex-shrink: 0;">AW</div>
+            <div style="flex: 1; min-width: 0;">
+              <div style="font-size: 12px; font-weight: 600; color: var(--text);">Anna Weber</div>
+              <div style="font-size: 10px; color: #15803d; font-weight: 500;">Verfuegbar</div>
+            </div>
+            <span style="font-size: 10px; color: var(--text-light); margin-right: 6px;">00:00</span>
+            <span style="font-size: 10px; color: var(--text-muted);">Ext. 102</span>
+          </div>
+
+          <!-- Agent 3: Chris Mueller - Pause (yellow dot) -->
+          <div class="board-agent-row" data-agent="cm">
+            <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--warning); flex-shrink: 0;"></span>
+            <div style="width: 28px; height: 28px; border-radius: 8px; background: #fef3c7; color: #92400e; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 11px; flex-shrink: 0;">CM</div>
+            <div style="flex: 1; min-width: 0;">
+              <div style="font-size: 12px; font-weight: 600; color: var(--text);">Chris Mueller</div>
+              <div style="font-size: 10px; color: #d97706; font-weight: 500;">Pause</div>
+            </div>
+            <span style="font-size: 10px; color: var(--text-light); margin-right: 6px;">12:00</span>
+            <span style="font-size: 10px; color: var(--text-muted);">Ext. 103</span>
+          </div>
+
+          <!-- Agent 4: Laura Klein - Im Gespraech (red dot) -->
+          <div class="board-agent-row" data-agent="lk">
+            <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--danger); flex-shrink: 0;"></span>
+            <div style="width: 28px; height: 28px; border-radius: 8px; background: #fff7ed; color: var(--orange); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 11px; flex-shrink: 0;">LK</div>
+            <div style="flex: 1; min-width: 0;">
+              <div style="font-size: 12px; font-weight: 600; color: var(--text);">Laura Klein</div>
+              <div style="font-size: 10px; color: var(--danger); font-weight: 500;">Im Gespraech</div>
+            </div>
+            <span style="font-size: 10px; color: var(--text-light); margin-right: 6px;">01:48</span>
+            <span style="font-size: 10px; color: var(--text-muted);">Ext. 104</span>
+          </div>
+
+          <!-- Agent 5: Tom Huber - Verfuegbar (green dot) -->
+          <div class="board-agent-row" data-agent="th">
+            <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--success); flex-shrink: 0;"></span>
+            <div style="width: 28px; height: 28px; border-radius: 8px; background: #dcfce7; color: #15803d; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 11px; flex-shrink: 0;">TH</div>
+            <div style="flex: 1; min-width: 0;">
+              <div style="font-size: 12px; font-weight: 600; color: var(--text);">Tom Huber</div>
+              <div style="font-size: 10px; color: #15803d; font-weight: 500;">Verfuegbar</div>
+            </div>
+            <span style="font-size: 10px; color: var(--text-light); margin-right: 6px;">00:00</span>
+            <span style="font-size: 10px; color: var(--text-muted);">Ext. 105</span>
+          </div>
+
+          <!-- Agent 6: Voicebot - Aktiv (green dot, robot icon) -->
+          <div class="board-agent-row" data-agent="vb">
+            <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--success); flex-shrink: 0;"></span>
+            <div style="width: 28px; height: 28px; border-radius: 8px; background: var(--info-light); color: var(--info); display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0;"><i class="fa-solid fa-robot"></i></div>
+            <div style="flex: 1; min-width: 0;">
+              <div style="font-size: 12px; font-weight: 600; color: var(--text);">Voicebot</div>
+              <div style="font-size: 10px; color: #15803d; font-weight: 500;">Aktiv</div>
+            </div>
+            <span style="font-size: 10px; color: var(--text-light); margin-right: 6px;">3 Calls</span>
+            <span style="font-size: 10px; color: var(--text-muted);">Bot</span>
+          </div>
+        </div>
+
+        <!-- Chat Area -->
+        <div class="board-chat" id="board-chat">
+          <!-- System message -->
+          <div class="chat-msg system" style="text-align: center; padding: 8px; font-size: 11px; color: var(--text-muted);">
+            <i class="fa-solid fa-phone-volume" style="margin-right: 4px;"></i>
+            Eingehender Anruf von +49 176 1234567
+          </div>
+
+          <!-- Incoming message 1 -->
+          <div class="chat-msg incoming">
+            <div style="font-size: 10px; color: var(--text-light); margin-bottom: 2px;">Anrufer - 09:14</div>
+            <div style="background: #f1f5f9; border-radius: 12px 12px 12px 4px; padding: 10px 14px; font-size: 13px; color: var(--text); max-width: 75%; line-height: 1.5;">
+              Guten Tag, ich haette gerne einen Termin fuer naechste Woche.
+            </div>
+          </div>
+
+          <!-- Incoming message 2 -->
+          <div class="chat-msg incoming">
+            <div style="font-size: 10px; color: var(--text-light); margin-bottom: 2px;">Anrufer - 09:15</div>
+            <div style="background: #f1f5f9; border-radius: 12px 12px 12px 4px; padding: 10px 14px; font-size: 13px; color: var(--text); max-width: 75%; line-height: 1.5;">
+              Am liebsten bei Dr. Schmidt, Dienstag oder Mittwoch.
+            </div>
+          </div>
+
+          <!-- Outgoing message 1 -->
+          <div class="chat-msg outgoing" style="display: flex; flex-direction: column; align-items: flex-end;">
+            <div style="font-size: 10px; color: var(--text-light); margin-bottom: 2px;">Anna Weber - 09:15</div>
+            <div style="background: var(--primary); border-radius: 12px 12px 4px 12px; padding: 10px 14px; font-size: 13px; color: white; max-width: 75%; line-height: 1.5;">
+              Guten Tag! Ich schaue gerne nach verfuegbaren Terminen bei Dr. Schmidt fuer naechste Woche.
+            </div>
+          </div>
+        </div>
+
+        <!-- Chat Input -->
+        <div style="padding: 10px 16px; background: var(--card-bg); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); display: flex; gap: 8px; align-items: center;">
+          <input type="text" id="chat-input" placeholder="Nachricht eingeben..." style="flex: 1; padding: 10px 14px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; font-family: var(--font); outline: none;">
+          <button id="chat-send-btn" class="btn btn-primary" style="padding: 10px 18px; display: inline-flex; align-items: center; gap: 6px; font-size: 13px;">
+            <i class="fa-solid fa-paper-plane"></i> Senden
+          </button>
+        </div>
+
+        <!-- Call Controls -->
+        <div style="padding: 10px 16px; background: var(--card-bg); display: flex; align-items: center; justify-content: center; gap: 8px; flex-shrink: 0; flex-wrap: wrap;">
+          <button class="btn btn-success" style="display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px; font-size: 12px; font-weight: 700;">
+            <i class="fa-solid fa-phone"></i> Annehmen
+          </button>
+          <button class="btn btn-danger" style="display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px; font-size: 12px; font-weight: 700;">
+            <i class="fa-solid fa-phone-slash"></i> Auflegen
+          </button>
+          <div style="width: 1px; height: 28px; background: var(--border); margin: 0 4px;"></div>
+          <button class="btn secondary btn-sm" style="display: inline-flex; align-items: center; gap: 5px;">
+            <i class="fa-solid fa-pause"></i> Halten
+          </button>
+          <button class="btn secondary btn-sm" style="display: inline-flex; align-items: center; gap: 5px;">
+            <i class="fa-solid fa-microphone-slash"></i> Stumm
+          </button>
+          <button class="btn secondary btn-sm" style="display: inline-flex; align-items: center; gap: 5px;">
+            <i class="fa-solid fa-right-left"></i> Transfer
+          </button>
+          <button class="btn secondary btn-sm" style="display: inline-flex; align-items: center; gap: 5px;">
+            <i class="fa-solid fa-users"></i> Konferenz
+          </button>
+          <button class="btn secondary btn-sm" style="display: inline-flex; align-items: center; gap: 5px;">
+            <i class="fa-solid fa-circle" style="color: var(--danger); font-size: 10px;"></i> Aufnahme
+          </button>
+        </div>
+
+      </div>
+
+      <!-- ========== BOARD RIGHT (300px) - Context ========== -->
+      <div class="board-right">
+
+        <!-- Anrufer-Info Card -->
+        <div class="card" style="margin-bottom: 14px;">
+          <div class="card-header" style="padding: 10px 12px; font-size: 12px;">
+            <i class="fa-solid fa-user" style="margin-right: 6px;"></i> Anrufer-Info
+          </div>
+          <div class="card-body" style="padding: 12px;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+              <div style="width: 38px; height: 38px; border-radius: 50%; background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0;">
+                <i class="fa-solid fa-user"></i>
+              </div>
+              <div>
+                <div style="font-size: 14px; font-weight: 700; color: var(--text);">Max Mustermann</div>
+                <span class="badge badge-success" style="font-size: 9px; padding: 1px 6px;">bekannt</span>
+              </div>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid var(--border-light);">
+              <span style="font-size: 11px; color: var(--text-muted);">Telefon</span>
+              <span style="font-size: 11px; font-weight: 600; color: var(--text);">+49 176 1234567</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 4px 0;">
+              <span style="font-size: 11px; color: var(--text-muted);">Letzte Anrufe</span>
+              <span style="font-size: 11px; font-weight: 600; color: var(--text);">3</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Kalender-Widget -->
+        <div class="card" style="margin-bottom: 14px;">
+          <div class="card-header" style="padding: 10px 12px; font-size: 12px;">
+            <i class="fa-solid fa-calendar" style="margin-right: 6px;"></i> Naechste Termine
+          </div>
+          <div class="card-body" style="padding: 10px 12px;">
+            <div style="display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--border-light);">
+              <i class="fa-regular fa-calendar" style="font-size: 13px; color: var(--primary);"></i>
+              <div style="flex: 1;">
+                <div style="font-size: 12px; font-weight: 600; color: var(--text);">Di. 04.03. | 10:00</div>
+                <div style="font-size: 10px; color: var(--text-muted);">Dr. Schmidt</div>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--border-light);">
+              <i class="fa-regular fa-calendar" style="font-size: 13px; color: var(--primary);"></i>
+              <div style="flex: 1;">
+                <div style="font-size: 12px; font-weight: 600; color: var(--text);">Di. 04.03. | 14:30</div>
+                <div style="font-size: 10px; color: var(--text-muted);">Dr. Schmidt</div>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--border-light);">
+              <i class="fa-regular fa-calendar" style="font-size: 13px; color: var(--primary);"></i>
+              <div style="flex: 1;">
+                <div style="font-size: 12px; font-weight: 600; color: var(--text);">Mi. 05.03. | 09:00</div>
+                <div style="font-size: 10px; color: var(--text-muted);">Dr. Schmidt</div>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px; padding: 7px 0;">
+              <i class="fa-regular fa-calendar" style="font-size: 13px; color: var(--info);"></i>
+              <div style="flex: 1;">
+                <div style="font-size: 12px; font-weight: 600; color: var(--text);">Mi. 05.03. | 11:00</div>
+                <div style="font-size: 10px; color: var(--text-muted);">Dr. Mueller</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Notizen -->
+        <div class="card" style="margin-bottom: 14px;">
+          <div class="card-header" style="padding: 10px 12px; font-size: 12px;">
+            <i class="fa-solid fa-sticky-note" style="margin-right: 6px;"></i> Notizen
+          </div>
+          <div class="card-body" style="padding: 10px 12px;">
+            <textarea id="call-notes" placeholder="Anruf-Notizen hier eingeben..." style="width: 100%; min-height: 100px; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px; font-size: 12px; font-family: var(--font); resize: vertical; outline: none;"></textarea>
+          </div>
+        </div>
+
+        <!-- Nacharbeit Select -->
+        <div class="card">
+          <div class="card-header" style="padding: 10px 12px; font-size: 12px;">
+            <i class="fa-solid fa-list-check" style="margin-right: 6px;"></i> Nacharbeit
+          </div>
+          <div class="card-body" style="padding: 10px 12px;">
+            <select id="nacharbeit-kategorie" style="width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 12px; font-family: var(--font); color: var(--text); background: white; outline: none;">
+              <option value="" disabled selected>Kategorie waehlen...</option>
+              <option value="termin">Termin gebucht</option>
+              <option value="info">Information erteilt</option>
+              <option value="weiterleitung">Weiterleitung</option>
+              <option value="rueckruf">Rueckruf</option>
+              <option value="beschwerde">Beschwerde</option>
+            </select>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===== JavaScript ===== -->
+  <script>
+    // 1) Status button click: toggle active state, update agent info badge
+    (function() {
+      var statusButtons = document.querySelectorAll('.status-btn');
+      var activeBtn = null;
+
+      // Set initial active on Verfuegbar
+      statusButtons.forEach(function(btn) {
+        if (btn.dataset.status === 'verfuegbar') {
+          btn.style.outline = '2px solid var(--primary)';
+          btn.style.outlineOffset = '2px';
+          activeBtn = btn;
+        }
+      });
+
+      statusButtons.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          statusButtons.forEach(function(b) {
+            b.style.outline = '';
+            b.style.outlineOffset = '';
+          });
+          btn.style.outline = '2px solid var(--primary)';
+          btn.style.outlineOffset = '2px';
+          activeBtn = btn;
+
+          var badge = document.getElementById('agent-status-badge');
+          if (!badge) return;
+
+          switch (btn.dataset.status) {
+            case 'verfuegbar':
+              badge.className = 'badge badge-success';
+              badge.textContent = 'Verfuegbar';
+              break;
+            case 'pause':
+              badge.className = 'badge badge-warning';
+              badge.textContent = 'Pause';
+              break;
+            case 'nacharbeit':
+              badge.className = 'badge badge-gray';
+              badge.textContent = 'Nacharbeit';
+              break;
+            case 'offline':
+              badge.className = 'badge badge-gray';
+              badge.textContent = 'Offline';
+              break;
+          }
+          badge.style.fontSize = '10px';
+          badge.style.padding = '2px 7px';
+        });
+      });
+    })();
+
+    // 2) Dialpad: append digits to display, double-click to clear
+    (function() {
+      var display = document.getElementById('dialpad-display');
+      var keys = document.querySelectorAll('.dialpad-key');
+
+      keys.forEach(function(key) {
+        key.addEventListener('click', function() {
+          display.value += key.dataset.key;
+        });
+      });
+
+      display.addEventListener('dblclick', function() {
+        display.value = '';
+      });
+    })();
+
+    // 3) Agent row click: toggle active class
+    (function() {
+      var agentRows = document.querySelectorAll('.board-agent-row');
+      agentRows.forEach(function(row) {
+        row.addEventListener('click', function() {
+          agentRows.forEach(function(r) {
+            r.classList.remove('active');
+          });
+          row.classList.add('active');
+        });
+      });
+    })();
+
+    // 4) Chat send: append message to chat on button click or Enter key
+    (function() {
+      var chatInput = document.getElementById('chat-input');
+      var chatSendBtn = document.getElementById('chat-send-btn');
+      var chatArea = document.getElementById('board-chat');
+
+      function sendMessage() {
+        var text = chatInput.value.trim();
+        if (!text) return;
+
+        var now = new Date();
+        var timeStr = ('0' + now.getHours()).slice(-2) + ':' + ('0' + now.getMinutes()).slice(-2);
+
+        var msgDiv = document.createElement('div');
+        msgDiv.className = 'chat-msg outgoing';
+        msgDiv.style.display = 'flex';
+        msgDiv.style.flexDirection = 'column';
+        msgDiv.style.alignItems = 'flex-end';
+
+        var timeLabel = document.createElement('div');
+        timeLabel.style.fontSize = '10px';
+        timeLabel.style.color = 'var(--text-light)';
+        timeLabel.style.marginBottom = '2px';
+        timeLabel.textContent = 'Anna Weber - ' + timeStr;
+
+        var bubble = document.createElement('div');
+        bubble.style.background = 'var(--primary)';
+        bubble.style.borderRadius = '12px 12px 4px 12px';
+        bubble.style.padding = '10px 14px';
+        bubble.style.fontSize = '13px';
+        bubble.style.color = 'white';
+        bubble.style.maxWidth = '75%';
+        bubble.style.lineHeight = '1.5';
+        bubble.textContent = text;
+
+        msgDiv.appendChild(timeLabel);
+        msgDiv.appendChild(bubble);
+        chatArea.appendChild(msgDiv);
+
+        chatInput.value = '';
+        chatArea.scrollTop = chatArea.scrollHeight;
+      }
+
+      chatSendBtn.addEventListener('click', sendMessage);
+
+      chatInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          sendMessage();
+        }
+      });
+    })();
+  </script>
+
+</body>
+</html>
