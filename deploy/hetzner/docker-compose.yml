@@ -37,31 +37,18 @@ services:
     restart: unless-stopped
     ports:
       - "127.0.0.1:8000:8000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - voicebot_daten:/app/data
       - voicebot_models:/app/models
     env_file:
       - .env
     environment:
-      - MR_LLM_BASE_URL=http://ollama:11434
+      # Ollama laeuft nativ auf dem Host (nicht im Container)
+      - MR_LLM_BASE_URL=http://host.docker.internal:11434
       - MR_API_PORT=8000
       - MR_AUDIO_HINTERGRUND_DIR=/app/audio/hintergrund
-    depends_on:
-      ollama:
-        condition: service_started
-
-  # --- Ollama LLM (lokale KI, DSGVO-konform) ---
-  ollama:
-    image: ollama/ollama:latest
-    restart: unless-stopped
-    ports:
-      - "127.0.0.1:11434:11434"
-    volumes:
-      - ollama_daten:/root/.ollama
-    deploy:
-      resources:
-        limits:
-          memory: 8G
 
   # --- Nginx Reverse Proxy ---
   nginx:
@@ -83,6 +70,4 @@ volumes:
   voicebot_daten:
     external: false
   voicebot_models:
-    external: false
-  ollama_daten:
     external: false

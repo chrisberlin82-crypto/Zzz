@@ -134,18 +134,23 @@ for i in $(seq 1 30); do
     sleep 2
 done
 
-# ===== 8. Ollama LLM laden =====
+# ===== 8. Ollama LLM pruefen (laeuft nativ auf dem Host) =====
 echo ""
-echo "[8/8] LLM-Modell pruefen..."
+echo "[8/8] Ollama LLM pruefen..."
 MODEL=$(grep "^MR_LLM_MODEL=" "$ENV_FILE" 2>/dev/null | cut -d= -f2 | tr -d ' ')
 MODEL=${MODEL:-llama3.1:8b-instruct-q4_K_M}
 
-sleep 5
-if $COMPOSE exec -T ollama ollama list 2>/dev/null | grep -q "$MODEL"; then
-    echo "  Modell vorhanden: $MODEL"
+if command -v ollama &>/dev/null; then
+    if ollama list 2>/dev/null | grep -q "$MODEL"; then
+        echo "  Modell vorhanden: $MODEL"
+    else
+        echo "  Lade Modell: $MODEL (kann 5-10 Minuten dauern)..."
+        ollama pull "$MODEL" || echo "  WARNUNG: Modell konnte nicht geladen werden. Manuell: ollama pull $MODEL"
+    fi
 else
-    echo "  Lade Modell: $MODEL (kann 5-10 Minuten dauern)..."
-    $COMPOSE exec -T ollama ollama pull "$MODEL" || echo "  WARNUNG: Modell konnte nicht geladen werden. Manuell: docker compose exec ollama ollama pull $MODEL"
+    echo "  Ollama nicht installiert. Installation:"
+    echo "    curl -fsSL https://ollama.com/install.sh | sh"
+    echo "    ollama pull $MODEL"
 fi
 
 # ===== Fertig =====
