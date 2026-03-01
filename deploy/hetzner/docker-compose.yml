@@ -15,8 +15,9 @@ services:
       context: ../..
       dockerfile: deploy/hetzner/Dockerfile.live
     restart: unless-stopped
-    ports:
-      - "127.0.0.1:5000:5000"
+    # Kein Port-Mapping noetig — Nginx verbindet sich intern via Docker-Netzwerk
+    expose:
+      - "5000"
     volumes:
       - app_daten:/app/daten
     env_file:
@@ -35,8 +36,9 @@ services:
       context: ../..
       dockerfile: deploy/hetzner/Dockerfile.voicebot
     restart: unless-stopped
-    ports:
-      - "127.0.0.1:8000:8000"
+    # Kein Port-Mapping noetig — Nginx verbindet sich intern via Docker-Netzwerk
+    expose:
+      - "8000"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
