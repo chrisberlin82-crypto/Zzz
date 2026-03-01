@@ -1,69 +1,7 @@
-/** MED Rezeption Frontend-Logik - Demo & Live-Version */
+/** Zzz Platform Frontend-Logik - CallCenter & AI Agent */
 
 var API_BASE = "/api";
 
-// ===== Branchen-Konfiguration (Office-Typen) =====
-
-var BRANCHEN = {
-    arztpraxis: { label: "Arztpraxis", buero_name: "Praxis", verwaltung: "Praxisverwaltung", assistent: "Praxis-Assistent", kunden: "Patienten", mitarbeiter: "Aerzte", dienste: ["Terminvergabe", "Rezeptbestellung", "Weiterleitung an Rezeption"], notfall: "Bei Notfaellen rufen Sie 112 an.", spezial: "Keine medizinischen Diagnosen oder Behandlungsratschlaege." },
-    zahnarzt: { label: "Zahnarztpraxis", buero_name: "Praxis", verwaltung: "Praxisverwaltung", assistent: "Praxis-Assistent", kunden: "Patienten", mitarbeiter: "Zahnaerzte", dienste: ["Terminvergabe", "Rezeptbestellung", "Weiterleitung"], notfall: "Bei Notfaellen rufen Sie 112 an.", spezial: "" },
-    anwalt: { label: "Rechtsanwaltskanzlei", buero_name: "Kanzlei", verwaltung: "Kanzleiverwaltung", assistent: "Kanzlei-Assistent", kunden: "Mandanten", mitarbeiter: "Anwaelte", dienste: ["Terminvergabe", "Dokumentenanfrage", "Weiterleitung"], notfall: "", spezial: "Keine Rechtsberatung erteilen." },
-    steuerberater: { label: "Steuerberatungsbuero", buero_name: "Buero", verwaltung: "Bueroverwaltung", assistent: "Buero-Assistent", kunden: "Mandanten", mitarbeiter: "Steuerberater", dienste: ["Terminvergabe", "Dokumentenanfrage", "Weiterleitung"], notfall: "", spezial: "" },
-    friseur: { label: "Friseursalon", buero_name: "Salon", verwaltung: "Salonverwaltung", assistent: "Salon-Assistent", kunden: "Kunden", mitarbeiter: "Friseure", dienste: ["Terminvergabe", "Weiterleitung"], notfall: "", spezial: "" },
-    werkstatt: { label: "KFZ-Werkstatt", buero_name: "Werkstatt", verwaltung: "Werkstattverwaltung", assistent: "Werkstatt-Assistent", kunden: "Kunden", mitarbeiter: "Mechaniker", dienste: ["Terminvergabe", "Statusabfrage", "Weiterleitung"], notfall: "Pannen: ADAC 0800-5 10 11 12", spezial: "" },
-    tierarzt: { label: "Tierarztpraxis", buero_name: "Praxis", verwaltung: "Praxisverwaltung", assistent: "Praxis-Assistent", kunden: "Tierhalter", mitarbeiter: "Tieraerzte", dienste: ["Terminvergabe", "Weiterleitung"], notfall: "Tier-Notfall: Sofort vorbeikommen.", spezial: "" },
-    allgemein: { label: "Allgemeines Buero", buero_name: "Buero", verwaltung: "Bueroverwaltung", assistent: "Buero-Assistent", kunden: "Kunden", mitarbeiter: "Mitarbeiter", dienste: ["Terminvergabe", "Weiterleitung"], notfall: "", spezial: "" }
-};
-
-var MED_BRANCHE_KEY = "arztpraxis";
-var MED_BRANCHE = BRANCHEN.arztpraxis;
-var MED_FIRMEN_NAME = "";
-
-function brancheLaden() {
-    try {
-        var gespeichert = localStorage.getItem("med_branche");
-        if (gespeichert) {
-            var daten = JSON.parse(gespeichert);
-            MED_BRANCHE_KEY = daten.key || "arztpraxis";
-            MED_FIRMEN_NAME = daten.firmen_name || "";
-            MED_BRANCHE = BRANCHEN[MED_BRANCHE_KEY] || BRANCHEN.arztpraxis;
-        }
-    } catch (e) { console.warn("brancheLaden:", e); }
-}
-
-function brancheSpeichern(key, firmenName) {
-    MED_BRANCHE_KEY = key;
-    MED_BRANCHE = BRANCHEN[key] || BRANCHEN.arztpraxis;
-    MED_FIRMEN_NAME = firmenName || "";
-    localStorage.setItem("med_branche", JSON.stringify({ key: key, firmen_name: firmenName }));
-    brancheAnwenden();
-}
-
-function brancheAnwenden() {
-    var b = MED_BRANCHE;
-    var name = MED_FIRMEN_NAME || b.label;
-
-    // Sidebar-Titel
-    var sidebarTitel = document.querySelectorAll(".sidebar h2");
-    for (var i = 0; i < sidebarTitel.length; i++) {
-        sidebarTitel[i].textContent = name;
-    }
-    var sidebarSub = document.querySelectorAll(".sidebar small");
-    for (var j = 0; j < sidebarSub.length; j++) {
-        sidebarSub[j].textContent = b.verwaltung;
-    }
-
-    // Chat-Assistent Label
-    var chatHeaders = document.querySelectorAll(".chat-header span");
-    for (var k = 0; k < chatHeaders.length; k++) {
-        chatHeaders[k].innerHTML = '<i class="fa-solid fa-robot"></i> ' + escapeHtmlSafe(b.assistent);
-    }
-
-    // Seiten-Titel
-    if (document.title.indexOf("MED Rezeption") !== -1 || document.title.indexOf(b.label) !== -1) {
-        document.title = document.title.replace(/MED Rezeption|[\w\-]+praxis|[\w\-]+kanzlei|[\w\-]+buero|[\w\-]+salon|[\w\-]+werkstatt/gi, name);
-    }
-}
 
 // ===== Modus-Erkennung (Demo / Live) =====
 
@@ -100,9 +38,6 @@ async function backendSeedUndSync() {
     // Backend-Daten in localStorage synchronisieren
     try {
         var endpoints = {
-            patienten: "/patienten",
-            aerzte: "/aerzte",
-            termine: "/termine",
             agenten: "/agenten",
             benutzer: "/benutzer",
             anrufe: "/anrufe"
@@ -143,7 +78,7 @@ function guardAbmelden() {
 }
 
 // Rollen-Konfiguration: Wer darf was sehen
-var ALLE_SEITEN = ["index.html","dashboard.html","patienten.html","aerzte.html","termine.html","wartezimmer.html","wissensdatenbank.html","ansagen.html","auswertung.html","agenten.html","softphone.html","voicebot.html","callflow.html","uebersetzung.html","standort.html","benutzer.html","ai-agent.html"];
+var ALLE_SEITEN = ["index.html","admin-dashboard.html","ai-agent.html","wissensdatenbank.html","ansagen.html","agent-board.html","softphone.html","agenten.html","auswertung.html","benutzer.html"];
 var ROLLEN = {
     admin:           { label: "Admin",           icon: "fa-user-gear",   farbe: "#dc2626", seiten: ALLE_SEITEN },
     standortleitung: { label: "Standortleitung", icon: "fa-building",    farbe: "#7c3aed", seiten: ALLE_SEITEN },
@@ -171,7 +106,7 @@ function rollenSidebarAnpassen(rolleKey) {
     for (var i = 0; i < links.length; i++) {
         var href = links[i].getAttribute("href");
         if (!href) continue;
-        // Seite aus href extrahieren (z.B. "patienten.html")
+        // Seite aus href extrahieren (z.B. "agenten.html")
         var seite = href.split("/").pop().split("?")[0];
         if (erlaubteSeiten.indexOf(seite) === -1) {
             links[i].style.display = "none";
@@ -239,40 +174,16 @@ function dbAktualisieren(schluessel, id, daten) {
 function demoDatenLaden() {
     if (localStorage.getItem("med_demo_geladen")) return;
 
-    var patienten = [
-        { id: 1, vorname: "Anna", nachname: "Mueller", geburtsdatum: "1985-03-15", versicherungsnummer: "A123456789", krankenkasse: "TK", telefon: "030-1234567", email: "anna.mueller@email.de", strasse: "Berliner Str. 12", plz: "10115", stadt: "Berlin" },
-        { id: 2, vorname: "Thomas", nachname: "Schmidt", geburtsdatum: "1970-07-22", versicherungsnummer: "B987654321", krankenkasse: "AOK", telefon: "030-9876543", email: "t.schmidt@email.de", strasse: "Hauptstr. 45", plz: "10827", stadt: "Berlin" },
-        { id: 3, vorname: "Maria", nachname: "Weber", geburtsdatum: "1992-11-30", versicherungsnummer: "C456789123", krankenkasse: "Barmer", telefon: "030-5551234", email: "m.weber@email.de", strasse: "Schoenhauser Allee 8", plz: "10435", stadt: "Berlin" },
-        { id: 4, vorname: "Klaus", nachname: "Fischer", geburtsdatum: "1955-01-08", versicherungsnummer: "D321654987", krankenkasse: "DAK", telefon: "030-7771234", email: "k.fischer@email.de", strasse: "Kantstr. 99", plz: "10623", stadt: "Berlin" },
-        { id: 5, vorname: "Sophie", nachname: "Wagner", geburtsdatum: "2000-05-20", versicherungsnummer: "E654987321", krankenkasse: "IKK", telefon: "030-3334567", email: "s.wagner@email.de", strasse: "Friedrichstr. 200", plz: "10117", stadt: "Berlin" },
-    ];
 
-    var aerzte = [
-        { id: 1, titel: "Dr.", vorname: "Michael", nachname: "Schneider", fachrichtung: "Allgemeinmedizin", telefon: "030-1110001", email: "dr.schneider@praxis.de" },
-        { id: 2, titel: "Dr.", vorname: "Petra", nachname: "Braun", fachrichtung: "Kardiologie", telefon: "030-1110002", email: "dr.braun@praxis.de" },
-        { id: 3, titel: "Prof. Dr.", vorname: "Hans", nachname: "Klein", fachrichtung: "Orthopaedie", telefon: "030-1110003", email: "prof.klein@praxis.de" },
-    ];
 
-    var heute = new Date().toISOString().split("T")[0];
-    var termine = [
-        { id: 1, patient_id: 1, arzt_id: 1, datum: heute, uhrzeit: "09:00", dauer_minuten: 30, grund: "Vorsorgeuntersuchung", status: "bestaetigt", patient_name: "Mueller, Anna", arzt_name: "Dr. Michael Schneider" },
-        { id: 2, patient_id: 2, arzt_id: 2, datum: heute, uhrzeit: "10:30", dauer_minuten: 20, grund: "Herz-Kontrolle", status: "geplant", patient_name: "Schmidt, Thomas", arzt_name: "Dr. Petra Braun" },
-        { id: 3, patient_id: 5, arzt_id: 3, datum: heute, uhrzeit: "14:00", dauer_minuten: 45, grund: "Erstvorstellung Ruecken", status: "geplant", patient_name: "Wagner, Sophie", arzt_name: "Prof. Dr. Hans Klein" },
-        { id: 4, patient_id: 3, arzt_id: 1, datum: heute, uhrzeit: "15:30", dauer_minuten: 15, grund: "Rezept abholen", status: "geplant", patient_name: "Weber, Maria", arzt_name: "Dr. Michael Schneider" },
-    ];
 
-    var jetzt = new Date();
-    var vor20min = new Date(jetzt - 20 * 60000).toISOString();
-    var vor5min = new Date(jetzt - 5 * 60000).toISOString();
-    var wartezimmer = [
-        { id: 1, patient_id: 1, patient_name: "Mueller, Anna", termin_id: 1, termin_uhrzeit: "09:00", termin_grund: "Vorsorgeuntersuchung", arzt_name: "Dr. Michael Schneider", status: "wartend", ankunft_zeit: vor20min },
-        { id: 2, patient_id: 2, patient_name: "Schmidt, Thomas", termin_id: 2, termin_uhrzeit: "10:30", termin_grund: "Herz-Kontrolle", arzt_name: "Dr. Petra Braun", status: "aufgerufen", ankunft_zeit: vor5min },
-    ];
 
     var agenten = [
-        { id: 1, name: "Lisa Meier", nebenstelle: "100", sip_passwort: "demo123", rolle: "rezeption", warteschlange: "rezeption", status: "online" },
-        { id: 2, name: "Peter Schulz", nebenstelle: "101", sip_passwort: "demo456", rolle: "rezeption", warteschlange: "terminvergabe", status: "pause" },
-        { id: 3, name: "Dr. Schneider", nebenstelle: "200", sip_passwort: "demo789", rolle: "arzt", warteschlange: "dringend", status: "online" },
+        { id: 1, name: "Dr. Schmidt", nebenstelle: "101", sip_passwort: "demo123", rolle: "admin", warteschlange: "Allgemein", status: "online" },
+        { id: 2, name: "Anna Weber", nebenstelle: "102", sip_passwort: "demo456", rolle: "agent", warteschlange: "Allgemein", status: "online" },
+        { id: 3, name: "Chris Mueller", nebenstelle: "103", sip_passwort: "demo789", rolle: "agent", warteschlange: "IT-Support", status: "pause" },
+        { id: 4, name: "Laura Klein", nebenstelle: "104", sip_passwort: "demo101", rolle: "agent", warteschlange: "Allgemein", status: "online" },
+        { id: 5, name: "Tom Huber", nebenstelle: "105", sip_passwort: "demo102", rolle: "agent", warteschlange: "Notfall", status: "online" },
     ];
 
     var benutzer = [
@@ -286,10 +197,6 @@ function demoDatenLaden() {
         { id: 2, anrufer_nummer: "030-5554433", anrufer_name: "", agent_name: "Peter Schulz", warteschlange: "terminvergabe", typ: "eingehend", status: "beendet", beginn: heute + " 08:45", dauer_sekunden: 120 },
     ];
 
-    dbSpeichern("patienten", patienten);
-    dbSpeichern("aerzte", aerzte);
-    dbSpeichern("termine", termine);
-    dbSpeichern("wartezimmer", wartezimmer);
     dbSpeichern("agenten", agenten);
     dbSpeichern("benutzer", benutzer);
     dbSpeichern("anrufe", anrufe);
@@ -298,72 +205,6 @@ function demoDatenLaden() {
     localStorage.setItem("med_demo_geladen", "1");
 }
 
-// ===== Rechner =====
-
-function berechnen(a, operation, b) {
-    switch (operation) {
-        case "addieren": return a + b;
-        case "subtrahieren": return a - b;
-        case "multiplizieren": return a * b;
-        case "dividieren":
-            if (b === 0) throw new Error("Division durch Null ist nicht erlaubt");
-            return a / b;
-        default: throw new Error("Unbekannte Operation: " + operation);
-    }
-}
-
-async function berechnenApi(a, operation, b) {
-    try {
-        var response = await fetch(API_BASE + "/berechnen", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ a: a, b: b, operation: operation }),
-        });
-        var daten = await response.json();
-        if (!response.ok) throw new Error(daten.fehler || "Serverfehler");
-        return daten.ergebnis;
-    } catch (e) {
-        var ergebnis = berechnen(a, operation, b);
-        var verlauf = dbLaden("verlauf");
-        verlauf.unshift({ a: a, b: b, operation: operation, ergebnis: ergebnis, erstellt_am: new Date().toLocaleString("de-DE") });
-        if (verlauf.length > 20) verlauf = verlauf.slice(0, 20);
-        dbSpeichern("verlauf", verlauf);
-        return ergebnis;
-    }
-}
-
-function initRechner() {
-    var form = document.getElementById("rechner-form");
-    if (!form) return;
-
-    form.addEventListener("submit", async function (e) {
-        e.preventDefault();
-        var a = parseFloat(document.getElementById("zahl-a").value);
-        var b = parseFloat(document.getElementById("zahl-b").value);
-        var op = document.getElementById("operation").value;
-        var ergebnisDiv = document.getElementById("ergebnis");
-        var fehlerDiv = document.getElementById("fehler");
-
-        try {
-            var ergebnis;
-            try {
-                ergebnis = await berechnenApi(a, op, b);
-            } catch (_) {
-                ergebnis = berechnen(a, op, b);
-            }
-            document.getElementById("ergebnis-wert").textContent = ergebnis;
-            ergebnisDiv.hidden = false;
-            fehlerDiv.hidden = true;
-            verlaufAktualisieren();
-        } catch (err) {
-            fehlerDiv.textContent = err.message;
-            fehlerDiv.hidden = false;
-            ergebnisDiv.hidden = true;
-        }
-    });
-
-    initVerlauf();
-}
 
 // ===== Benutzer-Validierung =====
 
@@ -376,38 +217,7 @@ function benutzerValidieren(daten) {
     return fehler;
 }
 
-// ===== Patienten-Validierung =====
 
-function patientValidieren(daten) {
-    var fehler = [];
-    if (!daten.vorname || daten.vorname.trim().length === 0) fehler.push("Vorname ist erforderlich");
-    if (!daten.nachname || daten.nachname.trim().length === 0) fehler.push("Nachname ist erforderlich");
-    if (!daten.geburtsdatum) fehler.push("Geburtsdatum ist erforderlich");
-    if (!daten.versicherungsnummer || daten.versicherungsnummer.trim().length === 0) fehler.push("Versicherungsnummer ist erforderlich");
-    if (!daten.krankenkasse || daten.krankenkasse.trim().length === 0) fehler.push("Krankenkasse ist erforderlich");
-    return fehler;
-}
-
-// ===== Aerzte-Validierung =====
-
-function arztValidieren(daten) {
-    var fehler = [];
-    if (!daten.vorname || daten.vorname.trim().length === 0) fehler.push("Vorname ist erforderlich");
-    if (!daten.nachname || daten.nachname.trim().length === 0) fehler.push("Nachname ist erforderlich");
-    if (!daten.fachrichtung || daten.fachrichtung.trim().length === 0) fehler.push("Fachrichtung ist erforderlich");
-    return fehler;
-}
-
-// ===== Termin-Validierung =====
-
-function terminValidieren(daten) {
-    var fehler = [];
-    if (!daten.patient_id) fehler.push("Patient ist erforderlich");
-    if (!daten.arzt_id) fehler.push("Arzt ist erforderlich");
-    if (!daten.datum) fehler.push("Datum ist erforderlich");
-    if (!daten.uhrzeit) fehler.push("Uhrzeit ist erforderlich");
-    return fehler;
-}
 
 // ===== Benutzer API (localStorage) =====
 
@@ -474,49 +284,6 @@ async function benutzerLadenApi(suche) {
     return liste;
 }
 
-// ===== Verlauf =====
-
-async function verlaufLadenApi() {
-    return dbLaden("verlauf");
-}
-
-async function verlaufLoeschenApi() {
-    dbSpeichern("verlauf", []);
-    return { erfolg: true };
-}
-
-var OP_SYMBOLE = {
-    addieren: "+", subtrahieren: "-",
-    multiplizieren: "*", dividieren: "/"
-};
-
-function initVerlauf() {
-    verlaufAktualisieren();
-    var btn = document.getElementById("btn-verlauf-loeschen");
-    if (btn) {
-        btn.addEventListener("click", async function () {
-            try { await verlaufLoeschenApi(); verlaufAktualisieren(); } catch (_) { console.warn("verlaufLoeschen:", _); }
-        });
-    }
-}
-
-async function verlaufAktualisieren() {
-    try {
-        var eintraege = await verlaufLadenApi();
-        var tbody = document.querySelector("#verlauf-tabelle tbody");
-        if (!tbody) return;
-        tbody.innerHTML = "";
-        eintraege.forEach(function (e) {
-            var tr = document.createElement("tr");
-            var symbol = OP_SYMBOLE[e.operation] || e.operation;
-            tr.innerHTML =
-                "<td>" + e.a + " " + symbol + " " + e.b + "</td>" +
-                "<td>" + e.ergebnis + "</td>" +
-                "<td>" + escapeHtml(e.erstellt_am || "") + "</td>";
-            tbody.appendChild(tr);
-        });
-    } catch (_) { console.warn("Fehler:", _); }
-}
 
 // ===== Benutzer-Formular =====
 
@@ -641,767 +408,6 @@ function benutzerZurTabelle(daten) {
     tr.querySelector(".btn-bearbeiten").addEventListener("click", function () { benutzerBearbeiten(daten); });
     tr.querySelector(".btn-loeschen").addEventListener("click", function () { benutzerEntfernen(daten.id); });
     tbody.appendChild(tr);
-}
-
-// ===== Patienten API (localStorage) =====
-
-async function patientenLadenApi(suche) {
-    if (MED_MODUS === "live") {
-        try {
-            var url = API_BASE + "/patienten";
-            if (suche) url += "?suche=" + encodeURIComponent(suche);
-            var resp = await fetch(url);
-            if (resp.ok) return await resp.json();
-        } catch (e) { console.warn("patientenLadenApi:", e); }
-    }
-    var liste = dbLaden("patienten");
-    if (suche) {
-        var s = suche.toLowerCase();
-        liste = liste.filter(function (p) {
-            return (p.vorname + " " + p.nachname).toLowerCase().includes(s) ||
-                   (p.versicherungsnummer && p.versicherungsnummer.toLowerCase().includes(s)) ||
-                   (p.stadt && p.stadt.toLowerCase().includes(s));
-        });
-    }
-    return liste;
-}
-
-async function patientSpeichernApi(daten) {
-    if (MED_MODUS === "live") {
-        try {
-            var resp = await fetch(API_BASE + "/patienten", {
-                method: "POST", headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(daten)
-            });
-            if (resp.ok) return await resp.json();
-        } catch (e) { console.warn("patientSpeichernApi:", e); }
-    }
-    var liste = dbLaden("patienten");
-    daten.id = dbNaechsteId("patienten");
-    liste.push(daten);
-    dbSpeichern("patienten", liste);
-    return daten;
-}
-
-async function patientAktualisierenApi(id, daten) {
-    if (MED_MODUS === "live") {
-        try {
-            var resp = await fetch(API_BASE + "/patienten/" + id, {
-                method: "PUT", headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(daten)
-            });
-            if (resp.ok) return await resp.json();
-        } catch (e) { console.warn("patientAktualisierenApi:", e); }
-    }
-    dbAktualisieren("patienten", parseInt(id), daten);
-    return daten;
-}
-
-async function patientLoeschenApi(id) {
-    if (MED_MODUS === "live") {
-        try {
-            var resp = await fetch(API_BASE + "/patienten/" + id, { method: "DELETE" });
-            if (resp.ok) return await resp.json();
-        } catch (e) { console.warn("patientLoeschenApi:", e); }
-    }
-    dbLoeschen("patienten", parseInt(id));
-    return { erfolg: true };
-}
-
-function initPatienten() {
-    var form = document.getElementById("patient-form");
-    if (!form) return;
-
-    patientenListeAktualisieren();
-
-    var suchfeld = document.getElementById("patient-suche");
-    if (suchfeld) {
-        var timer;
-        suchfeld.addEventListener("input", function () {
-            clearTimeout(timer);
-            timer = setTimeout(function () { patientenListeAktualisieren(suchfeld.value); }, 300);
-        });
-    }
-
-    var btnAbbrechen = document.getElementById("btn-patient-abbrechen");
-    if (btnAbbrechen) {
-        btnAbbrechen.addEventListener("click", function () { patientFormZuruecksetzen(); });
-    }
-
-    form.addEventListener("submit", async function (e) {
-        e.preventDefault();
-        var editId = document.getElementById("patient-id").value;
-        var daten = {
-            vorname: document.getElementById("patient-vorname").value,
-            nachname: document.getElementById("patient-nachname").value,
-            geburtsdatum: document.getElementById("patient-geburtsdatum").value,
-            versicherungsnummer: document.getElementById("patient-versicherungsnummer").value,
-            krankenkasse: document.getElementById("patient-krankenkasse").value,
-            telefon: document.getElementById("patient-telefon").value,
-            email: document.getElementById("patient-email").value,
-            strasse: document.getElementById("patient-strasse").value,
-            plz: document.getElementById("patient-plz").value,
-            stadt: document.getElementById("patient-stadt").value,
-        };
-
-        var erfolgDiv = document.getElementById("patient-erfolg");
-        var fehlerDiv = document.getElementById("patient-fehler");
-        var fehler = patientValidieren(daten);
-        if (fehler.length > 0) {
-            fehlerDiv.textContent = fehler.join(", ");
-            fehlerDiv.hidden = false;
-            erfolgDiv.hidden = true;
-            return;
-        }
-
-        try {
-            if (editId) {
-                await patientAktualisierenApi(editId, daten);
-                erfolgDiv.textContent = "Patient aktualisiert!";
-            } else {
-                await patientSpeichernApi(daten);
-                erfolgDiv.textContent = "Patient gespeichert!";
-            }
-            erfolgDiv.hidden = false;
-            fehlerDiv.hidden = true;
-            patientFormZuruecksetzen();
-            patientenListeAktualisieren();
-        } catch (err) {
-            fehlerDiv.textContent = err.message;
-            fehlerDiv.hidden = false;
-            erfolgDiv.hidden = true;
-        }
-    });
-}
-
-function patientFormZuruecksetzen() {
-    var form = document.getElementById("patient-form");
-    if (form) form.reset();
-    document.getElementById("patient-id").value = "";
-    document.getElementById("patient-formular-titel").textContent = "Patient anlegen";
-    document.getElementById("btn-patient-speichern").textContent = "Speichern";
-    var btn = document.getElementById("btn-patient-abbrechen");
-    if (btn) btn.hidden = true;
-}
-
-function patientBearbeiten(p) {
-    document.getElementById("patient-id").value = p.id;
-    document.getElementById("patient-vorname").value = p.vorname;
-    document.getElementById("patient-nachname").value = p.nachname;
-    document.getElementById("patient-geburtsdatum").value = p.geburtsdatum;
-    document.getElementById("patient-versicherungsnummer").value = p.versicherungsnummer;
-    document.getElementById("patient-krankenkasse").value = p.krankenkasse;
-    document.getElementById("patient-telefon").value = p.telefon || "";
-    document.getElementById("patient-email").value = p.email || "";
-    document.getElementById("patient-strasse").value = p.strasse || "";
-    document.getElementById("patient-plz").value = p.plz || "";
-    document.getElementById("patient-stadt").value = p.stadt || "";
-    document.getElementById("patient-formular-titel").textContent = "Patient bearbeiten";
-    document.getElementById("btn-patient-speichern").textContent = "Aktualisieren";
-    var btn = document.getElementById("btn-patient-abbrechen");
-    if (btn) btn.hidden = false;
-    document.getElementById("patient-formular").scrollIntoView({ behavior: "smooth" });
-}
-
-async function patientenListeAktualisieren(suche) {
-    try {
-        var patienten = await patientenLadenApi(suche);
-        var tbody = document.querySelector("#patienten-tabelle tbody");
-        if (!tbody) return;
-        tbody.innerHTML = "";
-        patienten.forEach(function (p) {
-            var tr = document.createElement("tr");
-            tr.innerHTML =
-                "<td>" + escapeHtml(p.nachname + ", " + p.vorname) + "</td>" +
-                "<td>" + escapeHtml(p.geburtsdatum) + "</td>" +
-                "<td>" + escapeHtml(p.versicherungsnummer) + "</td>" +
-                "<td>" + escapeHtml(p.krankenkasse) + "</td>" +
-                "<td>" + escapeHtml(p.telefon || "-") + "</td>" +
-                '<td class="aktionen">' +
-                    '<button class="btn-bearbeiten">Bearbeiten</button> ' +
-                    '<button class="btn-loeschen">Loeschen</button>' +
-                "</td>";
-            tr.querySelector(".btn-bearbeiten").addEventListener("click", function () { patientBearbeiten(p); });
-            tr.querySelector(".btn-loeschen").addEventListener("click", async function () {
-                if (!confirm("Patient wirklich loeschen?")) return;
-                try { await patientLoeschenApi(p.id); patientenListeAktualisieren(); } catch (err) { alert(err.message); }
-            });
-            tbody.appendChild(tr);
-        });
-    } catch (_) { console.warn("Fehler:", _); }
-}
-
-// ===== Aerzte API (localStorage) =====
-
-async function aerzteLadenApi() {
-    if (MED_MODUS === "live") {
-        try {
-            var resp = await fetch(API_BASE + "/aerzte");
-            if (resp.ok) return await resp.json();
-        } catch (e) { console.warn("aerzteLadenApi:", e); }
-    }
-    return dbLaden("aerzte");
-}
-
-async function arztSpeichernApi(daten) {
-    if (MED_MODUS === "live") {
-        try {
-            var resp = await fetch(API_BASE + "/aerzte", {
-                method: "POST", headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(daten)
-            });
-            if (resp.ok) return await resp.json();
-        } catch (e) { console.warn("arztSpeichernApi:", e); }
-    }
-    var liste = dbLaden("aerzte");
-    daten.id = dbNaechsteId("aerzte");
-    liste.push(daten);
-    dbSpeichern("aerzte", liste);
-    return daten;
-}
-
-async function arztAktualisierenApi(id, daten) {
-    if (MED_MODUS === "live") {
-        try {
-            var resp = await fetch(API_BASE + "/aerzte/" + id, {
-                method: "PUT", headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(daten)
-            });
-            if (resp.ok) return await resp.json();
-        } catch (e) { console.warn("arztAktualisierenApi:", e); }
-    }
-    dbAktualisieren("aerzte", parseInt(id), daten);
-    return daten;
-}
-
-async function arztLoeschenApi(id) {
-    if (MED_MODUS === "live") {
-        try {
-            var resp = await fetch(API_BASE + "/aerzte/" + id, { method: "DELETE" });
-            if (resp.ok) return await resp.json();
-        } catch (e) { console.warn("arztLoeschenApi:", e); }
-    }
-    dbLoeschen("aerzte", parseInt(id));
-    return { erfolg: true };
-}
-
-function initAerzte() {
-    var form = document.getElementById("arzt-form");
-    if (!form) return;
-
-    aerzteListeAktualisieren();
-
-    var btnAbbrechen = document.getElementById("btn-arzt-abbrechen");
-    if (btnAbbrechen) {
-        btnAbbrechen.addEventListener("click", function () { arztFormZuruecksetzen(); });
-    }
-
-    form.addEventListener("submit", async function (e) {
-        e.preventDefault();
-        var editId = document.getElementById("arzt-id").value;
-        var daten = {
-            titel: document.getElementById("arzt-titel").value,
-            vorname: document.getElementById("arzt-vorname").value,
-            nachname: document.getElementById("arzt-nachname").value,
-            fachrichtung: document.getElementById("arzt-fachrichtung").value,
-            telefon: document.getElementById("arzt-telefon").value,
-            email: document.getElementById("arzt-email").value,
-        };
-
-        var erfolgDiv = document.getElementById("arzt-erfolg");
-        var fehlerDiv = document.getElementById("arzt-fehler");
-        var fehler = arztValidieren(daten);
-        if (fehler.length > 0) {
-            fehlerDiv.textContent = fehler.join(", ");
-            fehlerDiv.hidden = false;
-            erfolgDiv.hidden = true;
-            return;
-        }
-
-        try {
-            if (editId) {
-                await arztAktualisierenApi(editId, daten);
-                erfolgDiv.textContent = "Arzt aktualisiert!";
-            } else {
-                await arztSpeichernApi(daten);
-                erfolgDiv.textContent = "Arzt gespeichert!";
-            }
-            erfolgDiv.hidden = false;
-            fehlerDiv.hidden = true;
-            arztFormZuruecksetzen();
-            aerzteListeAktualisieren();
-        } catch (err) {
-            fehlerDiv.textContent = err.message;
-            fehlerDiv.hidden = false;
-            erfolgDiv.hidden = true;
-        }
-    });
-}
-
-function arztFormZuruecksetzen() {
-    var form = document.getElementById("arzt-form");
-    if (form) form.reset();
-    document.getElementById("arzt-id").value = "";
-    document.getElementById("arzt-formular-titel").textContent = "Arzt anlegen";
-    document.getElementById("btn-arzt-speichern").textContent = "Speichern";
-    var btn = document.getElementById("btn-arzt-abbrechen");
-    if (btn) btn.hidden = true;
-}
-
-function arztBearbeiten(a) {
-    document.getElementById("arzt-id").value = a.id;
-    document.getElementById("arzt-titel").value = a.titel || "";
-    document.getElementById("arzt-vorname").value = a.vorname;
-    document.getElementById("arzt-nachname").value = a.nachname;
-    document.getElementById("arzt-fachrichtung").value = a.fachrichtung;
-    document.getElementById("arzt-telefon").value = a.telefon || "";
-    document.getElementById("arzt-email").value = a.email || "";
-    document.getElementById("arzt-formular-titel").textContent = "Arzt bearbeiten";
-    document.getElementById("btn-arzt-speichern").textContent = "Aktualisieren";
-    var btn = document.getElementById("btn-arzt-abbrechen");
-    if (btn) btn.hidden = false;
-    document.getElementById("arzt-formular").scrollIntoView({ behavior: "smooth" });
-}
-
-async function aerzteListeAktualisieren() {
-    try {
-        var aerzte = await aerzteLadenApi();
-        var tbody = document.querySelector("#aerzte-tabelle tbody");
-        if (!tbody) return;
-        tbody.innerHTML = "";
-        aerzte.forEach(function (a) {
-            var vollname = ((a.titel || "") + " " + a.vorname + " " + a.nachname).trim();
-            var tr = document.createElement("tr");
-            tr.innerHTML =
-                "<td>" + escapeHtml(vollname) + "</td>" +
-                "<td>" + escapeHtml(a.fachrichtung) + "</td>" +
-                "<td>" + escapeHtml(a.telefon || "-") + "</td>" +
-                "<td>" + escapeHtml(a.email || "-") + "</td>" +
-                '<td class="aktionen">' +
-                    '<button class="btn-bearbeiten">Bearbeiten</button> ' +
-                    '<button class="btn-loeschen">Loeschen</button>' +
-                "</td>";
-            tr.querySelector(".btn-bearbeiten").addEventListener("click", function () { arztBearbeiten(a); });
-            tr.querySelector(".btn-loeschen").addEventListener("click", async function () {
-                if (!confirm("Arzt wirklich loeschen?")) return;
-                try { await arztLoeschenApi(a.id); aerzteListeAktualisieren(); } catch (err) { alert(err.message); }
-            });
-            tbody.appendChild(tr);
-        });
-    } catch (_) { console.warn("Fehler:", _); }
-}
-
-// ===== Termine API (localStorage) =====
-
-async function termineLadenApi(datum) {
-    if (MED_MODUS === "live") {
-        try {
-            var url = API_BASE + "/termine";
-            if (datum) url += "?datum=" + encodeURIComponent(datum);
-            var resp = await fetch(url);
-            if (resp.ok) return await resp.json();
-        } catch (e) { console.warn("termineLadenApi:", e); }
-    }
-    var liste = dbLaden("termine");
-    if (datum) {
-        liste = liste.filter(function (t) { return t.datum === datum; });
-    }
-    return liste;
-}
-
-function _terminNamenSetzen(daten) {
-    var patient = dbFinden("patienten", daten.patient_id);
-    var arzt = dbFinden("aerzte", daten.arzt_id);
-    daten.patient_name = patient ? patient.nachname + ", " + patient.vorname : "Unbekannt";
-    daten.arzt_name = arzt ? ((arzt.titel || "") + " " + arzt.vorname + " " + arzt.nachname).trim() : "Unbekannt";
-}
-
-async function terminSpeichernApi(daten) {
-    _terminNamenSetzen(daten);
-    daten.status = daten.status || "geplant";
-    daten.dauer_minuten = daten.dauer_minuten || daten.dauer_min || 15;
-    if (MED_MODUS === "live") {
-        try {
-            var resp = await fetch(API_BASE + "/termine", {
-                method: "POST", headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(daten)
-            });
-            if (resp.ok) return await resp.json();
-        } catch (e) { console.warn("terminSpeichernApi:", e); }
-    }
-    var liste = dbLaden("termine");
-    daten.id = dbNaechsteId("termine");
-    liste.push(daten);
-    dbSpeichern("termine", liste);
-    return daten;
-}
-
-async function terminAktualisierenApi(id, daten) {
-    _terminNamenSetzen(daten);
-    daten.dauer_minuten = daten.dauer_minuten || daten.dauer_min || 15;
-    if (MED_MODUS === "live") {
-        try {
-            var resp = await fetch(API_BASE + "/termine/" + id, {
-                method: "PUT", headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(daten)
-            });
-            if (resp.ok) return await resp.json();
-        } catch (e) { console.warn("terminAktualisierenApi:", e); }
-    }
-    dbAktualisieren("termine", parseInt(id), daten);
-    return daten;
-}
-
-async function terminLoeschenApi(id) {
-    if (MED_MODUS === "live") {
-        try {
-            var resp = await fetch(API_BASE + "/termine/" + id, { method: "DELETE" });
-            if (resp.ok) return await resp.json();
-        } catch (e) { console.warn("terminLoeschenApi:", e); }
-    }
-    dbLoeschen("termine", parseInt(id));
-    return { erfolg: true };
-}
-
-function initTermine() {
-    var form = document.getElementById("termin-form");
-    if (!form) return;
-
-    terminDropdownsLaden();
-    termineListeAktualisieren();
-
-    var datumFilter = document.getElementById("termin-filter-datum");
-    if (datumFilter) {
-        datumFilter.addEventListener("change", function () { termineListeAktualisieren(datumFilter.value); });
-    }
-
-    var btnAbbrechen = document.getElementById("btn-termin-abbrechen");
-    if (btnAbbrechen) {
-        btnAbbrechen.addEventListener("click", function () { terminFormZuruecksetzen(); });
-    }
-
-    form.addEventListener("submit", async function (e) {
-        e.preventDefault();
-        var editId = document.getElementById("termin-id").value;
-        var daten = {
-            patient_id: parseInt(document.getElementById("termin-patient").value, 10),
-            arzt_id: parseInt(document.getElementById("termin-arzt").value, 10),
-            datum: document.getElementById("termin-datum").value,
-            uhrzeit: document.getElementById("termin-uhrzeit").value,
-            dauer_minuten: parseInt(document.getElementById("termin-dauer").value, 10) || 15,
-            grund: document.getElementById("termin-grund").value,
-        };
-
-        var erfolgDiv = document.getElementById("termin-erfolg");
-        var fehlerDiv = document.getElementById("termin-fehler");
-        var fehler = terminValidieren(daten);
-        if (fehler.length > 0) {
-            fehlerDiv.textContent = fehler.join(", ");
-            fehlerDiv.hidden = false;
-            erfolgDiv.hidden = true;
-            return;
-        }
-
-        try {
-            if (editId) {
-                await terminAktualisierenApi(editId, daten);
-                erfolgDiv.textContent = "Termin aktualisiert!";
-            } else {
-                await terminSpeichernApi(daten);
-                erfolgDiv.textContent = "Termin gespeichert!";
-            }
-            erfolgDiv.hidden = false;
-            fehlerDiv.hidden = true;
-            terminFormZuruecksetzen();
-            termineListeAktualisieren();
-        } catch (err) {
-            fehlerDiv.textContent = err.message;
-            fehlerDiv.hidden = false;
-            erfolgDiv.hidden = true;
-        }
-    });
-}
-
-async function terminDropdownsLaden() {
-    try {
-        var patienten = await patientenLadenApi();
-        var sel = document.getElementById("termin-patient");
-        if (sel) {
-            patienten.forEach(function (p) {
-                var opt = document.createElement("option");
-                opt.value = p.id;
-                opt.textContent = p.nachname + ", " + p.vorname + " (" + p.versicherungsnummer + ")";
-                sel.appendChild(opt);
-            });
-        }
-    } catch (_) { console.warn("Fehler:", _); }
-    try {
-        var aerzte = await aerzteLadenApi();
-        var sel2 = document.getElementById("termin-arzt");
-        if (sel2) {
-            aerzte.forEach(function (a) {
-                var opt = document.createElement("option");
-                opt.value = a.id;
-                opt.textContent = ((a.titel || "") + " " + a.vorname + " " + a.nachname).trim() + " - " + a.fachrichtung;
-                sel2.appendChild(opt);
-            });
-        }
-    } catch (_) { console.warn("Fehler:", _); }
-}
-
-function terminFormZuruecksetzen() {
-    var form = document.getElementById("termin-form");
-    if (form) form.reset();
-    document.getElementById("termin-id").value = "";
-    document.getElementById("termin-formular-titel").textContent = "Termin anlegen";
-    document.getElementById("btn-termin-speichern").textContent = "Speichern";
-    var btn = document.getElementById("btn-termin-abbrechen");
-    if (btn) btn.hidden = true;
-}
-
-function terminBearbeiten(t) {
-    document.getElementById("termin-id").value = t.id;
-    document.getElementById("termin-patient").value = t.patient_id;
-    document.getElementById("termin-arzt").value = t.arzt_id;
-    document.getElementById("termin-datum").value = t.datum;
-    document.getElementById("termin-uhrzeit").value = t.uhrzeit;
-    document.getElementById("termin-dauer").value = t.dauer_minuten;
-    document.getElementById("termin-grund").value = t.grund || "";
-    document.getElementById("termin-formular-titel").textContent = "Termin bearbeiten";
-    document.getElementById("btn-termin-speichern").textContent = "Aktualisieren";
-    var btn = document.getElementById("btn-termin-abbrechen");
-    if (btn) btn.hidden = false;
-    document.getElementById("termin-formular").scrollIntoView({ behavior: "smooth" });
-}
-
-var STATUS_KLASSEN = {
-    geplant: "status-geplant",
-    bestaetigt: "status-bestaetigt",
-    abgesagt: "status-abgesagt",
-    abgeschlossen: "status-abgeschlossen",
-};
-
-async function termineListeAktualisieren(datum) {
-    try {
-        var termine = await termineLadenApi(datum);
-        var tbody = document.querySelector("#termine-tabelle tbody");
-        if (!tbody) return;
-        tbody.innerHTML = "";
-        termine.forEach(function (t) {
-            var statusKlasse = STATUS_KLASSEN[t.status] || "status-geplant";
-            var tr = document.createElement("tr");
-            tr.innerHTML =
-                "<td>" + escapeHtml(t.datum) + "</td>" +
-                "<td>" + escapeHtml(t.uhrzeit) + "</td>" +
-                "<td>" + escapeHtml(t.patient_name) + "</td>" +
-                "<td>" + escapeHtml(t.arzt_name) + "</td>" +
-                "<td>" + escapeHtml(t.grund || "-") + "</td>" +
-                '<td><span class="status-badge ' + statusKlasse + '">' + escapeHtml(t.status) + "</span></td>" +
-                '<td class="aktionen">' +
-                    '<button class="btn-bearbeiten">Bearbeiten</button> ' +
-                    '<button class="btn-loeschen">Loeschen</button>' +
-                "</td>";
-            tr.querySelector(".btn-bearbeiten").addEventListener("click", function () { terminBearbeiten(t); });
-            tr.querySelector(".btn-loeschen").addEventListener("click", async function () {
-                if (!confirm("Termin wirklich loeschen?")) return;
-                try { await terminLoeschenApi(t.id); termineListeAktualisieren(datum); } catch (err) { alert(err.message); }
-            });
-            tbody.appendChild(tr);
-        });
-    } catch (_) { console.warn("Fehler:", _); }
-}
-
-// ===== Wartezimmer API (localStorage) =====
-
-async function wartezimmerLadenApi() {
-    if (MED_MODUS === "live") {
-        try {
-            var resp = await fetch(API_BASE + "/wartezimmer");
-            if (resp.ok) return await resp.json();
-        } catch (e) { console.warn("wartezimmerLadenApi:", e); }
-    }
-    return dbLaden("wartezimmer").filter(function (e) { return e.status !== "fertig"; });
-}
-
-async function wartezimmerCheckinApi(daten) {
-    var patient = dbFinden("patienten", daten.patient_id);
-    daten.patient_name = patient ? patient.nachname + ", " + patient.vorname : "Unbekannt";
-    if (daten.termin_id) {
-        var termin = dbFinden("termine", daten.termin_id);
-        if (termin) {
-            daten.termin_uhrzeit = termin.uhrzeit;
-            daten.termin_grund = termin.grund;
-            daten.arzt_name = termin.arzt_name;
-        }
-    }
-    if (MED_MODUS === "live") {
-        try {
-            var resp = await fetch(API_BASE + "/wartezimmer", {
-                method: "POST", headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(daten)
-            });
-            if (resp.ok) return await resp.json();
-        } catch (e) { console.warn("wartezimmerCheckinApi:", e); }
-    }
-    var liste = dbLaden("wartezimmer");
-    daten.id = dbNaechsteId("wartezimmer");
-    daten.status = "wartend";
-    daten.ankunft_zeit = new Date().toISOString();
-    liste.push(daten);
-    dbSpeichern("wartezimmer", liste);
-    return daten;
-}
-
-async function wartezimmerStatusApi(id, status) {
-    if (MED_MODUS === "live") {
-        try {
-            var resp = await fetch(API_BASE + "/wartezimmer/" + id + "/status?status=" + encodeURIComponent(status), { method: "PUT" });
-            if (resp.ok) return await resp.json();
-        } catch (e) { console.warn("wartezimmerStatusApi:", e); }
-    }
-    dbAktualisieren("wartezimmer", parseInt(id), { status: status });
-    return { erfolg: true };
-}
-
-async function wartezimmerEntfernenApi(id) {
-    if (MED_MODUS === "live") {
-        try {
-            var resp = await fetch(API_BASE + "/wartezimmer/" + id, { method: "DELETE" });
-            if (resp.ok) return await resp.json();
-        } catch (e) { console.warn("wartezimmerEntfernenApi:", e); }
-    }
-    dbLoeschen("wartezimmer", parseInt(id));
-    return { erfolg: true };
-}
-
-function initWartezimmer() {
-    var form = document.getElementById("checkin-form");
-    if (!form) return;
-
-    wartezimmerDropdownsLaden();
-    wartezimmerAktualisieren();
-    setInterval(wartezimmerAktualisieren, 15000);
-
-    var patientSelect = document.getElementById("checkin-patient");
-    if (patientSelect) {
-        patientSelect.addEventListener("change", function () { wartezimmerTermineLaden(patientSelect.value); });
-    }
-
-    form.addEventListener("submit", async function (e) {
-        e.preventDefault();
-        var daten = { patient_id: parseInt(document.getElementById("checkin-patient").value, 10) };
-        var terminId = document.getElementById("checkin-termin").value;
-        if (terminId) daten.termin_id = parseInt(terminId, 10);
-
-        var erfolgDiv = document.getElementById("checkin-erfolg");
-        var fehlerDiv = document.getElementById("checkin-fehler");
-
-        try {
-            await wartezimmerCheckinApi(daten);
-            erfolgDiv.textContent = "Patient eingecheckt!";
-            erfolgDiv.hidden = false;
-            fehlerDiv.hidden = true;
-            form.reset();
-            wartezimmerAktualisieren();
-        } catch (err) {
-            fehlerDiv.textContent = err.message;
-            fehlerDiv.hidden = false;
-            erfolgDiv.hidden = true;
-        }
-    });
-}
-
-async function wartezimmerDropdownsLaden() {
-    try {
-        var patienten = await patientenLadenApi();
-        var sel = document.getElementById("checkin-patient");
-        if (sel) {
-            patienten.forEach(function (p) {
-                var opt = document.createElement("option");
-                opt.value = p.id;
-                opt.textContent = p.nachname + ", " + p.vorname;
-                sel.appendChild(opt);
-            });
-        }
-    } catch (_) { console.warn("Fehler:", _); }
-}
-
-async function wartezimmerTermineLaden(patientId) {
-    var sel = document.getElementById("checkin-termin");
-    if (!sel) return;
-    sel.innerHTML = '<option value="">-- Ohne Termin --</option>';
-    if (!patientId) return;
-    try {
-        var heute = new Date().toISOString().split("T")[0];
-        var termine = await termineLadenApi(heute);
-        termine.forEach(function (t) {
-            if (t.patient_id === parseInt(patientId, 10) && t.status !== "abgesagt") {
-                var opt = document.createElement("option");
-                opt.value = t.id;
-                opt.textContent = t.uhrzeit + " - " + (t.grund || "Termin") + " bei " + t.arzt_name;
-                sel.appendChild(opt);
-            }
-        });
-    } catch (_) { console.warn("Fehler:", _); }
-}
-
-function wartezeitBerechnen(ankunftZeit) {
-    if (!ankunftZeit) return "";
-    var ankunft = new Date(ankunftZeit);
-    var jetzt = new Date();
-    var diff = Math.floor((jetzt - ankunft) / 60000);
-    if (diff < 1) return "gerade eben";
-    if (diff < 60) return diff + " Min.";
-    return Math.floor(diff / 60) + " Std. " + (diff % 60) + " Min.";
-}
-
-async function wartezimmerAktualisieren() {
-    try {
-        var eintraege = await wartezimmerLadenApi();
-        var container = document.getElementById("wartezimmer-liste");
-        var badge = document.getElementById("wartezimmer-anzahl");
-        if (!container) return;
-
-        var wartend = eintraege.filter(function (e) { return e.status === "wartend"; }).length;
-        if (badge) badge.textContent = wartend + " wartend";
-
-        container.innerHTML = "";
-        if (eintraege.length === 0) {
-            container.innerHTML = '<p style="color:#666;text-align:center;padding:2rem">Keine Patienten im Wartezimmer.</p>';
-            return;
-        }
-
-        eintraege.forEach(function (e) {
-            var karte = document.createElement("div");
-            karte.className = "warte-karte " + e.status;
-            var info = '<div class="warte-info"><h3>' + escapeHtml(e.patient_name) + '</h3><p>';
-            if (e.termin_uhrzeit) info += "Termin: " + escapeHtml(e.termin_uhrzeit);
-            if (e.termin_grund) info += " - " + escapeHtml(e.termin_grund);
-            if (e.arzt_name) info += " bei " + escapeHtml(e.arzt_name);
-            info += '</p><p class="wartezeit">Wartezeit: ' + wartezeitBerechnen(e.ankunft_zeit) + "</p></div>";
-
-            var aktionen = '<div class="warte-aktionen">';
-            if (e.status === "wartend") aktionen += '<button class="btn-aufrufen">Aufrufen</button>';
-            if (e.status === "aufgerufen") aktionen += '<button class="btn-fertig">Fertig</button>';
-            aktionen += '<button class="btn-loeschen">Entfernen</button></div>';
-
-            karte.innerHTML = info + aktionen;
-
-            var btnAufrufen = karte.querySelector(".btn-aufrufen");
-            if (btnAufrufen) btnAufrufen.addEventListener("click", async function () {
-                try { await wartezimmerStatusApi(e.id, "aufgerufen"); wartezimmerAktualisieren(); } catch (_) { console.warn("Fehler:", _); }
-            });
-            var btnFertig = karte.querySelector(".btn-fertig");
-            if (btnFertig) btnFertig.addEventListener("click", async function () {
-                try { await wartezimmerStatusApi(e.id, "fertig"); wartezimmerAktualisieren(); } catch (_) { console.warn("Fehler:", _); }
-            });
-            karte.querySelector(".btn-loeschen").addEventListener("click", async function () {
-                try { await wartezimmerEntfernenApi(e.id); wartezimmerAktualisieren(); } catch (_) { console.warn("Fehler:", _); }
-            });
-
-            container.appendChild(karte);
-        });
-    } catch (_) { console.warn("Fehler:", _); }
 }
 
 // ===== Agenten API =====
@@ -1777,13 +783,9 @@ function initDashboard() {
     var auth = JSON.parse(sessionStorage.getItem("med_guard_auth") || localStorage.getItem("med_guard_auth") || "{}");
     var rolle = (auth.rolle || "admin").toLowerCase();
 
-    var patienten = dbLaden("patienten");
-    var aerzte = dbLaden("aerzte");
-    var heute = new Date().toISOString().split("T")[0];
-    var termine = dbLaden("termine").filter(function (t) { return t.datum === heute; });
-    var wartezimmer = dbLaden("wartezimmer").filter(function (w) { return w.status !== "fertig"; });
     var agenten = dbLaden("agenten");
     var onlineAgenten = agenten.filter(function (a) { return a.status === "online"; });
+    var anrufe = dbLaden("anrufe");
 
     // Rollenbasiertes HTML generieren
     var html = "";
@@ -1804,11 +806,11 @@ function initDashboard() {
 
     // KPI-Zeile
     html += '<div class="stat-grid" style="margin-bottom:1.5rem">' +
-        statCard("fa-users", "bg-primary", patienten.length, "Patienten") +
-        statCard("fa-user-doctor", "bg-success", aerzte.length, "Aerzte") +
-        statCard("fa-calendar-check", "bg-warning", termine.length, "Termine heute") +
-        statCard("fa-couch", "bg-info", wartezimmer.length, "Wartezimmer") +
-        statCard("fa-headset", "bg-primary", onlineAgenten.length + "/" + agenten.length, "Agenten online") +
+        statCard("fa-phone", "bg-primary", anrufe.length, "Anrufe gesamt") +
+        statCard("fa-headset", "bg-success", onlineAgenten.length + "/" + agenten.length, "Agenten online") +
+        statCard("fa-robot", "bg-info", "3", "AI Agents aktiv") +
+        statCard("fa-clock", "bg-warning", "0:34", "Avg. Wartezeit") +
+        statCard("fa-check", "bg-success", "89%", "Annahmequote") +
         '</div>';
 
     // Callcenter Live
@@ -1836,12 +838,9 @@ function initDashboard() {
     });
     html += '</div></div></div>';
 
-    // Termine + Wartezimmer nebeneinander
-    html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem">';
-    html += '<div class="card"><div style="padding:1rem"><h3><i class="fa-solid fa-calendar-days"></i> Heutige Termine</h3>' +
-        '<table style="width:100%;margin-top:0.75rem;font-size:0.85rem"><thead><tr><th>Uhrzeit</th><th>Patient</th><th>Arzt</th><th>Status</th></tr></thead><tbody id="dashboard-termine"></tbody></table></div></div>';
-    html += '<div class="card"><div style="padding:1rem"><h3><i class="fa-solid fa-couch"></i> Wartezimmer</h3><div id="dashboard-wartezimmer" style="margin-top:0.75rem"></div></div></div>';
-    html += '</div>';
+    // Anruf-Protokoll
+    html += '<div class="card"><div style="padding:1rem"><h3><i class="fa-solid fa-phone"></i> Letzte Anrufe</h3>' +
+        '<table style="width:100%;margin-top:0.75rem;font-size:0.85rem"><thead><tr><th>Zeit</th><th>Anrufer</th><th>Agent</th><th>Status</th></tr></thead><tbody id="dashboard-anrufe"></tbody></table></div></div>';
     html += '</div>'; // end dash-admin
 
     // ===== TEAMLEITER Dashboard =====
@@ -1881,32 +880,7 @@ function initDashboard() {
     html += '</div></div></div>';
     html += '</div>'; // end dash-teamleitung
 
-    // ===== STANDORTLEITUNG Dashboard =====
-    html += '<div id="dash-standortleitung" class="dash-view" style="display:none">';
-    html += '<h2 style="margin-bottom:1rem"><i class="fa-solid fa-building"></i> Standortleitung Dashboard</h2>';
-    html += '<div style="background:#fffbeb;border:1px solid #fbbf24;border-radius:var(--radius);padding:0.75rem;margin-bottom:1rem;font-size:0.85rem;color:#92400e"><i class="fa-solid fa-location-dot"></i> Ansicht: <strong>Praxis Dr. Schmidt</strong> &mdash; Nur Daten dieses Standorts</div>';
-    html += '<div class="stat-grid" style="margin-bottom:1.5rem">' +
-        statCard("fa-phone", "bg-primary", "28", "Anrufe heute") +
-        statCard("fa-calendar-check", "bg-success", termine.length, "Termine heute") +
-        statCard("fa-envelope", "bg-warning", "7", "Nachrichten offen") +
-        statCard("fa-headset", "bg-info", onlineAgenten.length, "Agenten online") +
-        '</div>';
-
-    // Postfach
-    html += '<div class="card" style="margin-bottom:1.5rem"><div style="padding:1rem"><h3><i class="fa-solid fa-inbox"></i> Postfach</h3>' +
-        '<div style="margin-top:0.75rem">';
-    [{ von: "Lisa M.", anliegen: "Terminanfrage Hr. Weber", status: "offen", zeit: "14:23" },
-     { von: "Tom R.", anliegen: "Rezeptbestellung Ibuprofen", status: "erledigt", zeit: "13:45" },
-     { von: "Voicebot", anliegen: "Rueckrufwunsch Fr. Klein", status: "offen", zeit: "12:10" }
-    ].forEach(function (n) {
-        var badge = n.status === "erledigt" ? 'background:#dcfce7;color:#15803d' : 'background:#fef3c7;color:#92400e';
-        html += '<div style="display:flex;align-items:center;gap:0.75rem;padding:0.5rem 0;border-bottom:1px solid var(--border)">' +
-            '<div style="flex:1"><strong style="font-size:0.85rem">' + escapeHtml(n.anliegen) + '</strong>' +
-            '<div style="font-size:0.75rem;color:var(--text-muted)">Von: ' + escapeHtml(n.von) + ' · ' + n.zeit + '</div></div>' +
-            '<span style="padding:0.2rem 0.5rem;border-radius:4px;font-size:0.7rem;font-weight:600;' + badge + '">' + escapeHtml(n.status) + '</span></div>';
-    });
-    html += '</div></div></div>';
-    html += '</div>'; // end dash-standortleitung
+    // Standortleitung entfernt - siehe admin-dashboard.html
 
     // ===== AGENT Dashboard =====
     html += '<div id="dash-agent" class="dash-view" style="display:none">';
@@ -1956,46 +930,28 @@ function initDashboard() {
         titel.textContent = rollenTitel[rolle] || "Dashboard";
     }
 
-    // Tabellen fuellen (Admin)
-    var termineListe = document.getElementById("dashboard-termine");
-    if (termineListe) {
-        termineListe.innerHTML = "";
-        if (termine.length === 0) {
-            termineListe.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#888">Keine Termine heute</td></tr>';
+    // Anrufe-Tabelle fuellen
+    var anrufeListe = document.getElementById("dashboard-anrufe");
+    if (anrufeListe) {
+        anrufeListe.innerHTML = "";
+        if (anrufe.length === 0) {
+            anrufeListe.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#888">Keine Anrufe</td></tr>';
         } else {
-            termine.forEach(function (t) {
+            anrufe.forEach(function (a) {
                 var tr = document.createElement("tr");
-                var statusKlasse = STATUS_KLASSEN[t.status] || "status-geplant";
                 tr.innerHTML =
-                    "<td>" + escapeHtml(t.uhrzeit) + "</td>" +
-                    "<td>" + escapeHtml(t.patient_name) + "</td>" +
-                    "<td>" + escapeHtml(t.arzt_name) + "</td>" +
-                    '<td><span class="status-badge ' + statusKlasse + '">' + escapeHtml(t.status) + "</span></td>";
-                termineListe.appendChild(tr);
-            });
-        }
-    }
-
-    var warteListe = document.getElementById("dashboard-wartezimmer");
-    if (warteListe) {
-        warteListe.innerHTML = "";
-        if (wartezimmer.length === 0) {
-            warteListe.innerHTML = '<p style="color:#888;text-align:center;padding:1rem">Wartezimmer leer</p>';
-        } else {
-            wartezimmer.forEach(function (w) {
-                var div = document.createElement("div");
-                div.className = "warte-mini " + w.status;
-                div.innerHTML = '<strong>' + escapeHtml(w.patient_name) + '</strong> <span class="status-badge status-' +
-                    (w.status === "aufgerufen" ? "bestaetigt" : "geplant") + '">' + escapeHtml(w.status) + '</span>' +
-                    '<br><small>' + wartezeitBerechnen(w.ankunft_zeit) + '</small>';
-                warteListe.appendChild(div);
+                    "<td>" + escapeHtml(a.beginn || "") + "</td>" +
+                    "<td>" + escapeHtml(a.anrufer_nummer) + (a.anrufer_name ? " (" + escapeHtml(a.anrufer_name) + ")" : "") + "</td>" +
+                    "<td>" + escapeHtml(a.agent_name || "-") + "</td>" +
+                    '<td><span class="status-badge">' + escapeHtml(a.status) + "</span></td>";
+                anrufeListe.appendChild(tr);
             });
         }
     }
 
     // Richtige View basierend auf Rolle zeigen
     if (rolle !== "admin" && rolle !== "administrator") {
-        var map = { teamleitung: "dash-teamleitung", standortleitung: "dash-standortleitung", agent: "dash-agent" };
+        var map = { teamleitung: "dash-teamleitung", agent: "dash-agent" };
         var target = map[rolle];
         if (target) {
             document.querySelectorAll(".dash-view").forEach(function (v) { v.style.display = "none"; });
@@ -2016,7 +972,7 @@ if (typeof window !== "undefined") {
         document.querySelectorAll(".dashboard-rolle-btn").forEach(function (b) { b.classList.remove("aktiv"); });
         if (btn) btn.classList.add("aktiv");
         document.querySelectorAll(".dash-view").forEach(function (v) { v.style.display = "none"; });
-        var map = { admin: "dash-admin", teamleitung: "dash-teamleitung", standortleitung: "dash-standortleitung", agent: "dash-agent" };
+        var map = { admin: "dash-admin", teamleitung: "dash-teamleitung", agent: "dash-agent" };
         var target = map[rolle] || "dash-admin";
         var el = document.getElementById(target);
         if (el) el.style.display = "block";
@@ -2137,39 +1093,20 @@ function chatAntwortGenerieren(frage) {
         return "Hallo! Willkommen bei " + name + ". Wie kann ich Ihnen helfen?";
     }
 
-    if (f.includes("patient") || f.includes("kunde") || f.includes("mandant") || f.includes("klient")) {
-        var patienten = dbLaden("patienten");
-        if (patienten.length === 0) return "Aktuell sind keine " + b.kunden + " angelegt.";
-        var namen = patienten.map(function (p) { return p.vorname + " " + p.nachname; }).join(", ");
-        return "Wir haben " + patienten.length + " " + b.kunden + ": " + namen + ".";
+    if (f.includes("agent") || f.includes("agenten")) {
+        var agenten = dbLaden("agenten");
+        if (agenten.length === 0) return "Keine Agenten angelegt.";
+        var namen = agenten.map(function (a) { return a.name + " (" + a.status + ")"; }).join(", ");
+        return "Wir haben " + agenten.length + " Agenten: " + namen + ".";
     }
 
-    if (f.includes("arzt") || f.includes("aerzt") || f.includes("doktor") || f.includes("mitarbeiter") || f.includes("anwalt") || f.includes("berater") || f.includes("friseur") || f.includes("mechaniker")) {
-        var aerzte = dbLaden("aerzte");
-        if (aerzte.length === 0) return "Keine " + b.mitarbeiter + " angelegt.";
-        var infos = aerzte.map(function (a) {
-            return ((a.titel || "") + " " + a.vorname + " " + a.nachname).trim() + " (" + a.fachrichtung + ")";
-        }).join(", ");
-        return "Unsere " + b.mitarbeiter + ": " + infos;
-    }
-
-    if (f.includes("termin")) {
-        var heute = new Date().toISOString().split("T")[0];
-        var termine = dbLaden("termine").filter(function (t) { return t.datum === heute; });
-        if (termine.length === 0) return "Heute sind keine Termine geplant.";
-        var tInfos = termine.map(function (t) { return t.uhrzeit + " - " + t.patient_name + " bei " + t.arzt_name; }).join(" | ");
-        return "Heute " + termine.length + " Termine: " + tInfos;
-    }
-
-    if (f.includes("warte")) {
-        var wartezimmer = dbLaden("wartezimmer").filter(function (w) { return w.status !== "fertig"; });
-        if (wartezimmer.length === 0) return "Das Wartezimmer ist leer.";
-        return wartezimmer.length + " " + b.kunden + " im Wartezimmer: " +
-            wartezimmer.map(function (w) { return w.patient_name + " (" + w.status + ")"; }).join(", ");
+    if (f.includes("anruf") || f.includes("anrufe")) {
+        var anrufe = dbLaden("anrufe");
+        return "Es gibt " + anrufe.length + " Anrufe im Protokoll.";
     }
 
     if (f.includes("hilfe") || f.includes("help")) {
-        return "Ich kann Ihnen helfen mit: " + b.kunden + "-Info, " + b.mitarbeiter + "-Info, Termine heute, Wartezimmer-Status, Voicebot, Callflow, Uebersetzer.";
+        return "Ich kann Ihnen helfen mit: Agenten-Info, Anrufe, AI Agents, Callflow, Wissensdatenbank.";
     }
 
     if (f.includes("agent")) {
@@ -2838,262 +1775,6 @@ function voicebotAnrufeLaden() {
     }
 }
 
-// ===== Uebersetzer =====
-
-var medPhrases = {
-    begruessung: [
-        { de: "Guten Tag, wie kann ich Ihnen helfen?", en: "Good day, how can I help you?", tr: "Merhaba, size nasil yardimci olabilirim?", ar: "مرحبا، كيف يمكنني مساعدتك؟", ru: "Здравствуйте, чем могу помочь?", pl: "Dzien dobry, jak moge pomoc?" },
-        { de: "Haben Sie einen Termin?", en: "Do you have an appointment?", tr: "Randevunuz var mi?", ar: "هل لديك موعد؟", ru: "У вас есть запись?", pl: "Czy ma Pan/Pani wizyte?" },
-        { de: "Bitte nehmen Sie im Wartezimmer Platz.", en: "Please take a seat in the waiting room.", tr: "Lutfen bekleme odasinda oturunuz.", ar: "يرجى الجلوس في غرفة الانتظار.", ru: "Пожалуйста, присядьте в зале ожидания.", pl: "Prosze usiasc w poczekalni." },
-        { de: "Ihre Versichertenkarte bitte.", en: "Your insurance card, please.", tr: "Sigorta kartinizi lutfen.", ar: "بطاقة التأمين من فضلك.", ru: "Вашу страховую карту, пожалуйста.", pl: "Prosze o karte ubezpieczenia." }
-    ],
-    anamnese: [
-        { de: "Was fuehrt Sie zu uns?", en: "What brings you to us?", tr: "Bizi neden ziyaret ediyorsunuz?", ar: "ما الذي أتى بك إلينا؟", ru: "Что привело вас к нам?", pl: "Co Pana/Pania do nas sprowadza?" },
-        { de: "Nehmen Sie regelmaessig Medikamente?", en: "Do you take regular medication?", tr: "Duzenli ilac kullaniyor musunuz?", ar: "هل تتناول أدوية بانتظام؟", ru: "Вы принимаете лекарства регулярно?", pl: "Czy przyjmuje Pan/Pani regularnie leki?" },
-        { de: "Haben Sie Allergien?", en: "Do you have any allergies?", tr: "Alerjiniz var mi?", ar: "هل لديك حساسية؟", ru: "У вас есть аллергия?", pl: "Czy ma Pan/Pani alergie?" },
-        { de: "Seit wann haben Sie die Beschwerden?", en: "Since when have you had these symptoms?", tr: "Sikayetleriniz ne zamandan beri var?", ar: "منذ متى تعاني من هذه الأعراض؟", ru: "С каких пор у вас эти жалобы?", pl: "Od kiedy ma Pan/Pani te dolegliwosci?" }
-    ],
-    schmerzen: [
-        { de: "Wo haben Sie Schmerzen?", en: "Where do you have pain?", tr: "Nereniz agriyor?", ar: "أين تشعر بالألم؟", ru: "Где у вас болит?", pl: "Gdzie odczuwa Pan/Pani bol?" },
-        { de: "Wie stark sind die Schmerzen auf einer Skala von 1-10?", en: "How severe is the pain on a scale of 1-10?", tr: "1-10 olceginde agriniz ne kadar siddetli?", ar: "ما مدى شدة الألم على مقياس من 1 إلى 10؟", ru: "Насколько сильная боль по шкале от 1 до 10?", pl: "Jak silny jest bol w skali od 1 do 10?" },
-        { de: "Ist der Schmerz staendig oder kommt und geht er?", en: "Is the pain constant or does it come and go?", tr: "Agri surekli mi yoksa gelip gidiyor mu?", ar: "هل الألم مستمر أم يأتي ويذهب؟", ru: "Боль постоянная или приходит и уходит?", pl: "Czy bol jest staly czy przychodzi i odchodzi?" }
-    ],
-    behandlung: [
-        { de: "Ich verschreibe Ihnen ein Medikament.", en: "I will prescribe you a medication.", tr: "Size bir ilac yazacagim.", ar: "سأصف لك دواء.", ru: "Я выпишу вам лекарство.", pl: "Przepisze Panu/Pani lek." },
-        { de: "Bitte kommen Sie naechste Woche wieder.", en: "Please come back next week.", tr: "Lutfen gelecek hafta tekrar gelin.", ar: "يرجى العودة الأسبوع المقبل.", ru: "Пожалуйста, приходите на следующей неделе.", pl: "Prosze przyjsc w przyszlym tygodniu." },
-        { de: "Sie muessen nuechtern zur Blutabnahme kommen.", en: "You need to come fasting for the blood test.", tr: "Kan testi icin ac karnina gelmelisiniz.", ar: "يجب أن تأتي صائماً لسحب الدم.", ru: "Вам нужно прийти натощак на анализ крови.", pl: "Musi Pan/Pani przyjsc na czczo na badanie krwi." }
-    ],
-    termin: [
-        { de: "Ihr naechster Termin ist am...", en: "Your next appointment is on...", tr: "Bir sonraki randevunuz...", ar: "موعدك القادم في...", ru: "Ваша следующая запись...", pl: "Pana/Pani nastepna wizyta jest..." },
-        { de: "Moechten Sie den Termin verschieben?", en: "Would you like to reschedule?", tr: "Randevunuzu ertelemek ister misiniz?", ar: "هل تريد تأجيل الموعد؟", ru: "Хотите перенести запись?", pl: "Czy chcialby Pan/chcialaby Pani przesunac wizyte?" }
-    ],
-    rezept: [
-        { de: "Ihr Rezept liegt an der Rezeption bereit.", en: "Your prescription is ready at the reception.", tr: "Recetiniz resepsiyonda hazir.", ar: "وصفتك جاهزة في الاستقبال.", ru: "Ваш рецепт готов на ресепшен.", pl: "Recepta czeka na Pana/Pania w recepcji." },
-        { de: "Das Rezept ist 3 Monate gueltig.", en: "The prescription is valid for 3 months.", tr: "Recete 3 ay gecerlidir.", ar: "الوصفة صالحة لمدة 3 أشهر.", ru: "Рецепт действителен 3 месяца.", pl: "Recepta jest wazna przez 3 miesiace." }
-    ]
-};
-
-function initUebersetzer() {
-    var uebersetzenBtn = document.getElementById("btn-ue-uebersetzen");
-    if (!uebersetzenBtn) return;
-
-    uebersetzenBtn.addEventListener("click", uebersetzen);
-
-    var tauschBtn = document.getElementById("btn-ue-tauschen");
-    if (tauschBtn) tauschBtn.addEventListener("click", function () {
-        var von = document.getElementById("ue-sprache-von");
-        var nach = document.getElementById("ue-sprache-nach");
-        var tmp = von.value; von.value = nach.value; nach.value = tmp;
-    });
-
-    var vorlesenBtn = document.getElementById("btn-ue-vorlesen");
-    if (vorlesenBtn) vorlesenBtn.addEventListener("click", function () {
-        var ausgabe = document.getElementById("ue-ausgabe");
-        if (ausgabe && ausgabe.textContent) {
-            var nach = document.getElementById("ue-sprache-nach");
-            var langMap = { de: "de-DE", en: "en-US", tr: "tr-TR", ar: "ar-SA", ru: "ru-RU", pl: "pl-PL" };
-            var utt = new SpeechSynthesisUtterance(ausgabe.textContent);
-            utt.lang = langMap[nach.value] || "de-DE";
-            window.speechSynthesis.speak(utt);
-        }
-    });
-
-    var kopierenBtn = document.getElementById("btn-ue-kopieren");
-    if (kopierenBtn) kopierenBtn.addEventListener("click", function () {
-        var ausgabe = document.getElementById("ue-ausgabe");
-        if (ausgabe && navigator.clipboard) {
-            navigator.clipboard.writeText(ausgabe.textContent);
-            kopierenBtn.textContent = "Kopiert!";
-            setTimeout(function () { kopierenBtn.innerHTML = '<i class="fa-solid fa-copy"></i> Kopieren'; }, 2000);
-        }
-    });
-
-    // Mikrofon fuer Uebersetzer
-    var mikBtn = document.getElementById("btn-ue-mikrofon");
-    if (mikBtn) {
-        var SpeechRec = typeof window !== "undefined" && (window.SpeechRecognition || window.webkitSpeechRecognition);
-        if (SpeechRec) {
-            var rec = new SpeechRec();
-            rec.continuous = false;
-            rec.interimResults = false;
-            var isRec = false;
-            mikBtn.addEventListener("click", function () {
-                if (isRec) { rec.stop(); return; }
-                var von = document.getElementById("ue-sprache-von");
-                var langMap = { de: "de-DE", en: "en-US", tr: "tr-TR", ar: "ar-SA", ru: "ru-RU", pl: "pl-PL" };
-                rec.lang = langMap[von.value] || "de-DE";
-                isRec = true;
-                mikBtn.classList.add("recording");
-                rec.start();
-            });
-            rec.onresult = function (e) {
-                var text = e.results[0][0].transcript;
-                document.getElementById("ue-eingabe").value = text;
-                uebersetzen();
-            };
-            rec.onend = function () { isRec = false; mikBtn.classList.remove("recording"); };
-            rec.onerror = function () { isRec = false; mikBtn.classList.remove("recording"); };
-        }
-    }
-
-    // Phrasen laden
-    initPhrasen();
-}
-
-function uebersetzen() {
-    var eingabe = document.getElementById("ue-eingabe").value.trim();
-    var von = document.getElementById("ue-sprache-von").value;
-    var nach = document.getElementById("ue-sprache-nach").value;
-    var ausgabe = document.getElementById("ue-ausgabe");
-    if (!eingabe || !ausgabe) return;
-
-    // Im Live-Modus: LLM-Uebersetzung nutzen
-    if (MED_LLM_VERFUEGBAR) {
-        ausgabe.textContent = "Uebersetze...";
-        uebersetzenLlm(eingabe, von, nach, ausgabe);
-        return;
-    }
-
-    // Demo-Modus: Phrasen-Suche + Fallback
-    uebersetzenDemo(eingabe, von, nach, ausgabe);
-}
-
-function uebersetzenLlm(eingabe, von, nach, ausgabe) {
-    var xhr = new XMLHttpRequest();
-    xhr.open("POST", API_BASE + "/uebersetzen", true);
-    xhr.setRequestHeader("Content-Type", "application/json");
-    xhr.timeout = 30000;
-    xhr.onload = function () {
-        if (xhr.status === 200) {
-            try {
-                var daten = JSON.parse(xhr.responseText);
-                ausgabe.textContent = daten.uebersetzung || eingabe;
-            } catch (e) {
-                // Fallback auf Demo
-                uebersetzenDemo(eingabe, von, nach, ausgabe);
-            }
-        } else {
-            uebersetzenDemo(eingabe, von, nach, ausgabe);
-        }
-        ueVerlaufSpeichern(eingabe, ausgabe.textContent, von, nach);
-    };
-    xhr.onerror = function () {
-        uebersetzenDemo(eingabe, von, nach, ausgabe);
-        ueVerlaufSpeichern(eingabe, ausgabe.textContent, von, nach);
-    };
-    xhr.send(JSON.stringify({ text: eingabe, von: von, nach: nach, branche: MED_BRANCHE_KEY, firmen_name: MED_FIRMEN_NAME }));
-}
-
-function uebersetzenDemo(eingabe, von, nach, ausgabe) {
-    // Suche in den medizinischen Phrasen
-    var gefunden = null;
-    var kategorien = Object.keys(medPhrases);
-    for (var k = 0; k < kategorien.length; k++) {
-        var phrasen = medPhrases[kategorien[k]];
-        for (var p = 0; p < phrasen.length; p++) {
-            if (phrasen[p][von] && phrasen[p][von].toLowerCase() === eingabe.toLowerCase()) {
-                gefunden = phrasen[p][nach] || phrasen[p].en || eingabe;
-                break;
-            }
-        }
-        if (gefunden) break;
-    }
-
-    if (gefunden) {
-        ausgabe.textContent = gefunden;
-    } else {
-        var demoUe = {
-            "de-en": { "hallo": "hello", "ja": "yes", "nein": "no", "danke": "thank you", "bitte": "please", "schmerzen": "pain", "kopf": "head", "bauch": "stomach", "termin": "appointment", "arzt": "doctor", "medikament": "medication", "rezept": "prescription" },
-            "de-tr": { "hallo": "merhaba", "ja": "evet", "nein": "hayir", "danke": "tesekkurler", "bitte": "lutfen", "schmerzen": "agri", "termin": "randevu", "arzt": "doktor" }
-        };
-        var key = von + "-" + nach;
-        var woerter = eingabe.toLowerCase().split(" ");
-        var uebersetzt = [];
-        var dict = demoUe[key] || {};
-        for (var w = 0; w < woerter.length; w++) {
-            uebersetzt.push(dict[woerter[w]] || woerter[w]);
-        }
-        ausgabe.textContent = uebersetzt.join(" ");
-        if (Object.keys(dict).length === 0) {
-            ausgabe.textContent = "[Demo] " + eingabe + " (" + von + " → " + nach + ")";
-        }
-    }
-
-    ueVerlaufSpeichern(eingabe, ausgabe.textContent, von, nach);
-}
-
-function ueVerlaufSpeichern(eingabe, uebersetzung, von, nach) {
-    var verlauf = dbLaden("ue_verlauf");
-    verlauf.unshift({ original: eingabe, uebersetzung: uebersetzung, von: von, nach: nach, zeit: new Date().toLocaleTimeString("de-DE") });
-    if (verlauf.length > 20) verlauf = verlauf.slice(0, 20);
-    dbSpeichern("ue_verlauf", verlauf);
-    ueVerlaufAktualisieren();
-}
-
-function ueVerlaufAktualisieren() {
-    var tabelle = document.getElementById("ue-verlauf-tabelle");
-    if (!tabelle) return;
-    var tbody = tabelle.querySelector("tbody");
-    if (!tbody) return;
-    var verlauf = dbLaden("ue_verlauf");
-    tbody.innerHTML = "";
-    for (var i = 0; i < verlauf.length; i++) {
-        var v = verlauf[i];
-        var tr = document.createElement("tr");
-        tr.innerHTML = '<td>' + escapeHtml(v.original) + '</td><td>' + escapeHtml(v.uebersetzung) + '</td><td>' + v.von.toUpperCase() + ' → ' + v.nach.toUpperCase() + '</td><td>' + escapeHtml(v.zeit) + '</td>';
-        tbody.appendChild(tr);
-    }
-}
-
-function initPhrasen() {
-    var katBtns = document.querySelectorAll(".phrasen-kat");
-    for (var i = 0; i < katBtns.length; i++) {
-        katBtns[i].addEventListener("click", function () {
-            for (var j = 0; j < katBtns.length; j++) katBtns[j].classList.remove("active");
-            this.classList.add("active");
-            phrasenAnzeigen(this.getAttribute("data-kat"));
-        });
-    }
-
-    var sprachSel = document.getElementById("ue-phrasen-sprache");
-    if (sprachSel) sprachSel.addEventListener("change", function () {
-        var aktiveKat = document.querySelector(".phrasen-kat.active");
-        phrasenAnzeigen(aktiveKat ? aktiveKat.getAttribute("data-kat") : "begruessung");
-    });
-
-    phrasenAnzeigen("begruessung");
-    ueVerlaufAktualisieren();
-}
-
-function phrasenAnzeigen(kategorie) {
-    var liste = document.getElementById("phrasen-liste");
-    var sprachSel = document.getElementById("ue-phrasen-sprache");
-    if (!liste || !sprachSel) return;
-    var sprache = sprachSel.value;
-    var phrasen = medPhrases[kategorie] || [];
-    liste.innerHTML = "";
-    for (var i = 0; i < phrasen.length; i++) {
-        var p = phrasen[i];
-        var div = document.createElement("div");
-        div.className = "phrase-card";
-        div.innerHTML = '<div class="phrase-de">' + escapeHtml(p.de) + '</div><div class="phrase-uebersetzt">' + escapeHtml(p[sprache] || p.en) + '</div><div class="phrase-actions"><button type="button" class="btn-sm" onclick="phraseVorlesen(\'' + escapeHtml(p[sprache] || p.en).replace(/'/g, "\\'") + '\',\'' + sprache + '\')"><i class="fa-solid fa-volume-high"></i></button><button type="button" class="btn-sm" onclick="phraseUebernehmen(\'' + escapeHtml(p.de).replace(/'/g, "\\'") + '\')"><i class="fa-solid fa-arrow-right"></i></button></div>';
-        liste.appendChild(div);
-    }
-}
-
-function phraseVorlesen(text, sprache) {
-    if (!window.speechSynthesis) return;
-    var langMap = { en: "en-US", tr: "tr-TR", ar: "ar-SA", ru: "ru-RU", pl: "pl-PL" };
-    var utt = new SpeechSynthesisUtterance(text);
-    utt.lang = langMap[sprache] || "en-US";
-    window.speechSynthesis.speak(utt);
-}
-
-function phraseUebernehmen(text) {
-    var eingabe = document.getElementById("ue-eingabe");
-    if (eingabe) { eingabe.value = text; uebersetzen(); }
-}
-
 // ===== Standort & ACD =====
 
 var WOCHENTAGE = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"];
@@ -3398,34 +2079,17 @@ if (typeof module !== "undefined" && module.exports) {
         berechnen, benutzerValidieren, escapeHtml, OP_SYMBOLE,
         patientValidieren, arztValidieren, terminValidieren,
         wartezeitBerechnen, STATUS_KLASSEN,
-        berechnenApi,
         benutzerSpeichernApi, benutzerAktualisierenApi,
         benutzerLoeschenApi, benutzerLadenApi,
-        verlaufLadenApi, verlaufLoeschenApi,
-        patientenLadenApi, patientSpeichernApi,
-        patientAktualisierenApi, patientLoeschenApi,
-        aerzteLadenApi, arztSpeichernApi,
-        arztAktualisierenApi, arztLoeschenApi,
-        termineLadenApi, terminSpeichernApi,
-        terminAktualisierenApi, terminLoeschenApi,
-        wartezimmerLadenApi, wartezimmerCheckinApi,
-        wartezimmerStatusApi, wartezimmerEntfernenApi,
         agentenLadenApi, agentSpeichernApi,
         agentAktualisierenApi, agentLoeschenApi,
         agentStatusSetzenApi, anrufeLadenApi,
         startAnrufTimer, stopAnrufTimer,
         formularZuruecksetzen, benutzerBearbeiten, benutzerZurTabelle,
         benutzerListeAktualisieren, benutzerEntfernen,
-        verlaufAktualisieren,
-        patientFormZuruecksetzen, patientBearbeiten, patientenListeAktualisieren,
-        arztFormZuruecksetzen, arztBearbeiten, aerzteListeAktualisieren,
-        terminFormZuruecksetzen, terminBearbeiten, termineListeAktualisieren,
-        terminDropdownsLaden,
-        wartezimmerAktualisieren, wartezimmerDropdownsLaden, wartezimmerTermineLaden,
         agentFormZuruecksetzen, agentBearbeiten, agentenBoardAktualisieren,
         aktiveAnrufeAktualisieren, anrufprotokollAktualisieren,
         sprachAusgabe, callflowDaten: callflowDaten,
-        medPhrases: medPhrases, uebersetzen: typeof uebersetzen !== "undefined" ? uebersetzen : function () {},
         WOCHENTAGE: WOCHENTAGE, ACD_MODUS_LABEL: ACD_MODUS_LABEL,
         standardZeitplan: standardZeitplan,
         acdConfigLaden: acdConfigLaden, acdConfigSpeichern: acdConfigSpeichern,
@@ -4713,24 +3377,16 @@ if (typeof document !== "undefined") {
         // Auth deaktiviert — keine Anmeldung noetig
         guardInfoAnzeigen();
 
-        brancheLaden();
-        brancheAnwenden();
         modusPruefen();
         demoDatenLaden();
         initDashboard();
-        initRechner();
         initBenutzerFormular();
-        initPatienten();
-        initAerzte();
-        initTermine();
-        initWartezimmer();
         initAgentenBoard();
         initSoftphone();
         initChatWidget();
         initSprachChat();
         initCallflowEditor();
         initVoicebotSeite();
-        initUebersetzer();
         initStandortSeite();
         initWissensdatenbank();
         initAnsagenGenerator();
