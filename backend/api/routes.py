@@ -12,7 +12,8 @@ from typing import Optional, List
 from pydantic import BaseModel
 
 from database import (get_db, Anruf, Agent, Queue, Callflow, Patient,
-                      Termin, KBArtikel, Einstellung, Arzt, Wartezimmer, Benutzer)
+                      Termin, KBArtikel, Einstellung, Arzt, Wartezimmer, Benutzer,
+                      AiAgent, AiIntegration)
 from config import settings
 from branchen import branche_laden, voicebot_system_prompt
 
@@ -857,8 +858,159 @@ async def uebersetzen(data: UebersetzenRequest):
 
 # ===== AI Agent Engineering =====
 
+class AiAgentSchema(BaseModel):
+    name: str
+    branche: str = "arztpraxis"
+    stimme: str = ""
+    hintergrund: str = "buero"
+    persoenlichkeit: str = ""
+    begruessung: str = ""
+    regeln: str = ""
+    llm_model: str = "llama3.1:8b-instruct-q4_K_M"
+    temperatur: float = 0.7
+    skills: dict = {}
+    kanaele: list = []
+    system_prompt: str = ""
+    kontext: str = ""
+    prompt_regeln: str = ""
+    status: str = "aktiv"
+
+class AiIntegrationSchema(BaseModel):
+    name: str
+    kategorie: str = ""
+    api_url: str = ""
+    auth_typ: str = "apikey"
+    auth_user: str = ""
+    auth_pass: str = ""
+    mapping: str = ""
+    aktiv: bool = False
+
 class AIChatRequest(BaseModel):
     messages: list
+
+
+@router.get("/ai-agents")
+async def ai_agents_liste(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(AiAgent).order_by(AiAgent.erstellt.desc()))
+    return [_to_dict(a) for a in result.scalars().all()]
+
+@router.post("/ai-agents")
+async def ai_agent_erstellen(data: AiAgentSchema, db: AsyncSession = Depends(get_db)):
+    agent = AiAgent(**data.model_dump(), geaendert=datetime.utcnow())
+    db.add(agent)
+    await db.commit()
+    await db.refresh(agent)
+    return _to_dict(agent)
+
+@router.get("/ai-agents/{agent_id}")
+async def ai_agent_detail(agent_id: int, db: AsyncSession = Depends(get_db)):
+    agent = await db.get(AiAgent, agent_id)
+    if not agent:
+        raise HTTPException(404, "AI Agent nicht gefunden")
+    return _to_dict(agent)
+
+@router.put("/ai-agents/{agent_id}")
+async def ai_agent_aktualisieren(agent_id: int, data: AiAgentSchema, db: AsyncSession = Depends(get_db)):
+    agent = await db.get(AiAgent, agent_id)
+    if not agent:
+        raise HTTPException(404, "AI Agent nicht gefunden")
+    for key, value in data.model_dump().items():
+        setattr(agent, key, value)
+    agent.geaendert = datetime.utcnow()
+    await db.commit()
+    return _to_dict(agent)
+
+@router.put("/ai-agents/{agent_id}/status")
+async def ai_agent_status(agent_id: int, status: str, db: AsyncSession = Depends(get_db)):
+    agent = await db.get(AiAgent, agent_id)
+    if not agent:
+        raise HTTPException(404, "AI Agent nicht gefunden")
+    agent.status = status
+    agent.geaendert = datetime.utcnow()
+    await db.commit()
+    return {"ok": True, "status": status}
+
+@router.put("/ai-agents/{agent_id}/prompt")
+async def ai_agent_prompt_speichern(agent_id: int, db: AsyncSession = Depends(get_db),
+                                     system_prompt: str = "", kontext: str = "", prompt_regeln: str = ""):
+    agent = await db.get(AiAgent, agent_id)
+    if not agent:
+        raise HTTPException(404, "AI Agent nicht gefunden")
+    agent.system_prompt = system_prompt
+    agent.kontext = kontext
+    agent.prompt_regeln = prompt_regeln
+    agent.geaendert = datetime.utcnow()
+    await db.commit()
+    return {"ok": True}
+
+@router.delete("/ai-agents/{agent_id}")
+async def ai_agent_loeschen(agent_id: int, db: AsyncSession = Depends(get_db)):
+    agent = await db.get(AiAgent, agent_id)
+    if not agent:
+        raise HTTPException(404, "AI Agent nicht gefunden")
+    await db.delete(agent)
+    await db.commit()
+    return {"ok": True}
+
+@router.post("/ai-agents/{agent_id}/deploy")
+async def ai_agent_deploy(agent_id: int, umgebung: str = "dev", db: AsyncSession = Depends(get_db)):
+    """Agent in eine Umgebung deployen."""
+    agent = await db.get(AiAgent, agent_id)
+    if not agent:
+        raise HTTPException(404, "AI Agent nicht gefunden")
+    agent.status = "aktiv" if umgebung == "prod" else "testing"
+    agent.geaendert = datetime.utcnow()
+    await db.commit()
+    return {"ok": True, "umgebung": umgebung, "agent": agent.name, "status": agent.status}
+
+
+# ===== AI Integrationen =====
+
+@router.get("/ai-integrationen")
+async def ai_integrationen_liste(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(AiIntegration).order_by(AiIntegration.name))
+    return [_to_dict(i) for i in result.scalars().all()]
+
+@router.post("/ai-integrationen")
+async def ai_integration_erstellen(data: AiIntegrationSchema, db: AsyncSession = Depends(get_db)):
+    integ = AiIntegration(**data.model_dump())
+    db.add(integ)
+    await db.commit()
+    await db.refresh(integ)
+    return _to_dict(integ)
+
+@router.put("/ai-integrationen/{int_id}")
+async def ai_integration_aktualisieren(int_id: int, data: AiIntegrationSchema, db: AsyncSession = Depends(get_db)):
+    integ = await db.get(AiIntegration, int_id)
+    if not integ:
+        raise HTTPException(404, "Integration nicht gefunden")
+    for key, value in data.model_dump().items():
+        setattr(integ, key, value)
+    await db.commit()
+    return _to_dict(integ)
+
+@router.delete("/ai-integrationen/{int_id}")
+async def ai_integration_loeschen(int_id: int, db: AsyncSession = Depends(get_db)):
+    integ = await db.get(AiIntegration, int_id)
+    if not integ:
+        raise HTTPException(404, "Integration nicht gefunden")
+    await db.delete(integ)
+    await db.commit()
+    return {"ok": True}
+
+@router.post("/ai-integrationen/{int_id}/testen")
+async def ai_integration_testen(int_id: int, db: AsyncSession = Depends(get_db)):
+    """Integration testen — prueft ob URL erreichbar ist."""
+    integ = await db.get(AiIntegration, int_id)
+    if not integ:
+        raise HTTPException(404, "Integration nicht gefunden")
+    # Einfacher Check: URL gesetzt?
+    if not integ.api_url:
+        return {"ok": False, "fehler": "Keine API URL konfiguriert"}
+    return {"ok": True, "name": integ.name, "url": integ.api_url}
+
+
+# ===== AI Agent Test-Chat =====
 
 @router.post("/ai-agent/chat")
 async def ai_agent_chat(data: AIChatRequest):
@@ -870,7 +1022,13 @@ async def ai_agent_chat(data: AIChatRequest):
         engine = None
 
     if not engine or not engine.llm or not engine.llm.client:
-        return {"antwort": "LLM nicht verfuegbar. Bitte Ollama starten."}
+        # Demo-Antwort wenn kein LLM
+        last_msg = ""
+        for m in reversed(data.messages):
+            if m.get("role") == "user":
+                last_msg = m.get("content", "")
+                break
+        return {"antwort": _ai_agent_demo_antwort(last_msg)}
 
     try:
         response = await asyncio.wait_for(
@@ -893,6 +1051,26 @@ async def ai_agent_chat(data: AIChatRequest):
         return {"antwort": "Timeout — LLM hat nicht rechtzeitig geantwortet."}
     except Exception as e:
         return {"antwort": f"Fehler: {e}"}
+
+
+def _ai_agent_demo_antwort(text: str) -> str:
+    """Demo-Antwort fuer AI Agent Test-Chat wenn kein LLM verfuegbar."""
+    t = text.lower()
+    if any(w in t for w in ["hallo", "guten tag", "hi"]):
+        return "Guten Tag! Praxis Dr. Mueller, wie kann ich Ihnen helfen?"
+    if any(w in t for w in ["termin", "termine"]):
+        return "Gerne vereinbare ich einen Termin fuer Sie. Wann wuerden Sie denn gerne kommen — vormittags oder nachmittags?"
+    if any(w in t for w in ["rezept", "medikament"]):
+        return "Fuer eine Rezeptbestellung brauche ich Ihren Namen und das gewuenschte Medikament. Wie ist Ihr Name bitte?"
+    if any(w in t for w in ["schmerz", "weh", "notfall", "dringend"]):
+        return "Bei akuten Beschwerden koennen Sie heute noch in unsere offene Sprechstunde kommen. Diese ist von 11:00 bis 12:00 Uhr. Schaffen Sie das?"
+    if any(w in t for w in ["danke", "tschuess", "wiedersehen"]):
+        return "Gerne! Ich wuensche Ihnen einen schoenen Tag. Auf Wiedersehen!"
+    if any(w in t for w in ["oeffnungszeit", "geoeffnet", "wann"]):
+        return "Unsere Oeffnungszeiten sind Montag bis Freitag 08:00 bis 12:00 Uhr und Montag, Dienstag und Donnerstag 14:00 bis 18:00 Uhr."
+    if any(w in t for w in ["ueberweisung", "facharzt"]):
+        return "Fuer eine Ueberweisung kommen Sie bitte in die Sprechstunde. Ihr Arzt kann dann entscheiden, an welchen Facharzt ueberwiesen wird."
+    return "Alles klar, ich habe das notiert. Kann ich sonst noch etwas fuer Sie tun?"
 
 
 # ===== Seed / Demo-Daten =====

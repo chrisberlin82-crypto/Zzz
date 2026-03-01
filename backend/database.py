@@ -159,6 +159,43 @@ class Benutzer(Base):
     erstellt = Column(DateTime, default=_utcnow)
 
 
+class AiAgent(Base):
+    __tablename__ = "ai_agents"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(128))
+    branche = Column(String(64), default="arztpraxis")
+    stimme = Column(String(64), default="")
+    hintergrund = Column(String(32), default="buero")
+    persoenlichkeit = Column(Text, default="")
+    begruessung = Column(Text, default="")
+    regeln = Column(Text, default="")
+    llm_model = Column(String(128), default="llama3.1:8b-instruct-q4_K_M")
+    temperatur = Column(Float, default=0.7)
+    skills = Column(JSON, default=dict)
+    kanaele = Column(JSON, default=list)
+    system_prompt = Column(Text, default="")
+    kontext = Column(Text, default="")
+    prompt_regeln = Column(Text, default="")
+    status = Column(String(32), default="aktiv")  # aktiv, inaktiv, testing
+    version = Column(String(16), default="v1.0")
+    erstellt = Column(DateTime, default=_utcnow)
+    geaendert = Column(DateTime, default=_utcnow)
+
+
+class AiIntegration(Base):
+    __tablename__ = "ai_integrationen"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(128))
+    kategorie = Column(String(64), default="")
+    api_url = Column(String(512), default="")
+    auth_typ = Column(String(32), default="apikey")
+    auth_user = Column(String(256), default="")
+    auth_pass = Column(String(256), default="")
+    mapping = Column(Text, default="")
+    aktiv = Column(Boolean, default=False)
+    erstellt = Column(DateTime, default=_utcnow)
+
+
 class Einstellung(Base):
     __tablename__ = "einstellungen"
     id = Column(Integer, primary_key=True, autoincrement=True)
