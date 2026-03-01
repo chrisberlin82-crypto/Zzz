@@ -101,23 +101,30 @@ else
     echo "  .env vorhanden."
 fi
 
-# ===== 6. Port 80 freimachen =====
+# ===== 6. Ports freimachen (80, 5000, 8000) =====
 echo ""
-echo "[6/8] Port 80 freimachen..."
+echo "[6/8] Ports freimachen..."
 systemctl stop nginx 2>/dev/null || true
 systemctl stop apache2 2>/dev/null || true
+# Alte Container und Orphans stoppen
 cd "$APP_DIR/deploy/hetzner"
-$COMPOSE down 2>/dev/null || true
+$COMPOSE down --remove-orphans 2>/dev/null || true
+# Alte Prozesse auf benoetigten Ports killen (z.B. nohup uvicorn)
+pkill -f "uvicorn main:app" 2>/dev/null || true
+pkill -f "flask run" 2>/dev/null || true
+sleep 2
 fuser -k 80/tcp 2>/dev/null || true
+fuser -k 5000/tcp 2>/dev/null || true
+fuser -k 8000/tcp 2>/dev/null || true
 sleep 1
-echo "  Port 80 frei."
+echo "  Ports 80, 5000, 8000 frei."
 
 # ===== 7. Docker Container bauen und starten =====
 echo ""
 echo "[7/8] Container bauen und starten..."
 cd "$APP_DIR/deploy/hetzner"
 $COMPOSE build --no-cache
-$COMPOSE up -d
+$COMPOSE up -d --remove-orphans
 
 echo ""
 echo "  Container-Status:"
@@ -127,9 +134,13 @@ echo ""
 # Warten auf Start
 echo "  Warte auf Backend..."
 for i in $(seq 1 30); do
-    if curl -sf http://localhost:8000/api/system/status &>/dev/null; then
+    if curl -sf http://localhost/api/system/status &>/dev/null; then
         echo "  Backend ist online!"
         break
+    fi
+    if [ "$i" -eq 30 ]; then
+        echo "  WARNUNG: Backend antwortet noch nicht. Logs pruefen:"
+        echo "    cd $APP_DIR/deploy/hetzner && $COMPOSE logs voicebot"
     fi
     sleep 2
 done
