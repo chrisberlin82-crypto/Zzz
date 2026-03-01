@@ -1,232 +1,313 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Auswertungen – MedReception</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zzz Platform - Auswertungen</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="stylesheet" href="style.css">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: #f8fafc; display: flex; }
+  .sidebar { width: 220px; background: white; border-right: 1px solid #e5e7eb; padding: 20px 12px; flex-shrink: 0; min-height: 100vh; }
+  .sidebar-logo { display: flex; align-items: center; gap: 10px; padding: 8px 10px; margin-bottom: 24px; }
+  .sidebar-logo .icon { width: 34px; height: 34px; background: #2563eb; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 16px; }
+  .sidebar-logo span { font-weight: 700; font-size: 15px; color: #111827; }
+  .nav-group { font-size: 10px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; padding: 0 12px; margin: 14px 0 6px; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 10px; font-size: 13px; font-weight: 500; color: #6b7280; cursor: pointer; margin-bottom: 2px; }
+  .nav-item.active { background: #eff6ff; color: #2563eb; }
+  .nav-item:hover:not(.active) { background: #f9fafb; color: #374151; }
+  .main { flex: 1; padding: 28px; overflow: auto; }
+  .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+  h1 { font-size: 22px; font-weight: 700; color: #111827; }
+  .date-line { font-size: 13px; color: #6b7280; margin-bottom: 20px; }
+  .period-btns { display: flex; gap: 6px; margin-bottom: 20px; }
+  .period-btn { padding: 7px 16px; border-radius: 8px; font-size: 12px; font-weight: 600; border: 1px solid #e5e7eb; background: white; color: #6b7280; cursor: pointer; }
+  .period-btn.active { background: #2563eb; color: white; border-color: #2563eb; }
+  .period-btn:hover:not(.active) { background: #f9fafb; color: #374151; }
+  .kpi-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 20px; }
+  .kpi { background: white; border-radius: 12px; border: 1px solid #e5e7eb; padding: 18px; }
+  .kpi-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .kpi-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+  .kpi-icon.blue { background: #eff6ff; color: #2563eb; }
+  .kpi-icon.green { background: #f0fdf4; color: #16a34a; }
+  .kpi-icon.red { background: #fef2f2; color: #dc2626; }
+  .kpi-icon.amber { background: #fffbeb; color: #d97706; }
+  .kpi-icon.purple { background: #faf5ff; color: #9333ea; }
+  .kpi-label { font-size: 12px; color: #6b7280; font-weight: 500; }
+  .kpi-value { font-size: 24px; font-weight: 700; color: #111827; margin-top: 4px; }
+  .kpi-sub { font-size: 11px; color: #6b7280; margin-top: 4px; }
+  .kpi-sub.positive { color: #16a34a; }
+  .kpi-sub.negative { color: #dc2626; }
+  .card { background: white; border-radius: 12px; border: 1px solid #e5e7eb; margin-bottom: 20px; }
+  .card-header { padding: 16px 20px; border-bottom: 1px solid #f3f4f6; font-weight: 600; font-size: 14px; color: #111827; }
+  .card-body { padding: 20px; }
+  .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  label { display: block; font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 6px; }
+  .table-container { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead { background: #f9fafb; }
+  th { text-align: left; padding: 10px 14px; font-weight: 600; color: #6b7280; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e5e7eb; }
+  td { padding: 12px 14px; border-bottom: 1px solid #f3f4f6; color: #374151; }
+  td.fw { font-weight: 600; color: #111827; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+  .badge-success { background: #f0fdf4; color: #16a34a; }
+  .badge-warning { background: #fffbeb; color: #d97706; }
+  .badge-info { background: #eff6ff; color: #2563eb; }
+  .badge-gray { background: #f3f4f6; color: #6b7280; }
+  .cost-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: #f9fafb; border-radius: 8px; }
+  .cost-label { font-size: 13px; color: #374151; font-weight: 500; }
+  .cost-value { font-size: 16px; font-weight: 700; color: #111827; }
+  .cost-total { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; background: #eff6ff; border-radius: 8px; margin-top: 12px; }
+  .cost-total .cost-label { font-weight: 700; color: #111827; }
+  .cost-total .cost-value { font-size: 20px; color: #2563eb; }
+  .stars { color: #f59e0b; }
+</style>
 </head>
 <body>
-    <aside class="sidebar" id="sidebar">
-        <div class="sidebar-logo" onclick="location.href='admin-dashboard.html'"><div class="icon">M</div><span>MedReception</span></div>
-        <nav class="sidebar-nav">
-            <div class="nav-group">Uebersicht</div>
-            <a href="admin-dashboard.html"><i class="fa-solid fa-gauge nav-icon"></i> Dashboard</a>
-            <div class="nav-group">Praxis</div>
-            <a href="patienten.html"><i class="fa-solid fa-users nav-icon"></i> Patienten</a>
-            <a href="aerzte.html"><i class="fa-solid fa-user-doctor nav-icon"></i> Aerzte</a>
-            <a href="termine.html"><i class="fa-solid fa-calendar-days nav-icon"></i> Termine</a>
-            <a href="wartezimmer.html"><i class="fa-solid fa-couch nav-icon"></i> Wartezimmer</a>
-            <div class="nav-group">Callcenter</div>
-            <a href="agenten.html"><i class="fa-solid fa-headset nav-icon"></i> Agenten</a>
-            <a href="voicebot.html"><i class="fa-solid fa-robot nav-icon"></i> Voicebot</a>
-            <a href="voicebot-live.html"><i class="fa-solid fa-microphone nav-icon"></i> Voicebot Live</a>
-            <a href="ansagen.html"><i class="fa-solid fa-tower-broadcast nav-icon"></i> Ansagen</a>
-            <a href="softphone.html"><i class="fa-solid fa-phone nav-icon"></i> Softphone</a>
-            <div class="nav-group">Telefonie</div>
-            <a href="asterisk.html"><i class="fa-solid fa-server nav-icon"></i> Asterisk</a>
-            <a href="acd.html"><i class="fa-solid fa-phone-volume nav-icon"></i> ACD</a>
-            <a href="standort.html"><i class="fa-solid fa-building nav-icon"></i> Standort</a>
-            <a href="callflow.html"><i class="fa-solid fa-diagram-project nav-icon"></i> Callflow</a>
-            <div class="nav-group">Analyse</div>
-            <a href="auswertung.html" class="active"><i class="fa-solid fa-chart-line nav-icon"></i> Auswertungen</a>
-            <a href="wissensdatenbank.html"><i class="fa-solid fa-book nav-icon"></i> Wissensdatenbank</a>
-            <a href="uebersetzung.html"><i class="fa-solid fa-language nav-icon"></i> Uebersetzer</a>
-            <div class="nav-group">Admin</div>
-            <a href="benutzer.html"><i class="fa-solid fa-user-gear nav-icon"></i> Benutzer</a>
-            <div class="nav-group">KI</div>
-            <a href="ai-agent.html"><i class="fa-solid fa-microchip nav-icon"></i> AI Agent Hub</a>
 
-        </nav>
-        <div class="sidebar-footer">
-            <button onclick="sessionStorage.removeItem('mr_guard_session');location.href='index.html'" type="button"><i class="fa-solid fa-right-from-bracket nav-icon"></i> Abmelden</button>
-        </div>
-    </aside>
-    <div class="main-wrapper">
-        <header class="topbar">
-            <button id="menu-toggle" type="button"><i class="fa-solid fa-bars"></i></button>
-            <h1><i class="fa-solid fa-chart-line"></i> Auswertungen &amp; Kosten</h1>
-            <div class="topbar-right">Demo-Modus</div>
-        </header>
-        <main>
-            <!-- Zeitraum-Filter -->
-            <div class="card" style="margin-bottom:1.5rem">
-                <div style="display:flex;gap:1rem;align-items:center;flex-wrap:wrap">
-                    <div class="form-group" style="margin:0">
-                        <label for="aw-zeitraum" style="font-size:0.8rem;margin-bottom:0.25rem">Zeitraum</label>
-                        <select id="aw-zeitraum">
-                            <option value="heute">Heute</option>
-                            <option value="woche" selected>Diese Woche</option>
-                            <option value="monat">Dieser Monat</option>
-                            <option value="quartal">Quartal</option>
-                            <option value="jahr">Dieses Jahr</option>
-                        </select>
-                    </div>
-                    <div class="form-group" style="margin:0">
-                        <label for="aw-von" style="font-size:0.8rem;margin-bottom:0.25rem">Von</label>
-                        <input type="date" id="aw-von">
-                    </div>
-                    <div class="form-group" style="margin:0">
-                        <label for="aw-bis" style="font-size:0.8rem;margin-bottom:0.25rem">Bis</label>
-                        <input type="date" id="aw-bis">
-                    </div>
-                    <div class="form-group" style="margin:0">
-                        <label for="aw-standort" style="font-size:0.8rem;margin-bottom:0.25rem">Standort</label>
-                        <select id="aw-standort">
-                            <option value="">Alle Standorte</option>
-                            <option value="hauptpraxis">Hauptpraxis</option>
-                            <option value="filiale1">Filiale Nord</option>
-                            <option value="filiale2">Filiale Sued</option>
-                        </select>
-                    </div>
-                    <button type="button" id="btn-aw-aktualisieren" class="btn-primary" style="margin-top:auto"><i class="fa-solid fa-rotate"></i> Aktualisieren</button>
-                    <button type="button" id="btn-aw-export" style="margin-top:auto;background:var(--success)"><i class="fa-solid fa-file-csv"></i> CSV Export</button>
-                </div>
-            </div>
+<div class="sidebar">
+  <div class="sidebar-logo"><div class="icon">Z</div><span>Zzz Platform</span></div>
+  <div class="nav-group">Uebersicht</div>
+  <div class="nav-item" onclick="location.href='admin-dashboard.html'"><i class="fa-solid fa-gauge"></i> Dashboard</div>
+  <div class="nav-group">AI & Automatisierung</div>
+  <div class="nav-item" onclick="location.href='ai-agent.html'"><i class="fa-solid fa-microchip"></i> AI Agents</div>
+  <div class="nav-item" onclick="location.href='wissensdatenbank.html'"><i class="fa-solid fa-book"></i> Wissensdatenbank</div>
+  <div class="nav-item" onclick="location.href='ansagen.html'"><i class="fa-solid fa-tower-broadcast"></i> Ansagen</div>
+  <div class="nav-group">Callcenter</div>
+  <div class="nav-item" onclick="location.href='agent-board.html'"><i class="fa-solid fa-headset"></i> Agent Board</div>
+  <div class="nav-item" onclick="location.href='softphone.html'"><i class="fa-solid fa-phone"></i> Softphone</div>
+  <div class="nav-item" onclick="location.href='agenten.html'"><i class="fa-solid fa-users-gear"></i> Agenten Verwaltung</div>
+  <div class="nav-group">System</div>
+  <div class="nav-item active" onclick="location.href='auswertung.html'"><i class="fa-solid fa-chart-line"></i> Auswertungen</div>
+  <div class="nav-item" onclick="location.href='benutzer.html'"><i class="fa-solid fa-user-gear"></i> Benutzer</div>
+  <div class="nav-group"></div>
+  <div class="nav-item" onclick="sessionStorage.removeItem('mr_guard_session');location.href='index.html'"><i class="fa-solid fa-right-from-bracket"></i> Abmelden</div>
+</div>
 
-            <!-- KPI Uebersicht -->
-            <div class="stat-grid" style="margin-bottom:1.5rem">
-                <div class="stat-card">
-                    <div class="stat-icon bg-primary"><i class="fa-solid fa-phone"></i></div>
-                    <div class="stat-content">
-                        <div class="stat-value" id="aw-anrufe-gesamt">0</div>
-                        <div class="stat-label">Anrufe gesamt</div>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon bg-success"><i class="fa-solid fa-phone-volume"></i></div>
-                    <div class="stat-content">
-                        <div class="stat-value" id="aw-angenommen">0</div>
-                        <div class="stat-label">Angenommen</div>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon bg-danger"><i class="fa-solid fa-phone-slash"></i></div>
-                    <div class="stat-content">
-                        <div class="stat-value" id="aw-verpasst">0</div>
-                        <div class="stat-label">Verpasst</div>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon bg-info"><i class="fa-solid fa-robot"></i></div>
-                    <div class="stat-content">
-                        <div class="stat-value" id="aw-voicebot">0</div>
-                        <div class="stat-label">Voicebot erledigt</div>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon bg-warning"><i class="fa-solid fa-clock"></i></div>
-                    <div class="stat-content">
-                        <div class="stat-value" id="aw-wartezeit">0s</div>
-                        <div class="stat-label">Avg. Wartezeit</div>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon" style="background:#7c3aed"><i class="fa-solid fa-stopwatch"></i></div>
-                    <div class="stat-content">
-                        <div class="stat-value" id="aw-gespraechsdauer">0s</div>
-                        <div class="stat-label">Avg. Gespraechsdauer</div>
-                    </div>
-                </div>
-            </div>
+<div class="main">
+  <div class="top-bar">
+    <h1>Auswertungen</h1>
+  </div>
+  <div class="date-line">Samstag, 01. Maerz 2026</div>
 
-            <!-- Anrufverlauf Chart (CSS-basiert) -->
-            <div class="card" style="margin-bottom:1.5rem">
-                <h2><i class="fa-solid fa-chart-bar"></i> Anrufverlauf</h2>
-                <div id="aw-chart-anrufe" style="margin-top:1rem;display:flex;align-items:flex-end;gap:4px;height:200px;padding:0 0.5rem;border-bottom:2px solid var(--border)"></div>
-                <div id="aw-chart-labels" style="display:flex;gap:4px;padding:0.5rem 0.5rem 0;font-size:0.7rem;color:var(--text-muted)"></div>
-                <div style="display:flex;gap:1.5rem;margin-top:0.75rem;font-size:0.8rem;color:var(--text-muted)">
-                    <span><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:var(--primary);vertical-align:middle"></span> Angenommen</span>
-                    <span><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:var(--danger);vertical-align:middle"></span> Verpasst</span>
-                    <span><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:var(--info);vertical-align:middle"></span> Voicebot</span>
-                </div>
-            </div>
+  <!-- Period Buttons -->
+  <div class="period-btns">
+    <button class="period-btn active">Heute</button>
+    <button class="period-btn">Woche</button>
+    <button class="period-btn">Monat</button>
+    <button class="period-btn">Quartal</button>
+    <button class="period-btn">Jahr</button>
+  </div>
 
-            <!-- Zwei-Spalten: Agenten-Performance + Kosten -->
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem">
-                <!-- Agenten-Performance -->
-                <div class="card">
-                    <h2><i class="fa-solid fa-headset"></i> Agenten-Performance</h2>
-                    <table style="width:100%;margin-top:1rem;font-size:0.85rem" id="aw-agenten-tabelle">
-                        <thead>
-                            <tr>
-                                <th>Agent</th>
-                                <th>Anrufe</th>
-                                <th>Avg. Dauer</th>
-                                <th>Erreichbarkeit</th>
-                                <th>Bewertung</th>
-                            </tr>
-                        </thead>
-                        <tbody id="aw-agenten-body"></tbody>
-                    </table>
-                </div>
-
-                <!-- Kosten -->
-                <div class="card">
-                    <h2><i class="fa-solid fa-euro-sign"></i> Kosten &amp; Ersparnis</h2>
-                    <div id="aw-kosten-bereich" style="margin-top:1rem"></div>
-                </div>
-            </div>
-
-            <!-- Zwei-Spalten: Top Anrufgruende + Erreichbarkeit-Verlauf -->
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem">
-                <!-- Top Anrufgruende -->
-                <div class="card">
-                    <h2><i class="fa-solid fa-list-ol"></i> Top Anrufgruende</h2>
-                    <div id="aw-anrufgruende" style="margin-top:1rem"></div>
-                </div>
-
-                <!-- Erreichbarkeit nach Tageszeit -->
-                <div class="card">
-                    <h2><i class="fa-solid fa-clock"></i> Erreichbarkeit nach Tageszeit</h2>
-                    <div id="aw-tageszeit" style="margin-top:1rem"></div>
-                </div>
-            </div>
-
-            <!-- Einzelverbindungsnachweis -->
-            <div class="card">
-                <div style="display:flex;justify-content:space-between;align-items:center">
-                    <h2><i class="fa-solid fa-list"></i> Einzelverbindungsnachweis (EVN)</h2>
-                    <div style="display:flex;gap:0.5rem">
-                        <input type="text" id="aw-evn-suche" placeholder="Suchen..." style="font-size:0.85rem;width:200px">
-                        <select id="aw-evn-filter" style="font-size:0.85rem">
-                            <option value="">Alle</option>
-                            <option value="angenommen">Angenommen</option>
-                            <option value="verpasst">Verpasst</option>
-                            <option value="voicebot">Voicebot</option>
-                            <option value="weiterleitung">Weiterleitung</option>
-                        </select>
-                    </div>
-                </div>
-                <table style="width:100%;margin-top:1rem;font-size:0.85rem">
-                    <thead>
-                        <tr>
-                            <th>Datum/Zeit</th>
-                            <th>Rufnummer</th>
-                            <th>Richtung</th>
-                            <th>Agent</th>
-                            <th>Dauer</th>
-                            <th>Status</th>
-                            <th>Kosten</th>
-                        </tr>
-                    </thead>
-                    <tbody id="aw-evn-body"></tbody>
-                </table>
-                <div id="aw-evn-paging" style="display:flex;justify-content:space-between;align-items:center;margin-top:1rem;font-size:0.85rem"></div>
-            </div>
-        </main>
+  <!-- KPI Grid -->
+  <div class="kpi-grid">
+    <div class="kpi">
+      <div class="kpi-header">
+        <div class="kpi-label">Anrufe gesamt</div>
+        <div class="kpi-icon blue"><i class="fa-solid fa-phone"></i></div>
+      </div>
+      <div class="kpi-value">1.247</div>
+      <div class="kpi-sub positive">+12%</div>
     </div>
-    <button id="chat-toggle" type="button"><i class="fa-solid fa-comment-dots"></i></button>
-    <div id="chat-fenster">
-        <div class="chat-header"><span><i class="fa-solid fa-robot"></i> Praxis-Assistent</span><button id="chat-schliessen" type="button"><i class="fa-solid fa-xmark"></i></button></div>
-        <div id="chat-nachrichten"></div>
-        <div class="chat-eingabe">
-            <input id="chat-input" type="text" placeholder="Frage stellen oder sprechen...">
-            <button id="chat-mikrofon" type="button" title="Sprechen"><i class="fa-solid fa-microphone"></i></button>
-            <button id="chat-senden" type="button"><i class="fa-solid fa-paper-plane"></i></button>
-        </div>
+    <div class="kpi">
+      <div class="kpi-header">
+        <div class="kpi-label">Angenommen</div>
+        <div class="kpi-icon green"><i class="fa-solid fa-phone-volume"></i></div>
+      </div>
+      <div class="kpi-value">1.108</div>
+      <div class="kpi-sub">88.9%</div>
     </div>
-    <script src="app.js"></script>
+    <div class="kpi">
+      <div class="kpi-header">
+        <div class="kpi-label">Verpasst</div>
+        <div class="kpi-icon red"><i class="fa-solid fa-phone-slash"></i></div>
+      </div>
+      <div class="kpi-value">139</div>
+      <div class="kpi-sub">11.1%</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-header">
+        <div class="kpi-label">Avg Wartezeit</div>
+        <div class="kpi-icon amber"><i class="fa-solid fa-clock"></i></div>
+      </div>
+      <div class="kpi-value">0:34</div>
+      <div class="kpi-sub positive">-8%</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-header">
+        <div class="kpi-label">Avg Gespraechsdauer</div>
+        <div class="kpi-icon purple"><i class="fa-solid fa-hourglass"></i></div>
+      </div>
+      <div class="kpi-value">4:12</div>
+      <div class="kpi-sub">+0:15</div>
+    </div>
+  </div>
+
+  <!-- Anruf-Statistiken -->
+  <div class="card">
+    <div class="card-header">Anruf-Statistiken</div>
+    <div class="card-body">
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Zeitraum</th>
+              <th>Eingehend</th>
+              <th>Ausgehend</th>
+              <th>Angenommen</th>
+              <th>Verpasst</th>
+              <th>Avg Wartezeit</th>
+              <th>Avg Dauer</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="fw">Montag</td>
+              <td>287</td>
+              <td>45</td>
+              <td>261</td>
+              <td>26</td>
+              <td>0:28</td>
+              <td>3:45</td>
+            </tr>
+            <tr>
+              <td class="fw">Dienstag</td>
+              <td>312</td>
+              <td>52</td>
+              <td>278</td>
+              <td>34</td>
+              <td>0:35</td>
+              <td>4:02</td>
+            </tr>
+            <tr>
+              <td class="fw">Mittwoch</td>
+              <td>245</td>
+              <td>38</td>
+              <td>220</td>
+              <td>25</td>
+              <td>0:31</td>
+              <td>4:18</td>
+            </tr>
+            <tr>
+              <td class="fw">Donnerstag</td>
+              <td>298</td>
+              <td>41</td>
+              <td>264</td>
+              <td>34</td>
+              <td>0:38</td>
+              <td>4:25</td>
+            </tr>
+            <tr>
+              <td class="fw">Freitag</td>
+              <td>205</td>
+              <td>31</td>
+              <td>185</td>
+              <td>20</td>
+              <td>0:30</td>
+              <td>3:52</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Agent-Performance -->
+  <div class="card">
+    <div class="card-header">Agent-Performance</div>
+    <div class="card-body">
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Agent</th>
+              <th>Anrufe</th>
+              <th>Angenommen</th>
+              <th>Verpasst</th>
+              <th>Avg Dauer</th>
+              <th>Avg Nacharbeit</th>
+              <th>Bewertung</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="fw">Dr. Schmidt</td>
+              <td>312</td>
+              <td>298</td>
+              <td>14</td>
+              <td>4:35</td>
+              <td>1:20</td>
+              <td><span class="stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></span> 4.9</td>
+            </tr>
+            <tr>
+              <td class="fw">Anna Weber</td>
+              <td>285</td>
+              <td>267</td>
+              <td>18</td>
+              <td>3:50</td>
+              <td>1:05</td>
+              <td><span class="stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star-half-stroke"></i></span> 4.7</td>
+            </tr>
+            <tr>
+              <td class="fw">Chris Mueller</td>
+              <td>248</td>
+              <td>220</td>
+              <td>28</td>
+              <td>4:10</td>
+              <td>1:30</td>
+              <td><span class="stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-regular fa-star"></i></span> 4.2</td>
+            </tr>
+            <tr>
+              <td class="fw">Laura Klein</td>
+              <td>215</td>
+              <td>198</td>
+              <td>17</td>
+              <td>3:45</td>
+              <td>0:55</td>
+              <td><span class="stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></span> 4.8</td>
+            </tr>
+            <tr>
+              <td class="fw">Tom Huber</td>
+              <td>187</td>
+              <td>165</td>
+              <td>22</td>
+              <td>4:25</td>
+              <td>1:15</td>
+              <td><span class="stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-regular fa-star"></i></span> 4.0</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Kosten-Uebersicht -->
+  <div class="card">
+    <div class="card-header">Kosten-Uebersicht</div>
+    <div class="card-body">
+      <div class="form-row-3">
+        <div class="cost-item">
+          <span class="cost-label">Telefonie</span>
+          <span class="cost-value">&euro; 234.50</span>
+        </div>
+        <div class="cost-item">
+          <span class="cost-label">AI-Agent</span>
+          <span class="cost-value">&euro; 89.20</span>
+        </div>
+        <div class="cost-item">
+          <span class="cost-label">TTS/STT</span>
+          <span class="cost-value">&euro; 45.80</span>
+        </div>
+      </div>
+      <div class="cost-total">
+        <span class="cost-label">Gesamt</span>
+        <span class="cost-value">&euro; 369.50</span>
+      </div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

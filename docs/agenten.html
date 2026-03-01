@@ -1,108 +1,201 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agenten – MedReception</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zzz Platform - Agenten Verwaltung</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <aside class="sidebar" id="sidebar">
-        <div class="sidebar-logo" onclick="location.href='admin-dashboard.html'"><div class="icon">M</div><span>MedReception</span></div>
-        <nav class="sidebar-nav">
-            <div class="nav-group">Uebersicht</div>
-            <a href="admin-dashboard.html"><i class="fa-solid fa-gauge nav-icon"></i> Dashboard</a>
-            <div class="nav-group">Praxis</div>
-            <a href="patienten.html"><i class="fa-solid fa-users nav-icon"></i> Patienten</a>
-            <a href="aerzte.html"><i class="fa-solid fa-user-doctor nav-icon"></i> Aerzte</a>
-            <a href="termine.html"><i class="fa-solid fa-calendar-days nav-icon"></i> Termine</a>
-            <a href="wartezimmer.html"><i class="fa-solid fa-couch nav-icon"></i> Wartezimmer</a>
-            <div class="nav-group">Callcenter</div>
-            <a href="agenten.html" class="active"><i class="fa-solid fa-headset nav-icon"></i> Agenten</a>
-            <a href="voicebot.html"><i class="fa-solid fa-robot nav-icon"></i> Voicebot</a>
-            <a href="voicebot-live.html"><i class="fa-solid fa-microphone nav-icon"></i> Voicebot Live</a>
-            <a href="ansagen.html"><i class="fa-solid fa-tower-broadcast nav-icon"></i> Ansagen</a>
-            <a href="softphone.html"><i class="fa-solid fa-phone nav-icon"></i> Softphone</a>
-            <div class="nav-group">Telefonie</div>
-            <a href="asterisk.html"><i class="fa-solid fa-server nav-icon"></i> Asterisk</a>
-            <a href="acd.html"><i class="fa-solid fa-phone-volume nav-icon"></i> ACD</a>
-            <a href="standort.html"><i class="fa-solid fa-building nav-icon"></i> Standort</a>
-            <a href="callflow.html"><i class="fa-solid fa-diagram-project nav-icon"></i> Callflow</a>
-            <div class="nav-group">Analyse</div>
-            <a href="auswertung.html"><i class="fa-solid fa-chart-line nav-icon"></i> Auswertungen</a>
-            <a href="wissensdatenbank.html"><i class="fa-solid fa-book nav-icon"></i> Wissensdatenbank</a>
-            <a href="uebersetzung.html"><i class="fa-solid fa-language nav-icon"></i> Uebersetzer</a>
-            <div class="nav-group">Admin</div>
-            <a href="benutzer.html"><i class="fa-solid fa-user-gear nav-icon"></i> Benutzer</a>
-            <div class="nav-group">KI</div>
-            <a href="ai-agent.html"><i class="fa-solid fa-microchip nav-icon"></i> AI Agent Hub</a>
 
-        </nav>
-        <div class="sidebar-footer">
-            <button onclick="sessionStorage.removeItem('mr_guard_session');location.href='index.html'" type="button"><i class="fa-solid fa-right-from-bracket nav-icon"></i> Abmelden</button>
-        </div>
-    </aside>
-    <div class="main-wrapper">
-        <header class="topbar">
-            <button id="menu-toggle" type="button"><i class="fa-solid fa-bars"></i></button>
-            <h1>Agenten &amp; Telefonie</h1>
-            <div class="topbar-right"><span class="badge" id="agenten-online-badge">0 online</span></div>
-        </header>
-        <main>
-            <section id="agent-formular" class="card">
-                <h2 id="agent-formular-titel">Agent anlegen</h2>
-                <form id="agent-form">
-                    <input type="hidden" id="agent-id">
-                    <div class="form-row">
-                        <div class="form-group"><label for="agent-name">Name</label><input type="text" id="agent-name" required></div>
-                        <div class="form-group"><label for="agent-nebenstelle">Nebenstelle</label><input type="text" id="agent-nebenstelle" required></div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group"><label for="agent-sip-passwort">SIP-Passwort</label><input type="password" id="agent-sip-passwort" required></div>
-                        <div class="form-group"><label for="agent-rolle">Rolle</label><select id="agent-rolle"><option value="rezeption">Rezeption</option><option value="arzt">Arzt</option><option value="verwaltung">Verwaltung</option><option value="teamleiter">Teamleiter</option><option value="standortleitung">Standortleitung</option></select></div>
-                    </div>
-                    <div class="form-group"><label for="agent-warteschlange">Warteschlange</label><select id="agent-warteschlange"><option value="rezeption">Rezeption</option><option value="terminvergabe">Terminvergabe</option><option value="dringend">Dringend</option><option value="allgemein">Allgemein</option></select></div>
-                    <div class="button-gruppe">
-                        <button type="submit" id="btn-agent-speichern">Speichern</button>
-                        <button type="button" id="btn-agent-abbrechen" hidden>Abbrechen</button>
-                    </div>
-                </form>
-                <div id="agent-erfolg" class="ergebnis" hidden></div>
-                <div id="agent-fehler" class="fehler" hidden></div>
-            </section>
-            <section class="card">
-                <h2>Agenten-Board</h2>
-                <div class="agenten-grid" id="agenten-karten"></div>
-            </section>
-            <section class="card">
-                <div class="section-header">
-                    <h2>Aktive Anrufe</h2>
-                    <span class="badge badge-rot" id="anrufe-aktiv-badge">0 aktiv</span>
-                </div>
-                <div id="aktive-anrufe-liste"></div>
-            </section>
-            <section class="card">
-                <h2>Anrufprotokoll</h2>
-                <div class="table-container">
-                    <table id="anrufe-tabelle">
-                        <thead><tr><th>Zeit</th><th>Anrufer</th><th>Agent</th><th>Queue</th><th>Typ</th><th>Status</th><th>Dauer</th></tr></thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-            </section>
-        </main>
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-logo"><div class="icon">Z</div><span>Zzz Platform</span></div>
+    <div class="nav-group">Uebersicht</div>
+    <div class="nav-item" onclick="location.href='admin-dashboard.html'">
+      <i class="fa-solid fa-gauge"></i> Dashboard
     </div>
-    <button id="chat-toggle" type="button"><i class="fa-solid fa-comment-dots"></i></button>
-    <div id="chat-fenster">
-        <div class="chat-header"><span><i class="fa-solid fa-robot"></i> Praxis-Assistent</span><button id="chat-schliessen" type="button"><i class="fa-solid fa-xmark"></i></button></div>
-        <div id="chat-nachrichten"></div>
-        <div class="chat-eingabe">
-            <input id="chat-input" type="text" placeholder="Frage stellen oder sprechen...">
-            <button id="chat-mikrofon" type="button" title="Sprechen"><i class="fa-solid fa-microphone"></i></button>
-            <button id="chat-senden" type="button"><i class="fa-solid fa-paper-plane"></i></button>
-        </div>
+    <div class="nav-group">AI & Automatisierung</div>
+    <div class="nav-item" onclick="location.href='ai-agent.html'">
+      <i class="fa-solid fa-microchip"></i> AI Agents
     </div>
-    <script src="app.js"></script>
+    <div class="nav-item" onclick="location.href='wissensdatenbank.html'">
+      <i class="fa-solid fa-book"></i> Wissensdatenbank
+    </div>
+    <div class="nav-item" onclick="location.href='ansagen.html'">
+      <i class="fa-solid fa-tower-broadcast"></i> Ansagen
+    </div>
+    <div class="nav-group">Callcenter</div>
+    <div class="nav-item" onclick="location.href='agent-board.html'">
+      <i class="fa-solid fa-headset"></i> Agent Board
+    </div>
+    <div class="nav-item" onclick="location.href='softphone.html'">
+      <i class="fa-solid fa-phone"></i> Softphone
+    </div>
+    <div class="nav-item active" onclick="location.href='agenten.html'">
+      <i class="fa-solid fa-users-gear"></i> Agenten Verwaltung
+    </div>
+    <div class="nav-group">System</div>
+    <div class="nav-item" onclick="location.href='auswertung.html'">
+      <i class="fa-solid fa-chart-line"></i> Auswertungen
+    </div>
+    <div class="nav-item" onclick="location.href='benutzer.html'">
+      <i class="fa-solid fa-user-gear"></i> Benutzer
+    </div>
+    <div class="nav-group"></div>
+    <div class="nav-item" onclick="sessionStorage.removeItem('mr_guard_session');location.href='index.html'">
+      <i class="fa-solid fa-right-from-bracket"></i> Abmelden
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main">
+
+    <!-- Top Bar -->
+    <div class="top-bar">
+      <h1>Agenten Verwaltung</h1>
+      <div class="live-badge"><span class="live-dot"></span> 5 online</div>
+    </div>
+    <div class="date-line"></div>
+
+    <!-- Agent anlegen/bearbeiten -->
+    <div class="card">
+      <div class="card-header">
+        <h2><i class="fa-solid fa-user-plus"></i> Agent anlegen/bearbeiten</h2>
+      </div>
+      <div class="card-body">
+        <div class="form-row-2">
+          <div>
+            <label>Name</label>
+            <input type="text" placeholder="Vor- und Nachname">
+          </div>
+          <div>
+            <label>Nebenstelle</label>
+            <input type="text" placeholder="z.B. 101">
+          </div>
+        </div>
+        <div class="form-row-2">
+          <div>
+            <label>SIP-Passwort</label>
+            <input type="password" placeholder="SIP-Passwort">
+          </div>
+          <div>
+            <label>Rolle</label>
+            <select>
+              <option>Rezeption</option>
+              <option>Agent</option>
+              <option>Teamleiter</option>
+              <option>Admin</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row-2">
+          <div>
+            <label>Warteschlange</label>
+            <select>
+              <option>Allgemein</option>
+              <option>IT-Support</option>
+              <option>Notfall</option>
+            </select>
+          </div>
+          <div>
+            <label>Status</label>
+            <select>
+              <option>Online</option>
+              <option>Offline</option>
+              <option>Pause</option>
+            </select>
+          </div>
+        </div>
+        <div class="button-gruppe">
+          <button class="btn primary"><i class="fa-solid fa-save"></i> Speichern</button>
+          <button class="btn secondary">Abbrechen</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Agenten-Liste -->
+    <div class="card">
+      <div class="card-header">
+        <h2><i class="fa-solid fa-users"></i> Agenten-Liste</h2>
+      </div>
+      <div class="card-body">
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Nebenstelle</th>
+                <th>Rolle</th>
+                <th>Queue</th>
+                <th>Status</th>
+                <th>Aktionen</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="fw">Dr. Schmidt</td>
+                <td>101</td>
+                <td>Admin</td>
+                <td>Allgemein</td>
+                <td><span class="badge badge-success">Online</span></td>
+                <td>
+                  <button class="btn btn-sm btn-primary"><i class="fa-solid fa-pen"></i> Bearbeiten</button>
+                  <button class="btn btn-sm btn-danger"><i class="fa-solid fa-trash"></i> Loeschen</button>
+                </td>
+              </tr>
+              <tr>
+                <td class="fw">Anna Weber</td>
+                <td>102</td>
+                <td>Agent</td>
+                <td>Allgemein</td>
+                <td><span class="badge badge-success">Online</span></td>
+                <td>
+                  <button class="btn btn-sm btn-primary"><i class="fa-solid fa-pen"></i> Bearbeiten</button>
+                  <button class="btn btn-sm btn-danger"><i class="fa-solid fa-trash"></i> Loeschen</button>
+                </td>
+              </tr>
+              <tr>
+                <td class="fw">Chris Mueller</td>
+                <td>103</td>
+                <td>Agent</td>
+                <td>IT-Support</td>
+                <td><span class="badge badge-warning">Pause</span></td>
+                <td>
+                  <button class="btn btn-sm btn-primary"><i class="fa-solid fa-pen"></i> Bearbeiten</button>
+                  <button class="btn btn-sm btn-danger"><i class="fa-solid fa-trash"></i> Loeschen</button>
+                </td>
+              </tr>
+              <tr>
+                <td class="fw">Laura Klein</td>
+                <td>104</td>
+                <td>Agent</td>
+                <td>Allgemein</td>
+                <td><span class="badge badge-success">Online</span></td>
+                <td>
+                  <button class="btn btn-sm btn-primary"><i class="fa-solid fa-pen"></i> Bearbeiten</button>
+                  <button class="btn btn-sm btn-danger"><i class="fa-solid fa-trash"></i> Loeschen</button>
+                </td>
+              </tr>
+              <tr>
+                <td class="fw">Tom Huber</td>
+                <td>105</td>
+                <td>Agent</td>
+                <td>Notfall</td>
+                <td><span class="badge badge-success">Online</span></td>
+                <td>
+                  <button class="btn btn-sm btn-primary"><i class="fa-solid fa-pen"></i> Bearbeiten</button>
+                  <button class="btn btn-sm btn-danger"><i class="fa-solid fa-trash"></i> Loeschen</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
 </body>
 </html>

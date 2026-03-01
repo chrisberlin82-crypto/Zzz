@@ -3,362 +3,262 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Audio Studio – MedReception</title>
+<title>Zzz Platform - Ansagen</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <link rel="stylesheet" href="style.css">
 <style>
-.studio-tabs{display:flex;gap:4px;margin-bottom:20px;background:white;border:1px solid #e5e7eb;border-radius:12px;padding:5px;width:fit-content}
-.studio-tab{padding:8px 18px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;color:#6b7280;border:none;background:transparent;font-family:inherit;display:flex;align-items:center;gap:6px}
-.studio-tab.active{background:#6366f1;color:white}
-.studio-tab:hover:not(.active){background:#f1f5f9;color:#374151}
-.studio-tab .tc{background:rgba(255,255,255,.2);padding:1px 7px;border-radius:999px;font-size:10px;font-weight:700}
-.studio-tab:not(.active) .tc{background:#f1f5f9;color:#6b7280}
-.amb-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px}
-.amb-card{background:white;border-radius:14px;border:2px solid #e5e7eb;padding:18px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
-.amb-card:hover{border-color:#a5b4fc;box-shadow:0 4px 12px rgba(99,102,241,.1)}
-.amb-card.active{border-color:#6366f1;background:#faf5ff}
-.amb-card.active::after{content:'Aktiv';position:absolute;top:10px;right:10px;background:#6366f1;color:white;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px}
-.amb-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:10px}
-.amb-name{font-size:14px;font-weight:700;color:#1e293b;margin-bottom:3px}
-.amb-desc{font-size:11px;color:#9ca3af;line-height:1.4;margin-bottom:10px}
-.amb-ctrl{display:flex;align-items:center;gap:8px}
-.amb-play{width:32px;height:32px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;color:white}
-.amb-vol{flex:1;accent-color:#6366f1;height:4px}
-.upload-zone{border:2px dashed #d1d5db;border-radius:14px;padding:40px;text-align:center;background:#fafbfc;cursor:pointer;transition:all .2s}
-.upload-zone:hover,.upload-zone.dragover{border-color:#6366f1;background:#f5f3ff}
-.upload-zone i.big{font-size:36px;color:#9ca3af;margin-bottom:12px}
-.upload-zone.dragover i.big{color:#6366f1}
-.file-row{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid #f3f4f6}
-.file-row:last-child{border-bottom:none}
-.file-row:hover{background:#fafbfc}
-.file-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
-.file-info{flex:1}
-.file-name{font-size:13px;font-weight:600;color:#1e293b}
-.file-meta{font-size:11px;color:#9ca3af;display:flex;gap:10px;margin-top:2px}
-.fbtn{width:32px;height:32px;border-radius:8px;border:1px solid #e5e7eb;background:white;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;color:#6b7280}
-.fbtn:hover{background:#f1f5f9;color:#4f46e5}
-.fbtn.del:hover{background:#fef2f2;color:#dc2626}
-.voice-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:20px}
-.voice-card{background:white;border-radius:14px;border:2px solid #e5e7eb;padding:16px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:all .2s}
-.voice-card:hover{border-color:#a5b4fc}
-.voice-card.selected{border-color:#6366f1;background:#faf5ff}
-.voice-av{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
-.voice-info{flex:1}
-.voice-name{font-size:13px;font-weight:700;color:#1e293b}
-.voice-attrs{font-size:11px;color:#9ca3af;display:flex;gap:8px;margin-top:2px}
-.vplay{width:36px;height:36px;border-radius:50%;border:none;background:#6366f1;color:white;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
-.vplay:hover{background:#4f46e5}
-.vtag{padding:2px 8px;border-radius:999px;font-size:10px;font-weight:600}
-.vtag.piper{background:#dbeafe;color:#4f46e5}
-.vtag.azure{background:#dcfce7;color:#15803d}
-.vtag.eleven{background:#fef3c7;color:#92400e}
-.vtag.openai{background:#ede9fe;color:#7c3aed}
-.sec-title{font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
-@media(max-width:900px){.amb-grid{grid-template-columns:repeat(2,1fr)}.voice-grid{grid-template-columns:1fr}}
-@media(max-width:600px){.amb-grid{grid-template-columns:1fr}}
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: #f8fafc; display: flex; }
+  .sidebar { width: 220px; background: white; border-right: 1px solid #e5e7eb; padding: 20px 12px; flex-shrink: 0; min-height: 100vh; }
+  .sidebar-logo { display: flex; align-items: center; gap: 10px; padding: 8px 10px; margin-bottom: 24px; }
+  .sidebar-logo .icon { width: 34px; height: 34px; background: #2563eb; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 16px; }
+  .sidebar-logo span { font-weight: 700; font-size: 15px; color: #111827; }
+  .nav-group { font-size: 10px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; padding: 0 12px; margin: 14px 0 6px; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 10px; font-size: 13px; font-weight: 500; color: #6b7280; cursor: pointer; margin-bottom: 2px; }
+  .nav-item.active { background: #eff6ff; color: #2563eb; }
+  .nav-item:hover:not(.active) { background: #f9fafb; color: #374151; }
+  .main { flex: 1; padding: 28px; overflow: auto; }
+  .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+  h1 { font-size: 22px; font-weight: 700; color: #111827; }
+  .date-line { font-size: 13px; color: #6b7280; margin-bottom: 20px; }
+  .card { background: white; border-radius: 12px; border: 1px solid #e5e7eb; margin-bottom: 20px; }
+  .card-header { padding: 16px 20px; border-bottom: 1px solid #f3f4f6; font-weight: 600; font-size: 14px; color: #111827; }
+  .card-body { padding: 20px; }
+  .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  label { display: block; font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 6px; }
+  input, select, textarea { width: 100%; padding: 9px 12px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 13px; font-family: inherit; outline: none; background: white; }
+  input:focus, select:focus, textarea:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+  textarea { resize: vertical; }
+  input[type="range"] { padding: 0; border: none; box-shadow: none; accent-color: #2563eb; }
+  input[type="range"]:focus { box-shadow: none; }
+  .range-group { display: flex; flex-direction: column; }
+  .range-row { display: flex; align-items: center; gap: 12px; }
+  .range-row input[type="range"] { flex: 1; }
+  .range-value { font-size: 13px; font-weight: 600; color: #2563eb; min-width: 36px; text-align: center; }
+  .button-gruppe { display: flex; gap: 10px; margin-top: 16px; }
+  .btn { padding: 9px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+  .btn.primary { background: #2563eb; color: white; }
+  .btn.primary:hover { background: #1d4ed8; }
+  .btn.secondary { background: #f3f4f6; color: #374151; }
+  .btn.secondary:hover { background: #e5e7eb; }
+  .btn-sm { padding: 5px 12px; font-size: 12px; border-radius: 6px; border: none; cursor: pointer; font-weight: 500; }
+  .btn-primary { background: #eff6ff; color: #2563eb; }
+  .btn-primary:hover { background: #dbeafe; }
+  .btn-danger { background: #fef2f2; color: #dc2626; }
+  .btn-danger:hover { background: #fee2e2; }
+  .btn-success { background: #f0fdf4; color: #16a34a; }
+  .btn-success:hover { background: #dcfce7; }
+  .audio-player { display: flex; align-items: center; gap: 16px; padding: 20px; background: #f9fafb; border-radius: 10px; }
+  .audio-play-btn { width: 48px; height: 48px; border-radius: 50%; background: #2563eb; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .audio-play-btn i { color: white; font-size: 16px; }
+  .audio-play-btn:hover { background: #1d4ed8; }
+  .audio-progress { flex: 1; }
+  .audio-progress-bar { height: 6px; background: #e5e7eb; border-radius: 3px; overflow: hidden; }
+  .audio-progress-fill { height: 100%; width: 0%; background: #2563eb; border-radius: 3px; }
+  .audio-time { display: flex; justify-content: space-between; margin-top: 6px; font-size: 12px; color: #9ca3af; }
+  .table-container { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead { background: #f9fafb; }
+  th { text-align: left; padding: 10px 14px; font-weight: 600; color: #6b7280; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e5e7eb; }
+  td { padding: 12px 14px; border-bottom: 1px solid #f3f4f6; color: #374151; }
+  td.fw { font-weight: 600; color: #111827; }
 </style>
 </head>
 <body>
-<aside class="sidebar" id="sidebar">
-  <div class="sidebar-logo" onclick="location.href='admin-dashboard.html'"><div class="icon">M</div><span>MedReception</span></div>
-  <nav class="sidebar-nav">
-            <div class="nav-group">Uebersicht</div>
-            <a href="admin-dashboard.html"><i class="fa-solid fa-gauge nav-icon"></i> Dashboard</a>
-            <div class="nav-group">Praxis</div>
-            <a href="patienten.html"><i class="fa-solid fa-users nav-icon"></i> Patienten</a>
-            <a href="aerzte.html"><i class="fa-solid fa-user-doctor nav-icon"></i> Aerzte</a>
-            <a href="termine.html"><i class="fa-solid fa-calendar-days nav-icon"></i> Termine</a>
-            <a href="wartezimmer.html"><i class="fa-solid fa-couch nav-icon"></i> Wartezimmer</a>
-            <div class="nav-group">Callcenter</div>
-            <a href="agenten.html"><i class="fa-solid fa-headset nav-icon"></i> Agenten</a>
-            <a href="voicebot.html"><i class="fa-solid fa-robot nav-icon"></i> Voicebot</a>
-            <a href="voicebot-live.html"><i class="fa-solid fa-microphone nav-icon"></i> Voicebot Live</a>
-            <a href="ansagen.html" class="active"><i class="fa-solid fa-tower-broadcast nav-icon"></i> Ansagen</a>
-            <a href="softphone.html"><i class="fa-solid fa-phone nav-icon"></i> Softphone</a>
-            <div class="nav-group">Telefonie</div>
-            <a href="asterisk.html"><i class="fa-solid fa-server nav-icon"></i> Asterisk</a>
-            <a href="acd.html"><i class="fa-solid fa-phone-volume nav-icon"></i> ACD</a>
-            <a href="standort.html"><i class="fa-solid fa-building nav-icon"></i> Standort</a>
-            <a href="callflow.html"><i class="fa-solid fa-diagram-project nav-icon"></i> Callflow</a>
-            <div class="nav-group">Analyse</div>
-            <a href="auswertung.html"><i class="fa-solid fa-chart-line nav-icon"></i> Auswertungen</a>
-            <a href="wissensdatenbank.html"><i class="fa-solid fa-book nav-icon"></i> Wissensdatenbank</a>
-            <a href="uebersetzung.html"><i class="fa-solid fa-language nav-icon"></i> Uebersetzer</a>
-            <div class="nav-group">Admin</div>
-            <a href="benutzer.html"><i class="fa-solid fa-user-gear nav-icon"></i> Benutzer</a>
-            <div class="nav-group">KI</div>
-            <a href="ai-agent.html"><i class="fa-solid fa-microchip nav-icon"></i> AI Agent Hub</a>
 
-        </nav>
-  <div class="sidebar-footer">
-    <button onclick="sessionStorage.removeItem('mr_guard_session');location.href='index.html'" type="button"><i class="fa-solid fa-right-from-bracket nav-icon"></i> Abmelden</button>
+<div class="sidebar">
+  <div class="sidebar-logo"><div class="icon">Z</div><span>Zzz Platform</span></div>
+  <div class="nav-group">Uebersicht</div>
+  <div class="nav-item" onclick="location.href='admin-dashboard.html'"><i class="fa-solid fa-gauge"></i> Dashboard</div>
+  <div class="nav-group">AI & Automatisierung</div>
+  <div class="nav-item" onclick="location.href='ai-agent.html'"><i class="fa-solid fa-microchip"></i> AI Agents</div>
+  <div class="nav-item" onclick="location.href='wissensdatenbank.html'"><i class="fa-solid fa-book"></i> Wissensdatenbank</div>
+  <div class="nav-item active" onclick="location.href='ansagen.html'"><i class="fa-solid fa-tower-broadcast"></i> Ansagen</div>
+  <div class="nav-group">Callcenter</div>
+  <div class="nav-item" onclick="location.href='agent-board.html'"><i class="fa-solid fa-headset"></i> Agent Board</div>
+  <div class="nav-item" onclick="location.href='softphone.html'"><i class="fa-solid fa-phone"></i> Softphone</div>
+  <div class="nav-item" onclick="location.href='agenten.html'"><i class="fa-solid fa-users-gear"></i> Agenten Verwaltung</div>
+  <div class="nav-group">System</div>
+  <div class="nav-item" onclick="location.href='auswertung.html'"><i class="fa-solid fa-chart-line"></i> Auswertungen</div>
+  <div class="nav-item" onclick="location.href='benutzer.html'"><i class="fa-solid fa-user-gear"></i> Benutzer</div>
+  <div class="nav-group"></div>
+  <div class="nav-item" onclick="sessionStorage.removeItem('mr_guard_session');location.href='index.html'"><i class="fa-solid fa-right-from-bracket"></i> Abmelden</div>
+</div>
+
+<div class="main">
+  <div class="top-bar">
+    <h1>Ansagen Generator</h1>
   </div>
-</aside>
-<div class="main-wrapper">
-  <header class="topbar">
-    <button id="menu-toggle" type="button"><i class="fa-solid fa-bars"></i></button>
-    <h1><i class="fa-solid fa-tower-broadcast"></i> Audio Studio</h1>
-    <div class="topbar-right">Demo-Modus</div>
-  </header>
-  <main>
-    <!-- Stats -->
-    <div class="stat-grid" style="margin-bottom:1.5rem">
-      <div class="stat-card"><div class="stat-icon bg-primary"><i class="fa-solid fa-volume-high"></i></div><div class="stat-content"><div class="stat-value" id="ans-stat-gesamt">0</div><div class="stat-label">Ansagen</div></div></div>
-      <div class="stat-card"><div class="stat-icon bg-success"><i class="fa-solid fa-cloud-arrow-up"></i></div><div class="stat-content"><div class="stat-value" id="stat-uploads">3</div><div class="stat-label">Uploads</div></div></div>
-      <div class="stat-card"><div class="stat-icon bg-warning"><i class="fa-solid fa-headphones"></i></div><div class="stat-content"><div class="stat-value">8</div><div class="stat-label">Ambience</div></div></div>
-      <div class="stat-card"><div class="stat-icon bg-info"><i class="fa-solid fa-microphone"></i></div><div class="stat-content"><div class="stat-value" id="ans-stat-stimmen">14</div><div class="stat-label">KI-Stimmen</div></div></div>
-    </div>
+  <div class="date-line">Samstag, 01. Maerz 2026</div>
 
-    <!-- TABS -->
-    <div class="studio-tabs">
-      <button class="studio-tab active" onclick="studioTab('generator')"><i class="fa-solid fa-wand-magic-sparkles"></i> Ansagen</button>
-      <button class="studio-tab" onclick="studioTab('ambience')"><i class="fa-solid fa-headphones"></i> Ambience</button>
-      <button class="studio-tab" onclick="studioTab('upload')"><i class="fa-solid fa-cloud-arrow-up"></i> Upload</button>
-      <button class="studio-tab" onclick="studioTab('stimmen')"><i class="fa-solid fa-microphone"></i> Stimmen</button>
-    </div>
-
-    <!-- ═══ TAB 1: ANSAGEN GENERATOR ═══ -->
-    <div id="tab-generator">
-      <div class="card" style="margin-bottom:1.5rem">
-        <h2 style="padding:1rem 1.2rem 0"><i class="fa-solid fa-wand-magic-sparkles"></i> Ansage erstellen</h2>
-        <form id="ans-formular" style="padding:1rem 1.2rem">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
-            <div class="form-group"><label for="ans-typ">Ansage-Typ</label>
-              <select id="ans-typ"><option value="begruessung">Begruessung</option><option value="warteschleife">Warteschleife</option><option value="abwesenheit">Abwesenheit / AB</option><option value="oeffnungszeiten">Oeffnungszeiten</option><option value="notfall">Notfall-Hinweis</option><option value="feiertag">Feiertags-Ansage</option><option value="weiterleitung">Weiterleitung</option><option value="ivr_menue">IVR-Menue (Auswahl)</option></select>
-            </div>
-            <div class="form-group"><label for="ans-name">Name der Ansage</label><input type="text" id="ans-name" placeholder="z.B. Begruessung Hauptnummer"></div>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-top:1rem">
-            <div class="form-group"><label for="ans-sprache">Sprache</label>
-              <select id="ans-sprache"><option value="de">Deutsch</option><option value="en">Englisch</option><option value="tr">Tuerkisch</option><option value="ar">Arabisch</option><option value="ru">Russisch</option><option value="fr">Franzoesisch</option></select>
-            </div>
-            <div class="form-group"><label for="ans-stimme">KI-Stimme</label>
-              <select id="ans-stimme">
-                <optgroup label="Piper TTS (Lokal)">
-                  <option value="piper-anna">Anna (weiblich, freundlich)</option><option value="piper-thomas">Thomas (maennlich, sachlich)</option><option value="piper-sophie">Sophie (weiblich, warm)</option><option value="piper-markus">Markus (maennlich, professionell)</option><option value="piper-lena">Lena (weiblich, jung)</option><option value="piper-oliver">Oliver (maennlich, ruhig)</option>
-                </optgroup>
-                <optgroup label="Azure Neural (Cloud)">
-                  <option value="azure-katja">Katja Neural (weiblich)</option><option value="azure-conrad">Conrad Neural (maennlich)</option><option value="azure-amala">Amala Neural (weiblich, warm)</option>
-                </optgroup>
-                <optgroup label="ElevenLabs (Premium)">
-                  <option value="eleven-rachel">Rachel (weiblich, natuerlich)</option><option value="eleven-adam">Adam (maennlich, tief)</option>
-                </optgroup>
-                <optgroup label="OpenAI TTS">
-                  <option value="openai-nova">Nova (weiblich)</option><option value="openai-onyx">Onyx (maennlich)</option><option value="openai-shimmer">Shimmer (weiblich, sanft)</option>
-                </optgroup>
-              </select>
-            </div>
-            <div class="form-group"><label for="ans-tempo">Sprechtempo</label>
-              <select id="ans-tempo"><option value="langsam">Langsam</option><option value="normal" selected>Normal</option><option value="schnell">Schnell</option></select>
-            </div>
-          </div>
-          <!-- Hintergrund-Sound -->
-          <div style="margin-top:1rem;padding:12px 16px;background:var(--bg);border-radius:10px;border:1px solid var(--border)">
-            <label style="font-weight:600;font-size:.85rem;display:flex;align-items:center;gap:6px;margin-bottom:8px"><i class="fa-solid fa-headphones" style="color:#6366f1"></i> Hintergrund-Sound (optional)</label>
-            <div style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center">
-              <select id="ans-bg-sound" style="font-size:.85rem"><option value="">Kein Hintergrund</option><option value="buero">Buero (leicht)</option><option value="callcenter">Callcenter</option><option value="cafe">Cafe / Lounge</option><option value="natur">Natur / Regen</option><option value="tastatur">Leises Tippen</option><option value="musik-hold">Wartemusik Classic</option><option value="musik-modern">Wartemusik Modern</option><option value="neutral">Neutrales Rauschen</option></select>
-              <div style="display:flex;align-items:center;gap:6px"><label style="font-size:11px;color:#6b7280">Vol:</label><input type="range" min="0" max="100" value="30" id="ans-bg-vol" style="width:80px;accent-color:#6366f1"><span id="bg-vol-lbl" style="font-size:11px;font-weight:700;color:#6366f1;min-width:28px">30%</span></div>
-            </div>
-          </div>
-          <!-- Vorlagen -->
-          <div style="margin-top:1rem">
-            <label style="font-weight:600;margin-bottom:.5rem;display:block"><i class="fa-solid fa-clipboard-list"></i> Schnell-Vorlagen:</label>
-            <div style="display:flex;flex-wrap:wrap;gap:.5rem" id="ans-vorlagen">
-              <button type="button" class="ans-vorlage-btn" data-vorlage="begruessung_standard" style="padding:.4rem .8rem;border-radius:6px;font-size:.8rem;background:var(--bg);border:1px solid var(--border);cursor:pointer"><i class="fa-solid fa-hand-wave"></i> Standard-Begruessung</button>
-              <button type="button" class="ans-vorlage-btn" data-vorlage="warteschleife_standard" style="padding:.4rem .8rem;border-radius:6px;font-size:.8rem;background:var(--bg);border:1px solid var(--border);cursor:pointer"><i class="fa-solid fa-clock"></i> Warteschleife</button>
-              <button type="button" class="ans-vorlage-btn" data-vorlage="ab_standard" style="padding:.4rem .8rem;border-radius:6px;font-size:.8rem;background:var(--bg);border:1px solid var(--border);cursor:pointer"><i class="fa-solid fa-voicemail"></i> Anrufbeantworter</button>
-              <button type="button" class="ans-vorlage-btn" data-vorlage="oeffnungszeiten_standard" style="padding:.4rem .8rem;border-radius:6px;font-size:.8rem;background:var(--bg);border:1px solid var(--border);cursor:pointer"><i class="fa-solid fa-clock"></i> Oeffnungszeiten</button>
-              <button type="button" class="ans-vorlage-btn" data-vorlage="notfall_standard" style="padding:.4rem .8rem;border-radius:6px;font-size:.8rem;background:var(--bg);border:1px solid var(--border);cursor:pointer"><i class="fa-solid fa-triangle-exclamation"></i> Notfall</button>
-              <button type="button" class="ans-vorlage-btn" data-vorlage="ivr_menue" style="padding:.4rem .8rem;border-radius:6px;font-size:.8rem;background:var(--bg);border:1px solid var(--border);cursor:pointer"><i class="fa-solid fa-list-ol"></i> IVR-Menue</button>
-              <button type="button" class="ans-vorlage-btn" data-vorlage="feiertag_standard" style="padding:.4rem .8rem;border-radius:6px;font-size:.8rem;background:var(--bg);border:1px solid var(--border);cursor:pointer"><i class="fa-solid fa-tree"></i> Feiertag</button>
-            </div>
-          </div>
-          <div class="form-group" style="margin-top:1rem">
-            <label for="ans-text">Ansagetext</label>
-            <textarea id="ans-text" rows="5" placeholder="Geben Sie den Ansagetext ein oder waehlen Sie eine Vorlage..." required style="font-size:.95rem;line-height:1.6"></textarea>
-            <small style="color:var(--text-muted)">Variablen: {praxis_name}, {oeffnungszeiten}, {notfall_nummer}, {datum}</small>
-          </div>
-          <div id="ans-vorschau-bereich" style="margin-top:1rem;padding:1rem;background:var(--bg);border-radius:8px" hidden>
-            <div style="display:flex;align-items:center;gap:1rem">
-              <button type="button" id="btn-ans-play" style="width:48px;height:48px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;border:none;cursor:pointer"><i class="fa-solid fa-play" style="color:#fff;font-size:1.2rem" id="ans-play-icon"></i></button>
-              <div style="flex:1"><div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden"><div id="ans-progress" style="height:100%;width:0%;background:var(--primary);border-radius:2px;transition:width .1s"></div></div><div style="display:flex;justify-content:space-between;margin-top:.3rem;font-size:.75rem;color:var(--text-muted)"><span id="ans-zeit-aktuell">0:00</span><span id="ans-zeit-gesamt">0:00</span></div></div>
-              <span id="ans-stimme-label" style="font-size:.8rem;color:var(--text-muted)"></span>
-            </div>
-          </div>
-          <div style="display:flex;gap:.5rem;margin-top:1rem">
-            <button type="button" id="btn-ans-generieren" class="btn-primary"><i class="fa-solid fa-wand-magic-sparkles"></i> KI-Text generieren</button>
-            <button type="button" id="btn-ans-vorhoeren" style="background:var(--info)"><i class="fa-solid fa-volume-high"></i> Vorhoeren</button>
-            <button type="submit" style="background:var(--success)"><i class="fa-solid fa-save"></i> Ansage speichern</button>
-          </div>
-          <div id="ans-erfolg" class="ergebnis" hidden></div>
-        </form>
+  <!-- Neue Ansage erstellen -->
+  <div class="card">
+    <div class="card-header">Neue Ansage erstellen</div>
+    <div class="card-body">
+      <div style="margin-bottom: 16px;">
+        <label>Ansage-Text</label>
+        <textarea rows="5" placeholder="Geben Sie den Text fuer die Ansage ein..."></textarea>
       </div>
-      <div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:1rem 1.2rem 0">
-          <h2><i class="fa-solid fa-list"></i> Gespeicherte Ansagen</h2>
-          <select id="ans-filter-typ" style="font-size:.85rem;padding:.3rem .6rem"><option value="">Alle Typen</option><option value="begruessung">Begruessung</option><option value="warteschleife">Warteschleife</option><option value="abwesenheit">Abwesenheit</option><option value="oeffnungszeiten">Oeffnungszeiten</option><option value="notfall">Notfall</option><option value="ivr_menue">IVR-Menue</option></select>
+      <div class="form-row-3">
+        <div>
+          <label>Stimme</label>
+          <select>
+            <option>Seraphina</option>
+            <option>Florian</option>
+            <option>Katja</option>
+            <option>Conrad</option>
+            <option>Marie</option>
+          </select>
         </div>
-        <div id="ans-liste" style="padding:1rem 1.2rem"></div>
+        <div>
+          <label>Sprache</label>
+          <select>
+            <option>Deutsch</option>
+            <option>Englisch</option>
+            <option>Franzoesisch</option>
+            <option>Tuerkisch</option>
+            <option>Arabisch</option>
+          </select>
+        </div>
+        <div>
+          <label>Format</label>
+          <select>
+            <option>WAV</option>
+            <option>MP3</option>
+            <option>OGG</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row-2">
+        <div class="range-group">
+          <label>Geschwindigkeit</label>
+          <div class="range-row">
+            <input type="range" min="0.5" max="2.0" step="0.1" value="1.0" id="speed-range" oninput="document.getElementById('speed-val').textContent=this.value">
+            <span class="range-value" id="speed-val">1.0</span>
+          </div>
+        </div>
+        <div class="range-group">
+          <label>Lautstaerke</label>
+          <div class="range-row">
+            <input type="range" min="0" max="100" step="5" value="80" id="volume-range" oninput="document.getElementById('volume-val').textContent=this.value+'%'">
+            <span class="range-value" id="volume-val">80%</span>
+          </div>
+        </div>
+      </div>
+      <div class="button-gruppe">
+        <button class="btn primary"><i class="fa-solid fa-wand-magic-sparkles"></i> Generieren</button>
+        <button class="btn secondary"><i class="fa-solid fa-play"></i> Vorhoeren</button>
       </div>
     </div>
+  </div>
 
-    <!-- ═══ TAB 2: AMBIENCE ═══ -->
-    <div id="tab-ambience" style="display:none">
-      <div class="card" style="margin-bottom:1.5rem">
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:1rem 1.2rem">
-          <div><h2><i class="fa-solid fa-headphones" style="color:#6366f1"></i> Hintergrundgeraeusche</h2><p style="font-size:12px;color:#9ca3af;margin-top:4px">Realistisches Audio-Ambiente fuer Bot-Gespraeche und Warteschleifen. Sound wird in die Asterisk-Bridge gemischt.</p></div>
-          <div style="display:flex;align-items:center;gap:8px;padding:6px 14px;border-radius:10px;background:#dcfce7;font-size:12px;font-weight:600;color:#15803d"><i class="fa-solid fa-circle-check"></i> Aktiv: <span id="active-amb">Buero (leicht)</span></div>
-        </div>
-      </div>
-      <div class="amb-grid">
-        <div class="amb-card active" onclick="selAmb(this)" data-amb="buero">
-          <div class="amb-icon" style="background:#dbeafe;color:#3b82f6"><i class="fa-solid fa-building"></i></div>
-          <div class="amb-name">Buero (leicht)</div><div class="amb-desc">Dezente Buerogeraeusche — leises Tastaturklicken, entfernte Stimmen, Papierrascheln</div>
-          <div class="amb-ctrl"><button class="amb-play" style="background:#3b82f6" onclick="event.stopPropagation();playAmb(this)"><i class="fa-solid fa-play"></i></button><input type="range" class="amb-vol" min="0" max="100" value="30" oninput="this.nextElementSibling.textContent=this.value+'%'"><span style="font-size:10px;color:#6b7280;font-weight:600;min-width:28px;text-align:right">30%</span></div>
-        </div>
-        <div class="amb-card" onclick="selAmb(this)" data-amb="callcenter">
-          <div class="amb-icon" style="background:#fef3c7;color:#d97706"><i class="fa-solid fa-headset"></i></div>
-          <div class="amb-name">Callcenter</div><div class="amb-desc">Belebtes Callcenter — Telefone, Tastatur, professionelle Gespraechsatmosphaere</div>
-          <div class="amb-ctrl"><button class="amb-play" style="background:#d97706" onclick="event.stopPropagation();playAmb(this)"><i class="fa-solid fa-play"></i></button><input type="range" class="amb-vol" min="0" max="100" value="25" oninput="this.nextElementSibling.textContent=this.value+'%'"><span style="font-size:10px;color:#6b7280;font-weight:600;min-width:28px;text-align:right">25%</span></div>
-        </div>
-        <div class="amb-card" onclick="selAmb(this)" data-amb="cafe">
-          <div class="amb-icon" style="background:#fce7f3;color:#db2777"><i class="fa-solid fa-mug-hot"></i></div>
-          <div class="amb-name">Cafe / Lounge</div><div class="amb-desc">Gemuetliche Cafe-Atmosphaere — leise Musik, Geschirr, entspannte Stimmen</div>
-          <div class="amb-ctrl"><button class="amb-play" style="background:#db2777" onclick="event.stopPropagation();playAmb(this)"><i class="fa-solid fa-play"></i></button><input type="range" class="amb-vol" min="0" max="100" value="20" oninput="this.nextElementSibling.textContent=this.value+'%'"><span style="font-size:10px;color:#6b7280;font-weight:600;min-width:28px;text-align:right">20%</span></div>
-        </div>
-        <div class="amb-card" onclick="selAmb(this)" data-amb="natur">
-          <div class="amb-icon" style="background:#dcfce7;color:#16a34a"><i class="fa-solid fa-leaf"></i></div>
-          <div class="amb-name">Natur / Regen</div><div class="amb-desc">Beruhigende Naturgeraeusche — sanfter Regen, Voegel, Wind in Baeumen</div>
-          <div class="amb-ctrl"><button class="amb-play" style="background:#16a34a" onclick="event.stopPropagation();playAmb(this)"><i class="fa-solid fa-play"></i></button><input type="range" class="amb-vol" min="0" max="100" value="35" oninput="this.nextElementSibling.textContent=this.value+'%'"><span style="font-size:10px;color:#6b7280;font-weight:600;min-width:28px;text-align:right">35%</span></div>
-        </div>
-        <div class="amb-card" onclick="selAmb(this)" data-amb="tastatur">
-          <div class="amb-icon" style="background:#e0e7ff;color:#6366f1"><i class="fa-solid fa-keyboard"></i></div>
-          <div class="amb-name">Leises Tippen</div><div class="amb-desc">Dezentes Tastaturtippen — simuliert aktive Datenerfassung waehrend des Gespraechs</div>
-          <div class="amb-ctrl"><button class="amb-play" style="background:#6366f1" onclick="event.stopPropagation();playAmb(this)"><i class="fa-solid fa-play"></i></button><input type="range" class="amb-vol" min="0" max="100" value="15" oninput="this.nextElementSibling.textContent=this.value+'%'"><span style="font-size:10px;color:#6b7280;font-weight:600;min-width:28px;text-align:right">15%</span></div>
-        </div>
-        <div class="amb-card" onclick="selAmb(this)" data-amb="musik-hold">
-          <div class="amb-icon" style="background:#fef9c3;color:#ca8a04"><i class="fa-solid fa-music"></i></div>
-          <div class="amb-name">Wartemusik Classic</div><div class="amb-desc">Klassische Wartemusik — instrumentale Melodie, professionell und vertraut</div>
-          <div class="amb-ctrl"><button class="amb-play" style="background:#ca8a04" onclick="event.stopPropagation();playAmb(this)"><i class="fa-solid fa-play"></i></button><input type="range" class="amb-vol" min="0" max="100" value="50" oninput="this.nextElementSibling.textContent=this.value+'%'"><span style="font-size:10px;color:#6b7280;font-weight:600;min-width:28px;text-align:right">50%</span></div>
-        </div>
-        <div class="amb-card" onclick="selAmb(this)" data-amb="musik-modern">
-          <div class="amb-icon" style="background:#ede9fe;color:#7c3aed"><i class="fa-solid fa-headphones-simple"></i></div>
-          <div class="amb-name">Wartemusik Modern</div><div class="amb-desc">Moderne Lo-Fi Beats — entspannt, zeitgemaess, angenehme Warteatmosphaere</div>
-          <div class="amb-ctrl"><button class="amb-play" style="background:#7c3aed" onclick="event.stopPropagation();playAmb(this)"><i class="fa-solid fa-play"></i></button><input type="range" class="amb-vol" min="0" max="100" value="40" oninput="this.nextElementSibling.textContent=this.value+'%'"><span style="font-size:10px;color:#6b7280;font-weight:600;min-width:28px;text-align:right">40%</span></div>
-        </div>
-        <div class="amb-card" onclick="selAmb(this)" data-amb="neutral">
-          <div class="amb-icon" style="background:#f1f5f9;color:#64748b"><i class="fa-solid fa-wave-square"></i></div>
-          <div class="amb-name">Neutrales Rauschen</div><div class="amb-desc">Sanftes weisses Rauschen — eliminiert Stille, klingt professionell und clean</div>
-          <div class="amb-ctrl"><button class="amb-play" style="background:#64748b" onclick="event.stopPropagation();playAmb(this)"><i class="fa-solid fa-play"></i></button><input type="range" class="amb-vol" min="0" max="100" value="10" oninput="this.nextElementSibling.textContent=this.value+'%'"><span style="font-size:10px;color:#6b7280;font-weight:600;min-width:28px;text-align:right">10%</span></div>
-        </div>
-      </div>
-      <!-- Zuordnung -->
-      <div class="card">
-        <div style="padding:1rem 1.2rem"><h2><i class="fa-solid fa-link" style="color:#6366f1"></i> Ambience-Zuordnung</h2><p style="font-size:12px;color:#9ca3af;margin-top:4px">Welcher Hintergrund-Sound wird wo eingesetzt?</p></div>
-        <div style="padding:0 1.2rem 1rem;display:grid;grid-template-columns:1fr 1fr;gap:10px">
-          <div style="padding:12px 16px;border-radius:10px;border:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between"><div style="display:flex;align-items:center;gap:8px"><i class="fa-solid fa-robot" style="color:#6366f1"></i><span style="font-size:13px;font-weight:600">Voicebot-Gespraeche</span></div><select style="font-size:12px;padding:4px 8px;border-radius:6px;border:1px solid #e5e7eb"><option selected>Buero (leicht)</option><option>Callcenter</option><option>Tastatur</option><option>Neutral</option><option>Kein Sound</option></select></div>
-          <div style="padding:12px 16px;border-radius:10px;border:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between"><div style="display:flex;align-items:center;gap:8px"><i class="fa-solid fa-clock" style="color:#f59e0b"></i><span style="font-size:13px;font-weight:600">Warteschleife</span></div><select style="font-size:12px;padding:4px 8px;border-radius:6px;border:1px solid #e5e7eb"><option>Buero (leicht)</option><option selected>Wartemusik Classic</option><option>Wartemusik Modern</option><option>Cafe / Lounge</option><option>Natur / Regen</option></select></div>
-          <div style="padding:12px 16px;border-radius:10px;border:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between"><div style="display:flex;align-items:center;gap:8px"><i class="fa-solid fa-phone-volume" style="color:#22c55e"></i><span style="font-size:13px;font-weight:600">IVR-Menue</span></div><select style="font-size:12px;padding:4px 8px;border-radius:6px;border:1px solid #e5e7eb"><option selected>Kein Sound</option><option>Buero (leicht)</option><option>Neutral</option></select></div>
-          <div style="padding:12px 16px;border-radius:10px;border:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between"><div style="display:flex;align-items:center;gap:8px"><i class="fa-solid fa-moon" style="color:#8b5cf6"></i><span style="font-size:13px;font-weight:600">Ausserhalb Oeffnungszeiten</span></div><select style="font-size:12px;padding:4px 8px;border-radius:6px;border:1px solid #e5e7eb"><option>Kein Sound</option><option selected>Natur / Regen</option><option>Wartemusik Modern</option></select></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ═══ TAB 3: UPLOAD ═══ -->
-    <div id="tab-upload" style="display:none">
-      <div class="card" style="margin-bottom:1.5rem">
-        <div style="padding:1rem 1.2rem"><h2><i class="fa-solid fa-cloud-arrow-up" style="color:#6366f1"></i> Eigene Audio-Dateien hochladen</h2><p style="font-size:12px;color:#9ca3af;margin-top:4px">Eigene Ansagen, Wartemusik, Jingles oder Hintergrundgeraeusche hochladen</p></div>
-        <div style="padding:0 1.2rem 1.2rem">
-          <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()">
-            <input type="file" id="file-input" accept=".wav,.mp3,.ogg,.flac,.m4a" multiple style="display:none" onchange="handleUpload(this.files)">
-            <i class="fa-solid fa-cloud-arrow-up big"></i>
-            <div style="font-size:15px;font-weight:700;color:#374151;margin-bottom:4px">Dateien hier ablegen oder klicken</div>
-            <div style="font-size:12px;color:#9ca3af">Max. 20 MB pro Datei</div>
-            <div style="display:flex;gap:6px;justify-content:center;margin-top:10px">
-              <span style="padding:3px 10px;border-radius:6px;font-size:10px;font-weight:700;background:#f1f5f9;color:#6b7280">WAV</span>
-              <span style="padding:3px 10px;border-radius:6px;font-size:10px;font-weight:700;background:#f1f5f9;color:#6b7280">MP3</span>
-              <span style="padding:3px 10px;border-radius:6px;font-size:10px;font-weight:700;background:#f1f5f9;color:#6b7280">OGG</span>
-              <span style="padding:3px 10px;border-radius:6px;font-size:10px;font-weight:700;background:#f1f5f9;color:#6b7280">FLAC</span>
-              <span style="padding:3px 10px;border-radius:6px;font-size:10px;font-weight:700;background:#f1f5f9;color:#6b7280">M4A</span>
-            </div>
+  <!-- Audio-Vorschau -->
+  <div class="card">
+    <div class="card-header">Audio-Vorschau</div>
+    <div class="card-body">
+      <div class="audio-player">
+        <button class="audio-play-btn"><i class="fa-solid fa-play"></i></button>
+        <div class="audio-progress">
+          <div class="audio-progress-bar">
+            <div class="audio-progress-fill"></div>
+          </div>
+          <div class="audio-time">
+            <span>0:00</span>
+            <span>0:00</span>
           </div>
         </div>
       </div>
-      <div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:1rem 1.2rem"><h2><i class="fa-solid fa-folder-open"></i> Hochgeladene Dateien</h2><span style="font-size:12px;color:#9ca3af" id="upload-count">3 Dateien</span></div>
-        <div id="upload-list">
-          <div class="file-row"><div class="file-icon" style="background:#dbeafe;color:#3b82f6"><i class="fa-solid fa-music"></i></div><div class="file-info"><div class="file-name">praxis-jingle-v2.mp3</div><div class="file-meta"><span>MP3 · 1.2 MB</span><span>0:08</span><span>24.02.2026</span></div></div><div style="margin-right:8px"><span style="padding:2px 8px;border-radius:6px;font-size:10px;font-weight:600;background:#dbeafe;color:#4f46e5">Jingle</span></div><div style="display:flex;gap:6px"><button class="fbtn" title="Play"><i class="fa-solid fa-play"></i></button><button class="fbtn" title="Download"><i class="fa-solid fa-download"></i></button><button class="fbtn del" onclick="this.closest('.file-row').remove();updUC()" title="Loeschen"><i class="fa-solid fa-trash"></i></button></div></div>
-          <div class="file-row"><div class="file-icon" style="background:#dcfce7;color:#16a34a"><i class="fa-solid fa-volume-high"></i></div><div class="file-info"><div class="file-name">warteschleife-holiday.wav</div><div class="file-meta"><span>WAV · 4.8 MB</span><span>0:32</span><span>20.02.2026</span></div></div><div style="margin-right:8px"><span style="padding:2px 8px;border-radius:6px;font-size:10px;font-weight:600;background:#dcfce7;color:#15803d">Wartemusik</span></div><div style="display:flex;gap:6px"><button class="fbtn" title="Play"><i class="fa-solid fa-play"></i></button><button class="fbtn" title="Download"><i class="fa-solid fa-download"></i></button><button class="fbtn del" onclick="this.closest('.file-row').remove();updUC()" title="Loeschen"><i class="fa-solid fa-trash"></i></button></div></div>
-          <div class="file-row"><div class="file-icon" style="background:#fef3c7;color:#d97706"><i class="fa-solid fa-microphone"></i></div><div class="file-info"><div class="file-name">begruessung-dr-schmidt-custom.mp3</div><div class="file-meta"><span>MP3 · 2.2 MB</span><span>0:14</span><span>18.02.2026</span></div></div><div style="margin-right:8px"><span style="padding:2px 8px;border-radius:6px;font-size:10px;font-weight:600;background:#fef3c7;color:#92400e">Ansage</span></div><div style="display:flex;gap:6px"><button class="fbtn" title="Play"><i class="fa-solid fa-play"></i></button><button class="fbtn" title="Download"><i class="fa-solid fa-download"></i></button><button class="fbtn del" onclick="this.closest('.file-row').remove();updUC()" title="Loeschen"><i class="fa-solid fa-trash"></i></button></div></div>
-        </div>
+      <div class="button-gruppe">
+        <button class="btn primary"><i class="fa-solid fa-download"></i> Download</button>
       </div>
     </div>
+  </div>
 
-    <!-- ═══ TAB 4: STIMMEN ═══ -->
-    <div id="tab-stimmen" style="display:none">
-      <div class="card" style="margin-bottom:1.5rem">
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:1rem 1.2rem">
-          <div><h2><i class="fa-solid fa-microphone" style="color:#6366f1"></i> Verfuegbare KI-Stimmen</h2><p style="font-size:12px;color:#9ca3af;margin-top:4px">Piper-Stimmen laufen lokal, Cloud-Stimmen benoetigen API-Keys.</p></div>
-          <div style="display:flex;gap:6px" id="vfilters">
-            <button onclick="vFilt('all')" class="vf active" style="padding:4px 12px;border-radius:8px;font-size:11px;font-weight:600;border:1px solid #e5e7eb;background:#6366f1;color:white;cursor:pointer">Alle</button>
-            <button onclick="vFilt('piper')" class="vf" style="padding:4px 12px;border-radius:8px;font-size:11px;font-weight:600;border:1px solid #e5e7eb;background:white;color:#6b7280;cursor:pointer">Piper</button>
-            <button onclick="vFilt('azure')" class="vf" style="padding:4px 12px;border-radius:8px;font-size:11px;font-weight:600;border:1px solid #e5e7eb;background:white;color:#6b7280;cursor:pointer">Azure</button>
-            <button onclick="vFilt('eleven')" class="vf" style="padding:4px 12px;border-radius:8px;font-size:11px;font-weight:600;border:1px solid #e5e7eb;background:white;color:#6b7280;cursor:pointer">ElevenLabs</button>
-            <button onclick="vFilt('openai')" class="vf" style="padding:4px 12px;border-radius:8px;font-size:11px;font-weight:600;border:1px solid #e5e7eb;background:white;color:#6b7280;cursor:pointer">OpenAI</button>
-          </div>
-        </div>
-      </div>
-      <!-- Piper -->
-      <div class="sec-title" data-vg="piper"><i class="fa-solid fa-server" style="margin-right:4px"></i> Piper TTS — Lokal</div>
-      <div class="voice-grid" data-vg="piper">
-        <div class="voice-card selected" data-e="piper"><div class="voice-av" style="background:#dbeafe;color:#3b82f6"><i class="fa-solid fa-user"></i></div><div class="voice-info"><div class="voice-name">Anna <span class="vtag piper">Piper</span></div><div class="voice-attrs"><span><i class="fa-solid fa-venus"></i> Weiblich</span><span>Freundlich</span><span>de_DE</span></div></div><button class="vplay" onclick="pvVoice('Anna')"><i class="fa-solid fa-play"></i></button></div>
-        <div class="voice-card" data-e="piper"><div class="voice-av" style="background:#e0e7ff;color:#6366f1"><i class="fa-solid fa-user"></i></div><div class="voice-info"><div class="voice-name">Thomas <span class="vtag piper">Piper</span></div><div class="voice-attrs"><span><i class="fa-solid fa-mars"></i> Maennlich</span><span>Sachlich</span><span>de_DE</span></div></div><button class="vplay" onclick="pvVoice('Thomas')"><i class="fa-solid fa-play"></i></button></div>
-        <div class="voice-card" data-e="piper"><div class="voice-av" style="background:#fce7f3;color:#db2777"><i class="fa-solid fa-user"></i></div><div class="voice-info"><div class="voice-name">Sophie <span class="vtag piper">Piper</span></div><div class="voice-attrs"><span><i class="fa-solid fa-venus"></i> Weiblich</span><span>Warm</span><span>de_DE</span></div></div><button class="vplay" onclick="pvVoice('Sophie')"><i class="fa-solid fa-play"></i></button></div>
-        <div class="voice-card" data-e="piper"><div class="voice-av" style="background:#f1f5f9;color:#64748b"><i class="fa-solid fa-user"></i></div><div class="voice-info"><div class="voice-name">Markus <span class="vtag piper">Piper</span></div><div class="voice-attrs"><span><i class="fa-solid fa-mars"></i> Maennlich</span><span>Professionell</span><span>de_DE</span></div></div><button class="vplay" onclick="pvVoice('Markus')"><i class="fa-solid fa-play"></i></button></div>
-        <div class="voice-card" data-e="piper"><div class="voice-av" style="background:#fef9c3;color:#ca8a04"><i class="fa-solid fa-user"></i></div><div class="voice-info"><div class="voice-name">Lena <span class="vtag piper">Piper</span></div><div class="voice-attrs"><span><i class="fa-solid fa-venus"></i> Weiblich</span><span>Jung</span><span>de_DE</span></div></div><button class="vplay" onclick="pvVoice('Lena')"><i class="fa-solid fa-play"></i></button></div>
-        <div class="voice-card" data-e="piper"><div class="voice-av" style="background:#dcfce7;color:#16a34a"><i class="fa-solid fa-user"></i></div><div class="voice-info"><div class="voice-name">Oliver <span class="vtag piper">Piper</span></div><div class="voice-attrs"><span><i class="fa-solid fa-mars"></i> Maennlich</span><span>Ruhig</span><span>de_DE</span></div></div><button class="vplay" onclick="pvVoice('Oliver')"><i class="fa-solid fa-play"></i></button></div>
-      </div>
-      <!-- Azure -->
-      <div class="sec-title" data-vg="azure" style="margin-top:20px"><i class="fa-solid fa-cloud" style="margin-right:4px"></i> Azure Neural — Cloud</div>
-      <div class="voice-grid" data-vg="azure">
-        <div class="voice-card" data-e="azure"><div class="voice-av" style="background:#dcfce7;color:#15803d"><i class="fa-solid fa-user"></i></div><div class="voice-info"><div class="voice-name">Katja Neural <span class="vtag azure">Azure</span></div><div class="voice-attrs"><span><i class="fa-solid fa-venus"></i> Weiblich</span><span>Empfohlen</span><span>de_DE</span></div></div><button class="vplay" onclick="pvVoice('Katja')"><i class="fa-solid fa-play"></i></button></div>
-        <div class="voice-card" data-e="azure"><div class="voice-av" style="background:#dcfce7;color:#15803d"><i class="fa-solid fa-user"></i></div><div class="voice-info"><div class="voice-name">Conrad Neural <span class="vtag azure">Azure</span></div><div class="voice-attrs"><span><i class="fa-solid fa-mars"></i> Maennlich</span><span>Klar</span><span>de_DE</span></div></div><button class="vplay" onclick="pvVoice('Conrad')"><i class="fa-solid fa-play"></i></button></div>
-        <div class="voice-card" data-e="azure"><div class="voice-av" style="background:#dcfce7;color:#15803d"><i class="fa-solid fa-user"></i></div><div class="voice-info"><div class="voice-name">Amala Neural <span class="vtag azure">Azure</span></div><div class="voice-attrs"><span><i class="fa-solid fa-venus"></i> Weiblich</span><span>Warm</span><span>de_DE</span></div></div><button class="vplay" onclick="pvVoice('Amala')"><i class="fa-solid fa-play"></i></button></div>
-      </div>
-      <!-- ElevenLabs -->
-      <div class="sec-title" data-vg="eleven" style="margin-top:20px"><i class="fa-solid fa-star" style="margin-right:4px"></i> ElevenLabs — Premium</div>
-      <div class="voice-grid" data-vg="eleven">
-        <div class="voice-card" data-e="eleven"><div class="voice-av" style="background:#fef3c7;color:#d97706"><i class="fa-solid fa-user"></i></div><div class="voice-info"><div class="voice-name">Rachel <span class="vtag eleven">ElevenLabs</span></div><div class="voice-attrs"><span><i class="fa-solid fa-venus"></i> Weiblich</span><span>Natuerlich</span><span>Multi-lang</span></div></div><button class="vplay" onclick="pvVoice('Rachel')"><i class="fa-solid fa-play"></i></button></div>
-        <div class="voice-card" data-e="eleven"><div class="voice-av" style="background:#fef3c7;color:#d97706"><i class="fa-solid fa-user"></i></div><div class="voice-info"><div class="voice-name">Adam <span class="vtag eleven">ElevenLabs</span></div><div class="voice-attrs"><span><i class="fa-solid fa-mars"></i> Maennlich</span><span>Tief</span><span>Multi-lang</span></div></div><button class="vplay" onclick="pvVoice('Adam')"><i class="fa-solid fa-play"></i></button></div>
-      </div>
-      <!-- OpenAI -->
-      <div class="sec-title" data-vg="openai" style="margin-top:20px"><i class="fa-solid fa-bolt" style="margin-right:4px"></i> OpenAI TTS</div>
-      <div class="voice-grid" data-vg="openai" style="margin-bottom:20px">
-        <div class="voice-card" data-e="openai"><div class="voice-av" style="background:#ede9fe;color:#7c3aed"><i class="fa-solid fa-user"></i></div><div class="voice-info"><div class="voice-name">Nova <span class="vtag openai">OpenAI</span></div><div class="voice-attrs"><span><i class="fa-solid fa-venus"></i> Weiblich</span><span>Klar</span><span>Multi-lang</span></div></div><button class="vplay" onclick="pvVoice('Nova')"><i class="fa-solid fa-play"></i></button></div>
-        <div class="voice-card" data-e="openai"><div class="voice-av" style="background:#ede9fe;color:#7c3aed"><i class="fa-solid fa-user"></i></div><div class="voice-info"><div class="voice-name">Onyx <span class="vtag openai">OpenAI</span></div><div class="voice-attrs"><span><i class="fa-solid fa-mars"></i> Maennlich</span><span>Tief</span><span>Multi-lang</span></div></div><button class="vplay" onclick="pvVoice('Onyx')"><i class="fa-solid fa-play"></i></button></div>
-        <div class="voice-card" data-e="openai"><div class="voice-av" style="background:#ede9fe;color:#7c3aed"><i class="fa-solid fa-user"></i></div><div class="voice-info"><div class="voice-name">Shimmer <span class="vtag openai">OpenAI</span></div><div class="voice-attrs"><span><i class="fa-solid fa-venus"></i> Weiblich</span><span>Sanft</span><span>Multi-lang</span></div></div><button class="vplay" onclick="pvVoice('Shimmer')"><i class="fa-solid fa-play"></i></button></div>
+  <!-- Gespeicherte Ansagen -->
+  <div class="card">
+    <div class="card-header">Gespeicherte Ansagen</div>
+    <div class="card-body">
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Stimme</th>
+              <th>Sprache</th>
+              <th>Dauer</th>
+              <th>Erstellt</th>
+              <th>Aktionen</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="fw">Willkommenansage</td>
+              <td>Seraphina</td>
+              <td>Deutsch</td>
+              <td>0:12</td>
+              <td>28.02.2026</td>
+              <td>
+                <button class="btn-sm btn-success"><i class="fa-solid fa-play"></i></button>
+                <button class="btn-sm btn-primary">Bearbeiten</button>
+                <button class="btn-sm btn-danger">Loeschen</button>
+              </td>
+            </tr>
+            <tr>
+              <td class="fw">Warteschleife</td>
+              <td>Florian</td>
+              <td>Deutsch</td>
+              <td>0:30</td>
+              <td>27.02.2026</td>
+              <td>
+                <button class="btn-sm btn-success"><i class="fa-solid fa-play"></i></button>
+                <button class="btn-sm btn-primary">Bearbeiten</button>
+                <button class="btn-sm btn-danger">Loeschen</button>
+              </td>
+            </tr>
+            <tr>
+              <td class="fw">Ausserhalb Geschaeftszeiten</td>
+              <td>Katja</td>
+              <td>Deutsch</td>
+              <td>0:18</td>
+              <td>25.02.2026</td>
+              <td>
+                <button class="btn-sm btn-success"><i class="fa-solid fa-play"></i></button>
+                <button class="btn-sm btn-primary">Bearbeiten</button>
+                <button class="btn-sm btn-danger">Loeschen</button>
+              </td>
+            </tr>
+            <tr>
+              <td class="fw">Welcome Message</td>
+              <td>Conrad</td>
+              <td>Englisch</td>
+              <td>0:15</td>
+              <td>24.02.2026</td>
+              <td>
+                <button class="btn-sm btn-success"><i class="fa-solid fa-play"></i></button>
+                <button class="btn-sm btn-primary">Bearbeiten</button>
+                <button class="btn-sm btn-danger">Loeschen</button>
+              </td>
+            </tr>
+            <tr>
+              <td class="fw">Notfall-Weiterleitung</td>
+              <td>Marie</td>
+              <td>Deutsch</td>
+              <td>0:08</td>
+              <td>23.02.2026</td>
+              <td>
+                <button class="btn-sm btn-success"><i class="fa-solid fa-play"></i></button>
+                <button class="btn-sm btn-primary">Bearbeiten</button>
+                <button class="btn-sm btn-danger">Loeschen</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
-
-  </main>
+  </div>
 </div>
-<button id="chat-toggle" type="button"><i class="fa-solid fa-comment-dots"></i></button>
-<div id="chat-fenster">
-  <div class="chat-header"><span><i class="fa-solid fa-robot"></i> Praxis-Assistent</span><button id="chat-schliessen" type="button"><i class="fa-solid fa-xmark"></i></button></div>
-  <div id="chat-nachrichten"></div>
-  <div class="chat-eingabe"><input id="chat-input" type="text" placeholder="Frage stellen..."><button id="chat-mikrofon" type="button" title="Sprechen"><i class="fa-solid fa-microphone"></i></button><button id="chat-senden" type="button"><i class="fa-solid fa-paper-plane"></i></button></div>
-</div>
-<script src="app.js"></script>
-<script>
-function studioTab(n){['generator','ambience','upload','stimmen'].forEach(function(t){var e=document.getElementById('tab-'+t);if(e)e.style.display=t===n?'':'none'});document.querySelectorAll('.studio-tab').forEach(function(b,i){var tabs=['generator','ambience','upload','stimmen'];b.classList.toggle('active',tabs[i]===n)})}
-function selAmb(c){document.querySelectorAll('.amb-card').forEach(function(x){x.classList.remove('active')});c.classList.add('active');var n=c.querySelector('.amb-name').textContent;document.getElementById('active-amb').textContent=n;localStorage.setItem('med_ambience',JSON.stringify({id:c.dataset.amb,name:n}))}
-function playAmb(btn){var icon=btn.querySelector('i');if(icon.classList.contains('fa-pause')){icon.classList.replace('fa-pause','fa-play');return}document.querySelectorAll('.amb-play i').forEach(function(x){x.classList.replace('fa-pause','fa-play')});icon.classList.replace('fa-play','fa-pause');setTimeout(function(){icon.classList.replace('fa-pause','fa-play')},4000)}
-var uz=document.getElementById('upload-zone');if(uz){uz.addEventListener('dragover',function(e){e.preventDefault();this.classList.add('dragover')});uz.addEventListener('dragleave',function(){this.classList.remove('dragover')});uz.addEventListener('drop',function(e){e.preventDefault();this.classList.remove('dragover');handleUpload(e.dataTransfer.files)})}
-function handleUpload(files){if(!files||!files.length)return;var list=document.getElementById('upload-list');var ok=['.wav','.mp3','.ogg','.flac','.m4a'];for(var i=0;i<files.length;i++){var f=files[i];var ext=f.name.substring(f.name.lastIndexOf('.')).toLowerCase();if(ok.indexOf(ext)===-1){alert('Format nicht unterstuetzt: '+ext);continue}if(f.size>20*1024*1024){alert('Datei zu gross: '+f.name);continue}var mb=(f.size/1024/1024).toFixed(1);var d=new Date().toLocaleDateString('de-DE');var r=document.createElement('div');r.className='file-row';r.innerHTML='<div class="file-icon" style="background:#e0e7ff;color:#6366f1"><i class="fa-solid fa-file-audio"></i></div><div class="file-info"><div class="file-name">'+f.name+'</div><div class="file-meta"><span>'+ext.toUpperCase().replace('.','')+' · '+mb+' MB</span><span>'+d+'</span></div></div><div style="display:flex;gap:6px"><button class="fbtn"><i class="fa-solid fa-play"></i></button><button class="fbtn del" onclick="this.closest(\'.file-row\').remove();updUC()"><i class="fa-solid fa-trash"></i></button></div>';list.appendChild(r)}updUC()}
-function updUC(){var c=document.querySelectorAll('#upload-list .file-row').length;document.getElementById('upload-count').textContent=c+' Dateien';document.getElementById('stat-uploads').textContent=c}
-function vFilt(e){document.querySelectorAll('.vf').forEach(function(b){b.style.background='white';b.style.color='#6b7280'});event.target.style.background='#6366f1';event.target.style.color='white';document.querySelectorAll('[data-vg]').forEach(function(el){el.style.display=e==='all'?'':el.dataset.vg===e?'':'none'})}
-function pvVoice(n){if('speechSynthesis' in window){window.speechSynthesis.cancel();var u=new SpeechSynthesisUtterance('Guten Tag, Praxis Dr. Schmidt, wie kann ich Ihnen helfen?');u.lang='de-DE';u.rate=1;window.speechSynthesis.speak(u)}}
-var bv=document.getElementById('ans-bg-vol');if(bv)bv.addEventListener('input',function(){document.getElementById('bg-vol-lbl').textContent=this.value+'%'});
-</script>
+
 </body>
 </html>
