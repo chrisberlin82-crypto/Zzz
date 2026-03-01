@@ -1,291 +1,214 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MED Rezeption - Anmeldung</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="style.css">
-    <style>
-        body {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            background: linear-gradient(135deg, #1e293b 0%, #0f172a 50%, #1e293b 100%);
-            position: relative;
-            overflow: hidden;
-        }
-        body::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle at 30% 50%, rgba(8,145,178,0.08) 0%, transparent 50%),
-                        radial-gradient(circle at 70% 50%, rgba(34,211,238,0.06) 0%, transparent 50%);
-            animation: guardBg 20s ease infinite;
-        }
-        @keyframes guardBg {
-            0%, 100% { transform: translate(0, 0); }
-            50% { transform: translate(-2%, -1%); }
-        }
-        .guard-container {
-            position: relative;
-            z-index: 1;
-            width: 100%;
-            max-width: 420px;
-            padding: 0 1rem;
-        }
-        .guard-card {
-            background: rgba(255,255,255,0.97);
-            border-radius: 16px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.1);
-            overflow: hidden;
-        }
-        .guard-header {
-            background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);
-            padding: 2.5rem 2rem 2rem;
-            text-align: center;
-            color: #fff;
-        }
-        .guard-header .guard-icon {
-            width: 72px;
-            height: 72px;
-            background: rgba(255,255,255,0.15);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 1rem;
-            font-size: 2rem;
-            backdrop-filter: blur(4px);
-            border: 2px solid rgba(255,255,255,0.2);
-        }
-        .guard-header h1 {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin-bottom: 0.25rem;
-        }
-        .guard-header p {
-            font-size: 0.85rem;
-            opacity: 0.85;
-        }
-        .guard-body {
-            padding: 2rem;
-        }
-        .guard-body .form-group {
-            margin-bottom: 1.25rem;
-        }
-        .guard-body label {
-            font-weight: 600;
-            font-size: 0.85rem;
-            color: #475569;
-            margin-bottom: 0.4rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .guard-body label i {
-            color: #94a3b8;
-            font-size: 0.85rem;
-        }
-        .guard-body input {
-            padding: 0.7rem 0.9rem;
-            border: 1.5px solid #e2e8f0;
-            border-radius: 10px;
-            font-size: 0.95rem;
-            transition: all 0.2s;
-        }
-        .guard-body input:focus {
-            border-color: #0891b2;
-            box-shadow: 0 0 0 3px rgba(8,145,178,0.12);
-        }
-        .guard-body .form-row-inline {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-        }
-        .guard-body .form-row-inline label {
-            font-weight: 500;
-            font-size: 0.85rem;
-            color: #64748b;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 0.4rem;
-            margin-bottom: 0;
-        }
-        .guard-body .form-row-inline input[type="checkbox"] {
-            width: auto;
-            accent-color: #0891b2;
-        }
-        .btn-guard {
-            width: 100%;
-            padding: 0.75rem;
-            font-size: 1rem;
-            font-weight: 600;
-            background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);
-            color: #fff;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-        }
-        .btn-guard:hover {
-            background: linear-gradient(135deg, #0e7490 0%, #155e75 100%);
-            transform: translateY(-1px);
-            box-shadow: 0 8px 20px rgba(8,145,178,0.3);
-        }
-        .btn-guard:active {
-            transform: translateY(0);
-        }
-        .guard-fehler {
-            background: #fef2f2;
-            border: 1px solid #fca5a5;
-            border-radius: 10px;
-            padding: 0.7rem 1rem;
-            color: #991b1b;
-            font-size: 0.85rem;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .guard-footer {
-            text-align: center;
-            padding: 0 2rem 1.75rem;
-        }
-        .guard-demo-info {
-            background: #ecfeff;
-            border: 1px solid #a5f3fc;
-            border-radius: 10px;
-            padding: 0.85rem 1rem;
-            font-size: 0.8rem;
-            color: #164e63;
-            line-height: 1.5;
-        }
-        .guard-demo-info strong {
-            display: block;
-            margin-bottom: 0.3rem;
-            font-size: 0.85rem;
-        }
-        .guard-demo-info code {
-            background: rgba(6,182,212,0.12);
-            padding: 0.1rem 0.4rem;
-            border-radius: 4px;
-            font-family: 'Courier New', monospace;
-            font-size: 0.8rem;
-        }
-        .guard-version {
-            position: fixed;
-            bottom: 1rem;
-            right: 1.5rem;
-            color: rgba(255,255,255,0.3);
-            font-size: 0.75rem;
-            z-index: 1;
-        }
-        @media (max-width: 480px) {
-            .guard-header { padding: 1.75rem 1.25rem 1.5rem; }
-            .guard-body { padding: 1.5rem 1.25rem; }
-            .guard-footer { padding: 0 1.25rem 1.25rem; }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zzz Platform - Zugangs-Code</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="stylesheet" href="style.css">
+<style>
+    body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        background: linear-gradient(135deg, #f0f4ff 0%, #e8f0fe 100%);
+        padding: 20px;
+    }
+
+    .guard-wrapper {
+        width: 100%;
+        max-width: 400px;
+    }
+
+    .guard-card {
+        background: var(--card-bg);
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        padding: 40px 36px;
+        text-align: center;
+    }
+
+    .guard-logo {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        margin-bottom: 28px;
+    }
+
+    .guard-logo .icon {
+        width: 44px;
+        height: 44px;
+        background: var(--primary);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 800;
+        font-size: 20px;
+    }
+
+    .guard-logo span {
+        font-weight: 700;
+        font-size: 18px;
+        color: var(--text);
+    }
+
+    .guard-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 6px;
+    }
+
+    .guard-subtitle {
+        font-size: 13px;
+        color: var(--text-muted);
+        margin-bottom: 24px;
+    }
+
+    .guard-card .code-input {
+        width: 100%;
+        padding: 14px 18px;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 9px;
+        font-size: 28px;
+        font-weight: 700;
+        font-family: var(--font);
+        color: var(--text);
+        text-align: center;
+        letter-spacing: 8px;
+        outline: none;
+        background: white;
+        transition: border-color .15s, box-shadow .15s;
+    }
+
+    .guard-card .code-input:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px var(--primary-ring);
+    }
+
+    .guard-card .code-input::placeholder {
+        font-size: 16px;
+        font-weight: 400;
+        letter-spacing: 2px;
+        color: var(--text-light);
+    }
+
+    .guard-btn {
+        width: 100%;
+        padding: 11px 18px;
+        background: var(--primary);
+        color: white;
+        border: none;
+        border-radius: 9px;
+        font-size: 14px;
+        font-weight: 600;
+        font-family: var(--font);
+        cursor: pointer;
+        transition: background .15s, transform .1s;
+        margin-top: 16px;
+    }
+
+    .guard-btn:hover {
+        background: var(--primary-dark);
+    }
+
+    .guard-btn:active {
+        transform: scale(0.98);
+    }
+
+    .guard-error {
+        background: var(--danger-light);
+        border: 1px solid #fca5a5;
+        border-radius: var(--radius-xs);
+        padding: 10px 14px;
+        color: var(--danger);
+        font-size: 12px;
+        font-weight: 500;
+        margin-top: 14px;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .guard-error.show {
+        display: flex;
+    }
+</style>
 </head>
 <body>
-    <div class="guard-container">
-        <div class="guard-card">
-            <div class="guard-header">
-                <div class="guard-icon"><i class="fa-solid fa-building-shield"></i></div>
-                <h1 id="guard-titel">MED Rezeption</h1>
-                <p id="guard-untertitel">Verwaltungssystem</p>
-            </div>
-            <div class="guard-body">
-                <form id="guard-form">
-                    <div id="guard-fehler" class="guard-fehler" hidden>
-                        <i class="fa-solid fa-circle-exclamation"></i>
-                        <span id="guard-fehler-text">Falsche Zugangsdaten.</span>
-                    </div>
-                    <div class="form-group">
-                        <label for="guard-benutzer"><i class="fa-solid fa-user"></i> Benutzername</label>
-                        <input type="text" id="guard-benutzer" value="admin" autocomplete="username" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="guard-passwort"><i class="fa-solid fa-lock"></i> Passwort</label>
-                        <input type="password" id="guard-passwort" value="demo" autocomplete="current-password" required>
-                    </div>
-                    <div class="form-row-inline">
-                        <label><input type="checkbox" id="guard-merken" checked> Angemeldet bleiben</label>
-                    </div>
-                    <button type="submit" class="btn-guard"><i class="fa-solid fa-right-to-bracket"></i> Anmelden</button>
-                </form>
-            </div>
-            <div class="guard-footer">
-                <div class="guard-demo-info">
-                    <strong><i class="fa-solid fa-info-circle"></i> Demo-Zugangsdaten</strong>
-                    <code>admin</code> / <code>teamleitung</code> / <code>standortleitung</code> / <code>agent</code><br>
-                    Passwort: <code>demo</code>
-                </div>
-            </div>
+
+<div class="guard-wrapper">
+    <div class="guard-card">
+        <div class="guard-logo">
+            <div class="icon">Z</div>
+            <span>Zzz Platform</span>
+        </div>
+
+        <div class="guard-title">Zugangs-Code eingeben</div>
+        <div class="guard-subtitle">Bitte den 6-stelligen Code eingeben um fortzufahren.</div>
+
+        <form id="guardForm" autocomplete="off">
+            <input type="text" class="code-input" id="codeInput"
+                   maxlength="6" inputmode="numeric" pattern="[0-9]*"
+                   placeholder="------" autofocus required>
+
+            <button type="submit" class="guard-btn">
+                <i class="fa-solid fa-shield-halved"></i> Zugang pruefen
+            </button>
+        </form>
+
+        <div class="guard-error" id="guardError">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            <span>Ungueltiger Code. Bitte erneut versuchen.</span>
         </div>
     </div>
-    <div class="guard-easter" style="position:fixed;bottom:3rem;left:0;right:0;text-align:center;color:#ffffff;font-size:0.9rem;font-style:normal;text-transform:uppercase;font-weight:700;opacity:1;z-index:1;letter-spacing:0.15em;">niemand hat die absicht einen ai agent zu entwickeln</div>
-    <div class="guard-version">MED Rezeption v1.0 MVP</div>
-    <script>
-    (function() {
-        var GUELTIGE_BENUTZER = {
-            "admin":           { passwort: "demo", name: "Administrator",    rolle: "admin" },
-            "teamleitung":     { passwort: "demo", name: "Frank Weber",      rolle: "teamleitung" },
-            "standortleitung": { passwort: "demo", name: "Dr. Sabine Gross", rolle: "standortleitung" },
-            "agent":           { passwort: "demo", name: "Lisa Meier",       rolle: "agent" }
-        };
+</div>
 
-        // Check ob bereits eingeloggt
-        if (sessionStorage.getItem("med_guard_auth") || localStorage.getItem("med_guard_auth")) {
-            window.location.href = "dashboard.html";
+<script>
+(function() {
+    var VALID_CODE = '123456';
+    var SESSION_KEY = 'zzz_guard_ok';
+
+    // Check existing session
+    try {
+        if (sessionStorage.getItem(SESSION_KEY) === '1') {
+            window.location.replace('admin-dashboard.html');
             return;
         }
+    } catch(e) {}
 
-        var form = document.getElementById("guard-form");
-        form.addEventListener("submit", function(e) {
-            e.preventDefault();
-            var benutzer = document.getElementById("guard-benutzer").value.trim().toLowerCase();
-            var passwort = document.getElementById("guard-passwort").value;
-            var merken   = document.getElementById("guard-merken").checked;
-            var fehlerEl = document.getElementById("guard-fehler");
-            var fehlerText = document.getElementById("guard-fehler-text");
+    var form = document.getElementById('guardForm');
+    var input = document.getElementById('codeInput');
+    var errorEl = document.getElementById('guardError');
 
-            var konto = GUELTIGE_BENUTZER[benutzer];
-            if (!konto || konto.passwort !== passwort) {
-                fehlerEl.hidden = false;
-                fehlerText.textContent = "Ungueltiger Benutzername oder Passwort.";
-                document.getElementById("guard-passwort").value = "";
-                document.getElementById("guard-passwort").focus();
-                return;
-            }
+    // Only allow numeric input
+    input.addEventListener('input', function() {
+        this.value = this.value.replace(/[^0-9]/g, '');
+    });
 
-            var authData = JSON.stringify({
-                benutzer: benutzer,
-                name: konto.name,
-                rolle: konto.rolle,
-                zeitpunkt: new Date().toISOString()
-            });
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
 
-            if (merken) {
-                localStorage.setItem("med_guard_auth", authData);
-            } else {
-                sessionStorage.setItem("med_guard_auth", authData);
-            }
+        var code = input.value.trim();
+        errorEl.classList.remove('show');
 
-            window.location.href = "dashboard.html";
-        });
-    })();
-    </script>
+        if (code === VALID_CODE) {
+            sessionStorage.setItem(SESSION_KEY, '1');
+            window.location.href = 'admin-dashboard.html';
+        } else {
+            errorEl.classList.add('show');
+            input.value = '';
+            input.focus();
+        }
+    });
+})();
+</script>
+
 </body>
 </html>

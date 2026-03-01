@@ -3,333 +3,231 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Zugang erforderlich</title>
+<title>Zzz Platform - Anmelden</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="stylesheet" href="style.css">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Inter:wght@400;500;600&display=swap');
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    min-height: 100vh;
-    background: linear-gradient(135deg, #e0f7f7 0%, #b2ebf2 25%, #e3f2fd 60%, #ffffff 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: 'Inter', sans-serif;
-    position: relative;
-    overflow-x: hidden;
-    padding-bottom: 4rem;
-  }
-  body::before {
-    content: '';
-    position: fixed;
-    width: 500px; height: 500px;
-    background: radial-gradient(circle, rgba(0,188,212,.15) 0%, transparent 70%);
-    top: -100px; right: -100px;
-    pointer-events: none;
-  }
-  body::after {
-    content: '';
-    position: fixed;
-    width: 400px; height: 400px;
-    background: radial-gradient(circle, rgba(33,150,243,.12) 0%, transparent 70%);
-    bottom: -80px; left: -80px;
-    pointer-events: none;
-  }
-  .card {
-    position: relative;
-    z-index: 10;
-    width: 100%;
-    max-width: 440px;
-    padding: 0 20px;
-    animation: fadeUp .5s cubic-bezier(.16,1,.3,1) both;
-  }
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-  .inner {
-    background: rgba(255,255,255,0.88);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(0,188,212,.25);
-    border-radius: 24px;
-    padding: 44px 40px;
-    box-shadow: 0 4px 40px rgba(0,150,200,.10), 0 1px 2px rgba(0,0,0,.04);
-    position: relative;
-  }
-  .inner::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, #00bcd4, #2196f3, #00bcd4);
-    border-radius: 24px 24px 0 0;
-  }
-  .logo {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    margin-bottom: 28px;
-  }
-  .logo-icon {
-    width: 48px; height: 48px;
-    background: linear-gradient(135deg, #00bcd4, #1976d2);
-    border-radius: 14px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 24px;
-    box-shadow: 0 4px 16px rgba(0,188,212,.35);
-  }
-  .logo-text {
-    font-family: 'Playfair Display', serif;
-    font-size: 22px;
-    font-weight: 700;
-    color: #0d47a1;
-  }
-  .logo-sub {
-    font-size: 10px;
-    color: #78909c;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    margin-top: 3px;
-  }
-  h1 {
-    font-family: 'Playfair Display', serif;
-    font-size: 26px;
-    color: #0d47a1;
-    margin-bottom: 8px;
-  }
-  .subtitle {
-    font-size: 13px;
-    color: #546e7a;
-    margin-bottom: 22px;
-    line-height: 1.6;
-  }
-  .quote {
-    background: linear-gradient(135deg, rgba(0,188,212,.07), rgba(33,150,243,.07));
-    border-left: 3px solid #00bcd4;
-    border-radius: 0 10px 10px 0;
-    padding: 13px 16px;
-    margin-bottom: 24px;
-  }
-  .quote p {
-    font-family: 'Playfair Display', serif;
-    font-style: italic;
-    font-size: 13px;
-    color: #1565c0;
-    line-height: 1.6;
-  }
-  .quote span {
-    display: block;
-    font-family: 'Inter', sans-serif;
-    font-style: normal;
-    font-size: 10px;
-    color: #78909c;
-    margin-top: 6px;
-    letter-spacing: 1px;
-  }
-  .field { margin-bottom: 16px; }
-  .field label {
-    display: block;
-    font-size: 11px;
-    font-weight: 600;
-    color: #78909c;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    margin-bottom: 8px;
-  }
-  .field input {
-    width: 100%;
-    padding: 13px 16px;
-    background: rgba(255,255,255,0.95);
-    border: 1.5px solid #b2dfdb;
-    border-radius: 12px;
-    color: #1a237e;
-    font-family: 'Inter', sans-serif;
-    font-size: 15px;
-    outline: none;
-    transition: border-color .2s, box-shadow .2s;
-  }
-  .field input:focus {
-    border-color: #00bcd4;
-    box-shadow: 0 0 0 3px rgba(0,188,212,.15);
-  }
-  .field input.error {
-    border-color: #ef5350;
-    animation: shake .4s cubic-bezier(.36,.07,.19,.97);
-  }
-  @keyframes shake {
-    10%,90%  { transform: translateX(-2px); }
-    20%,80%  { transform: translateX(4px); }
-    30%,50%,70% { transform: translateX(-4px); }
-    40%,60%  { transform: translateX(4px); }
-  }
-  .error-msg { font-size: 12px; color: #ef5350; margin-top: 6px; display: none; }
-  .error-msg.show { display: block; }
-  button {
-    width: 100%;
-    padding: 14px;
-    margin-top: 8px;
-    background: linear-gradient(135deg, #00bcd4, #1976d2);
-    border: none;
-    border-radius: 12px;
-    color: white;
-    font-family: 'Inter', sans-serif;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: transform .1s, box-shadow .2s;
-    box-shadow: 0 4px 20px rgba(0,188,212,.4);
-  }
-  button:hover { box-shadow: 0 6px 28px rgba(0,188,212,.55); }
-  button:active { transform: scale(.98); }
-  button:disabled { opacity: .6; cursor: not-allowed; }
-  .spinner {
-    display: none; width: 16px; height: 16px;
-    border: 2px solid rgba(255,255,255,.4);
-    border-top-color: white;
-    border-radius: 50%;
-    animation: spin .7s linear infinite;
-    margin: 0 auto;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .divider {
-    display: flex; align-items: center; gap: 12px;
-    margin: 24px 0 20px;
-  }
-  .divider::before, .divider::after {
-    content: ''; flex: 1; height: 1px;
-    background: linear-gradient(90deg, transparent, #b2dfdb, transparent);
-  }
-  .divider span { font-size: 10px; color: #90a4ae; letter-spacing: 2px; text-transform: uppercase; }
-  .meta { text-align: center; font-size: 11px; color: #90a4ae; line-height: 1.8; }
-  .success-overlay {
-    position: fixed; inset: 0;
-    background: linear-gradient(135deg, #e0f7f7, #e3f2fd);
-    z-index: 100;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center; gap: 16px;
-    opacity: 0; pointer-events: none; transition: opacity .4s;
-  }
-  .success-overlay.show { opacity: 1; pointer-events: all; }
-  .success-overlay .icon {
-    width: 72px; height: 72px;
-    background: linear-gradient(135deg, #00bcd4, #1976d2);
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 32px; color: white;
-    box-shadow: 0 8px 32px rgba(0,188,212,.4);
-    animation: popIn .4s cubic-bezier(.16,1,.3,1);
-  }
-  @keyframes popIn {
-    from { transform: scale(.5); opacity: 0; }
-    to   { transform: scale(1); opacity: 1; }
-  }
-  .success-overlay p { font-size: 14px; color: #1565c0; font-weight: 500; }
-  .zitat-banner {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: linear-gradient(135deg, #0d47a1 0%, #1565c0 50%, #0d47a1 100%);
-    padding: 1.6rem 2rem;
-    text-align: center;
-    color: #fff;
-    font-family: 'Inter', sans-serif;
-    font-size: 1.15rem;
-    font-weight: 800;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    box-shadow: 0 -4px 24px rgba(13,71,161,0.3);
-    z-index: 50;
-  }
-  .zitat-banner .verfasser {
-    display: block;
-    font-size: 0.75rem;
-    font-weight: 500;
-    letter-spacing: 0.12em;
-    text-transform: none;
-    opacity: 0.8;
-    margin-top: 0.4rem;
-  }
+    body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        background: linear-gradient(135deg, #f0f4ff 0%, #e8f0fe 100%);
+        padding: 20px;
+    }
+
+    .login-wrapper {
+        width: 100%;
+        max-width: 400px;
+    }
+
+    .login-card {
+        background: var(--card-bg);
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        padding: 40px 36px;
+    }
+
+    .login-logo {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 8px;
+    }
+
+    .login-logo .icon {
+        width: 44px;
+        height: 44px;
+        background: var(--primary);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 800;
+        font-size: 20px;
+    }
+
+    .login-logo span {
+        font-weight: 700;
+        font-size: 18px;
+        color: var(--text);
+    }
+
+    .login-subtitle {
+        font-size: 13px;
+        color: var(--text-muted);
+        margin-bottom: 28px;
+        margin-top: 4px;
+    }
+
+    .login-card .form-group {
+        margin-bottom: 16px;
+    }
+
+    .login-card .form-group label {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-transform: none;
+        letter-spacing: 0;
+        margin-bottom: 6px;
+        display: block;
+    }
+
+    .login-card .form-group input {
+        width: 100%;
+        padding: 10px 14px;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 9px;
+        font-size: 14px;
+        font-family: var(--font);
+        color: var(--text);
+        outline: none;
+        background: white;
+        transition: border-color .15s, box-shadow .15s;
+    }
+
+    .login-card .form-group input:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px var(--primary-ring);
+    }
+
+    .login-btn {
+        width: 100%;
+        padding: 11px 18px;
+        background: var(--primary);
+        color: white;
+        border: none;
+        border-radius: 9px;
+        font-size: 14px;
+        font-weight: 600;
+        font-family: var(--font);
+        cursor: pointer;
+        transition: background .15s, transform .1s;
+        margin-top: 4px;
+    }
+
+    .login-btn:hover {
+        background: var(--primary-dark);
+    }
+
+    .login-btn:active {
+        transform: scale(0.98);
+    }
+
+    .login-demo {
+        margin-top: 20px;
+        padding: 12px 14px;
+        background: var(--primary-light);
+        border-radius: var(--radius-xs);
+        text-align: center;
+        font-size: 12px;
+        color: var(--text-muted);
+        line-height: 1.6;
+    }
+
+    .login-demo strong {
+        color: var(--primary);
+    }
+
+    .login-error {
+        background: var(--danger-light);
+        border: 1px solid #fca5a5;
+        border-radius: var(--radius-xs);
+        padding: 10px 14px;
+        color: var(--danger);
+        font-size: 12px;
+        font-weight: 500;
+        margin-bottom: 16px;
+        display: none;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .login-error.show {
+        display: flex;
+    }
 </style>
 </head>
 <body>
-<div class="success-overlay" id="successOverlay">
-  <div class="icon">✓</div>
-  <p>Zugang gewährt — wird weitergeleitet…</p>
-</div>
-<div class="card">
-  <div class="inner">
-    <div class="logo">
-      <div class="logo-icon">🏥</div>
-      <div>
-        <div class="logo-text">MedReception</div>
-        <div class="logo-sub">Entwicklungsumgebung</div>
-      </div>
+
+<div class="login-wrapper">
+    <div class="login-card">
+        <div class="login-logo">
+            <div class="icon">Z</div>
+            <span>Zzz Platform</span>
+        </div>
+        <div class="login-subtitle">CallCenter &amp; AI Agent Platform</div>
+
+        <form id="loginForm" autocomplete="on">
+            <div class="login-error" id="loginError">
+                <i class="fa-solid fa-circle-exclamation"></i>
+                <span>Ungueltige Zugangsdaten. Bitte erneut versuchen.</span>
+            </div>
+
+            <div class="form-group">
+                <label for="email">E-Mail</label>
+                <input type="email" id="email" placeholder="name@firma.de" autocomplete="username" required autofocus>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Passwort</label>
+                <input type="password" id="password" placeholder="Passwort eingeben" autocomplete="current-password" required>
+            </div>
+
+            <button type="submit" class="login-btn">
+                <i class="fa-solid fa-right-to-bracket"></i> Anmelden
+            </button>
+        </form>
+
+        <div class="login-demo">
+            Demo-Zugang: <strong>admin@demo.de</strong> / <strong>demo</strong>
+        </div>
     </div>
-    <h1>Zugang erforderlich</h1>
-    <p class="subtitle">Dieses System befindet sich in der Entwicklung.<br>Bitte Zugangscode eingeben um fortzufahren.</p>
-    <div class="field">
-      <label>Zugangscode</label>
-      <input type="password" id="passwordInput" placeholder="Zugangscode eingeben"
-             autocomplete="current-password" autofocus
-             onkeydown="if(event.key==='Enter') verify()">
-      <div class="error-msg" id="errorMsg">Falscher Zugangscode. Bitte erneut versuchen.</div>
-    </div>
-    <button onclick="verify()" id="btn">
-      <span id="btnText">Zugang anfordern</span>
-      <div class="spinner" id="spinner"></div>
-    </button>
-    <div class="divider"><span>gesicherte verbindung</span></div>
-    <div class="meta">
-      Nur für autorisierte Personen<br>
-      Unbefugter Zugriff wird protokolliert
-    </div>
-  </div>
 </div>
-<div class="zitat-banner">
-  &bdquo;NIEMAND HAT DIE ABSICHT, AI AGENTS ZU ENTWICKELN.&ldquo;
-  <span class="verfasser">— Ceilitz, 2024</span>
-</div>
+
 <script>
-  const ACCESS_PASSWORD = 'MedReception2025!';
-  const REDIRECT_URL    = 'guard.html';
-  const SESSION_HOURS   = 8;
-  const SESSION_KEY     = 'mr_guard_session';
-  function checkSession() {
+(function() {
+    var SESSION_KEY = 'zzz_session';
+
+    // Check existing session
     try {
-      const s = JSON.parse(sessionStorage.getItem(SESSION_KEY) || 'null');
-      if (s && s.expires > Date.now()) { sessionStorage.setItem("med_portal_ok", "1"); window.location.replace(REDIRECT_URL); return true; }
-    } catch {}
-    return false;
-  }
-  function verify() {
-    const input    = document.getElementById('passwordInput');
-    const btn      = document.getElementById('btn');
-    const spinner  = document.getElementById('spinner');
-    const btnText  = document.getElementById('btnText');
-    const errorMsg = document.getElementById('errorMsg');
-    input.classList.remove('error');
-    errorMsg.classList.remove('show');
-    btn.disabled = true;
-    btnText.style.display = 'none';
-    spinner.style.display = 'block';
-    setTimeout(() => {
-      if (input.value === ACCESS_PASSWORD) {
-        sessionStorage.setItem(SESSION_KEY, JSON.stringify({ expires: Date.now() + SESSION_HOURS * 3600000 }));
-        sessionStorage.setItem("med_portal_ok", "1");
-        document.getElementById('successOverlay').classList.add('show');
-        setTimeout(() => window.location.replace(REDIRECT_URL), 1200);
-      } else {
-        input.classList.add('error');
-        errorMsg.classList.add('show');
-        input.value = '';
-        btn.disabled = false;
-        btnText.style.display = 'block';
-        spinner.style.display = 'none';
-        input.focus();
-      }
-    }, 600);
-  }
-  checkSession();
+        var session = JSON.parse(sessionStorage.getItem(SESSION_KEY) || 'null');
+        if (session && session.authenticated) {
+            window.location.replace('admin-dashboard.html');
+            return;
+        }
+    } catch(e) {}
+
+    var form = document.getElementById('loginForm');
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        var email = document.getElementById('email').value.trim();
+        var password = document.getElementById('password').value;
+        var errorEl = document.getElementById('loginError');
+
+        errorEl.classList.remove('show');
+
+        // Simple demo validation
+        if (email === 'admin@demo.de' && password === 'demo') {
+            sessionStorage.setItem(SESSION_KEY, JSON.stringify({
+                authenticated: true,
+                email: email,
+                name: 'Administrator',
+                timestamp: new Date().toISOString()
+            }));
+            window.location.href = 'admin-dashboard.html';
+        } else {
+            errorEl.classList.add('show');
+            document.getElementById('password').value = '';
+            document.getElementById('password').focus();
+        }
+    });
+})();
 </script>
+
 </body>
 </html>

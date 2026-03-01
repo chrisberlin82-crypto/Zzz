@@ -3,7 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin Dashboard – MedReception</title>
+<title>Admin Dashboard – Zzz Platform</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="stylesheet" href="style.css">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -171,18 +173,22 @@
 <body>
 <!-- Sidebar -->
 <div class="sidebar">
-  <div class="sidebar-logo" onclick="location.href='uebersicht.html'" style="cursor:pointer"><div class="icon">M</div><span>MedReception</span></div>
-  <div class="nav-group">Übersicht</div>
-  <div class="nav-item" onclick="location.href='uebersicht.html'" style="cursor:pointer">🗺 Projektübersicht</div>
-  <div class="nav-item active">📊 Admin Dashboard</div>
-  <div class="nav-group">Kommunikation</div>
-  <div class="nav-item" onclick="location.href='agent-board.html'" style="cursor:pointer">🤖 Agent Board</div>
-  <div class="nav-item" onclick="location.href='flow-editor.html'" style="cursor:pointer">🧠 Flow Editor</div>
-  <div class="nav-group">Dashboards</div>
-  <div class="nav-item" onclick="location.href='teamleiter.html'" style="cursor:pointer">👥 Teamleiter</div>
-  <div class="nav-item" onclick="location.href='standortleitung.html'" style="cursor:pointer">📍 Standortleitung</div>
+  <div class="sidebar-logo" onclick="location.href='admin-dashboard.html'"><div class="icon">Z</div><span>Zzz Platform</span></div>
+  <div class="nav-group">Uebersicht</div>
+  <div class="nav-item active" onclick="location.href='admin-dashboard.html'"><i class="fa-solid fa-gauge"></i> Dashboard</div>
+  <div class="nav-group">AI & Automatisierung</div>
+  <div class="nav-item" onclick="location.href='ai-agent.html'"><i class="fa-solid fa-microchip"></i> AI Agents</div>
+  <div class="nav-item" onclick="location.href='wissensdatenbank.html'"><i class="fa-solid fa-book"></i> Wissensdatenbank</div>
+  <div class="nav-item" onclick="location.href='ansagen.html'"><i class="fa-solid fa-tower-broadcast"></i> Ansagen</div>
+  <div class="nav-group">Callcenter</div>
+  <div class="nav-item" onclick="location.href='agent-board.html'"><i class="fa-solid fa-headset"></i> Agent Board</div>
+  <div class="nav-item" onclick="location.href='softphone.html'"><i class="fa-solid fa-phone"></i> Softphone</div>
+  <div class="nav-item" onclick="location.href='agenten.html'"><i class="fa-solid fa-users-gear"></i> Agenten Verwaltung</div>
   <div class="nav-group">System</div>
-  <div class="nav-item" onclick="sessionStorage.removeItem('mr_guard_session');location.href='index.html'" style="cursor:pointer">🔓 Abmelden</div>
+  <div class="nav-item" onclick="location.href='auswertung.html'"><i class="fa-solid fa-chart-line"></i> Auswertungen</div>
+  <div class="nav-item" onclick="location.href='benutzer.html'"><i class="fa-solid fa-user-gear"></i> Benutzer</div>
+  <div class="nav-group"></div>
+  <div class="nav-item" onclick="sessionStorage.removeItem('mr_guard_session');location.href='index.html'"><i class="fa-solid fa-right-from-bracket"></i> Abmelden</div>
 </div>
 <!-- Main -->
 <div class="main">
@@ -190,7 +196,30 @@
     <h1>Admin Dashboard</h1>
     <div class="live-badge"><span class="live-dot"></span> Live · 08:34 Uhr</div>
   </div>
-  <p class="date">Sonntag, 22. Februar 2026</p>
+  <p class="date" style="margin-bottom:16px">Sonntag, 01. Maerz 2026</p>
+  <!-- Quick-Access -->
+  <div class="quick-grid">
+    <div class="quick-card" onclick="showTab('asterisk')">
+      <div class="q-icon blue"><i class="fa-solid fa-server"></i></div>
+      <div><div class="q-title">Asterisk Server</div><div class="q-sub">PBX & SIP Verwaltung</div></div>
+      <div class="q-status online"></div>
+    </div>
+    <div class="quick-card" onclick="showTab('acd')">
+      <div class="q-icon green"><i class="fa-solid fa-phone-volume"></i></div>
+      <div><div class="q-title">ACD Verwaltung</div><div class="q-sub">Queues & Routing</div></div>
+      <div class="q-status online"></div>
+    </div>
+    <div class="quick-card" onclick="location.href='ai-agent.html'">
+      <div class="q-icon purple"><i class="fa-solid fa-microchip"></i></div>
+      <div><div class="q-title">AI Agents</div><div class="q-sub">3 Agents aktiv</div></div>
+      <div class="q-status online"></div>
+    </div>
+    <div class="quick-card" onclick="location.href='agent-board.html'">
+      <div class="q-icon orange"><i class="fa-solid fa-headset"></i></div>
+      <div><div class="q-title">Agent Board</div><div class="q-sub">5 Agenten online</div></div>
+      <div class="q-status online"></div>
+    </div>
+  </div>
   <!-- Dashboard Tabs -->
   <div class="dash-tabs">
     <button class="dash-tab active" onclick="showTab('overview')">📊 Übersicht</button>
