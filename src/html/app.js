@@ -71,7 +71,7 @@ var MED_MODUS = "demo"; // "demo" = localStorage, "live" = Backend + LLM
 var MED_LLM_VERFUEGBAR = false;
 
 function modusPruefen() {
-    // Pruefe ob Backend + LLM erreichbar ist
+    // Pruefe ob Backend erreichbar ist
     try {
         var xhr = new XMLHttpRequest();
         xhr.open("GET", API_BASE + "/llm/status", true);
@@ -84,12 +84,40 @@ function modusPruefen() {
                         MED_MODUS = "live";
                         MED_LLM_VERFUEGBAR = true;
                         modusAnzeigeAktualisieren();
+                        // Backend-Daten in localStorage laden und Seed ausfuehren
+                        backendSeedUndSync();
                     }
                 } catch (e) { console.warn("modusPruefen JSON:", e); }
             }
         };
         xhr.send();
     } catch (e) { console.warn("modusPruefen:", e); }
+}
+
+async function backendSeedUndSync() {
+    // Seed-Daten im Backend anlegen (idempotent)
+    try { await fetch(API_BASE + "/seed", { method: "POST" }); } catch (e) { /* ignorieren */ }
+    // Backend-Daten in localStorage synchronisieren
+    try {
+        var endpoints = {
+            patienten: "/patienten",
+            aerzte: "/aerzte",
+            termine: "/termine",
+            agenten: "/agenten",
+            benutzer: "/benutzer",
+            anrufe: "/anrufe"
+        };
+        for (var key in endpoints) {
+            try {
+                var resp = await fetch(API_BASE + endpoints[key]);
+                if (resp.ok) {
+                    var daten = await resp.json();
+                    dbSpeichern(key, daten);
+                }
+            } catch (e) { console.warn("Sync " + key + ":", e); }
+        }
+        localStorage.setItem("med_demo_geladen", "1");
+    } catch (e) { console.warn("backendSeedUndSync:", e); }
 }
 
 function modusAnzeigeAktualisieren() {
@@ -384,6 +412,15 @@ function terminValidieren(daten) {
 // ===== Benutzer API (localStorage) =====
 
 async function benutzerSpeichernApi(daten) {
+    if (MED_MODUS === "live") {
+        try {
+            var resp = await fetch(API_BASE + "/benutzer", {
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(daten)
+            });
+            if (resp.ok) return await resp.json();
+        } catch (e) { console.warn("benutzerSpeichernApi:", e); }
+    }
     var liste = dbLaden("benutzer");
     daten.id = dbNaechsteId("benutzer");
     liste.push(daten);
@@ -392,16 +429,39 @@ async function benutzerSpeichernApi(daten) {
 }
 
 async function benutzerAktualisierenApi(id, daten) {
+    if (MED_MODUS === "live") {
+        try {
+            var resp = await fetch(API_BASE + "/benutzer/" + id, {
+                method: "PUT", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(daten)
+            });
+            if (resp.ok) return await resp.json();
+        } catch (e) { console.warn("benutzerAktualisierenApi:", e); }
+    }
     dbAktualisieren("benutzer", parseInt(id), daten);
     return daten;
 }
 
 async function benutzerLoeschenApi(id) {
+    if (MED_MODUS === "live") {
+        try {
+            var resp = await fetch(API_BASE + "/benutzer/" + id, { method: "DELETE" });
+            if (resp.ok) return await resp.json();
+        } catch (e) { console.warn("benutzerLoeschenApi:", e); }
+    }
     dbLoeschen("benutzer", parseInt(id));
     return { erfolg: true };
 }
 
 async function benutzerLadenApi(suche) {
+    if (MED_MODUS === "live") {
+        try {
+            var url = API_BASE + "/benutzer";
+            if (suche) url += "?suche=" + encodeURIComponent(suche);
+            var resp = await fetch(url);
+            if (resp.ok) return await resp.json();
+        } catch (e) { console.warn("benutzerLadenApi:", e); }
+    }
     var liste = dbLaden("benutzer");
     if (suche) {
         var s = suche.toLowerCase();
@@ -586,6 +646,14 @@ function benutzerZurTabelle(daten) {
 // ===== Patienten API (localStorage) =====
 
 async function patientenLadenApi(suche) {
+    if (MED_MODUS === "live") {
+        try {
+            var url = API_BASE + "/patienten";
+            if (suche) url += "?suche=" + encodeURIComponent(suche);
+            var resp = await fetch(url);
+            if (resp.ok) return await resp.json();
+        } catch (e) { console.warn("patientenLadenApi:", e); }
+    }
     var liste = dbLaden("patienten");
     if (suche) {
         var s = suche.toLowerCase();
@@ -599,6 +667,15 @@ async function patientenLadenApi(suche) {
 }
 
 async function patientSpeichernApi(daten) {
+    if (MED_MODUS === "live") {
+        try {
+            var resp = await fetch(API_BASE + "/patienten", {
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(daten)
+            });
+            if (resp.ok) return await resp.json();
+        } catch (e) { console.warn("patientSpeichernApi:", e); }
+    }
     var liste = dbLaden("patienten");
     daten.id = dbNaechsteId("patienten");
     liste.push(daten);
@@ -607,11 +684,26 @@ async function patientSpeichernApi(daten) {
 }
 
 async function patientAktualisierenApi(id, daten) {
+    if (MED_MODUS === "live") {
+        try {
+            var resp = await fetch(API_BASE + "/patienten/" + id, {
+                method: "PUT", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(daten)
+            });
+            if (resp.ok) return await resp.json();
+        } catch (e) { console.warn("patientAktualisierenApi:", e); }
+    }
     dbAktualisieren("patienten", parseInt(id), daten);
     return daten;
 }
 
 async function patientLoeschenApi(id) {
+    if (MED_MODUS === "live") {
+        try {
+            var resp = await fetch(API_BASE + "/patienten/" + id, { method: "DELETE" });
+            if (resp.ok) return await resp.json();
+        } catch (e) { console.warn("patientLoeschenApi:", e); }
+    }
     dbLoeschen("patienten", parseInt(id));
     return { erfolg: true };
 }
@@ -742,10 +834,25 @@ async function patientenListeAktualisieren(suche) {
 // ===== Aerzte API (localStorage) =====
 
 async function aerzteLadenApi() {
+    if (MED_MODUS === "live") {
+        try {
+            var resp = await fetch(API_BASE + "/aerzte");
+            if (resp.ok) return await resp.json();
+        } catch (e) { console.warn("aerzteLadenApi:", e); }
+    }
     return dbLaden("aerzte");
 }
 
 async function arztSpeichernApi(daten) {
+    if (MED_MODUS === "live") {
+        try {
+            var resp = await fetch(API_BASE + "/aerzte", {
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(daten)
+            });
+            if (resp.ok) return await resp.json();
+        } catch (e) { console.warn("arztSpeichernApi:", e); }
+    }
     var liste = dbLaden("aerzte");
     daten.id = dbNaechsteId("aerzte");
     liste.push(daten);
@@ -754,11 +861,26 @@ async function arztSpeichernApi(daten) {
 }
 
 async function arztAktualisierenApi(id, daten) {
+    if (MED_MODUS === "live") {
+        try {
+            var resp = await fetch(API_BASE + "/aerzte/" + id, {
+                method: "PUT", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(daten)
+            });
+            if (resp.ok) return await resp.json();
+        } catch (e) { console.warn("arztAktualisierenApi:", e); }
+    }
     dbAktualisieren("aerzte", parseInt(id), daten);
     return daten;
 }
 
 async function arztLoeschenApi(id) {
+    if (MED_MODUS === "live") {
+        try {
+            var resp = await fetch(API_BASE + "/aerzte/" + id, { method: "DELETE" });
+            if (resp.ok) return await resp.json();
+        } catch (e) { console.warn("arztLoeschenApi:", e); }
+    }
     dbLoeschen("aerzte", parseInt(id));
     return { erfolg: true };
 }
@@ -872,6 +994,14 @@ async function aerzteListeAktualisieren() {
 // ===== Termine API (localStorage) =====
 
 async function termineLadenApi(datum) {
+    if (MED_MODUS === "live") {
+        try {
+            var url = API_BASE + "/termine";
+            if (datum) url += "?datum=" + encodeURIComponent(datum);
+            var resp = await fetch(url);
+            if (resp.ok) return await resp.json();
+        } catch (e) { console.warn("termineLadenApi:", e); }
+    }
     var liste = dbLaden("termine");
     if (datum) {
         liste = liste.filter(function (t) { return t.datum === datum; });
@@ -879,29 +1009,56 @@ async function termineLadenApi(datum) {
     return liste;
 }
 
-async function terminSpeichernApi(daten) {
-    var liste = dbLaden("termine");
-    daten.id = dbNaechsteId("termine");
+function _terminNamenSetzen(daten) {
     var patient = dbFinden("patienten", daten.patient_id);
     var arzt = dbFinden("aerzte", daten.arzt_id);
     daten.patient_name = patient ? patient.nachname + ", " + patient.vorname : "Unbekannt";
     daten.arzt_name = arzt ? ((arzt.titel || "") + " " + arzt.vorname + " " + arzt.nachname).trim() : "Unbekannt";
+}
+
+async function terminSpeichernApi(daten) {
+    _terminNamenSetzen(daten);
     daten.status = daten.status || "geplant";
+    daten.dauer_minuten = daten.dauer_minuten || daten.dauer_min || 15;
+    if (MED_MODUS === "live") {
+        try {
+            var resp = await fetch(API_BASE + "/termine", {
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(daten)
+            });
+            if (resp.ok) return await resp.json();
+        } catch (e) { console.warn("terminSpeichernApi:", e); }
+    }
+    var liste = dbLaden("termine");
+    daten.id = dbNaechsteId("termine");
     liste.push(daten);
     dbSpeichern("termine", liste);
     return daten;
 }
 
 async function terminAktualisierenApi(id, daten) {
-    var patient = dbFinden("patienten", daten.patient_id);
-    var arzt = dbFinden("aerzte", daten.arzt_id);
-    daten.patient_name = patient ? patient.nachname + ", " + patient.vorname : "Unbekannt";
-    daten.arzt_name = arzt ? ((arzt.titel || "") + " " + arzt.vorname + " " + arzt.nachname).trim() : "Unbekannt";
+    _terminNamenSetzen(daten);
+    daten.dauer_minuten = daten.dauer_minuten || daten.dauer_min || 15;
+    if (MED_MODUS === "live") {
+        try {
+            var resp = await fetch(API_BASE + "/termine/" + id, {
+                method: "PUT", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(daten)
+            });
+            if (resp.ok) return await resp.json();
+        } catch (e) { console.warn("terminAktualisierenApi:", e); }
+    }
     dbAktualisieren("termine", parseInt(id), daten);
     return daten;
 }
 
 async function terminLoeschenApi(id) {
+    if (MED_MODUS === "live") {
+        try {
+            var resp = await fetch(API_BASE + "/termine/" + id, { method: "DELETE" });
+            if (resp.ok) return await resp.json();
+        } catch (e) { console.warn("terminLoeschenApi:", e); }
+    }
     dbLoeschen("termine", parseInt(id));
     return { erfolg: true };
 }
@@ -1057,14 +1214,16 @@ async function termineListeAktualisieren(datum) {
 // ===== Wartezimmer API (localStorage) =====
 
 async function wartezimmerLadenApi() {
+    if (MED_MODUS === "live") {
+        try {
+            var resp = await fetch(API_BASE + "/wartezimmer");
+            if (resp.ok) return await resp.json();
+        } catch (e) { console.warn("wartezimmerLadenApi:", e); }
+    }
     return dbLaden("wartezimmer").filter(function (e) { return e.status !== "fertig"; });
 }
 
 async function wartezimmerCheckinApi(daten) {
-    var liste = dbLaden("wartezimmer");
-    daten.id = dbNaechsteId("wartezimmer");
-    daten.status = "wartend";
-    daten.ankunft_zeit = new Date().toISOString();
     var patient = dbFinden("patienten", daten.patient_id);
     daten.patient_name = patient ? patient.nachname + ", " + patient.vorname : "Unbekannt";
     if (daten.termin_id) {
@@ -1075,17 +1234,42 @@ async function wartezimmerCheckinApi(daten) {
             daten.arzt_name = termin.arzt_name;
         }
     }
+    if (MED_MODUS === "live") {
+        try {
+            var resp = await fetch(API_BASE + "/wartezimmer", {
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(daten)
+            });
+            if (resp.ok) return await resp.json();
+        } catch (e) { console.warn("wartezimmerCheckinApi:", e); }
+    }
+    var liste = dbLaden("wartezimmer");
+    daten.id = dbNaechsteId("wartezimmer");
+    daten.status = "wartend";
+    daten.ankunft_zeit = new Date().toISOString();
     liste.push(daten);
     dbSpeichern("wartezimmer", liste);
     return daten;
 }
 
 async function wartezimmerStatusApi(id, status) {
+    if (MED_MODUS === "live") {
+        try {
+            var resp = await fetch(API_BASE + "/wartezimmer/" + id + "/status?status=" + encodeURIComponent(status), { method: "PUT" });
+            if (resp.ok) return await resp.json();
+        } catch (e) { console.warn("wartezimmerStatusApi:", e); }
+    }
     dbAktualisieren("wartezimmer", parseInt(id), { status: status });
     return { erfolg: true };
 }
 
 async function wartezimmerEntfernenApi(id) {
+    if (MED_MODUS === "live") {
+        try {
+            var resp = await fetch(API_BASE + "/wartezimmer/" + id, { method: "DELETE" });
+            if (resp.ok) return await resp.json();
+        } catch (e) { console.warn("wartezimmerEntfernenApi:", e); }
+    }
     dbLoeschen("wartezimmer", parseInt(id));
     return { erfolg: true };
 }
@@ -1220,13 +1404,28 @@ async function wartezimmerAktualisieren() {
     } catch (_) { console.warn("Fehler:", _); }
 }
 
-// ===== Agenten API (localStorage) =====
+// ===== Agenten API =====
 
 async function agentenLadenApi() {
+    if (MED_MODUS === "live") {
+        try {
+            var resp = await fetch(API_BASE + "/agenten");
+            if (resp.ok) return await resp.json();
+        } catch (e) { console.warn("agentenLadenApi:", e); }
+    }
     return dbLaden("agenten");
 }
 
 async function agentSpeichernApi(daten) {
+    if (MED_MODUS === "live") {
+        try {
+            var resp = await fetch(API_BASE + "/agenten", {
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(daten)
+            });
+            if (resp.ok) return await resp.json();
+        } catch (e) { console.warn("agentSpeichernApi:", e); }
+    }
     var liste = dbLaden("agenten");
     daten.id = dbNaechsteId("agenten");
     daten.status = daten.status || "offline";
@@ -1236,21 +1435,53 @@ async function agentSpeichernApi(daten) {
 }
 
 async function agentAktualisierenApi(id, daten) {
+    if (MED_MODUS === "live") {
+        try {
+            var resp = await fetch(API_BASE + "/agenten/" + id, {
+                method: "PUT", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(daten)
+            });
+            if (resp.ok) return await resp.json();
+        } catch (e) { console.warn("agentAktualisierenApi:", e); }
+    }
     dbAktualisieren("agenten", parseInt(id), daten);
     return daten;
 }
 
 async function agentLoeschenApi(id) {
+    if (MED_MODUS === "live") {
+        try {
+            var resp = await fetch(API_BASE + "/agenten/" + id, { method: "DELETE" });
+            if (resp.ok) return await resp.json();
+        } catch (e) { console.warn("agentLoeschenApi:", e); }
+    }
     dbLoeschen("agenten", parseInt(id));
     return { erfolg: true };
 }
 
 async function agentStatusSetzenApi(id, status) {
+    if (MED_MODUS === "live") {
+        try {
+            var resp = await fetch(API_BASE + "/agenten/" + id, {
+                method: "PUT", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ status: status })
+            });
+            if (resp.ok) return await resp.json();
+        } catch (e) { console.warn("agentStatusSetzenApi:", e); }
+    }
     dbAktualisieren("agenten", parseInt(id), { status: status });
     return { erfolg: true };
 }
 
 async function anrufeLadenApi(aktiv) {
+    if (MED_MODUS === "live") {
+        try {
+            var url = API_BASE + "/anrufe";
+            if (aktiv) url += "?aktiv=true";
+            var resp = await fetch(url);
+            if (resp.ok) return await resp.json();
+        } catch (e) { console.warn("anrufeLadenApi:", e); }
+    }
     var liste = dbLaden("anrufe");
     if (aktiv) {
         liste = liste.filter(function (a) { return a.status === "klingelt" || a.status === "verbunden"; });

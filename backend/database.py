@@ -1,5 +1,6 @@
 """
 Datenbank — SQLAlchemy Async mit SQLite.
+Modelle sind an das Frontend angepasst.
 """
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase
@@ -25,34 +26,29 @@ class Base(DeclarativeBase):
 class Anruf(Base):
     __tablename__ = "anrufe"
     id = Column(Integer, primary_key=True, autoincrement=True)
-    caller_id = Column(String(64))
-    caller_name = Column(String(128), default="")
-    kanal = Column(String(64))
+    anrufer_nummer = Column(String(64), default="")
+    anrufer_name = Column(String(128), default="")
+    agent_name = Column(String(128), default="")
+    warteschlange = Column(String(64), default="")
+    typ = Column(String(16), default="eingehend")  # eingehend, ausgehend
     status = Column(String(32), default="aktiv")  # aktiv, beendet, verpasst, voicebot
-    richtung = Column(String(16), default="eingehend")
-    queue = Column(String(64), default="")
-    agent_id = Column(Integer, ForeignKey("agenten.id"), nullable=True)
-    voicebot_aktiv = Column(Boolean, default=False)
+    beginn = Column(String(32), default="")
     dauer_sekunden = Column(Integer, default=0)
-    aufnahme_pfad = Column(String(256), default="")
+    voicebot_aktiv = Column(Boolean, default=False)
     transkript = Column(Text, default="")
     zusammenfassung = Column(Text, default="")
     erstellt = Column(DateTime, default=_utcnow)
-    beendet = Column(DateTime, nullable=True)
 
 
 class Agent(Base):
     __tablename__ = "agenten"
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(128))
-    extension = Column(String(16))
-    email = Column(String(128), default="")
-    rolle = Column(String(32), default="agent")  # agent, teamleiter, standortleitung, admin
-    status = Column(String(32), default="offline")  # online, offline, pause, gespraech, azu, meeting
-    queues = Column(JSON, default=list)
-    skills = Column(JSON, default=list)
-    anrufe_heute = Column(Integer, default=0)
-    online_seit = Column(DateTime, nullable=True)
+    nebenstelle = Column(String(16), default="")
+    sip_passwort = Column(String(64), default="")
+    rolle = Column(String(32), default="rezeption")
+    warteschlange = Column(String(64), default="rezeption")
+    status = Column(String(32), default="offline")  # online, offline, pause, gespraech
     erstellt = Column(DateTime, default=_utcnow)
 
 
@@ -61,7 +57,7 @@ class Queue(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(64), unique=True)
     anzeigename = Column(String(128))
-    strategie = Column(String(32), default="rrmemory")  # ringall, rrmemory, leastrecent, random
+    strategie = Column(String(32), default="rrmemory")
     timeout = Column(Integer, default=30)
     max_wartezeit = Column(Integer, default=120)
     wartemusik = Column(String(64), default="default")
@@ -73,7 +69,7 @@ class Callflow(Base):
     __tablename__ = "callflows"
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(128))
-    modus = Column(String(16), default="voicebot")  # voicebot, clickbot
+    modus = Column(String(16), default="voicebot")
     bloecke = Column(JSON, default=list)
     aktiv = Column(Boolean, default=True)
     erstellt = Column(DateTime, default=_utcnow)
@@ -83,11 +79,16 @@ class Callflow(Base):
 class Patient(Base):
     __tablename__ = "patienten"
     id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(String(128))
-    telefon = Column(String(32))
-    email = Column(String(128), default="")
+    vorname = Column(String(128), default="")
+    nachname = Column(String(128), default="")
     geburtsdatum = Column(String(16), default="")
-    versichertennr = Column(String(32), default="")
+    versicherungsnummer = Column(String(32), default="")
+    krankenkasse = Column(String(64), default="")
+    telefon = Column(String(32), default="")
+    email = Column(String(128), default="")
+    strasse = Column(String(256), default="")
+    plz = Column(String(8), default="")
+    stadt = Column(String(128), default="")
     notizen = Column(Text, default="")
     erstellt = Column(DateTime, default=_utcnow)
 
@@ -96,14 +97,15 @@ class Termin(Base):
     __tablename__ = "termine"
     id = Column(Integer, primary_key=True, autoincrement=True)
     patient_id = Column(Integer, ForeignKey("patienten.id"), nullable=True)
-    patient_name = Column(String(128))
-    arzt = Column(String(128), default="")
+    arzt_id = Column(Integer, ForeignKey("aerzte.id"), nullable=True)
+    patient_name = Column(String(128), default="")
+    arzt_name = Column(String(128), default="")
     datum = Column(String(16))
     uhrzeit = Column(String(8))
-    dauer_min = Column(Integer, default=15)
+    dauer_minuten = Column(Integer, default=15)
     grund = Column(String(256), default="")
-    status = Column(String(32), default="geplant")  # geplant, bestaetigt, abgesagt
-    quelle = Column(String(32), default="voicebot")  # voicebot, agent, online
+    status = Column(String(32), default="geplant")
+    quelle = Column(String(32), default="agent")
     erstellt = Column(DateTime, default=_utcnow)
 
 
@@ -128,6 +130,32 @@ class Arzt(Base):
     fachrichtung = Column(String(128))
     telefon = Column(String(32), default="")
     email = Column(String(128), default="")
+    erstellt = Column(DateTime, default=_utcnow)
+
+
+class Wartezimmer(Base):
+    __tablename__ = "wartezimmer"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    patient_id = Column(Integer, ForeignKey("patienten.id"), nullable=True)
+    patient_name = Column(String(128), default="")
+    termin_id = Column(Integer, ForeignKey("termine.id"), nullable=True)
+    termin_uhrzeit = Column(String(8), default="")
+    termin_grund = Column(String(256), default="")
+    arzt_name = Column(String(128), default="")
+    status = Column(String(32), default="wartend")  # wartend, aufgerufen, behandlung, fertig
+    ankunft_zeit = Column(String(32), default="")
+    erstellt = Column(DateTime, default=_utcnow)
+
+
+class Benutzer(Base):
+    __tablename__ = "benutzer"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(128))
+    email = Column(String(128), default="")
+    alter_jahre = Column(Integer, default=0)
+    strasse = Column(String(256), default="")
+    plz = Column(String(8), default="")
+    stadt = Column(String(128), default="")
     erstellt = Column(DateTime, default=_utcnow)
 
 

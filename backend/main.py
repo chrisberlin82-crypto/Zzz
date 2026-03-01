@@ -38,17 +38,22 @@ async def lifespan(app: FastAPI):
     await init_db()
     log.info("Datenbank initialisiert")
 
-    # Voicebot-Komponenten laden (lazy)
-    from voicebot.engine import VoicebotEngine
-    app.state.voicebot = VoicebotEngine()
-    await app.state.voicebot.initialize()
-    log.info("Voicebot-Engine geladen")
+    # Voicebot-Komponenten laden (graceful — Server startet auch ohne)
+    app.state.voicebot = None
+    try:
+        from voicebot.engine import VoicebotEngine
+        app.state.voicebot = VoicebotEngine()
+        await app.state.voicebot.initialize()
+        log.info("Voicebot-Engine geladen")
+    except Exception as e:
+        log.warning("Voicebot-Engine nicht verfuegbar: %s (Backend laeuft trotzdem)", e)
 
     yield
 
     # Shutdown
     log.info("=== MedReception Backend stoppt ===")
-    await app.state.voicebot.shutdown()
+    if app.state.voicebot:
+        await app.state.voicebot.shutdown()
 
 
 app = FastAPI(
@@ -60,7 +65,7 @@ app = FastAPI(
 # CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.frontend_url, "http://localhost", "http://localhost:8000"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

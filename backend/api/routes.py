@@ -1,29 +1,48 @@
 """
 REST-API Endpoints — wird vom Web-Frontend aufgerufen.
 """
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select, func
+import asyncio
+import logging
+
+from fastapi import APIRouter, Depends, HTTPException, Request
+from sqlalchemy import select, func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 from pydantic import BaseModel
 
-from database import get_db, Anruf, Agent, Queue, Callflow, Patient, Termin, KBArtikel, Einstellung, Arzt
+from database import (get_db, Anruf, Agent, Queue, Callflow, Patient,
+                      Termin, KBArtikel, Einstellung, Arzt, Wartezimmer, Benutzer)
 from config import settings
-from api.auth import auth_erforderlich, admin_erforderlich
+from branchen import branche_laden, voicebot_system_prompt
+
+log = logging.getLogger("api.routes")
 
 router = APIRouter()
 
 
-# ===== Schemas =====
+# ===== Hilfsfunktion =====
+
+def _to_dict(obj):
+    """SQLAlchemy-Objekt -> dict (ohne _sa_instance_state)."""
+    d = {}
+    for c in obj.__table__.columns:
+        val = getattr(obj, c.name)
+        if isinstance(val, datetime):
+            val = val.isoformat()
+        d[c.name] = val
+    return d
+
+
+# ===== Schemas (passend zum Frontend) =====
 
 class AgentSchema(BaseModel):
     name: str
-    extension: str
-    email: str = ""
-    rolle: str = "agent"
-    queues: list = []
-    skills: list = []
+    nebenstelle: str = ""
+    sip_passwort: str = ""
+    rolle: str = "rezeption"
+    warteschlange: str = "rezeption"
+    status: str = "offline"
 
 class QueueSchema(BaseModel):
     name: str
@@ -39,12 +58,16 @@ class CallflowSchema(BaseModel):
     bloecke: list = []
 
 class TerminSchema(BaseModel):
-    patient_name: str
-    arzt: str = ""
+    patient_id: Optional[int] = None
+    arzt_id: Optional[int] = None
+    patient_name: str = ""
+    arzt_name: str = ""
     datum: str
     uhrzeit: str
-    dauer_min: int = 15
+    dauer_minuten: int = 15
     grund: str = ""
+    status: str = "geplant"
+    quelle: str = "agent"
 
 class KBSchema(BaseModel):
     titel: str
@@ -55,12 +78,16 @@ class KBSchema(BaseModel):
     clickbot_aktiv: bool = True
 
 class PatientSchema(BaseModel):
-    name: str
+    vorname: str = ""
+    nachname: str = ""
+    geburtsdatum: str = ""
+    versicherungsnummer: str = ""
+    krankenkasse: str = ""
     telefon: str = ""
     email: str = ""
-    geburtsdatum: str = ""
-    versichertennr: str = ""
-    notizen: str = ""
+    strasse: str = ""
+    plz: str = ""
+    stadt: str = ""
 
 class ArztSchema(BaseModel):
     titel: str = ""
@@ -70,10 +97,56 @@ class ArztSchema(BaseModel):
     telefon: str = ""
     email: str = ""
 
-class EinstellungSchema(BaseModel):
-    schluessel: str
-    wert: str
-    kategorie: str = "allgemein"
+class AnrufSchema(BaseModel):
+    anrufer_nummer: str = ""
+    anrufer_name: str = ""
+    agent_name: str = ""
+    warteschlange: str = ""
+    typ: str = "eingehend"
+    status: str = "aktiv"
+    beginn: str = ""
+    dauer_sekunden: int = 0
+
+class WartezimmerCheckinSchema(BaseModel):
+    patient_id: Optional[int] = None
+    patient_name: str = ""
+    termin_id: Optional[int] = None
+    termin_uhrzeit: str = ""
+    termin_grund: str = ""
+    arzt_name: str = ""
+
+class BenutzerSchema(BaseModel):
+    name: str
+    email: str = ""
+    alter: int = 0
+    strasse: str = ""
+    plz: str = ""
+    stadt: str = ""
+
+class ChatRequest(BaseModel):
+    text: str
+    verlauf: list = []
+    branche: str = "arztpraxis"
+    firmen_name: str = ""
+
+class BerechnenRequest(BaseModel):
+    a: float
+    b: float
+    operation: str
+
+class VoicebotDialogRequest(BaseModel):
+    eingabe: str
+    schritt: int = 0
+    dialog_typ: str = "frage"
+    branche: str = "arztpraxis"
+    firmen_name: str = ""
+
+class UebersetzenRequest(BaseModel):
+    text: str
+    von: str = "de"
+    nach: str = "en"
+    branche: str = "arztpraxis"
+    firmen_name: str = ""
 
 
 # ===== Dashboard =====
@@ -111,7 +184,7 @@ async def dashboard(db: AsyncSession = Depends(get_db)):
 @router.get("/agenten")
 async def agenten_liste(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Agent).order_by(Agent.name))
-    return [a.__dict__ for a in result.scalars().all()]
+    return [_to_dict(a) for a in result.scalars().all()]
 
 @router.post("/agenten")
 async def agent_erstellen(data: AgentSchema, db: AsyncSession = Depends(get_db)):
@@ -119,7 +192,24 @@ async def agent_erstellen(data: AgentSchema, db: AsyncSession = Depends(get_db))
     db.add(agent)
     await db.commit()
     await db.refresh(agent)
-    return agent.__dict__
+    return _to_dict(agent)
+
+@router.get("/agenten/{agent_id}")
+async def agent_detail(agent_id: int, db: AsyncSession = Depends(get_db)):
+    agent = await db.get(Agent, agent_id)
+    if not agent:
+        raise HTTPException(404, "Agent nicht gefunden")
+    return _to_dict(agent)
+
+@router.put("/agenten/{agent_id}")
+async def agent_aktualisieren(agent_id: int, data: AgentSchema, db: AsyncSession = Depends(get_db)):
+    agent = await db.get(Agent, agent_id)
+    if not agent:
+        raise HTTPException(404, "Agent nicht gefunden")
+    for key, value in data.model_dump().items():
+        setattr(agent, key, value)
+    await db.commit()
+    return _to_dict(agent)
 
 @router.put("/agenten/{agent_id}/status")
 async def agent_status(agent_id: int, status: str, db: AsyncSession = Depends(get_db)):
@@ -127,10 +217,17 @@ async def agent_status(agent_id: int, status: str, db: AsyncSession = Depends(ge
     if not agent:
         raise HTTPException(404, "Agent nicht gefunden")
     agent.status = status
-    if status == "online":
-        agent.online_seit = datetime.utcnow()
     await db.commit()
     return {"ok": True, "status": status}
+
+@router.delete("/agenten/{agent_id}")
+async def agent_loeschen(agent_id: int, db: AsyncSession = Depends(get_db)):
+    agent = await db.get(Agent, agent_id)
+    if not agent:
+        raise HTTPException(404, "Agent nicht gefunden")
+    await db.delete(agent)
+    await db.commit()
+    return {"ok": True}
 
 
 # ===== Queues / ACD =====
@@ -138,7 +235,7 @@ async def agent_status(agent_id: int, status: str, db: AsyncSession = Depends(ge
 @router.get("/queues")
 async def queues_liste(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Queue).order_by(Queue.name))
-    return [q.__dict__ for q in result.scalars().all()]
+    return [_to_dict(q) for q in result.scalars().all()]
 
 @router.post("/queues")
 async def queue_erstellen(data: QueueSchema, db: AsyncSession = Depends(get_db)):
@@ -146,7 +243,7 @@ async def queue_erstellen(data: QueueSchema, db: AsyncSession = Depends(get_db))
     db.add(queue)
     await db.commit()
     await db.refresh(queue)
-    return queue.__dict__
+    return _to_dict(queue)
 
 @router.get("/queues/{queue_name}/status")
 async def queue_status(queue_name: str, db: AsyncSession = Depends(get_db)):
@@ -157,12 +254,11 @@ async def queue_status(queue_name: str, db: AsyncSession = Depends(get_db)):
         raise HTTPException(404, "Queue nicht gefunden")
 
     # Agenten in dieser Queue
-    agenten = await db.execute(select(Agent))
-    alle_agenten = agenten.scalars().all()
-    queue_agenten = [a for a in alle_agenten if queue_name in (a.queues or [])]
+    agenten = await db.execute(select(Agent).where(Agent.warteschlange == queue_name))
+    queue_agenten = agenten.scalars().all()
 
     wartende = await db.scalar(
-        select(func.count()).where(Anruf.queue == queue_name, Anruf.status == "wartend")
+        select(func.count()).where(Anruf.warteschlange == queue_name, Anruf.status == "wartend")
     ) or 0
 
     return {
@@ -181,7 +277,7 @@ async def queue_status(queue_name: str, db: AsyncSession = Depends(get_db)):
 @router.get("/callflows")
 async def callflows_liste(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Callflow).order_by(Callflow.name))
-    return [c.__dict__ for c in result.scalars().all()]
+    return [_to_dict(c) for c in result.scalars().all()]
 
 @router.post("/callflows")
 async def callflow_erstellen(data: CallflowSchema, db: AsyncSession = Depends(get_db)):
@@ -189,7 +285,14 @@ async def callflow_erstellen(data: CallflowSchema, db: AsyncSession = Depends(ge
     db.add(cf)
     await db.commit()
     await db.refresh(cf)
-    return cf.__dict__
+    return _to_dict(cf)
+
+@router.get("/callflows/{cf_id}")
+async def callflow_detail(cf_id: int, db: AsyncSession = Depends(get_db)):
+    cf = await db.get(Callflow, cf_id)
+    if not cf:
+        raise HTTPException(404, "Callflow nicht gefunden")
+    return _to_dict(cf)
 
 @router.put("/callflows/{cf_id}")
 async def callflow_aktualisieren(cf_id: int, data: CallflowSchema, db: AsyncSession = Depends(get_db)):
@@ -201,7 +304,26 @@ async def callflow_aktualisieren(cf_id: int, data: CallflowSchema, db: AsyncSess
     cf.bloecke = data.bloecke
     cf.geaendert = datetime.utcnow()
     await db.commit()
-    return cf.__dict__
+    return _to_dict(cf)
+
+@router.delete("/callflows/{cf_id}")
+async def callflow_loeschen(cf_id: int, db: AsyncSession = Depends(get_db)):
+    cf = await db.get(Callflow, cf_id)
+    if not cf:
+        raise HTTPException(404, "Callflow nicht gefunden")
+    await db.delete(cf)
+    await db.commit()
+    return {"ok": True}
+
+@router.post("/callflows/{cf_id}/aktivieren")
+async def callflow_aktivieren(cf_id: int, db: AsyncSession = Depends(get_db)):
+    cf = await db.get(Callflow, cf_id)
+    if not cf:
+        raise HTTPException(404, "Callflow nicht gefunden")
+    cf.aktiv = True
+    cf.geaendert = datetime.utcnow()
+    await db.commit()
+    return {"ok": True}
 
 
 # ===== Anrufe =====
@@ -211,14 +333,31 @@ async def anrufe_liste(limit: int = 50, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
         select(Anruf).order_by(Anruf.erstellt.desc()).limit(limit)
     )
-    return [a.__dict__ for a in result.scalars().all()]
+    return [_to_dict(a) for a in result.scalars().all()]
 
 @router.get("/anrufe/{anruf_id}")
 async def anruf_detail(anruf_id: int, db: AsyncSession = Depends(get_db)):
     anruf = await db.get(Anruf, anruf_id)
     if not anruf:
         raise HTTPException(404, "Anruf nicht gefunden")
-    return anruf.__dict__
+    return _to_dict(anruf)
+
+@router.post("/anrufe")
+async def anruf_erstellen(data: AnrufSchema, db: AsyncSession = Depends(get_db)):
+    anruf = Anruf(**data.model_dump())
+    db.add(anruf)
+    await db.commit()
+    await db.refresh(anruf)
+    return _to_dict(anruf)
+
+@router.put("/anrufe/{anruf_id}")
+async def anruf_aktualisieren(anruf_id: int, status: str = "beendet", db: AsyncSession = Depends(get_db)):
+    anruf = await db.get(Anruf, anruf_id)
+    if not anruf:
+        raise HTTPException(404, "Anruf nicht gefunden")
+    anruf.status = status
+    await db.commit()
+    return _to_dict(anruf)
 
 
 # ===== Termine =====
@@ -229,7 +368,7 @@ async def termine_liste(datum: Optional[str] = None, db: AsyncSession = Depends(
     if datum:
         query = query.where(Termin.datum == datum)
     result = await db.execute(query)
-    return [t.__dict__ for t in result.scalars().all()]
+    return [_to_dict(t) for t in result.scalars().all()]
 
 @router.post("/termine")
 async def termin_erstellen(data: TerminSchema, db: AsyncSession = Depends(get_db)):
@@ -237,22 +376,41 @@ async def termin_erstellen(data: TerminSchema, db: AsyncSession = Depends(get_db
     db.add(termin)
     await db.commit()
     await db.refresh(termin)
-    return termin.__dict__
+    return _to_dict(termin)
+
+@router.put("/termine/{termin_id}")
+async def termin_aktualisieren(termin_id: int, data: TerminSchema, db: AsyncSession = Depends(get_db)):
+    termin = await db.get(Termin, termin_id)
+    if not termin:
+        raise HTTPException(404, "Termin nicht gefunden")
+    for key, value in data.model_dump().items():
+        setattr(termin, key, value)
+    await db.commit()
+    return _to_dict(termin)
+
+@router.delete("/termine/{termin_id}")
+async def termin_loeschen(termin_id: int, db: AsyncSession = Depends(get_db)):
+    termin = await db.get(Termin, termin_id)
+    if not termin:
+        raise HTTPException(404, "Termin nicht gefunden")
+    await db.delete(termin)
+    await db.commit()
+    return {"ok": True}
 
 
 # ===== Patienten =====
 
 @router.get("/patienten")
 async def patienten_liste(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Patient).order_by(Patient.name))
-    return [p.__dict__ for p in result.scalars().all()]
+    result = await db.execute(select(Patient).order_by(Patient.nachname))
+    return [_to_dict(p) for p in result.scalars().all()]
 
 @router.get("/patienten/{patient_id}")
 async def patient_detail(patient_id: int, db: AsyncSession = Depends(get_db)):
     patient = await db.get(Patient, patient_id)
     if not patient:
         raise HTTPException(404, "Patient nicht gefunden")
-    return patient.__dict__
+    return _to_dict(patient)
 
 @router.post("/patienten")
 async def patient_erstellen(data: PatientSchema, db: AsyncSession = Depends(get_db)):
@@ -260,7 +418,7 @@ async def patient_erstellen(data: PatientSchema, db: AsyncSession = Depends(get_
     db.add(patient)
     await db.commit()
     await db.refresh(patient)
-    return patient.__dict__
+    return _to_dict(patient)
 
 @router.put("/patienten/{patient_id}")
 async def patient_aktualisieren(patient_id: int, data: PatientSchema, db: AsyncSession = Depends(get_db)):
@@ -270,7 +428,7 @@ async def patient_aktualisieren(patient_id: int, data: PatientSchema, db: AsyncS
     for key, value in data.model_dump().items():
         setattr(patient, key, value)
     await db.commit()
-    return patient.__dict__
+    return _to_dict(patient)
 
 @router.delete("/patienten/{patient_id}")
 async def patient_loeschen(patient_id: int, db: AsyncSession = Depends(get_db)):
@@ -287,14 +445,14 @@ async def patient_loeschen(patient_id: int, db: AsyncSession = Depends(get_db)):
 @router.get("/aerzte")
 async def aerzte_liste(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Arzt).order_by(Arzt.nachname))
-    return [a.__dict__ for a in result.scalars().all()]
+    return [_to_dict(a) for a in result.scalars().all()]
 
 @router.get("/aerzte/{arzt_id}")
 async def arzt_detail(arzt_id: int, db: AsyncSession = Depends(get_db)):
     arzt = await db.get(Arzt, arzt_id)
     if not arzt:
         raise HTTPException(404, "Arzt nicht gefunden")
-    return arzt.__dict__
+    return _to_dict(arzt)
 
 @router.post("/aerzte")
 async def arzt_erstellen(data: ArztSchema, db: AsyncSession = Depends(get_db)):
@@ -302,7 +460,7 @@ async def arzt_erstellen(data: ArztSchema, db: AsyncSession = Depends(get_db)):
     db.add(arzt)
     await db.commit()
     await db.refresh(arzt)
-    return arzt.__dict__
+    return _to_dict(arzt)
 
 @router.put("/aerzte/{arzt_id}")
 async def arzt_aktualisieren(arzt_id: int, data: ArztSchema, db: AsyncSession = Depends(get_db)):
@@ -312,7 +470,7 @@ async def arzt_aktualisieren(arzt_id: int, data: ArztSchema, db: AsyncSession = 
     for key, value in data.model_dump().items():
         setattr(arzt, key, value)
     await db.commit()
-    return arzt.__dict__
+    return _to_dict(arzt)
 
 @router.delete("/aerzte/{arzt_id}")
 async def arzt_loeschen(arzt_id: int, db: AsyncSession = Depends(get_db)):
@@ -320,6 +478,87 @@ async def arzt_loeschen(arzt_id: int, db: AsyncSession = Depends(get_db)):
     if not arzt:
         raise HTTPException(404, "Arzt nicht gefunden")
     await db.delete(arzt)
+    await db.commit()
+    return {"ok": True}
+
+
+# ===== Wartezimmer =====
+
+@router.get("/wartezimmer")
+async def wartezimmer_liste(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(Wartezimmer).where(Wartezimmer.status != "fertig").order_by(Wartezimmer.erstellt)
+    )
+    return [_to_dict(w) for w in result.scalars().all()]
+
+@router.post("/wartezimmer")
+async def wartezimmer_checkin(data: WartezimmerCheckinSchema, db: AsyncSession = Depends(get_db)):
+    eintrag = Wartezimmer(**data.model_dump(), status="wartend",
+                          ankunft_zeit=datetime.utcnow().isoformat())
+    db.add(eintrag)
+    await db.commit()
+    await db.refresh(eintrag)
+    return _to_dict(eintrag)
+
+@router.put("/wartezimmer/{wz_id}/status")
+async def wartezimmer_status(wz_id: int, status: str, db: AsyncSession = Depends(get_db)):
+    eintrag = await db.get(Wartezimmer, wz_id)
+    if not eintrag:
+        raise HTTPException(404, "Wartezimmer-Eintrag nicht gefunden")
+    eintrag.status = status
+    await db.commit()
+    return {"ok": True}
+
+@router.delete("/wartezimmer/{wz_id}")
+async def wartezimmer_entfernen(wz_id: int, db: AsyncSession = Depends(get_db)):
+    eintrag = await db.get(Wartezimmer, wz_id)
+    if not eintrag:
+        raise HTTPException(404, "Wartezimmer-Eintrag nicht gefunden")
+    await db.delete(eintrag)
+    await db.commit()
+    return {"ok": True}
+
+
+# ===== Benutzer =====
+
+@router.get("/benutzer")
+async def benutzer_liste(suche: Optional[str] = None, db: AsyncSession = Depends(get_db)):
+    query = select(Benutzer).order_by(Benutzer.name)
+    if suche:
+        s = f"%{suche}%"
+        query = query.where(or_(Benutzer.name.ilike(s), Benutzer.email.ilike(s), Benutzer.stadt.ilike(s)))
+    result = await db.execute(query)
+    return [{**_to_dict(b), "alter": b.alter_jahre} for b in result.scalars().all()]
+
+@router.post("/benutzer")
+async def benutzer_erstellen(data: BenutzerSchema, db: AsyncSession = Depends(get_db)):
+    b = Benutzer(name=data.name, email=data.email, alter_jahre=data.alter,
+                 strasse=data.strasse, plz=data.plz, stadt=data.stadt)
+    db.add(b)
+    await db.commit()
+    await db.refresh(b)
+    return {**_to_dict(b), "alter": b.alter_jahre}
+
+@router.put("/benutzer/{benutzer_id}")
+async def benutzer_aktualisieren(benutzer_id: int, data: BenutzerSchema, db: AsyncSession = Depends(get_db)):
+    b = await db.get(Benutzer, benutzer_id)
+    if not b:
+        raise HTTPException(404, "Benutzer nicht gefunden")
+    b.name = data.name
+    b.email = data.email
+    b.alter_jahre = data.alter
+    b.strasse = data.strasse
+    b.plz = data.plz
+    b.stadt = data.stadt
+    await db.commit()
+    return {**_to_dict(b), "alter": b.alter_jahre}
+
+@router.delete("/benutzer/{benutzer_id}")
+async def benutzer_loeschen(benutzer_id: int, db: AsyncSession = Depends(get_db)):
+    b = await db.get(Benutzer, benutzer_id)
+    if not b:
+        raise HTTPException(404, "Benutzer nicht gefunden")
+    await db.delete(b)
     await db.commit()
     return {"ok": True}
 
@@ -332,7 +571,7 @@ async def kb_liste(kategorie: Optional[str] = None, db: AsyncSession = Depends(g
     if kategorie:
         query = query.where(KBArtikel.kategorie == kategorie)
     result = await db.execute(query)
-    return [a.__dict__ for a in result.scalars().all()]
+    return [_to_dict(a) for a in result.scalars().all()]
 
 @router.post("/kb")
 async def kb_erstellen(data: KBSchema, db: AsyncSession = Depends(get_db)):
@@ -340,7 +579,7 @@ async def kb_erstellen(data: KBSchema, db: AsyncSession = Depends(get_db)):
     db.add(artikel)
     await db.commit()
     await db.refresh(artikel)
-    return artikel.__dict__
+    return _to_dict(artikel)
 
 
 # ===== Branchen =====
@@ -402,11 +641,10 @@ async def voicebot_hintergruende():
 @router.get("/einstellungen")
 async def einstellungen_liste(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Einstellung).order_by(Einstellung.kategorie, Einstellung.schluessel))
-    return [e.__dict__ for e in result.scalars().all()]
+    return [_to_dict(e) for e in result.scalars().all()]
 
 @router.put("/einstellungen/{schluessel}")
 async def einstellung_setzen(schluessel: str, wert: str, kategorie: str = "allgemein",
-                             agent: Agent = Depends(admin_erforderlich),
                              db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Einstellung).where(Einstellung.schluessel == schluessel))
     e = result.scalar_one_or_none()
@@ -431,6 +669,192 @@ async def llm_status():
     }
 
 
+# ===== Chat (Allgemeiner Chat-Assistent) =====
+
+@router.post("/chat")
+async def chat(data: ChatRequest):
+    """Chat-Assistent — sendet Nachrichten ans LLM mit Branchenkontext."""
+    try:
+        from main import app
+        engine = app.state.voicebot
+    except Exception:
+        engine = None
+
+    if not engine or not engine.llm or not engine.llm.client:
+        return {"antwort": _chat_demo_antwort(data.text)}
+
+    kontext = voicebot_system_prompt(data.branche, data.firmen_name)
+    messages = [{"role": "system", "content": kontext}]
+    for msg in data.verlauf[-10:]:
+        rolle = msg.get("rolle", "user")
+        r = "assistant" if rolle in ("bot", "assistant") else "user"
+        messages.append({"role": r, "content": msg.get("text", msg.get("content", ""))})
+    messages.append({"role": "user", "content": data.text})
+
+    try:
+        response = await asyncio.wait_for(
+            engine.llm.client.chat(
+                model=settings.llm_model,
+                messages=messages,
+                options={"temperature": 0.7, "num_predict": 256},
+            ),
+            timeout=30.0,
+        )
+        antwort = response.message.content.strip().replace("*", "").replace("#", "").replace("`", "")
+        return {"antwort": antwort}
+    except asyncio.TimeoutError:
+        return {"antwort": "Entschuldigung, das dauert gerade etwas laenger. Bitte versuchen Sie es erneut."}
+    except Exception as e:
+        log.error("Chat-Fehler: %s", e)
+        return {"antwort": _chat_demo_antwort(data.text)}
+
+
+def _chat_demo_antwort(text: str) -> str:
+    """Fallback-Antwort wenn LLM nicht verfuegbar."""
+    text_lower = text.lower()
+    if any(w in text_lower for w in ["termin", "termine"]):
+        return "Gerne helfe ich Ihnen bei der Terminvereinbarung. Wann wuerden Sie gerne kommen?"
+    if any(w in text_lower for w in ["rezept", "medikament"]):
+        return "Fuer eine Rezeptbestellung brauche ich Ihren Namen und das gewuenschte Medikament."
+    if any(w in text_lower for w in ["oeffnungszeit", "geoeffnet", "offen"]):
+        return "Unsere Oeffnungszeiten sind Mo-Fr 08:00-12:00 Uhr und Mo, Di, Do 14:00-18:00 Uhr."
+    if any(w in text_lower for w in ["hallo", "guten tag", "hi"]):
+        return "Guten Tag! Wie kann ich Ihnen helfen?"
+    return "Vielen Dank fuer Ihre Nachricht. Wie kann ich Ihnen weiterhelfen?"
+
+
+# ===== Rechner =====
+
+@router.post("/berechnen")
+async def berechnen(data: BerechnenRequest):
+    """Einfacher Rechner fuer das Frontend."""
+    try:
+        if data.operation == "addieren":
+            ergebnis = data.a + data.b
+        elif data.operation == "subtrahieren":
+            ergebnis = data.a - data.b
+        elif data.operation == "multiplizieren":
+            ergebnis = data.a * data.b
+        elif data.operation == "dividieren":
+            if data.b == 0:
+                raise HTTPException(400, "Division durch Null")
+            ergebnis = data.a / data.b
+        else:
+            raise HTTPException(400, f"Unbekannte Operation: {data.operation}")
+        return {"ergebnis": ergebnis}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(400, str(e))
+
+
+# ===== Voicebot Dialog (Test) =====
+
+@router.post("/voicebot/dialog")
+async def voicebot_dialog(data: VoicebotDialogRequest):
+    """Voicebot-Dialog Test — simuliert ein Telefongespraech Schritt fuer Schritt."""
+    try:
+        from main import app
+        engine = app.state.voicebot
+    except Exception:
+        engine = None
+
+    if not engine or not engine.llm or not engine.llm.client:
+        return _voicebot_demo_dialog(data)
+
+    kontext = voicebot_system_prompt(data.branche, data.firmen_name)
+    messages = [
+        {"role": "system", "content": kontext},
+        {"role": "user", "content": data.eingabe},
+    ]
+
+    try:
+        response = await asyncio.wait_for(
+            engine.llm.client.chat(
+                model=settings.llm_model,
+                messages=messages,
+                options={"temperature": 0.7, "num_predict": 256},
+            ),
+            timeout=30.0,
+        )
+        antwort = response.message.content.strip().replace("*", "").replace("#", "").replace("`", "")
+
+        aktion = "weiter"
+        antwort_lower = antwort.lower()
+        if any(w in antwort_lower for w in ["termin", "gebucht", "eingetragen"]):
+            aktion = "termin_buchen"
+        elif any(w in antwort_lower for w in ["rezept", "bestellt"]):
+            aktion = "rezept"
+        elif any(w in antwort_lower for w in ["auf wiedersehen", "tschuess", "schoenen tag"]):
+            aktion = "beenden"
+
+        return {"schritt": data.schritt + 1, "aktion": aktion, "antwort": antwort}
+    except Exception as e:
+        log.error("Voicebot-Dialog Fehler: %s", e)
+        return _voicebot_demo_dialog(data)
+
+
+def _voicebot_demo_dialog(data: VoicebotDialogRequest) -> dict:
+    """Demo-Dialog wenn LLM nicht verfuegbar."""
+    eingabe_lower = data.eingabe.lower()
+    if any(w in eingabe_lower for w in ["termin", "termine"]):
+        return {"schritt": data.schritt + 1, "aktion": "termin_buchen",
+                "antwort": "Gerne vereinbare ich einen Termin fuer Sie. Wann wuerden Sie gerne kommen?"}
+    if any(w in eingabe_lower for w in ["rezept"]):
+        return {"schritt": data.schritt + 1, "aktion": "rezept",
+                "antwort": "Fuer das Rezept brauche ich Ihren Namen und das Medikament."}
+    return {"schritt": data.schritt + 1, "aktion": "weiter",
+            "antwort": "Vielen Dank. Wie kann ich Ihnen weiterhelfen?"}
+
+
+# ===== Uebersetzen =====
+
+@router.post("/uebersetzen")
+async def uebersetzen(data: UebersetzenRequest):
+    """Uebersetzungsdienst via LLM."""
+    try:
+        from main import app
+        engine = app.state.voicebot
+    except Exception:
+        engine = None
+
+    if not engine or not engine.llm or not engine.llm.client:
+        return {"uebersetzung": f"[Demo] {data.text}"}
+
+    sprachen = {
+        "de": "Deutsch", "en": "Englisch", "fr": "Franzoesisch",
+        "es": "Spanisch", "it": "Italienisch", "tr": "Tuerkisch",
+        "ar": "Arabisch", "ru": "Russisch", "pl": "Polnisch",
+        "pt": "Portugiesisch", "zh": "Chinesisch", "ja": "Japanisch",
+    }
+    von_name = sprachen.get(data.von, data.von)
+    nach_name = sprachen.get(data.nach, data.nach)
+
+    messages = [
+        {"role": "system", "content": (
+            f"Du bist ein professioneller Uebersetzer. "
+            f"Uebersetze den folgenden Text von {von_name} nach {nach_name}. "
+            f"Gib NUR die Uebersetzung zurueck, ohne Erklaerungen."
+        )},
+        {"role": "user", "content": data.text},
+    ]
+
+    try:
+        response = await asyncio.wait_for(
+            engine.llm.client.chat(
+                model=settings.llm_model,
+                messages=messages,
+                options={"temperature": 0.3, "num_predict": 512},
+            ),
+            timeout=30.0,
+        )
+        uebersetzung = response.message.content.strip()
+        return {"uebersetzung": uebersetzung}
+    except Exception as e:
+        log.error("Uebersetzung Fehler: %s", e)
+        return {"uebersetzung": f"[Fehler] Uebersetzung nicht moeglich: {e}"}
+
+
 # ===== AI Agent Engineering =====
 
 class AIChatRequest(BaseModel):
@@ -439,13 +863,15 @@ class AIChatRequest(BaseModel):
 @router.post("/ai-agent/chat")
 async def ai_agent_chat(data: AIChatRequest):
     """Test-Chat fuer AI Agent Engineering — sendet Nachrichten ans LLM."""
-    from main import app
-    engine = app.state.voicebot
+    try:
+        from main import app
+        engine = app.state.voicebot
+    except Exception:
+        engine = None
 
-    if not engine.llm or not engine.llm.client:
+    if not engine or not engine.llm or not engine.llm.client:
         return {"antwort": "LLM nicht verfuegbar. Bitte Ollama starten."}
 
-    import asyncio
     try:
         response = await asyncio.wait_for(
             engine.llm.client.chat(
@@ -469,15 +895,148 @@ async def ai_agent_chat(data: AIChatRequest):
         return {"antwort": f"Fehler: {e}"}
 
 
+# ===== Seed / Demo-Daten =====
+
+@router.post("/seed")
+async def seed_demo_daten(db: AsyncSession = Depends(get_db)):
+    """Demo-Daten in die Datenbank laden (idempotent)."""
+    count = await db.scalar(select(func.count()).select_from(Patient))
+    if count and count > 0:
+        return {"ok": True, "nachricht": "Demo-Daten bereits vorhanden"}
+
+    # Patienten (exakt wie im Frontend)
+    for p in [
+        Patient(vorname="Anna", nachname="Mueller", geburtsdatum="1985-03-15",
+                versicherungsnummer="A123456789", krankenkasse="TK", telefon="030-1234567",
+                email="anna.mueller@email.de", strasse="Berliner Str. 12", plz="10115", stadt="Berlin"),
+        Patient(vorname="Thomas", nachname="Schmidt", geburtsdatum="1970-07-22",
+                versicherungsnummer="B987654321", krankenkasse="AOK", telefon="030-9876543",
+                email="t.schmidt@email.de", strasse="Hauptstr. 45", plz="10827", stadt="Berlin"),
+        Patient(vorname="Maria", nachname="Weber", geburtsdatum="1992-11-30",
+                versicherungsnummer="C456789123", krankenkasse="Barmer", telefon="030-5551234",
+                email="m.weber@email.de", strasse="Schoenhauser Allee 8", plz="10435", stadt="Berlin"),
+        Patient(vorname="Klaus", nachname="Fischer", geburtsdatum="1955-01-08",
+                versicherungsnummer="D321654987", krankenkasse="DAK", telefon="030-7771234",
+                email="k.fischer@email.de", strasse="Kantstr. 99", plz="10623", stadt="Berlin"),
+        Patient(vorname="Sophie", nachname="Wagner", geburtsdatum="2000-05-20",
+                versicherungsnummer="E654987321", krankenkasse="IKK", telefon="030-3334567",
+                email="s.wagner@email.de", strasse="Friedrichstr. 200", plz="10117", stadt="Berlin"),
+    ]:
+        db.add(p)
+
+    # Aerzte
+    for a in [
+        Arzt(titel="Dr.", vorname="Michael", nachname="Schneider",
+             fachrichtung="Allgemeinmedizin", telefon="030-1110001", email="dr.schneider@praxis.de"),
+        Arzt(titel="Dr.", vorname="Petra", nachname="Braun",
+             fachrichtung="Kardiologie", telefon="030-1110002", email="dr.braun@praxis.de"),
+        Arzt(titel="Prof. Dr.", vorname="Hans", nachname="Klein",
+             fachrichtung="Orthopaedie", telefon="030-1110003", email="prof.klein@praxis.de"),
+    ]:
+        db.add(a)
+
+    # Agenten (Frontend-Struktur)
+    for ag in [
+        Agent(name="Lisa Meier", nebenstelle="100", sip_passwort="demo123",
+              rolle="rezeption", warteschlange="rezeption", status="online"),
+        Agent(name="Peter Schulz", nebenstelle="101", sip_passwort="demo456",
+              rolle="rezeption", warteschlange="terminvergabe", status="pause"),
+        Agent(name="Dr. Schneider", nebenstelle="200", sip_passwort="demo789",
+              rolle="arzt", warteschlange="dringend", status="online"),
+    ]:
+        db.add(ag)
+
+    # Benutzer
+    for b in [
+        Benutzer(name="Admin", email="admin@praxis.de", alter_jahre=35,
+                 strasse="Praxisstr. 1", plz="10115", stadt="Berlin"),
+        Benutzer(name="Lisa Meier", email="lisa@praxis.de", alter_jahre=28,
+                 strasse="Muellerstr. 5", plz="10119", stadt="Berlin"),
+        Benutzer(name="Peter Schulz", email="peter@praxis.de", alter_jahre=42,
+                 strasse="Torstr. 30", plz="10119", stadt="Berlin"),
+    ]:
+        db.add(b)
+
+    # Termine (mit patient_id + arzt_id)
+    heute = datetime.utcnow().strftime("%Y-%m-%d")
+    for t in [
+        Termin(patient_id=1, arzt_id=1, datum=heute, uhrzeit="09:00", dauer_minuten=30,
+               grund="Vorsorgeuntersuchung", status="bestaetigt",
+               patient_name="Mueller, Anna", arzt_name="Dr. Michael Schneider"),
+        Termin(patient_id=2, arzt_id=2, datum=heute, uhrzeit="10:30", dauer_minuten=20,
+               grund="Herz-Kontrolle", status="geplant",
+               patient_name="Schmidt, Thomas", arzt_name="Dr. Petra Braun"),
+        Termin(patient_id=5, arzt_id=3, datum=heute, uhrzeit="14:00", dauer_minuten=45,
+               grund="Erstvorstellung Ruecken", status="geplant",
+               patient_name="Wagner, Sophie", arzt_name="Prof. Dr. Hans Klein"),
+        Termin(patient_id=3, arzt_id=1, datum=heute, uhrzeit="15:30", dauer_minuten=15,
+               grund="Rezept abholen", status="geplant",
+               patient_name="Weber, Maria", arzt_name="Dr. Michael Schneider"),
+    ]:
+        db.add(t)
+
+    # Anrufe
+    for an in [
+        Anruf(anrufer_nummer="030-9998877", anrufer_name="Frau Lehmann",
+              agent_name="Lisa Meier", warteschlange="rezeption",
+              typ="eingehend", status="beendet", beginn=heute + " 08:15", dauer_sekunden=180),
+        Anruf(anrufer_nummer="030-5554433", anrufer_name="",
+              agent_name="Peter Schulz", warteschlange="terminvergabe",
+              typ="eingehend", status="beendet", beginn=heute + " 08:45", dauer_sekunden=120),
+    ]:
+        db.add(an)
+
+    # Queues
+    for q in [
+        Queue(name="rezeption", anzeigename="Rezeption", strategie="rrmemory"),
+        Queue(name="terminvergabe", anzeigename="Terminvergabe", strategie="rrmemory"),
+        Queue(name="dringend", anzeigename="Dringend", strategie="ringall", timeout=15),
+    ]:
+        db.add(q)
+
+    # KB
+    for kb in [
+        KBArtikel(titel="Oeffnungszeiten", kategorie="allgemein",
+                  frage="Wann haben Sie geoeffnet?",
+                  antwort="Mo-Fr 08:00-12:00, Mo+Di+Do 14:00-18:00"),
+        KBArtikel(titel="Notfall", kategorie="notfall",
+                  frage="Was mache ich im Notfall?",
+                  antwort="Bei Notfaellen rufen Sie 112 an. Aerztlicher Bereitschaftsdienst: 116 117."),
+    ]:
+        db.add(kb)
+
+    # Callflow
+    db.add(Callflow(name="Standard-Empfang", modus="voicebot", aktiv=True, bloecke=[
+        {"typ": "begruessung", "label": "Begruessung", "config": {"text": "Guten Tag"}},
+        {"typ": "menue", "label": "Hauptmenue", "config": {"optionen": ["Termin", "Rezept", "Sonstiges"]}},
+    ]))
+
+    await db.commit()
+    return {"ok": True, "nachricht": "Demo-Daten geladen"}
+
+
 # ===== System =====
 
 @router.get("/system/status")
 async def system_status():
     """System-Health-Check."""
+    llm_ok = stt_ok = tts_ok = False
+    try:
+        from main import app
+        engine = app.state.voicebot
+        if engine:
+            llm_ok = engine.llm is not None and engine.llm.client is not None
+            stt_ok = engine.stt is not None and engine.stt.model is not None
+            tts_ok = engine.tts is not None
+    except Exception:
+        pass
+
     return {
         "status": "online",
         "version": "1.0.0",
-        "asterisk": "pruefen...",
+        "llm_status": "online" if llm_ok else "offline",
+        "stt_status": "online" if stt_ok else "offline",
+        "tts_status": "online" if tts_ok else "offline",
         "llm": settings.llm_model,
         "stt": settings.stt_model,
         "tts": settings.tts_stimme,
